@@ -124,8 +124,8 @@ const DiagnosticHistory = () => {
                 <div className="flex items-center gap-3 mb-6">
                   {trend === 'improved' && (
                     <div className="flex items-center gap-2 text-sm">
-                      <TrendingDown className="w-4 h-4 text-green-500" />
-                      <span className="text-green-600">Intensidade reduziu</span>
+                      <TrendingDown className="w-4 h-4 text-primary" />
+                      <span className="text-primary">Intensidade reduziu</span>
                     </div>
                   )}
                   {trend === 'worsened' && (
