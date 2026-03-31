@@ -115,6 +115,16 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     });
   }
 
+  // Combine whatNotToDo
+  const whatNotToDo = [...dominantDef.whatNotToDo];
+  if (secondaryDefs.length > 0) {
+    secondaryDefs.forEach(sd => {
+      sd.whatNotToDo.slice(0, 1).forEach(w => {
+        if (!whatNotToDo.includes(w)) whatNotToDo.push(w);
+      });
+    });
+  }
+
   return {
     dominantPattern: dominantDef,
     secondaryPatterns: secondaryDefs,
@@ -134,5 +144,9 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     blockingPoint: dominantDef.blockingPoint,
     lifeImpact,
     exitStrategy,
+    corePain: dominantDef.corePain,
+    keyUnlockArea: dominantDef.keyUnlockArea,
+    criticalDiagnosis: dominantDef.criticalDiagnosis,
+    whatNotToDo,
   };
 }
