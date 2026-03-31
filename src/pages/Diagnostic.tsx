@@ -79,7 +79,7 @@ const Diagnostic = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     setTimeout(() => {
-      const analysisResult = analyzeAnswers(answers, profile?.age ?? undefined);
+      const analysisResult = analyzeAnswers(answers);
       setResult(analysisResult);
       setStep('report');
       window.scrollTo({ top: 0, behavior: 'smooth' });

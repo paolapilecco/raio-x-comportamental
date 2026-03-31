@@ -130,8 +130,8 @@ const DiagnosticHistory = () => {
                   )}
                   {trend === 'worsened' && (
                     <div className="flex items-center gap-2 text-sm">
-                      <TrendingUp className="w-4 h-4 text-red-500" />
-                      <span className="text-red-500">Intensidade aumentou</span>
+                      <TrendingUp className="w-4 h-4 text-destructive" />
+                      <span className="text-destructive">Intensidade aumentou</span>
                     </div>
                   )}
                   {trend === 'stable' && (
