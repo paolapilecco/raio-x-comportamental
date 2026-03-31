@@ -55,9 +55,9 @@ const Diagnostic = () => {
         self_sabotage_cycle: analysisResult.selfSabotageCycle,
         blocking_point: analysisResult.blockingPoint,
         contradiction: analysisResult.contradiction,
-        life_impact: analysisResult.lifeImpact,
-        exit_strategy: analysisResult.exitStrategy,
-        all_scores: analysisResult.allScores,
+        life_impact: JSON.parse(JSON.stringify(analysisResult.lifeImpact)),
+        exit_strategy: JSON.parse(JSON.stringify(analysisResult.exitStrategy)),
+        all_scores: JSON.parse(JSON.stringify(analysisResult.allScores)),
         direction: analysisResult.direction,
         combined_title: analysisResult.combinedTitle,
       }]);
