@@ -62,7 +62,6 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     ? `${dominantDef.label} com ${secondaryDefs[0].label}`
     : dominantDef.label;
 
-  // Build combined texts, weaving in secondary patterns
   let summary = dominantDef.description;
   if (secondaryDefs.length > 0) {
     summary += ` Além disso, há traços significativos de ${secondaryDefs.map(d => d.label.toLowerCase()).join(' e ')}, o que intensifica a complexidade do seu funcionamento.`;
@@ -71,6 +70,49 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
   let mechanism = dominantDef.mechanism;
   if (secondaryDefs.length > 0) {
     mechanism += ` Esse mecanismo é amplificado pela presença de ${secondaryDefs[0].label.toLowerCase()}: ${secondaryDefs[0].mechanism.charAt(0).toLowerCase() + secondaryDefs[0].mechanism.slice(1)}`;
+  }
+
+  // Combine triggers from dominant + secondary
+  const triggers = [...dominantDef.triggers];
+  if (secondaryDefs.length > 0) {
+    secondaryDefs.forEach(sd => {
+      sd.triggers.slice(0, 2).forEach(t => {
+        if (!triggers.includes(t)) triggers.push(t);
+      });
+    });
+  }
+
+  // Combine mental traps
+  const mentalTraps = [...dominantDef.mentalTraps];
+  if (secondaryDefs.length > 0) {
+    secondaryDefs.forEach(sd => {
+      sd.mentalTraps.slice(0, 1).forEach(t => {
+        if (!mentalTraps.includes(t)) mentalTraps.push(t);
+      });
+    });
+  }
+
+  // Combine life impacts
+  const lifeImpact = [...dominantDef.lifeImpact];
+  if (secondaryDefs.length > 0) {
+    secondaryDefs.forEach(sd => {
+      sd.lifeImpact.slice(0, 2).forEach(li => {
+        if (!lifeImpact.find(existing => existing.pillar === li.pillar)) {
+          lifeImpact.push(li);
+        }
+      });
+    });
+  }
+
+  // Combine exit strategies
+  const exitStrategy = [...dominantDef.exitStrategy];
+  if (secondaryDefs.length > 0) {
+    const secondaryStep = secondaryDefs[0].exitStrategy[0];
+    exitStrategy.push({
+      step: exitStrategy.length + 1,
+      title: `Contra ${secondaryDefs[0].label.toLowerCase()}`,
+      action: secondaryStep.action,
+    });
   }
 
   return {
@@ -84,5 +126,13 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     impact: dominantDef.impact,
     direction: dominantDef.direction,
     combinedTitle,
+    profileName: dominantDef.profileName,
+    mentalState: dominantDef.mentalState,
+    triggers,
+    mentalTraps,
+    selfSabotageCycle: dominantDef.selfSabotageCycle,
+    blockingPoint: dominantDef.blockingPoint,
+    lifeImpact,
+    exitStrategy,
   };
 }
