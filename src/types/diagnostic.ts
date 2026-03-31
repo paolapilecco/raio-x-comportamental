@@ -40,7 +40,6 @@ export interface DiagnosticResult {
   impact: string;
   direction: string;
   combinedTitle: string;
-  // New deep sections
   profileName: string;
   mentalState: string;
   triggers: string[];
@@ -49,6 +48,10 @@ export interface DiagnosticResult {
   blockingPoint: string;
   lifeImpact: LifePillarImpact[];
   exitStrategy: ExitStep[];
+  corePain: string;
+  keyUnlockArea: string;
+  criticalDiagnosis: string;
+  whatNotToDo: string[];
 }
 
 export interface LifePillarImpact {
