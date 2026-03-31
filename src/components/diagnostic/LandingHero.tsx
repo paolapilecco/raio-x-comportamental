@@ -23,7 +23,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
             Diagnóstico Comportamental
           </motion.div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
-            Mapa de Padrão Comportamental
+            Mapa de Funcionamento Comportamental
           </h1>
         </div>
 

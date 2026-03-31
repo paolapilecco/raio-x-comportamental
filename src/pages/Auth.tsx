@@ -64,7 +64,7 @@ const Auth = () => {
       >
         <div className="text-center space-y-2">
           <p className="text-sm tracking-[0.25em] uppercase text-subtle font-medium">
-            Mapa de Padrão Comportamental
+            Mapa de Funcionamento Comportamental
           </p>
           <h1 className="text-3xl md:text-4xl">
             {isLogin ? 'Entrar' : 'Criar conta'}

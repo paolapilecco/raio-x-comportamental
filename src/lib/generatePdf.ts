@@ -89,7 +89,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
-  doc.text('Mapa de Padrão Comportamental', MARGIN, 30);
+  doc.text('Mapa de Funcionamento Comportamental', MARGIN, 30);
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
