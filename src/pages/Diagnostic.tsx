@@ -41,7 +41,7 @@ const Diagnostic = () => {
       await supabase.from('diagnostic_answers').insert(answerRows);
 
       // Save result
-      await supabase.from('diagnostic_results').insert({
+      await supabase.from('diagnostic_results').insert([{
         session_id: session.id,
         dominant_pattern: analysisResult.dominantPattern.key,
         secondary_patterns: analysisResult.secondaryPatterns.map(p => p.key),
