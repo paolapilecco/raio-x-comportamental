@@ -4,9 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, RefreshCw, ArrowRight } from 'lucide-react';
+import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, RefreshCw, ArrowRight, Download } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
-import type { PatternKey } from '@/types/diagnostic';
+import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 
 interface StoredResult {
   id: string;
@@ -155,6 +156,33 @@ const Dashboard = () => {
             <h1 className="text-2xl md:text-3xl">Dashboard</h1>
           </div>
           <div className="flex items-center gap-3">
+            <button onClick={() => {
+              const dominantDef = patternDefinitions[latestResult.dominant_pattern as PatternKey];
+              const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions[k as PatternKey]).filter(Boolean);
+              const diagResult: DiagnosticResult = {
+                dominantPattern: dominantDef,
+                secondaryPatterns: secondaryDefs,
+                intensity: latestResult.intensity as IntensityLevel,
+                allScores: (latestResult.all_scores as any[]) || [],
+                summary: latestResult.state_summary,
+                mechanism: latestResult.mechanism,
+                contradiction: latestResult.contradiction,
+                impact: dominantDef?.impact || '',
+                direction: latestResult.direction,
+                combinedTitle: latestResult.combined_title,
+                profileName: latestResult.profile_name,
+                mentalState: latestResult.mental_state,
+                triggers: latestResult.triggers || [],
+                mentalTraps: latestResult.traps || [],
+                selfSabotageCycle: latestResult.self_sabotage_cycle || [],
+                blockingPoint: latestResult.blocking_point,
+                lifeImpact: (latestResult.life_impact as any[]) || [],
+                exitStrategy: (latestResult.exit_strategy as any[]) || [],
+              };
+              generateDiagnosticPdf(diagResult, profile?.name);
+            }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Download className="w-4 h-4" /> PDF
+            </button>
             <button onClick={() => navigate('/history')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <History className="w-4 h-4" /> Histórico
             </button>
