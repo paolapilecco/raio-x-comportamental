@@ -1,16 +1,50 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import LandingHero from '@/components/diagnostic/LandingHero';
+import Questionnaire from '@/components/diagnostic/Questionnaire';
+import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
+import Report from '@/components/diagnostic/Report';
+import { Answer, DiagnosticResult, DiagnosticStep } from '@/types/diagnostic';
+import { analyzeAnswers } from '@/lib/analysis';
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const [step, setStep] = useState<DiagnosticStep>('landing');
+  const [result, setResult] = useState<DiagnosticResult | null>(null);
+
+  const handleStart = useCallback(() => {
+    setStep('questionnaire');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleComplete = useCallback((answers: Answer[]) => {
+    setStep('analyzing');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Simulate analysis time for UX
+    setTimeout(() => {
+      const analysisResult = analyzeAnswers(answers);
+      setResult(analysisResult);
+      setStep('report');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 2500);
+  }, []);
+
+  const handleRestart = useCallback(() => {
+    setResult(null);
+    setStep('landing');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen bg-background">
+      <AnimatePresence mode="wait">
+        {step === 'landing' && <LandingHero key="landing" onStart={handleStart} />}
+        {step === 'questionnaire' && <Questionnaire key="questionnaire" onComplete={handleComplete} />}
+        {step === 'analyzing' && <AnalyzingScreen key="analyzing" />}
+        {step === 'report' && result && <Report key="report" result={result} onRestart={handleRestart} />}
+      </AnimatePresence>
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
