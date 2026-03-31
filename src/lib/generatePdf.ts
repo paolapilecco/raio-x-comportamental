@@ -136,6 +136,21 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.text(result.profileName, MARGIN, ctx.y);
   ctx.y += SECTION_GAP;
 
+  // ─── Critical Diagnosis ───
+  addTitle(ctx, 'Diagnóstico Crítico');
+  addParagraph(ctx, result.criticalDiagnosis);
+  ctx.y += SECTION_GAP - 4;
+
+  // ─── Core Pain ───
+  addTitle(ctx, 'Dor Central');
+  addParagraph(ctx, result.corePain);
+  ctx.y += SECTION_GAP - 4;
+
+  // ─── Key Unlock Area ───
+  addTitle(ctx, 'Área-Chave de Destravamento');
+  addParagraph(ctx, result.keyUnlockArea);
+  ctx.y += SECTION_GAP - 4;
+
   // ─── Mental State ───
   addTitle(ctx, 'Estado Mental Atual');
   addParagraph(ctx, result.mentalState);
