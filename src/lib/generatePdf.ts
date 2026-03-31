@@ -235,6 +235,13 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   });
   ctx.y += SECTION_GAP - 4;
 
+  // ─── What NOT to do ───
+  addTitle(ctx, 'O Que NÃO Fazer');
+  result.whatNotToDo.forEach(item => {
+    addBullet(ctx, `✗ ${item}`);
+  });
+  ctx.y += SECTION_GAP - 4;
+
   // ─── Direction ───
   addTitle(ctx, 'Direção Inicial de Mudança');
   addParagraph(ctx, result.direction);
