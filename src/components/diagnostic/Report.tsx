@@ -22,6 +22,11 @@ const fadeUp = {
 
 const Report = ({ result, onRestart }: ReportProps) => {
   const intensityInfo = intensityConfig[result.intensity];
+  const { profile } = useAuth();
+
+  const handleDownloadPdf = () => {
+    generateDiagnosticPdf(result, profile?.name);
+  };
 
   return (
     <div className="min-h-screen px-4 py-12 md:py-20">
