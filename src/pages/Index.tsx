@@ -1,48 +1,83 @@
-import { useState, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import LandingHero from '@/components/diagnostic/LandingHero';
-import Questionnaire from '@/components/diagnostic/Questionnaire';
-import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
-import Report from '@/components/diagnostic/Report';
-import { Answer, DiagnosticResult, DiagnosticStep } from '@/types/diagnostic';
-import { analyzeAnswers } from '@/lib/analysis';
+import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
-  const [step, setStep] = useState<DiagnosticStep>('landing');
-  const [result, setResult] = useState<DiagnosticResult | null>(null);
+  const navigate = useNavigate();
+  const { user, profile } = useAuth();
 
-  const handleStart = useCallback(() => {
-    setStep('questionnaire');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
-  const handleComplete = useCallback((answers: Answer[]) => {
-    setStep('analyzing');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-
-    // Simulate analysis time for UX
-    setTimeout(() => {
-      const analysisResult = analyzeAnswers(answers);
-      setResult(analysisResult);
-      setStep('report');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 2500);
-  }, []);
-
-  const handleRestart = useCallback(() => {
-    setResult(null);
-    setStep('landing');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  const handleStart = () => {
+    if (user && profile) {
+      navigate('/dashboard');
+    } else if (user) {
+      navigate('/onboarding');
+    } else {
+      navigate('/auth');
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background">
-      <AnimatePresence mode="wait">
-        {step === 'landing' && <LandingHero key="landing" onStart={handleStart} />}
-        {step === 'questionnaire' && <Questionnaire key="questionnaire" onComplete={handleComplete} />}
-        {step === 'analyzing' && <AnalyzingScreen key="analyzing" />}
-        {step === 'report' && result && <Report key="report" result={result} onRestart={handleRestart} />}
-      </AnimatePresence>
+    <div className="min-h-screen flex items-center justify-center px-4 py-16">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className="max-w-2xl w-full text-center space-y-8"
+      >
+        <div className="space-y-2">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+            className="text-sm tracking-[0.25em] uppercase text-subtle font-medium"
+          >
+            Diagnóstico Comportamental
+          </motion.div>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
+            Mapa de Padrão Comportamental
+          </h1>
+        </div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+          className="text-lg md:text-xl text-subtle leading-relaxed max-w-xl mx-auto"
+        >
+          Descubra com clareza qual padrão comportamental está dirigindo suas decisões, travas e repetições.
+        </motion.p>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6, duration: 0.6 }}
+          className="text-muted-foreground leading-relaxed max-w-lg mx-auto text-sm"
+        >
+          Um questionário estruturado que analisa seus eixos de execução, regulação emocional, autocrítica e padrões de fuga — gerando um relatório comportamental completo e personalizado.
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.8, duration: 0.5 }}
+        >
+          <button
+            onClick={handleStart}
+            className="mt-4 px-10 py-4 bg-primary text-primary-foreground rounded-lg text-base font-medium tracking-wide hover:opacity-90 transition-opacity duration-200"
+          >
+            {user ? 'Acessar dashboard' : 'Começar agora'}
+          </button>
+        </motion.div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1, duration: 0.5 }}
+          className="text-xs text-subtle pt-4"
+        >
+          Tempo estimado: 5 minutos · 24 perguntas · Resultado imediato
+        </motion.p>
+      </motion.div>
     </div>
   );
 };
