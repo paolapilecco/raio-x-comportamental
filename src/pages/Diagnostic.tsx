@@ -60,7 +60,7 @@ const Diagnostic = () => {
         all_scores: analysisResult.allScores,
         direction: analysisResult.direction,
         combined_title: analysisResult.combinedTitle,
-      });
+      }]);
 
       // Mark session complete
       await supabase
