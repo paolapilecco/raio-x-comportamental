@@ -14,7 +14,166 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      diagnostic_answers: {
+        Row: {
+          answer_value: number
+          created_at: string
+          id: string
+          question_id: number
+          session_id: string
+        }
+        Insert: {
+          answer_value: number
+          created_at?: string
+          id?: string
+          question_id: number
+          session_id: string
+        }
+        Update: {
+          answer_value?: number
+          created_at?: string
+          id?: string
+          question_id?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnostic_results: {
+        Row: {
+          all_scores: Json | null
+          blocking_point: string
+          combined_title: string
+          contradiction: string
+          created_at: string
+          direction: string
+          dominant_pattern: string
+          exit_strategy: Json | null
+          id: string
+          intensity: string
+          life_impact: Json | null
+          mechanism: string
+          mental_state: string
+          profile_name: string
+          secondary_patterns: string[] | null
+          self_sabotage_cycle: string[] | null
+          session_id: string
+          state_summary: string
+          traps: string[] | null
+          triggers: string[] | null
+        }
+        Insert: {
+          all_scores?: Json | null
+          blocking_point: string
+          combined_title: string
+          contradiction: string
+          created_at?: string
+          direction: string
+          dominant_pattern: string
+          exit_strategy?: Json | null
+          id?: string
+          intensity: string
+          life_impact?: Json | null
+          mechanism: string
+          mental_state: string
+          profile_name: string
+          secondary_patterns?: string[] | null
+          self_sabotage_cycle?: string[] | null
+          session_id: string
+          state_summary: string
+          traps?: string[] | null
+          triggers?: string[] | null
+        }
+        Update: {
+          all_scores?: Json | null
+          blocking_point?: string
+          combined_title?: string
+          contradiction?: string
+          created_at?: string
+          direction?: string
+          dominant_pattern?: string
+          exit_strategy?: Json | null
+          id?: string
+          intensity?: string
+          life_impact?: Json | null
+          mechanism?: string
+          mental_state?: string
+          profile_name?: string
+          secondary_patterns?: string[] | null
+          self_sabotage_cycle?: string[] | null
+          session_id?: string
+          state_summary?: string
+          traps?: string[] | null
+          triggers?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "diagnostic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diagnostic_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          birth_date: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          birth_date: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          birth_date?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
