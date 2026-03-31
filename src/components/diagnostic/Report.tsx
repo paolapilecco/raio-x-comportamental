@@ -58,13 +58,32 @@ const Report = ({ result, onRestart }: ReportProps) => {
           </div>
         </ReportSection>
 
+        {/* Critical Diagnosis */}
+        <ReportSection title="Diagnóstico crítico" delay={0.08} icon={<Crosshair className="w-5 h-5 text-primary" />}>
+          <div className="border-l-2 border-destructive/50 pl-5">
+            <p className="text-foreground/90 leading-relaxed font-medium">{result.criticalDiagnosis}</p>
+          </div>
+        </ReportSection>
+
+        {/* Core Pain */}
+        <ReportSection title="Dor central" delay={0.1} icon={<Flame className="w-5 h-5 text-primary" />}>
+          <p className="text-foreground/80 leading-relaxed">{result.corePain}</p>
+        </ReportSection>
+
+        {/* Key Unlock Area */}
+        <ReportSection title="Área-chave de destravamento" delay={0.12} icon={<Key className="w-5 h-5 text-primary" />}>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
+            <p className="text-foreground/90 leading-relaxed">{result.keyUnlockArea}</p>
+          </div>
+        </ReportSection>
+
         {/* Mental State */}
-        <ReportSection title="Seu estado mental atual" delay={0.1} icon={<Brain className="w-5 h-5 text-primary" />}>
+        <ReportSection title="Seu estado mental atual" delay={0.15} icon={<Brain className="w-5 h-5 text-primary" />}>
           <p className="text-foreground/80 leading-relaxed">{result.mentalState}</p>
         </ReportSection>
 
         {/* Summary */}
-        <ReportSection title="Resumo do seu padrão" delay={0.15}>
+        <ReportSection title="Resumo do seu padrão" delay={0.18}>
           <p className="text-foreground/80 leading-relaxed">{result.summary}</p>
         </ReportSection>
 
