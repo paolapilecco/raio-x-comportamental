@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { lovable } from '@/integrations/lovable/index';
 
 const emailSchema = z.string().trim().email('Email inválido').max(255);
 const passwordSchema = z.string().min(6, 'Mínimo de 6 caracteres').max(128);
