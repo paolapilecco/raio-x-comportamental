@@ -40,7 +40,6 @@ export interface DiagnosticResult {
   impact: string;
   direction: string;
   combinedTitle: string;
-  // New deep sections
   profileName: string;
   mentalState: string;
   triggers: string[];
@@ -49,6 +48,10 @@ export interface DiagnosticResult {
   blockingPoint: string;
   lifeImpact: LifePillarImpact[];
   exitStrategy: ExitStep[];
+  corePain: string;
+  keyUnlockArea: string;
+  criticalDiagnosis: string;
+  whatNotToDo: string[];
 }
 
 export interface LifePillarImpact {
@@ -70,7 +73,6 @@ export interface PatternDefinition {
   contradiction: string;
   impact: string;
   direction: string;
-  // New deep fields
   profileName: string;
   mentalState: string;
   triggers: string[];
@@ -79,6 +81,10 @@ export interface PatternDefinition {
   blockingPoint: string;
   lifeImpact: LifePillarImpact[];
   exitStrategy: ExitStep[];
+  corePain: string;
+  keyUnlockArea: string;
+  criticalDiagnosis: string;
+  whatNotToDo: string[];
 }
 
 export type DiagnosticStep = 'landing' | 'questionnaire' | 'analyzing' | 'report';

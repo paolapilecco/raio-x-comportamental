@@ -89,7 +89,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(255, 255, 255);
-  doc.text('Mapa de Padrão Comportamental', MARGIN, 30);
+  doc.text('Mapa de Funcionamento Comportamental', MARGIN, 30);
 
   doc.setFontSize(11);
   doc.setFont('helvetica', 'normal');
@@ -135,6 +135,21 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.setTextColor(40, 40, 40);
   doc.text(result.profileName, MARGIN, ctx.y);
   ctx.y += SECTION_GAP;
+
+  // ─── Critical Diagnosis ───
+  addTitle(ctx, 'Diagnóstico Crítico');
+  addParagraph(ctx, result.criticalDiagnosis);
+  ctx.y += SECTION_GAP - 4;
+
+  // ─── Core Pain ───
+  addTitle(ctx, 'Dor Central');
+  addParagraph(ctx, result.corePain);
+  ctx.y += SECTION_GAP - 4;
+
+  // ─── Key Unlock Area ───
+  addTitle(ctx, 'Área-Chave de Destravamento');
+  addParagraph(ctx, result.keyUnlockArea);
+  ctx.y += SECTION_GAP - 4;
 
   // ─── Mental State ───
   addTitle(ctx, 'Estado Mental Atual');
@@ -217,6 +232,13 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       doc.roundedRect(MARGIN + 2, barY, Math.max(fillWidth, 3), 3, 1.5, 1.5, 'F');
     }
     ctx.y += 10;
+  });
+  ctx.y += SECTION_GAP - 4;
+
+  // ─── What NOT to do ───
+  addTitle(ctx, 'O Que NÃO Fazer');
+  result.whatNotToDo.forEach(item => {
+    addBullet(ctx, `✗ ${item}`);
   });
   ctx.y += SECTION_GAP - 4;
 

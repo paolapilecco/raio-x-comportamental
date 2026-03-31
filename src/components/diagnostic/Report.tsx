@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download } from 'lucide-react';
+import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download, XCircle, Crosshair, Flame, Key } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -58,13 +58,32 @@ const Report = ({ result, onRestart }: ReportProps) => {
           </div>
         </ReportSection>
 
+        {/* Critical Diagnosis */}
+        <ReportSection title="Diagnóstico crítico" delay={0.08} icon={<Crosshair className="w-5 h-5 text-primary" />}>
+          <div className="border-l-2 border-destructive/50 pl-5">
+            <p className="text-foreground/90 leading-relaxed font-medium">{result.criticalDiagnosis}</p>
+          </div>
+        </ReportSection>
+
+        {/* Core Pain */}
+        <ReportSection title="Dor central" delay={0.1} icon={<Flame className="w-5 h-5 text-primary" />}>
+          <p className="text-foreground/80 leading-relaxed">{result.corePain}</p>
+        </ReportSection>
+
+        {/* Key Unlock Area */}
+        <ReportSection title="Área-chave de destravamento" delay={0.12} icon={<Key className="w-5 h-5 text-primary" />}>
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-5">
+            <p className="text-foreground/90 leading-relaxed">{result.keyUnlockArea}</p>
+          </div>
+        </ReportSection>
+
         {/* Mental State */}
-        <ReportSection title="Seu estado mental atual" delay={0.1} icon={<Brain className="w-5 h-5 text-primary" />}>
+        <ReportSection title="Seu estado mental atual" delay={0.15} icon={<Brain className="w-5 h-5 text-primary" />}>
           <p className="text-foreground/80 leading-relaxed">{result.mentalState}</p>
         </ReportSection>
 
         {/* Summary */}
-        <ReportSection title="Resumo do seu padrão" delay={0.15}>
+        <ReportSection title="Resumo do seu padrão" delay={0.18}>
           <p className="text-foreground/80 leading-relaxed">{result.summary}</p>
         </ReportSection>
 
@@ -186,8 +205,21 @@ const Report = ({ result, onRestart }: ReportProps) => {
           </div>
         </ReportSection>
 
+        {/* What NOT to do */}
+        <ReportSection title="O que NÃO fazer" delay={0.62} icon={<XCircle className="w-5 h-5 text-destructive" />}>
+          <p className="text-xs text-subtle mb-4">Comportamentos que parecem produtivos mas reforçam o padrão:</p>
+          <div className="space-y-2">
+            {result.whatNotToDo.map((item, i) => (
+              <div key={i} className="flex items-start gap-3 py-2 bg-destructive/5 border border-destructive/10 rounded-lg px-4">
+                <span className="mt-0.5 text-destructive font-bold text-sm shrink-0">✗</span>
+                <p className="text-foreground/80 text-sm leading-relaxed">{item}</p>
+              </div>
+            ))}
+          </div>
+        </ReportSection>
+
         {/* Direction */}
-        <ReportSection title="Direção inicial de mudança" delay={0.65} icon={<Compass className="w-5 h-5 text-primary" />}>
+        <ReportSection title="Direção inicial de mudança" delay={0.67} icon={<Compass className="w-5 h-5 text-primary" />}>
           <div className="border-l-2 border-primary pl-5">
             <p className="text-foreground/90 leading-relaxed italic">{result.direction}</p>
           </div>

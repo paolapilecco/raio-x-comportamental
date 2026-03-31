@@ -178,6 +178,10 @@ const Dashboard = () => {
                 blockingPoint: latestResult.blocking_point,
                 lifeImpact: (latestResult.life_impact as any[]) || [],
                 exitStrategy: (latestResult.exit_strategy as any[]) || [],
+                corePain: dominantDef?.corePain || '',
+                keyUnlockArea: dominantDef?.keyUnlockArea || '',
+                criticalDiagnosis: dominantDef?.criticalDiagnosis || '',
+                whatNotToDo: dominantDef?.whatNotToDo || [],
               };
               generateDiagnosticPdf(diagResult, profile?.name);
             }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
