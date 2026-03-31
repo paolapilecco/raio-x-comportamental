@@ -222,17 +222,24 @@ const Report = ({ result, onRestart }: ReportProps) => {
           </p>
         </motion.div>
 
-        {/* Restart */}
+        {/* Actions */}
         <motion.div
           {...fadeUp}
           transition={{ delay: 1, duration: 0.5 }}
-          className="text-center pb-12"
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-12"
         >
+          <button
+            onClick={handleDownloadPdf}
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            <Download className="w-4 h-4" />
+            Baixar PDF do Relatório
+          </button>
           <button
             onClick={onRestart}
             className="text-sm text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4"
           >
-            Refazer diagnóstico
+            Ir para o Dashboard
           </button>
         </motion.div>
       </div>
