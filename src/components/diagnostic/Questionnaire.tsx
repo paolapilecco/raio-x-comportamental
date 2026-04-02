@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { questions } from '@/data/questions';
+import { questions as defaultQuestions } from '@/data/questions';
 import { Answer } from '@/types/diagnostic';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface QuestionnaireProps {
   onComplete: (answers: Answer[]) => void;
+  questions?: { id: number; text: string }[];
 }
 
 const scaleLabels = [
@@ -16,7 +17,8 @@ const scaleLabels = [
   'Concordo totalmente',
 ];
 
-const Questionnaire = ({ onComplete }: QuestionnaireProps) => {
+const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnaireProps) => {
+  const questions = questionsProp || defaultQuestions;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [direction, setDirection] = useState(1);

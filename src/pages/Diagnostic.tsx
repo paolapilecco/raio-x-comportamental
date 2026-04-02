@@ -5,6 +5,8 @@ import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
 import Report from '@/components/diagnostic/Report';
 import { Answer, DiagnosticResult } from '@/types/diagnostic';
 import { analyzeAnswers } from '@/lib/analysis';
+import { analyzePurposeAnswers } from '@/lib/purposeAnalysis';
+import { purposeQuestions } from '@/data/purposeQuestions';
 import { updateCentralProfile } from '@/lib/centralProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +14,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 type Step = 'questionnaire' | 'analyzing' | 'report';
+
+const PURPOSE_SLUG = 'proposito-sentido';
 
 const Diagnostic = () => {
   const [step, setStep] = useState<Step>('questionnaire');
@@ -21,8 +25,9 @@ const Diagnostic = () => {
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
 
+  const isPurposeTest = moduleSlug === PURPOSE_SLUG;
+
   useEffect(() => {
-    // Resolve module ID from slug
     const fetchModule = async () => {
       if (!moduleSlug) return;
       const { data } = await supabase
@@ -84,7 +89,6 @@ const Diagnostic = () => {
         .update({ completed_at: new Date().toISOString() })
         .eq('id', session.id);
 
-      // Update central profile with aggregated data
       await updateCentralProfile(user.id);
 
     } catch (err) {
@@ -98,13 +102,85 @@ const Diagnostic = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     setTimeout(() => {
-      const analysisResult = analyzeAnswers(answers);
+      let analysisResult: DiagnosticResult;
+
+      if (isPurposeTest) {
+        const purposeResult = analyzePurposeAnswers(answers);
+        // Map PurposeResult to DiagnosticResult shape for the Report component
+        analysisResult = {
+          dominantPattern: {
+            key: purposeResult.dominantPattern.key as any,
+            label: purposeResult.dominantPattern.label,
+            description: purposeResult.dominantPattern.description,
+            mechanism: purposeResult.dominantPattern.mechanism,
+            contradiction: purposeResult.dominantPattern.contradiction,
+            impact: purposeResult.dominantPattern.impact,
+            direction: purposeResult.dominantPattern.direction,
+            profileName: purposeResult.dominantPattern.profileName,
+            mentalState: purposeResult.dominantPattern.mentalState,
+            triggers: purposeResult.dominantPattern.triggers,
+            mentalTraps: purposeResult.dominantPattern.mentalTraps,
+            selfSabotageCycle: purposeResult.dominantPattern.selfSabotageCycle,
+            blockingPoint: purposeResult.dominantPattern.blockingPoint,
+            lifeImpact: purposeResult.dominantPattern.lifeImpact,
+            exitStrategy: purposeResult.dominantPattern.exitStrategy,
+            corePain: purposeResult.dominantPattern.corePain,
+            keyUnlockArea: purposeResult.dominantPattern.keyUnlockArea,
+            criticalDiagnosis: purposeResult.dominantPattern.criticalDiagnosis,
+            whatNotToDo: purposeResult.dominantPattern.whatNotToDo,
+          },
+          secondaryPatterns: purposeResult.secondaryPatterns.map(p => ({
+            key: p.key as any,
+            label: p.label,
+            description: p.description,
+            mechanism: p.mechanism,
+            contradiction: p.contradiction,
+            impact: p.impact,
+            direction: p.direction,
+            profileName: p.profileName,
+            mentalState: p.mentalState,
+            triggers: p.triggers,
+            mentalTraps: p.mentalTraps,
+            selfSabotageCycle: p.selfSabotageCycle,
+            blockingPoint: p.blockingPoint,
+            lifeImpact: p.lifeImpact,
+            exitStrategy: p.exitStrategy,
+            corePain: p.corePain,
+            keyUnlockArea: p.keyUnlockArea,
+            criticalDiagnosis: p.criticalDiagnosis,
+            whatNotToDo: p.whatNotToDo,
+          })),
+          intensity: purposeResult.intensity,
+          allScores: purposeResult.allScores as any,
+          summary: purposeResult.summary,
+          mechanism: purposeResult.mechanism,
+          contradiction: purposeResult.contradiction,
+          impact: purposeResult.impact,
+          direction: purposeResult.direction,
+          combinedTitle: purposeResult.combinedTitle,
+          profileName: purposeResult.profileName,
+          mentalState: purposeResult.mentalState,
+          triggers: purposeResult.triggers,
+          mentalTraps: purposeResult.mentalTraps,
+          selfSabotageCycle: purposeResult.selfSabotageCycle,
+          blockingPoint: purposeResult.blockingPoint,
+          lifeImpact: purposeResult.lifeImpact,
+          exitStrategy: purposeResult.exitStrategy,
+          corePain: purposeResult.corePain,
+          keyUnlockArea: purposeResult.keyUnlockArea,
+          criticalDiagnosis: purposeResult.criticalDiagnosis,
+          whatNotToDo: purposeResult.whatNotToDo,
+        };
+      } else {
+        analysisResult = analyzeAnswers(answers);
+      }
+
       setResult(analysisResult);
       setStep('report');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       saveToDatabase(answers, analysisResult);
     }, 2500);
-  }, [saveToDatabase]);
+  }, [saveToDatabase, isPurposeTest]);
 
   const handleGoToDashboard = useCallback(() => {
     navigate('/dashboard');
@@ -113,7 +189,13 @@ const Diagnostic = () => {
   return (
     <div className="min-h-screen bg-background">
       <AnimatePresence mode="wait">
-        {step === 'questionnaire' && <Questionnaire key="q" onComplete={handleComplete} />}
+        {step === 'questionnaire' && (
+          <Questionnaire
+            key="q"
+            onComplete={handleComplete}
+            questions={isPurposeTest ? purposeQuestions : undefined}
+          />
+        )}
         {step === 'analyzing' && <AnalyzingScreen key="a" />}
         {step === 'report' && result && <Report key="r" result={result} onRestart={handleGoToDashboard} />}
       </AnimatePresence>
