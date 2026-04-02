@@ -4,9 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, ArrowRight, Download, LayoutGrid, Layers, User } from 'lucide-react';
+import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, ArrowRight, Download, LayoutGrid, Layers, User, FlaskConical } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { toast } from 'sonner';
 import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 
 interface StoredResult {
