@@ -236,6 +236,21 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
+        {/* Admin empty state notice */}
+        {isAdmin && !latestResult && (
+          <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6 text-center">
+            <p className="text-[0.85rem] text-muted-foreground/60 leading-[1.7]">
+              Você ainda não realizou análises. Os dados aparecerão conforme os testes forem feitos.
+            </p>
+            <button
+              onClick={() => navigate('/tests')}
+              className="mt-4 px-6 py-2.5 bg-primary/10 text-primary rounded-xl text-[0.8rem] font-medium hover:bg-primary/15 transition-colors"
+            >
+              Ver módulos disponíveis
+            </button>
+          </motion.div>
+        )}
+
         {/* Central Profile Card */}
         {centralProfile && centralProfile.tests_completed > 0 && (
           <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-gradient-to-br from-primary/[0.04] to-primary/[0.08] rounded-2xl border border-primary/15 p-6 md:p-8">
