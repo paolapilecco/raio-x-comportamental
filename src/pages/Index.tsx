@@ -31,7 +31,7 @@ const Index = () => {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="text-sm tracking-[0.25em] uppercase text-subtle font-medium"
           >
-            Diagnóstico Comportamental
+            Análise Comportamental Contínua
           </motion.div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
             Mapa de Funcionamento Comportamental
@@ -53,7 +53,7 @@ const Index = () => {
           transition={{ delay: 0.6, duration: 0.6 }}
           className="text-muted-foreground leading-relaxed max-w-lg mx-auto text-sm"
         >
-          Um questionário estruturado que analisa seus eixos de execução, regulação emocional, autocrítica e padrões de fuga — gerando um relatório comportamental completo e personalizado.
+          Sistema modular de análise comportamental. Múltiplos testes independentes que alimentam um perfil central unificado — sua evolução real, visível e contínua.
         </motion.p>
 
         <motion.div
@@ -75,7 +75,7 @@ const Index = () => {
           transition={{ delay: 1, duration: 0.5 }}
           className="text-xs text-subtle pt-4"
         >
-          Tempo estimado: 5 minutos · 24 perguntas · Resultado imediato
+          Múltiplos módulos · Perfil Central · Análise contínua
         </motion.p>
       </motion.div>
     </div>
