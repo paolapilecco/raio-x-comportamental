@@ -94,12 +94,12 @@ const Index = () => {
             {features.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 px-5 py-3.5 bg-card border border-border rounded-xl w-full sm:w-auto sm:flex-1"
+                className="flex items-center gap-3.5 px-5 py-4 bg-card/80 border border-border/60 rounded-xl w-full sm:w-auto sm:flex-1 backdrop-blur-sm"
               >
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <f.icon className="w-4 h-4 text-primary" />
+                <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                  <f.icon className="w-4 h-4 text-primary/70" />
                 </div>
-                <span className="text-sm text-foreground/80 leading-snug">{f.text}</span>
+                <span className="text-[0.82rem] text-foreground/70 leading-snug tracking-[-0.005em]">{f.text}</span>
               </div>
             ))}
           </motion.div>
