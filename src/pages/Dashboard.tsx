@@ -184,6 +184,8 @@ const Dashboard = () => {
 
       const sessions = sessionsRes.data || [];
       setSessionCount(sessions.length);
+      setCompletedModules(new Set(sessions.map(s => s.test_module_id).filter(Boolean) as string[]));
+      setModules((modulesRes.data as TestModule[]) || []);
 
       if (sessions.length > 0) {
         const { data: result } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).single();
