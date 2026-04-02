@@ -75,7 +75,7 @@ const Index = () => {
           transition={{ delay: 1, duration: 0.5 }}
           className="text-xs text-subtle pt-4"
         >
-          Tempo estimado: 5 minutos · 24 perguntas · Resultado imediato
+          Múltiplos módulos · Perfil Central · Análise contínua
         </motion.p>
       </motion.div>
     </div>
