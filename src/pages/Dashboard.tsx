@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, RefreshCw, ArrowRight, Download } from 'lucide-react';
+import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, RefreshCw, ArrowRight, Download, LayoutGrid, Layers } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
@@ -30,6 +30,17 @@ interface StoredResult {
   direction: string;
   combined_title: string;
   created_at: string;
+}
+
+interface CentralProfile {
+  dominant_patterns: { key: string; score: number }[];
+  aggregated_scores: Record<string, number>;
+  tests_completed: number;
+  mental_state: string | null;
+  core_pain: string | null;
+  key_unlock_area: string | null;
+  profile_name: string | null;
+  last_test_at: string | null;
 }
 
 const intensityLabel: Record<string, string> = {
@@ -64,12 +75,34 @@ const Dashboard = () => {
   const { user, profile, signOut } = useAuth();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
+  const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
 
-    const fetchLatest = async () => {
+    const fetchData = async () => {
+      // Fetch central profile
+      const { data: cp } = await supabase
+        .from('user_central_profile')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (cp) {
+        setCentralProfile({
+          dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
+          aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
+          tests_completed: cp.tests_completed,
+          mental_state: cp.mental_state,
+          core_pain: cp.core_pain,
+          key_unlock_area: cp.key_unlock_area,
+          profile_name: cp.profile_name,
+          last_test_at: cp.last_test_at,
+        });
+      }
+
+      // Fetch latest result
       const { data: sessions } = await supabase
         .from('diagnostic_sessions')
         .select('id')
@@ -78,22 +111,19 @@ const Dashboard = () => {
         .order('completed_at', { ascending: false })
         .limit(1);
 
-      if (!sessions || sessions.length === 0) {
-        setLoading(false);
-        return;
+      if (sessions && sessions.length > 0) {
+        const { data: result } = await supabase
+          .from('diagnostic_results')
+          .select('*')
+          .eq('session_id', sessions[0].id)
+          .single();
+        setLatestResult(result);
       }
 
-      const { data: result } = await supabase
-        .from('diagnostic_results')
-        .select('*')
-        .eq('session_id', sessions[0].id)
-        .single();
-
-      setLatestResult(result);
       setLoading(false);
     };
 
-    fetchLatest();
+    fetchData();
   }, [user]);
 
   const handleSignOut = async () => {
@@ -113,13 +143,13 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center space-y-6 max-w-md">
-          <h1 className="text-3xl">Bem-vindo, {profile?.name?.split(' ')[0]}</h1>
-          <p className="text-muted-foreground">Você ainda não completou nenhum diagnóstico. Faça seu primeiro para acessar o dashboard completo.</p>
+          <h1 className="text-3xl font-serif">Bem-vindo, {profile?.name?.split(' ')[0]}</h1>
+          <p className="text-muted-foreground">Você ainda não completou nenhum teste. Escolha um módulo para começar sua análise comportamental.</p>
           <button
-            onClick={() => navigate('/diagnostic')}
+            onClick={() => navigate('/tests')}
             className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Iniciar diagnóstico
+            Ver módulos disponíveis
           </button>
         </motion.div>
       </div>
@@ -127,24 +157,30 @@ const Dashboard = () => {
   }
 
   const allScores = (latestResult.all_scores as any[]) || [];
-  const radarData = allScores.map((s: any) => ({
-    axis: radarAxisLabels[s.key] || s.label,
-    value: s.percentage,
-  }));
+
+  // Use central profile aggregated scores for radar if available
+  const radarData = centralProfile
+    ? Object.entries(centralProfile.aggregated_scores).map(([key, value]) => ({
+        axis: radarAxisLabels[key] || key,
+        value,
+      }))
+    : allScores.map((s: any) => ({
+        axis: radarAxisLabels[s.key] || s.label,
+        value: s.percentage,
+      }));
 
   const pillarData = [
-    { name: 'Execução', value: allScores.find((s: any) => s.key === 'unstable_execution')?.percentage || 0 },
-    { name: 'Fuga', value: allScores.find((s: any) => s.key === 'discomfort_escape')?.percentage || 0 },
-    { name: 'Reg. Emocional', value: allScores.find((s: any) => s.key === 'emotional_self_sabotage')?.percentage || 0 },
-    { name: 'Consistência', value: allScores.find((s: any) => s.key === 'low_routine_sustenance')?.percentage || 0 },
-    { name: 'Autocrítica', value: allScores.find((s: any) => s.key === 'excessive_self_criticism')?.percentage || 0 },
+    { name: 'Execução', value: centralProfile?.aggregated_scores?.unstable_execution || allScores.find((s: any) => s.key === 'unstable_execution')?.percentage || 0 },
+    { name: 'Fuga', value: centralProfile?.aggregated_scores?.discomfort_escape || allScores.find((s: any) => s.key === 'discomfort_escape')?.percentage || 0 },
+    { name: 'Reg. Emocional', value: centralProfile?.aggregated_scores?.emotional_self_sabotage || allScores.find((s: any) => s.key === 'emotional_self_sabotage')?.percentage || 0 },
+    { name: 'Consistência', value: centralProfile?.aggregated_scores?.low_routine_sustenance || allScores.find((s: any) => s.key === 'low_routine_sustenance')?.percentage || 0 },
+    { name: 'Autocrítica', value: centralProfile?.aggregated_scores?.excessive_self_criticism || allScores.find((s: any) => s.key === 'excessive_self_criticism')?.percentage || 0 },
   ];
 
   const cycle = latestResult.self_sabotage_cycle || [];
   const triggers = latestResult.triggers || [];
   const traps = latestResult.traps || [];
   const lifeImpact = (latestResult.life_impact as any[]) || [];
-  const patternDef = patternDefinitions[latestResult.dominant_pattern as PatternKey];
 
   return (
     <div className="min-h-screen px-4 py-8 md:py-12">
@@ -152,10 +188,13 @@ const Dashboard = () => {
         {/* Header */}
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-subtle">Olá, {profile?.name?.split(' ')[0]}</p>
-            <h1 className="text-2xl md:text-3xl">Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Olá, {profile?.name?.split(' ')[0]}</p>
+            <h1 className="text-2xl md:text-3xl font-serif">Dashboard</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <button onClick={() => navigate('/tests')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <LayoutGrid className="w-4 h-4" /> Módulos
+            </button>
             <button onClick={() => {
               const dominantDef = patternDefinitions[latestResult.dominant_pattern as PatternKey];
               const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions[k as PatternKey]).filter(Boolean);
@@ -196,22 +235,53 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
+        {/* Central Profile Card */}
+        {centralProfile && centralProfile.tests_completed > 0 && (
+          <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 p-6 md:p-8 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <Layers className="w-5 h-5 text-primary" />
+              <h3 className="text-xl font-serif">Perfil Central Unificado</h3>
+              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded ml-auto">
+                {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'teste' : 'testes'} realizados
+              </span>
+            </div>
+            <div className="grid sm:grid-cols-3 gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Perfil</p>
+                <p className="text-lg font-medium text-foreground">{centralProfile.profile_name || '-'}</p>
+              </div>
+              {centralProfile.core_pain && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Dor Central</p>
+                  <p className="text-sm text-foreground/80">{centralProfile.core_pain.slice(0, 100)}...</p>
+                </div>
+              )}
+              {centralProfile.key_unlock_area && (
+                <div>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Área-chave</p>
+                  <p className="text-sm text-foreground/80">{centralProfile.key_unlock_area.slice(0, 100)}...</p>
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {/* Current State Summary */}
         <motion.div {...fadeUp} transition={{ delay: 0.05, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Brain className="w-5 h-5 text-primary" />
-            <h3 className="text-xl">Resumo do Estado Atual</h3>
+            <h3 className="text-xl font-serif">Último Diagnóstico</h3>
           </div>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <span className="text-2xl font-serif text-foreground">{latestResult.profile_name}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-subtle">Padrão dominante:</span>
+              <span className="text-sm text-muted-foreground">Padrão dominante:</span>
               <span className="text-sm font-medium text-foreground">{latestResult.combined_title}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-subtle">Intensidade:</span>
+              <span className="text-sm text-muted-foreground">Intensidade:</span>
               <span className="text-sm font-semibold" style={{ color: intensityColor[latestResult.intensity] }}>
                 {intensityLabel[latestResult.intensity] || latestResult.intensity}
               </span>
@@ -222,9 +292,11 @@ const Dashboard = () => {
 
         {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6">
-          {/* Radar Chart */}
           <motion.div {...fadeUp} transition={{ delay: 0.1, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <h3 className="text-lg mb-4">Gráfico de Funcionamento</h3>
+            <h3 className="text-lg mb-1 font-serif">Gráfico de Funcionamento</h3>
+            {centralProfile && centralProfile.tests_completed > 1 && (
+              <p className="text-xs text-muted-foreground mb-3">Agregado de {centralProfile.tests_completed} testes</p>
+            )}
             <ResponsiveContainer width="100%" height={280}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="hsl(var(--border))" />
@@ -234,9 +306,8 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </motion.div>
 
-          {/* Bar Chart */}
           <motion.div {...fadeUp} transition={{ delay: 0.15, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <h3 className="text-lg mb-4">Eixos Comportamentais</h3>
+            <h3 className="text-lg mb-4 font-serif">Eixos Comportamentais</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={pillarData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -253,7 +324,7 @@ const Dashboard = () => {
         <motion.div {...fadeUp} transition={{ delay: 0.2, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Target className="w-5 h-5 text-primary" />
-            <h3 className="text-xl">Ciclo de Comportamento</h3>
+            <h3 className="text-xl font-serif">Ciclo de Comportamento</h3>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {cycle.map((step, i) => (
@@ -267,7 +338,7 @@ const Dashboard = () => {
               </div>
             ))}
           </div>
-          <p className="text-xs text-subtle mt-4 italic">
+          <p className="text-xs text-muted-foreground mt-4 italic">
             O ponto destacado em vermelho indica onde o travamento é mais intenso.
           </p>
         </motion.div>
@@ -277,7 +348,7 @@ const Dashboard = () => {
           <motion.div {...fadeUp} transition={{ delay: 0.25, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle className="w-5 h-5 text-primary" />
-              <h3 className="text-lg">Gatilhos</h3>
+              <h3 className="text-lg font-serif">Gatilhos</h3>
             </div>
             <div className="space-y-2">
               {triggers.map((t, i) => (
@@ -292,7 +363,7 @@ const Dashboard = () => {
           <motion.div {...fadeUp} transition={{ delay: 0.3, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <Eye className="w-5 h-5 text-primary" />
-              <h3 className="text-lg">Armadilhas Mentais</h3>
+              <h3 className="text-lg font-serif">Armadilhas Mentais</h3>
             </div>
             <div className="space-y-2">
               {traps.map((t, i) => (
@@ -306,7 +377,7 @@ const Dashboard = () => {
 
         {/* Life Impact */}
         <motion.div {...fadeUp} transition={{ delay: 0.35, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-          <h3 className="text-xl mb-4">Impacto nos Pilares</h3>
+          <h3 className="text-xl mb-4 font-serif">Impacto nos Pilares</h3>
           <div className="grid sm:grid-cols-2 gap-4">
             {lifeImpact.slice(0, 4).map((item: any, i: number) => (
               <div key={i} className="border border-border rounded-lg p-4">
@@ -321,7 +392,7 @@ const Dashboard = () => {
         <motion.div {...fadeUp} transition={{ delay: 0.4, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
           <div className="flex items-center gap-3 mb-4">
             <Compass className="w-5 h-5 text-primary" />
-            <h3 className="text-xl">Foco Atual</h3>
+            <h3 className="text-xl font-serif">Foco Atual</h3>
           </div>
           <div className="border-l-2 border-primary pl-5">
             <p className="text-foreground/90 leading-relaxed italic">{latestResult.direction}</p>
@@ -331,10 +402,10 @@ const Dashboard = () => {
         {/* Actions */}
         <motion.div {...fadeUp} transition={{ delay: 0.45, duration: 0.5 }} className="flex flex-col sm:flex-row gap-4 justify-center pb-12">
           <button
-            onClick={() => navigate('/diagnostic')}
+            onClick={() => navigate('/tests')}
             className="flex items-center justify-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            <RefreshCw className="w-4 h-4" /> Refazer diagnóstico
+            <LayoutGrid className="w-4 h-4" /> Fazer novo teste
           </button>
           <button
             onClick={() => navigate('/history')}
