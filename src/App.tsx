@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import DiagnosticHistory from "./pages/DiagnosticHistory";
 import TestCatalog from "./pages/TestCatalog";
 import CentralReport from "./pages/CentralReport";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
