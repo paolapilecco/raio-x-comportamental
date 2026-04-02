@@ -152,9 +152,9 @@ const CentralReport = () => {
         <motion.div {...fadeUp} className="text-center space-y-6 max-w-md">
           <Layers className="w-12 h-12 text-muted-foreground mx-auto" />
           <h1 className="text-2xl font-serif">Relatório Central</h1>
-          <p className="text-muted-foreground">Complete pelo menos um teste para gerar seu relatório central unificado.</p>
+          <p className="text-muted-foreground">Complete pelo menos uma leitura para gerar seu relatório central unificado.</p>
           <button onClick={() => navigate('/tests')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-            Fazer um teste
+            Iniciar leitura
           </button>
         </motion.div>
       </div>
