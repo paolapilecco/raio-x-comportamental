@@ -113,14 +113,15 @@ const Index = () => {
           >
             <button
               onClick={handleStart}
-              className="group px-10 py-4 bg-primary text-primary-foreground rounded-xl text-base font-medium tracking-wide hover:opacity-90 transition-all duration-200 shadow-lg shadow-primary/15 flex items-center gap-2"
+              className="group relative px-12 py-[1.1rem] bg-primary text-primary-foreground rounded-2xl text-[1.05rem] font-semibold tracking-[0.02em] transition-all duration-300 shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] active:translate-y-[0px] active:shadow-[0_4px_20px_-4px_hsl(var(--primary)/0.3)] flex items-center gap-2.5 overflow-hidden"
             >
-              Iniciar análise
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+              <span className="relative z-10">Iniciar análise</span>
+              <ArrowRight className="w-[1.1rem] h-[1.1rem] relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none rounded-2xl" />
             </button>
             <button
               onClick={scrollToHow}
-              className="px-8 py-4 border border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all duration-200"
+              className="px-8 py-[1.1rem] rounded-2xl text-[0.85rem] font-medium text-muted-foreground/70 hover:text-foreground/80 border border-border/50 hover:border-border transition-all duration-300 hover:bg-card/60 backdrop-blur-sm"
             >
               Ver como funciona
             </button>
