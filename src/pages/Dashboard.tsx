@@ -465,8 +465,65 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
+        {/* ── Test Modules Grid ── */}
+        {modules.length > 0 && (
+          <motion.div {...fadeUp} transition={{ delay: 0.22 }}>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <LayoutGrid className="w-5 h-5 text-primary/60" />
+                <h3 className="text-lg font-medium">Módulos de Análise</h3>
+              </div>
+              <button onClick={() => navigate('/tests')} className="text-[0.75rem] text-primary/70 hover:text-primary font-medium transition-colors">
+                Ver todos →
+              </button>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {modules.map((mod) => {
+                const Icon = iconMap[mod.icon] || Brain;
+                const isFreeTest = mod.slug === 'padrao-comportamental';
+                const canAccess = isSuperAdmin || isPremium || isFreeTest;
+                const isCompleted = completedModules.has(mod.id);
+                return (
+                  <div
+                    key={mod.id}
+                    onClick={() => canAccess ? navigate(`/diagnostic/${mod.slug}`) : setShowUpgradeModal(true)}
+                    className={`relative bg-card/70 backdrop-blur-sm rounded-2xl border p-5 transition-all duration-300 cursor-pointer group ${
+                      canAccess ? 'border-border/50 hover:border-primary/20' : 'border-border/30'
+                    }`}
+                  >
+                    {isCompleted && canAccess && (
+                      <div className="absolute top-3 right-3">
+                        <CheckCircle2 className="w-4 h-4 text-primary/60" />
+                      </div>
+                    )}
+                    {!canAccess && (
+                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 border border-primary/15">
+                        <Crown className="w-3 h-3 text-primary/60" />
+                        <span className="text-[0.6rem] font-semibold text-primary/70 tracking-wide uppercase">Premium</span>
+                      </div>
+                    )}
+                    <div className="space-y-3">
+                      <div className="p-2.5 rounded-xl bg-primary/[0.04] border border-primary/10 w-fit">
+                        {canAccess ? <Icon className="w-5 h-5 text-primary/50" /> : <Lock className="w-5 h-5 text-muted-foreground/30" />}
+                      </div>
+                      <div>
+                        <h4 className={`text-[0.9rem] font-medium mb-1 tracking-[-0.01em] ${canAccess ? 'text-foreground/85' : 'text-foreground/50'}`}>{mod.name}</h4>
+                        <p className="text-[0.75rem] text-muted-foreground/55 leading-[1.65] line-clamp-2">{mod.description}</p>
+                      </div>
+                      <div className="flex items-center gap-3 text-[0.68rem] text-muted-foreground/40 pt-0.5">
+                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> ~{Math.ceil(mod.question_count * 0.5)} min</span>
+                        <span>{mod.question_count} itens</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        )}
+
         {/* ── Bottom Actions ── */}
-        <motion.div {...fadeUp} transition={{ delay: 0.22 }} className="flex flex-col sm:flex-row gap-3 justify-center pb-12 pt-4">
+        <motion.div {...fadeUp} transition={{ delay: 0.25 }} className="flex flex-col sm:flex-row gap-3 justify-center pb-12 pt-4">
           <button
             onClick={() => navigate('/tests')}
             className="flex items-center justify-center gap-2.5 px-10 py-[1rem] bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold tracking-[0.02em] shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300"
@@ -483,6 +540,52 @@ const Dashboard = () => {
           )}
         </motion.div>
       </div>
+
+      {/* ── Upgrade Modal ── */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)} />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-lg p-8 space-y-6"
+          >
+            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 text-muted-foreground/40 hover:text-foreground/70 transition-colors">
+              <X className="w-5 h-5" />
+            </button>
+            <div className="text-center space-y-3">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                <Crown className="w-7 h-7 text-primary" />
+              </div>
+              <h2 className="text-2xl font-semibold">Desbloqueie todos os testes</h2>
+              <p className="text-[0.85rem] text-muted-foreground/70 leading-[1.7] max-w-sm mx-auto">
+                Com o plano Premium, você acessa todos os módulos de análise, relatórios avançados e acompanhamento de evolução.
+              </p>
+            </div>
+            <div className="space-y-3">
+              {[
+                'Acesso a todos os módulos de análise',
+                'Relatório Central unificado',
+                'Histórico completo de leituras',
+                'Cronograma de evolução comportamental',
+                'Download de relatórios em PDF',
+              ].map((feature, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-primary/70 shrink-0" />
+                  <span className="text-[0.82rem] text-foreground/75">{feature}</span>
+                </div>
+              ))}
+            </div>
+            <button className="w-full group flex items-center justify-center gap-2 py-3.5 bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300">
+              <Crown className="w-4 h-4" />
+              Upgrade para Premium
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+            <p className="text-center text-[0.7rem] text-muted-foreground/40">Cancele quando quiser · Acesso imediato</p>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };
