@@ -11,6 +11,7 @@ import Diagnostic from "./pages/Diagnostic";
 import Dashboard from "./pages/Dashboard";
 import DiagnosticHistory from "./pages/DiagnosticHistory";
 import TestCatalog from "./pages/TestCatalog";
+import CentralReport from "./pages/CentralReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
