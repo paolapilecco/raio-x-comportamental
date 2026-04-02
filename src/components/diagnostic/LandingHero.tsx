@@ -20,7 +20,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="text-sm tracking-[0.25em] uppercase text-subtle font-medium"
           >
-            Análise Comportamental Contínua
+            Sistema de Raio-X Comportamental
           </motion.div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
             Mapa de Funcionamento Comportamental
