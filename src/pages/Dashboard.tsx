@@ -226,6 +226,9 @@ const Dashboard = () => {
             }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <Download className="w-4 h-4" /> PDF
             </button>
+            <button onClick={() => navigate('/central-report')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Layers className="w-4 h-4" /> Relatório Central
+            </button>
             <button onClick={() => navigate('/history')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
               <History className="w-4 h-4" /> Histórico
             </button>
