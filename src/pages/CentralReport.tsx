@@ -9,10 +9,18 @@ import {
 } from 'recharts';
 import {
   ArrowLeft, Layers, Brain, AlertTriangle, TrendingUp, Shield,
-  Crosshair, Compass, Activity, Zap,
+  Crosshair, Compass, Activity, Zap, Sparkles, Eye, Target, Lightbulb,
 } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import type { PatternKey } from '@/types/diagnostic';
+import { toast } from 'sonner';
+
+interface AIInsights {
+  interpretacao_personalizada: string;
+  padroes_invisiveis: string[];
+  contradicoes_profundas: string[];
+  recomendacoes_praticas: string[];
+}
 
 interface CentralProfile {
   dominant_patterns: { key: string; score: number }[];
