@@ -278,7 +278,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-2 flex-wrap">
             {!isPremium && (
               <button
-                onClick={() => setShowUpgradeModal(true)}
+                onClick={() => navigate('/premium')}
                 className="group flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl text-[0.78rem] font-semibold shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_10px_32px_-4px_hsl(var(--primary)/0.5)] hover:translate-y-[-1px] transition-all duration-300"
               >
                 <Crown className="w-3.5 h-3.5" />
