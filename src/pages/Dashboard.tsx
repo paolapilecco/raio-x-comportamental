@@ -289,8 +289,15 @@ const Dashboard = () => {
         {/* Header */}
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center justify-between">
           <div>
-            <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Painel de Leitura</p>
-            <h1 className="text-2xl md:text-3xl mt-1">Olá, {profile?.name?.split(' ')[0]}</h1>
+            <div className="flex items-center gap-3">
+              <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Painel de Leitura</p>
+              {isSuperAdmin && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-[0.65rem] font-semibold text-amber-500/80 tracking-wide uppercase">
+                  ⚡ Modo super admin ativo
+                </span>
+              )}
+            </div>
+            <h1 className="text-2xl md:text-3xl mt-1">Olá, {profile?.name?.split(' ')[0] || user?.email?.split('@')[0]}</h1>
           </div>
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {[
