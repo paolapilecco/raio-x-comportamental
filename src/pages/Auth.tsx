@@ -28,6 +28,22 @@ const Auth = () => {
       toast.error(emailResult.error.errors[0].message);
       return;
     }
+
+    if (forgotMode) {
+      setSubmitting(true);
+      const { error } = await supabase.auth.resetPasswordForEmail(emailResult.data, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      setSubmitting(false);
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
+        setForgotMode(false);
+      }
+      return;
+    }
+
     const passwordResult = passwordSchema.safeParse(password);
     if (!passwordResult.success) {
       toast.error(passwordResult.error.errors[0].message);
