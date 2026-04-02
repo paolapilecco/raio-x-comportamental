@@ -44,6 +44,17 @@ interface CentralProfile {
   last_test_at: string | null;
 }
 
+const iconMap: Record<string, any> = { brain: Brain, zap: Zap, shield: Shield, heart: Heart };
+
+interface TestModule {
+  id: string;
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  question_count: number;
+}
+
 const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
 const intensityColor: Record<string, string> = { leve: 'hsl(152, 45%, 45%)', moderado: 'hsl(38, 72%, 50%)', alto: 'hsl(0, 65%, 52%)' };
 
