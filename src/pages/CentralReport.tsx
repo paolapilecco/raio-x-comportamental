@@ -411,7 +411,7 @@ const CentralReport = () => {
               <Compass className="w-5 h-5 text-primary" />
               <h3 className="text-xl font-serif">Evolução ao Longo do Tempo</h3>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">Cada ponto representa um teste realizado</p>
+            <p className="text-xs text-muted-foreground mb-4">Cada ponto representa uma leitura realizada</p>
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
