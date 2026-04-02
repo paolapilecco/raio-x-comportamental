@@ -67,6 +67,8 @@ const CentralReport = () => {
   const navigate = useNavigate();
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);
+  const [insightsLoading, setInsightsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
