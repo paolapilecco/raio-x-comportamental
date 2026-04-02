@@ -34,7 +34,7 @@ const Index = () => {
             Sistema de Raio-X Comportamental
           </motion.div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
-            Mapa de Funcionamento Comportamental
+            Raio-X Comportamental
           </h1>
         </div>
 
