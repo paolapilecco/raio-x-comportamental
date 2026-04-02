@@ -10,6 +10,7 @@ import Onboarding from "./pages/Onboarding";
 import Diagnostic from "./pages/Diagnostic";
 import Dashboard from "./pages/Dashboard";
 import DiagnosticHistory from "./pages/DiagnosticHistory";
+import TestCatalog from "./pages/TestCatalog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,6 +40,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/tests" element={<ProtectedRoute><RequireProfile><TestCatalog /></RequireProfile></ProtectedRoute>} />
+            <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><RequireProfile><Diagnostic /></RequireProfile></ProtectedRoute>} />
             <Route path="/diagnostic" element={<ProtectedRoute><RequireProfile><Diagnostic /></RequireProfile></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><RequireProfile><Dashboard /></RequireProfile></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><RequireProfile><DiagnosticHistory /></RequireProfile></ProtectedRoute>} />
