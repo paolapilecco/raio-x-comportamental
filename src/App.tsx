@@ -46,6 +46,7 @@ const App = () => (
             <Route path="/diagnostic" element={<ProtectedRoute><RequireProfile><Diagnostic /></RequireProfile></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><RequireProfile><Dashboard /></RequireProfile></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><RequireProfile><DiagnosticHistory /></RequireProfile></ProtectedRoute>} />
+            <Route path="/central-report" element={<ProtectedRoute><RequireProfile><CentralReport /></RequireProfile></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
