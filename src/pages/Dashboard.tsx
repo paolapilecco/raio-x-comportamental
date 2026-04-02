@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Brain, LogOut, History, LayoutGrid, Layers, User, FlaskConical, Crown, Lock, ArrowRight, FileText, TrendingUp, Sparkles, Shield } from 'lucide-react';
+import { Brain, LogOut, History, LayoutGrid, Layers, User, FlaskConical, Crown, Lock, ArrowRight, FileText, TrendingUp, Sparkles, Shield, Zap, Heart, Clock, CheckCircle2, X } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
