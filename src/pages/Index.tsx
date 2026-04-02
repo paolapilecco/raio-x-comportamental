@@ -42,9 +42,9 @@ const Index = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/15 bg-primary/[0.04]">
-              <ScanLine className="w-4 h-4 text-primary" />
-              <span className="text-[11px] tracking-[0.3em] uppercase text-primary font-semibold">
+            <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/12 bg-primary/[0.03]">
+              <ScanLine className="w-3.5 h-3.5 text-primary/70" />
+              <span className="text-[10px] tracking-[0.35em] uppercase text-primary/80 font-semibold">
                 Sistema de Leitura Comportamental
               </span>
             </div>
@@ -57,8 +57,9 @@ const Index = () => {
             transition={{ delay: 0.15, duration: 0.7 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif leading-[1.08] tracking-tight">
-              Raio-X<br />Comportamental
+            <h1 className="text-[3.2rem] md:text-[4.5rem] lg:text-[5.5rem] leading-[0.95] tracking-[-0.04em]">
+              Raio-X<br />
+              <span className="italic text-primary">Comportamental</span>
             </h1>
           </motion.div>
 
@@ -67,16 +68,17 @@ const Index = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.6 }}
-            className="text-center space-y-5"
+            className="text-center space-y-6 max-w-2xl mx-auto"
           >
-            <p className="text-lg md:text-xl text-foreground/80 leading-relaxed max-w-2xl mx-auto font-medium">
+            <p className="text-[1.15rem] md:text-[1.3rem] text-foreground/85 leading-[1.65] font-normal tracking-[-0.01em]">
               Você não está travada por acaso.<br />
-              <span className="text-muted-foreground font-normal">
-                Existe um padrão invisível operando por trás das suas decisões, travas e repetições.
+              <span className="text-muted-foreground">
+                Existe um padrão invisível operando por trás<br className="hidden sm:block" />
+                das suas decisões, travas e repetições.
               </span>
             </p>
 
-            <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+            <p className="text-[0.9rem] text-muted-foreground/70 leading-[1.8] max-w-lg mx-auto">
               Uma plataforma de autoanálise que identifica como sua mente está funcionando hoje,
               revela seu padrão dominante e mostra onde agir primeiro para destravar sua vida.
             </p>
@@ -92,12 +94,12 @@ const Index = () => {
             {features.map((f, i) => (
               <div
                 key={i}
-                className="flex items-center gap-3 px-5 py-3.5 bg-card border border-border rounded-xl w-full sm:w-auto sm:flex-1"
+                className="flex items-center gap-3.5 px-5 py-4 bg-card/80 border border-border/60 rounded-xl w-full sm:w-auto sm:flex-1 backdrop-blur-sm"
               >
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <f.icon className="w-4 h-4 text-primary" />
+                <div className="w-8 h-8 rounded-lg bg-primary/8 flex items-center justify-center shrink-0">
+                  <f.icon className="w-4 h-4 text-primary/70" />
                 </div>
-                <span className="text-sm text-foreground/80 leading-snug">{f.text}</span>
+                <span className="text-[0.82rem] text-foreground/70 leading-snug tracking-[-0.005em]">{f.text}</span>
               </div>
             ))}
           </motion.div>
@@ -144,10 +146,11 @@ const Index = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.6 }}
-            className="space-y-3"
+            className="space-y-4"
           >
-            <h2 className="text-2xl md:text-3xl font-serif">Como funciona</h2>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-primary/60 font-semibold">Metodologia</p>
+            <h2 className="text-3xl md:text-4xl">Como funciona</h2>
+            <p className="text-[0.9rem] text-muted-foreground/70 max-w-md mx-auto leading-[1.7]">
               Um sistema em 3 etapas que revela o que você não consegue ver sozinha.
             </p>
           </motion.div>
@@ -176,11 +179,11 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="bg-card border border-border rounded-xl p-6 text-left space-y-3 hover:border-primary/20 transition-colors"
+                className="bg-card/80 backdrop-blur-sm border border-border/60 rounded-xl p-7 text-left space-y-3 hover:border-primary/15 transition-colors"
               >
-                <span className="text-xs font-mono text-primary/60 tracking-widest">{item.step}</span>
-                <h3 className="text-base font-serif text-foreground">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                <span className="text-[10px] font-mono text-primary/50 tracking-[0.2em]">{item.step}</span>
+                <h3 className="text-lg text-foreground tracking-[-0.02em]">{item.title}</h3>
+                <p className="text-[0.82rem] text-muted-foreground/70 leading-[1.75]">{item.desc}</p>
               </motion.div>
             ))}
           </div>
