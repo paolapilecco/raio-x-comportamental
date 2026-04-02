@@ -54,7 +54,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
             onClick={onStart}
             className="mt-4 px-10 py-4 bg-primary text-primary-foreground rounded-lg text-base font-medium tracking-wide hover:opacity-90 transition-opacity duration-200"
           >
-            Iniciar diagnóstico
+            Iniciar leitura
           </button>
         </motion.div>
 
