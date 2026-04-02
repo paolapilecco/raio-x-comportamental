@@ -33,7 +33,7 @@ export async function updateCentralProfile(userId: string) {
 
   results.forEach((result, index) => {
     const recencyWeight = 1 + (results.length - index) * 0.2; // more recent = higher weight
-    const scores = (result.all_scores as ScoreEntry[]) || [];
+    const scores = (result.all_scores as unknown as ScoreEntry[]) || [];
     scores.forEach((s) => {
       if (!allPatternScores[s.key]) {
         allPatternScores[s.key] = { total: 0, count: 0, weight: 0 };
