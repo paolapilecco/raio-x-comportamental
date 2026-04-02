@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
-type AppRole = 'admin' | 'user';
+export type AppRole = 'user' | 'premium' | 'super_admin';
 
 interface Profile {
   id: string;
@@ -16,8 +16,10 @@ interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
-  role: AppRole | null;
+  role: AppRole;
   isAdmin: boolean;
+  isPremium: boolean;
+  isSuperAdmin: boolean;
   loading: boolean;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
@@ -27,11 +29,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function resolveRole(roles: string[]): AppRole {
+  if (roles.includes('super_admin')) return 'super_admin';
+  if (roles.includes('admin')) return 'super_admin'; // legacy admin → super_admin
+  if (roles.includes('premium')) return 'premium';
+  return 'user';
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [role, setRole] = useState<AppRole | null>(null);
+  const [role, setRole] = useState<AppRole>('user');
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -48,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
     setProfile(profileRes.data);
     const roles = (roleRes.data ?? []).map((r: { role: string }) => r.role);
-    setRole(roles.includes('admin') ? 'admin' : (roles[0] as AppRole) ?? 'user');
+    setRole(resolveRole(roles));
   }, []);
 
   useEffect(() => {
@@ -59,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTimeout(() => fetchProfile(session.user.id), 0);
       } else {
         setProfile(null);
-        setRole(null);
+        setRole('user');
       }
       setLoading(false);
     });
@@ -93,17 +102,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
-    setRole(null);
+    setRole('user');
   };
 
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
   };
 
-  const isAdmin = role === 'admin';
+  const isSuperAdmin = role === 'super_admin';
+  const isPremium = role === 'premium' || isSuperAdmin;
+  const isAdmin = isSuperAdmin; // backward compat
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, isAdmin, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, role, isAdmin, isPremium, isSuperAdmin, loading, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

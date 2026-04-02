@@ -73,7 +73,7 @@ const radarAxisLabels: Record<string, string> = {
 };
 
 const Dashboard = () => {
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, isSuperAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
@@ -81,7 +81,7 @@ const Dashboard = () => {
   const [generating, setGenerating] = useState(false);
 
   const generateTestData = async () => {
-    if (!user || !isAdmin) return;
+    if (!user || !isSuperAdmin) return;
     setGenerating(true);
     try {
       // 1. Create session
@@ -241,7 +241,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!latestResult && !isAdmin) {
+  if (!latestResult && !isSuperAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center space-y-6 max-w-md">
@@ -341,7 +341,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Admin empty state notice */}
-        {isAdmin && !latestResult && (
+        {isSuperAdmin && !latestResult && (
           <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6 text-center space-y-4">
             <p className="text-[0.85rem] text-muted-foreground/60 leading-[1.7]">
               Você ainda não realizou análises. Os dados aparecerão conforme os testes forem feitos.
