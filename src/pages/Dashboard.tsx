@@ -137,7 +137,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!latestResult) {
+  if (!latestResult && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center space-y-6 max-w-md">
