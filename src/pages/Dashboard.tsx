@@ -342,16 +342,26 @@ const Dashboard = () => {
 
         {/* Admin empty state notice */}
         {isAdmin && !latestResult && (
-          <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6 text-center">
+          <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6 text-center space-y-4">
             <p className="text-[0.85rem] text-muted-foreground/60 leading-[1.7]">
               Você ainda não realizou análises. Os dados aparecerão conforme os testes forem feitos.
             </p>
-            <button
-              onClick={() => navigate('/tests')}
-              className="mt-4 px-6 py-2.5 bg-primary/10 text-primary rounded-xl text-[0.8rem] font-medium hover:bg-primary/15 transition-colors"
-            >
-              Ver módulos disponíveis
-            </button>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <button
+                onClick={() => navigate('/tests')}
+                className="px-6 py-2.5 bg-primary/10 text-primary rounded-xl text-[0.8rem] font-medium hover:bg-primary/15 transition-colors"
+              >
+                Ver módulos disponíveis
+              </button>
+              <button
+                onClick={generateTestData}
+                disabled={generating}
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-[0.8rem] font-semibold shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.3)] hover:shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.4)] hover:translate-y-[-1px] transition-all duration-300 disabled:opacity-50"
+              >
+                <FlaskConical className="w-3.5 h-3.5" />
+                {generating ? 'Gerando...' : 'Gerar dados de teste'}
+              </button>
+            </div>
           </motion.div>
         )}
 
