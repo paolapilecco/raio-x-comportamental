@@ -42,9 +42,9 @@ const Index = () => {
             transition={{ duration: 0.6 }}
             className="text-center"
           >
-            <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/15 bg-primary/[0.04]">
-              <ScanLine className="w-4 h-4 text-primary" />
-              <span className="text-[11px] tracking-[0.3em] uppercase text-primary font-semibold">
+            <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/12 bg-primary/[0.03]">
+              <ScanLine className="w-3.5 h-3.5 text-primary/70" />
+              <span className="text-[10px] tracking-[0.35em] uppercase text-primary/80 font-semibold">
                 Sistema de Leitura Comportamental
               </span>
             </div>
@@ -57,8 +57,9 @@ const Index = () => {
             transition={{ delay: 0.15, duration: 0.7 }}
             className="text-center"
           >
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif leading-[1.08] tracking-tight">
-              Raio-X<br />Comportamental
+            <h1 className="text-[3.2rem] md:text-[4.5rem] lg:text-[5.5rem] leading-[0.95] tracking-[-0.04em]">
+              Raio-X<br />
+              <span className="italic text-primary">Comportamental</span>
             </h1>
           </motion.div>
 
@@ -67,16 +68,17 @@ const Index = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.6 }}
-            className="text-center space-y-5"
+            className="text-center space-y-6 max-w-2xl mx-auto"
           >
-            <p className="text-lg md:text-xl text-foreground/80 leading-relaxed max-w-2xl mx-auto font-medium">
+            <p className="text-[1.15rem] md:text-[1.3rem] text-foreground/85 leading-[1.65] font-normal tracking-[-0.01em]">
               Você não está travada por acaso.<br />
-              <span className="text-muted-foreground font-normal">
-                Existe um padrão invisível operando por trás das suas decisões, travas e repetições.
+              <span className="text-muted-foreground">
+                Existe um padrão invisível operando por trás<br className="hidden sm:block" />
+                das suas decisões, travas e repetições.
               </span>
             </p>
 
-            <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+            <p className="text-[0.9rem] text-muted-foreground/70 leading-[1.8] max-w-lg mx-auto">
               Uma plataforma de autoanálise que identifica como sua mente está funcionando hoje,
               revela seu padrão dominante e mostra onde agir primeiro para destravar sua vida.
             </p>
