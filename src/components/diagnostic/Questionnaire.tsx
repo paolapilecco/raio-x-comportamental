@@ -17,7 +17,8 @@ const scaleLabels = [
   'Concordo totalmente',
 ];
 
-const Questionnaire = ({ onComplete }: QuestionnaireProps) => {
+const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnaireProps) => {
+  const questions = questionsProp || defaultQuestions;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [direction, setDirection] = useState(1);
