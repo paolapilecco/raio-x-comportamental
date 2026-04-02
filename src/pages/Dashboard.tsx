@@ -341,7 +341,7 @@ const Dashboard = () => {
         </motion.div>
 
         {/* Admin empty state notice */}
-        {isAdmin && !latestResult && (
+        {isSuperAdmin && !latestResult && (
           <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6 text-center space-y-4">
             <p className="text-[0.85rem] text-muted-foreground/60 leading-[1.7]">
               Você ainda não realizou análises. Os dados aparecerão conforme os testes forem feitos.
