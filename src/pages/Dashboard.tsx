@@ -144,7 +144,7 @@ const Dashboard = () => {
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center space-y-6 max-w-md">
           <h1 className="text-3xl font-serif">Bem-vindo, {profile?.name?.split(' ')[0]}</h1>
-          <p className="text-muted-foreground">Você ainda não completou nenhum teste. Escolha um módulo para começar sua análise comportamental.</p>
+          <p className="text-muted-foreground">Você ainda não completou nenhuma leitura. Escolha um módulo para começar seu raio-x comportamental.</p>
           <button
             onClick={() => navigate('/tests')}
             className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
