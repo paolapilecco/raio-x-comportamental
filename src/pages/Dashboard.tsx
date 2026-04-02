@@ -162,9 +162,10 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [cpRes, sessionsRes] = await Promise.all([
+      const [cpRes, sessionsRes, modulesRes] = await Promise.all([
         supabase.from('user_central_profile').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('diagnostic_sessions').select('id').eq('user_id', user.id).not('completed_at', 'is', null).order('completed_at', { ascending: false }),
+        supabase.from('diagnostic_sessions').select('id, test_module_id').eq('user_id', user.id).not('completed_at', 'is', null).order('completed_at', { ascending: false }),
+        supabase.from('test_modules').select('id, slug, name, description, icon, question_count').eq('is_active', true).order('sort_order'),
       ]);
 
       if (cpRes.data) {
