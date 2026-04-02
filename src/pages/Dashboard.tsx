@@ -245,7 +245,7 @@ const Dashboard = () => {
               <Layers className="w-5 h-5 text-primary" />
               <h3 className="text-xl font-serif">Perfil Central Unificado</h3>
               <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded ml-auto">
-                {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'teste' : 'testes'} realizados
+                {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura realizada' : 'leituras realizadas'}
               </span>
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
