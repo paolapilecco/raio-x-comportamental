@@ -89,10 +89,10 @@ const Auth = () => {
             </span>
           </div>
           <h1 className="text-3xl md:text-4xl">
-            {isLogin ? 'Entrar' : 'Criar conta'}
+            {forgotMode ? 'Recuperar senha' : isLogin ? 'Entrar' : 'Criar conta'}
           </h1>
           <p className="text-[0.85rem] text-muted-foreground/70 leading-[1.7] max-w-sm mx-auto">
-            {isLogin ? 'Acesse sua leitura comportamental e acompanhe sua evolução.' : 'Comece sua jornada de autoconhecimento profundo.'}
+            {forgotMode ? 'Enviaremos um link para redefinir sua senha.' : isLogin ? 'Acesse sua leitura comportamental e acompanhe sua evolução.' : 'Comece sua jornada de autoconhecimento profundo.'}
           </p>
         </div>
 
