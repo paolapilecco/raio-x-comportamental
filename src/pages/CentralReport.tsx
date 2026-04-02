@@ -124,6 +124,20 @@ const CentralReport = () => {
     fetchData();
   }, [user]);
 
+  const generateInsights = async () => {
+    setInsightsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-insights');
+      if (error) throw error;
+      setAiInsights(data as AIInsights);
+    } catch (e: any) {
+      console.error('Insights error:', e);
+      toast.error(e?.message || 'Erro ao gerar insights com IA');
+    } finally {
+      setInsightsLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
