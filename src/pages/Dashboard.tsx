@@ -308,6 +308,25 @@ const Dashboard = () => {
           </motion.div>
         )}
 
+        {/* ── Complete Profile Nudge ── */}
+        {!isSuperAdmin && !profile && (
+          <motion.div {...fadeUp} transition={{ delay: 0.03 }} className="flex items-center justify-between bg-card/80 border border-border/50 rounded-xl px-5 py-3.5">
+            <div className="flex items-center gap-3">
+              <User className="w-4 h-4 text-primary/50 shrink-0" />
+              <div>
+                <p className="text-[0.82rem] font-medium text-foreground/75">Complete seu perfil</p>
+                <p className="text-[0.72rem] text-muted-foreground/50">Adicione seu nome e data de nascimento para personalizar suas leituras.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate('/onboarding')}
+              className="flex items-center gap-1.5 px-4 py-1.5 bg-primary/10 hover:bg-primary/15 text-primary rounded-lg text-[0.72rem] font-semibold transition-colors whitespace-nowrap"
+            >
+              Completar <ArrowRight className="w-3 h-3" />
+            </button>
+          </motion.div>
+        )}
+
         {/* ── Quick Nav Cards ── */}
         <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
