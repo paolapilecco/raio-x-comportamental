@@ -14,8 +14,7 @@ const Index = () => {
   const { user, profile } = useAuth();
 
   const handleStart = () => {
-    if (user && profile) navigate('/dashboard');
-    else if (user) navigate('/onboarding');
+    if (user) navigate('/dashboard');
     else navigate('/auth');
   };
 
