@@ -53,7 +53,7 @@ const Index = () => {
           transition={{ delay: 0.6, duration: 0.6 }}
           className="text-muted-foreground leading-relaxed max-w-lg mx-auto text-sm"
         >
-          Sistema modular de análise comportamental. Múltiplos testes independentes que alimentam um perfil central unificado — sua evolução real, visível e contínua.
+          Leituras comportamentais independentes que alimentam um perfil central unificado — sua evolução real, visível e contínua.
         </motion.p>
 
         <motion.div
