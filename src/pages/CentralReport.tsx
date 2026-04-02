@@ -152,9 +152,9 @@ const CentralReport = () => {
         <motion.div {...fadeUp} className="text-center space-y-6 max-w-md">
           <Layers className="w-12 h-12 text-muted-foreground mx-auto" />
           <h1 className="text-2xl font-serif">Relatório Central</h1>
-          <p className="text-muted-foreground">Complete pelo menos um teste para gerar seu relatório central unificado.</p>
+          <p className="text-muted-foreground">Complete pelo menos uma leitura para gerar seu relatório central unificado.</p>
           <button onClick={() => navigate('/tests')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-            Fazer um teste
+            Iniciar leitura
           </button>
         </motion.div>
       </div>
@@ -239,7 +239,7 @@ const CentralReport = () => {
           </button>
           <div>
             <h1 className="text-2xl md:text-3xl font-serif">Relatório Central</h1>
-            <p className="text-sm text-muted-foreground">Análise unificada de {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'teste' : 'testes'}</p>
+            <p className="text-sm text-muted-foreground">Análise unificada de {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}</p>
           </div>
         </motion.div>
 
@@ -411,7 +411,7 @@ const CentralReport = () => {
               <Compass className="w-5 h-5 text-primary" />
               <h3 className="text-xl font-serif">Evolução ao Longo do Tempo</h3>
             </div>
-            <p className="text-xs text-muted-foreground mb-4">Cada ponto representa um teste realizado</p>
+            <p className="text-xs text-muted-foreground mb-4">Cada ponto representa uma leitura realizada</p>
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
@@ -465,7 +465,7 @@ const CentralReport = () => {
 
           {!aiInsights && !insightsLoading && (
             <p className="text-sm text-muted-foreground">
-              A IA analisará todo o seu histórico de testes para gerar interpretações personalizadas, padrões invisíveis e recomendações práticas.
+              A IA analisará todo o seu histórico de leituras para gerar interpretações personalizadas, padrões invisíveis e recomendações práticas.
             </p>
           )}
 
@@ -564,7 +564,7 @@ const CentralReport = () => {
             Voltar ao Dashboard
           </button>
           <button onClick={() => navigate('/tests')} className="px-8 py-3 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
-            Fazer novo teste
+            Nova leitura
           </button>
         </motion.div>
       </div>

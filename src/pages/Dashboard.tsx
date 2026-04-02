@@ -144,7 +144,7 @@ const Dashboard = () => {
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center space-y-6 max-w-md">
           <h1 className="text-3xl font-serif">Bem-vindo, {profile?.name?.split(' ')[0]}</h1>
-          <p className="text-muted-foreground">Você ainda não completou nenhum teste. Escolha um módulo para começar sua análise comportamental.</p>
+          <p className="text-muted-foreground">Você ainda não completou nenhuma leitura. Escolha um módulo para começar seu raio-x comportamental.</p>
           <button
             onClick={() => navigate('/tests')}
             className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
@@ -245,7 +245,7 @@ const Dashboard = () => {
               <Layers className="w-5 h-5 text-primary" />
               <h3 className="text-xl font-serif">Perfil Central Unificado</h3>
               <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded ml-auto">
-                {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'teste' : 'testes'} realizados
+                {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura realizada' : 'leituras realizadas'}
               </span>
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
@@ -298,7 +298,7 @@ const Dashboard = () => {
           <motion.div {...fadeUp} transition={{ delay: 0.1, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
             <h3 className="text-lg mb-1 font-serif">Gráfico de Funcionamento</h3>
             {centralProfile && centralProfile.tests_completed > 1 && (
-              <p className="text-xs text-muted-foreground mb-3">Agregado de {centralProfile.tests_completed} testes</p>
+              <p className="text-xs text-muted-foreground mb-3">Agregado de {centralProfile.tests_completed} leituras</p>
             )}
             <ResponsiveContainer width="100%" height={280}>
               <RadarChart data={radarData}>
@@ -408,7 +408,7 @@ const Dashboard = () => {
             onClick={() => navigate('/tests')}
             className="flex items-center justify-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            <LayoutGrid className="w-4 h-4" /> Fazer novo teste
+            <LayoutGrid className="w-4 h-4" /> Nova leitura
           </button>
           <button
             onClick={() => navigate('/history')}

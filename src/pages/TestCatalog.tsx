@@ -91,9 +91,9 @@ const TestCatalog = () => {
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">Olá, {profile?.name?.split(' ')[0]}</p>
-            <h1 className="text-2xl md:text-3xl font-serif">Módulos de Análise</h1>
+            <h1 className="text-2xl md:text-3xl font-serif">Módulos de Leitura</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Cada teste alimenta seu Perfil Central unificado
+              Cada leitura alimenta seu Perfil Central unificado
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap justify-end">

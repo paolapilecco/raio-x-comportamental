@@ -123,7 +123,7 @@ const Profile = () => {
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <p className="text-2xl font-serif text-foreground">{centralProfile?.tests_completed || 0}</p>
-              <p className="text-xs text-muted-foreground">Testes feitos</p>
+              <p className="text-xs text-muted-foreground">Leituras feitas</p>
             </div>
             <div>
               <p className="text-2xl font-serif text-foreground">{completedCount}/{totalModules}</p>
@@ -135,7 +135,7 @@ const Profile = () => {
                   ? new Date(centralProfile.last_test_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
                   : '-'}
               </p>
-              <p className="text-xs text-muted-foreground">Último teste</p>
+              <p className="text-xs text-muted-foreground">Última leitura</p>
             </div>
           </div>
         </motion.div>

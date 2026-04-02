@@ -20,10 +20,10 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
             transition={{ delay: 0.2, duration: 0.6 }}
             className="text-sm tracking-[0.25em] uppercase text-subtle font-medium"
           >
-            Análise Comportamental Contínua
+            Sistema de Raio-X Comportamental
           </motion.div>
           <h1 className="text-4xl md:text-5xl lg:text-6xl leading-tight">
-            Mapa de Funcionamento Comportamental
+            Raio-X Comportamental
           </h1>
         </div>
 
@@ -33,7 +33,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="text-lg md:text-xl text-subtle leading-relaxed max-w-xl mx-auto"
         >
-          Descubra com clareza qual padrão comportamental está dirigindo suas decisões, travas e repetições.
+          Uma análise estruturada que identifica os padrões invisíveis que estão dirigindo suas decisões, travas e repetições.
         </motion.p>
 
         <motion.p
@@ -42,7 +42,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
           transition={{ delay: 0.6, duration: 0.6 }}
           className="text-muted-foreground leading-relaxed max-w-lg mx-auto text-sm"
         >
-          Sistema modular de análise comportamental. Múltiplos testes independentes que alimentam um perfil central unificado — sua evolução real, visível e contínua.
+          Leituras comportamentais independentes que alimentam um perfil central unificado — sua evolução real, visível e contínua.
         </motion.p>
 
         <motion.div
@@ -54,7 +54,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
             onClick={onStart}
             className="mt-4 px-10 py-4 bg-primary text-primary-foreground rounded-lg text-base font-medium tracking-wide hover:opacity-90 transition-opacity duration-200"
           >
-            Iniciar diagnóstico
+            Iniciar leitura
           </button>
         </motion.div>
 
@@ -64,7 +64,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
           transition={{ delay: 1, duration: 0.5 }}
           className="text-xs text-subtle pt-4"
         >
-          Múltiplos módulos · Perfil Central · Análise contínua
+          Múltiplos módulos · Perfil Central · Leitura contínua
         </motion.p>
       </motion.div>
     </div>
