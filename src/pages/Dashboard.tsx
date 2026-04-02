@@ -298,7 +298,7 @@ const Dashboard = () => {
           <motion.div {...fadeUp} transition={{ delay: 0.1, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
             <h3 className="text-lg mb-1 font-serif">Gráfico de Funcionamento</h3>
             {centralProfile && centralProfile.tests_completed > 1 && (
-              <p className="text-xs text-muted-foreground mb-3">Agregado de {centralProfile.tests_completed} testes</p>
+              <p className="text-xs text-muted-foreground mb-3">Agregado de {centralProfile.tests_completed} leituras</p>
             )}
             <ResponsiveContainer width="100%" height={280}>
               <RadarChart data={radarData}>
