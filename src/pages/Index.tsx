@@ -1,13 +1,12 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { ScanLine, Layers, Activity, Eye } from 'lucide-react';
+import { ScanLine, Crosshair, Eye, Compass, ArrowRight } from 'lucide-react';
 
-const pillars = [
-  { icon: ScanLine, label: 'Leitura profunda', desc: 'Análise dos padrões que operam abaixo da sua consciência' },
-  { icon: Eye, label: 'Padrões invisíveis', desc: 'Identificação de ciclos que se repetem sem você perceber' },
-  { icon: Layers, label: 'Perfil unificado', desc: 'Cada leitura refina um mapa único do seu funcionamento' },
-  { icon: Activity, label: 'Evolução contínua', desc: 'Acompanhe mudanças reais ao longo do tempo' },
+const features = [
+  { icon: Crosshair, text: 'Identifica seu padrão dominante' },
+  { icon: Eye, text: 'Revela seus gatilhos e armadilhas' },
+  { icon: Compass, text: 'Mostra por onde começar a mudança' },
 ];
 
 const Index = () => {
@@ -20,104 +19,192 @@ const Index = () => {
     else navigate('/auth');
   };
 
+  const scrollToHow = () => {
+    document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero */}
-      <section className="flex-1 flex items-center justify-center px-4 py-20 md:py-28 relative overflow-hidden">
-        {/* Subtle background accents */}
+      <section className="flex-1 flex items-center justify-center px-4 pt-16 pb-24 md:pt-24 md:pb-32 relative overflow-hidden">
+        {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full bg-primary/[0.03] blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/[0.04] blur-3xl" />
+          <div className="absolute top-[15%] left-[10%] w-[600px] h-[600px] rounded-full bg-primary/[0.03] blur-[100px]" />
+          <div className="absolute bottom-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-accent/[0.04] blur-[100px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-primary/[0.02] blur-[80px]" />
         </div>
 
-        <div className="max-w-3xl w-full text-center space-y-10 relative z-10">
+        <div className="max-w-3xl w-full relative z-10 space-y-12">
+          {/* Micro label */}
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.8 }}
-            className="space-y-1"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="text-center"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary/20 bg-primary/5 mb-6">
-              <ScanLine className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs tracking-[0.2em] uppercase text-primary font-medium">
-                Raio-X Comportamental
+            <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/15 bg-primary/[0.04]">
+              <ScanLine className="w-4 h-4 text-primary" />
+              <span className="text-[11px] tracking-[0.3em] uppercase text-primary font-semibold">
+                Sistema de Leitura Comportamental
               </span>
             </div>
           </motion.div>
 
-          <motion.h1
+          {/* Title */}
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.8 }}
-            className="text-4xl md:text-5xl lg:text-[3.5rem] font-serif leading-[1.15] tracking-tight"
+            transition={{ delay: 0.15, duration: 0.7 }}
+            className="text-center"
           >
-            Seus padrões invisíveis<br />
-            <span className="text-primary">revelados com precisão</span>
-          </motion.h1>
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif leading-[1.08] tracking-tight">
+              Raio-X<br />Comportamental
+            </h1>
+          </motion.div>
 
-          <motion.p
+          {/* Subtitle */}
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-            className="text-base md:text-lg text-muted-foreground leading-relaxed max-w-xl mx-auto"
+            transition={{ delay: 0.35, duration: 0.6 }}
+            className="text-center space-y-5"
           >
-            Uma análise estruturada que identifica os padrões que estão dirigindo
-            suas decisões, travas e repetições — sem generalizações, sem achismos.
-          </motion.p>
+            <p className="text-lg md:text-xl text-foreground/80 leading-relaxed max-w-2xl mx-auto font-medium">
+              Você não está travada por acaso.<br />
+              <span className="text-muted-foreground font-normal">
+                Existe um padrão invisível operando por trás das suas decisões, travas e repetições.
+              </span>
+            </p>
 
+            <p className="text-sm md:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+              Uma plataforma de autoanálise que identifica como sua mente está funcionando hoje,
+              revela seu padrão dominante e mostra onde agir primeiro para destravar sua vida.
+            </p>
+          </motion.div>
+
+          {/* 3 Features */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.55, duration: 0.5 }}
+            className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center sm:items-stretch max-w-2xl mx-auto"
+          >
+            {features.map((f, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-3 px-5 py-3.5 bg-card border border-border rounded-xl w-full sm:w-auto sm:flex-1"
+              >
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <f.icon className="w-4 h-4 text-primary" />
+                </div>
+                <span className="text-sm text-foreground/80 leading-snug">{f.text}</span>
+              </div>
+            ))}
+          </motion.div>
+
+          {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6, duration: 0.5 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
             <button
               onClick={handleStart}
-              className="px-10 py-4 bg-primary text-primary-foreground rounded-lg text-base font-medium tracking-wide hover:opacity-90 transition-all duration-200 shadow-lg shadow-primary/10"
+              className="group px-10 py-4 bg-primary text-primary-foreground rounded-xl text-base font-medium tracking-wide hover:opacity-90 transition-all duration-200 shadow-lg shadow-primary/15 flex items-center gap-2"
             >
-              {user ? 'Acessar meu painel' : 'Iniciar minha leitura'}
+              Iniciar análise
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
-            {!user && (
-              <span className="text-xs text-muted-foreground">
-                Gratuito · Sem cartão de crédito
-              </span>
-            )}
+            <button
+              onClick={scrollToHow}
+              className="px-8 py-4 border border-border rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all duration-200"
+            >
+              Ver como funciona
+            </button>
+          </motion.div>
+
+          {/* Trust line */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9, duration: 0.5 }}
+            className="text-center text-xs text-muted-foreground/50"
+          >
+            Gratuito · Sem cartão de crédito · Resultados imediatos
+          </motion.p>
+        </div>
+      </section>
+
+      {/* How it works (scroll target) */}
+      <section id="como-funciona" className="px-4 pb-24">
+        <div className="max-w-3xl mx-auto text-center space-y-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: 0.6 }}
+            className="space-y-3"
+          >
+            <h2 className="text-2xl md:text-3xl font-serif">Como funciona</h2>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+              Um sistema em 3 etapas que revela o que você não consegue ver sozinha.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                step: '01',
+                title: 'Leitura Comportamental',
+                desc: 'Responda a análises estruturadas que mapeiam como sua mente está operando agora — sem perguntas genéricas.',
+              },
+              {
+                step: '02',
+                title: 'Raio-X do Padrão',
+                desc: 'O sistema identifica seu padrão dominante, contradições internas, gatilhos e o ciclo de autossabotagem ativo.',
+              },
+              {
+                step: '03',
+                title: 'Direção Clara',
+                desc: 'Você recebe um mapa preciso de onde está travada e qual é o primeiro movimento para destravar sua vida.',
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1, duration: 0.5 }}
+                className="bg-card border border-border rounded-xl p-6 text-left space-y-3 hover:border-primary/20 transition-colors"
+              >
+                <span className="text-xs font-mono text-primary/60 tracking-widest">{item.step}</span>
+                <h3 className="text-base font-serif text-foreground">{item.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3, duration: 0.5 }}
+          >
+            <button
+              onClick={handleStart}
+              className="px-10 py-4 bg-primary text-primary-foreground rounded-xl text-base font-medium tracking-wide hover:opacity-90 transition-all duration-200 shadow-lg shadow-primary/10"
+            >
+              Iniciar minha análise
+            </button>
           </motion.div>
         </div>
       </section>
 
-      {/* Pillars */}
-      <section className="px-4 pb-20">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {pillars.map((p, i) => (
-              <motion.div
-                key={p.label}
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 + i * 0.1, duration: 0.5 }}
-                className="bg-card border border-border rounded-xl p-5 space-y-3 hover:border-primary/20 transition-colors"
-              >
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <p.icon className="w-4 h-4 text-primary" />
-                </div>
-                <h3 className="text-sm font-medium text-foreground">{p.label}</h3>
-                <p className="text-xs text-muted-foreground leading-relaxed">{p.desc}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Footer tagline */}
-      <motion.footer
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2, duration: 0.5 }}
-        className="text-center pb-8 text-xs text-muted-foreground/60"
-      >
-        Sistema de Raio-X Comportamental · Análise profunda · Evolução contínua
-      </motion.footer>
+      {/* Footer */}
+      <footer className="text-center pb-8 text-xs text-muted-foreground/40">
+        Raio-X Comportamental · Análise profunda · Evolução contínua
+      </footer>
     </div>
   );
 };
