@@ -13,6 +13,7 @@ import DiagnosticHistory from "./pages/DiagnosticHistory";
 import TestCatalog from "./pages/TestCatalog";
 import CentralReport from "./pages/CentralReport";
 import Profile from "./pages/Profile";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/tests" element={<ProtectedRoute><RequireProfile><TestCatalog /></RequireProfile></ProtectedRoute>} />
             <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><RequireProfile><Diagnostic /></RequireProfile></ProtectedRoute>} />
