@@ -64,8 +64,8 @@ const Auth = () => {
         if (error) {
           toast.error(error.message);
         } else {
-          toast.success('Conta criada! Complete seu perfil.');
-          navigate('/onboarding');
+          toast.success('Conta criada com sucesso!');
+          navigate('/dashboard');
         }
       }
     } finally {

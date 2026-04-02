@@ -25,12 +25,6 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function RequireProfile({ children }: { children: React.ReactNode }) {
-  const { profile, loading, isAdmin } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-  if (!profile && !isAdmin) return <Navigate to="/onboarding" replace />;
-  return <>{children}</>;
-}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -44,13 +38,13 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-            <Route path="/tests" element={<ProtectedRoute><RequireProfile><TestCatalog /></RequireProfile></ProtectedRoute>} />
-            <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><RequireProfile><Diagnostic /></RequireProfile></ProtectedRoute>} />
-            <Route path="/diagnostic" element={<ProtectedRoute><RequireProfile><Diagnostic /></RequireProfile></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><RequireProfile><Dashboard /></RequireProfile></ProtectedRoute>} />
-            <Route path="/history" element={<ProtectedRoute><RequireProfile><DiagnosticHistory /></RequireProfile></ProtectedRoute>} />
-            <Route path="/central-report" element={<ProtectedRoute><RequireProfile><CentralReport /></RequireProfile></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><RequireProfile><Profile /></RequireProfile></ProtectedRoute>} />
+            <Route path="/tests" element={<ProtectedRoute><TestCatalog /></ProtectedRoute>} />
+            <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
+            <Route path="/diagnostic" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/history" element={<ProtectedRoute><DiagnosticHistory /></ProtectedRoute>} />
+            <Route path="/central-report" element={<ProtectedRoute><CentralReport /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
