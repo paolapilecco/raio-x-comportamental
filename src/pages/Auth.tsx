@@ -155,10 +155,15 @@ const Auth = () => {
               <button
                 type="button"
                 onClick={async () => {
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
+                  const result = await lovable.auth.signInWithOAuth("google", {
                     redirect_uri: window.location.origin,
                   });
-                  if (error) toast.error('Erro ao entrar com Google');
+                  if (result.error) {
+                    toast.error('Erro ao entrar com Google');
+                  } else if (!result.redirected) {
+                    // Session already set by lovable SDK, navigate directly
+                    navigate('/dashboard');
+                  }
                 }}
                 className="w-full h-12 border border-border/60 rounded-xl text-[0.85rem] font-medium text-foreground/80 hover:bg-muted/30 hover:border-border transition-all duration-300 flex items-center justify-center gap-2.5"
               >

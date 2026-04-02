@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +12,14 @@ const features = [
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, profile } = useAuth();
+  const { user, loading } = useAuth();
+
+  // After Google OAuth redirect, user lands here — redirect to dashboard
+  useEffect(() => {
+    if (!loading && user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [loading, user, navigate]);
 
   const handleStart = () => {
     if (user) navigate('/dashboard');
