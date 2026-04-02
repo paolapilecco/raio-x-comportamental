@@ -78,6 +78,109 @@ const Dashboard = () => {
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+
+  const generateTestData = async () => {
+    if (!user || !isAdmin) return;
+    setGenerating(true);
+    try {
+      // 1. Create session
+      const { data: session, error: sessionErr } = await supabase
+        .from('diagnostic_sessions')
+        .insert({ user_id: user.id, completed_at: new Date().toISOString() })
+        .select('id')
+        .single();
+      if (sessionErr || !session) throw sessionErr;
+
+      // 2. Create mock scores
+      const mockScores = [
+        { key: 'unstable_execution', label: 'Execução Instável', percentage: 72 },
+        { key: 'emotional_self_sabotage', label: 'Autossabotagem Emocional', percentage: 65 },
+        { key: 'functional_overload', label: 'Sobrecarga Funcional', percentage: 48 },
+        { key: 'discomfort_escape', label: 'Fuga do Desconforto', percentage: 58 },
+        { key: 'paralyzing_perfectionism', label: 'Perfeccionismo Paralisante', percentage: 41 },
+        { key: 'validation_dependency', label: 'Dependência de Validação', percentage: 53 },
+        { key: 'excessive_self_criticism', label: 'Autocrítica Excessiva', percentage: 67 },
+        { key: 'low_routine_sustenance', label: 'Baixa Sustentação de Rotina', percentage: 74 },
+      ];
+
+      // 3. Create diagnostic result
+      const { error: resultErr } = await supabase.from('diagnostic_results').insert({
+        session_id: session.id,
+        dominant_pattern: 'unstable_execution',
+        secondary_patterns: ['excessive_self_criticism', 'low_routine_sustenance'],
+        intensity: 'alto',
+        profile_name: 'O Velocista sem Linha de Chegada',
+        mental_state: 'Você vive em um estado de entusiasmo intermitente seguido de esgotamento.',
+        state_summary: 'Seu funcionamento atual alterna entre picos de energia e quedas abruptas. A mente busca estímulos novos para se manter ativa, mas abandona projetos quando o esforço rotineiro aparece.',
+        mechanism: 'A energia inicial vem de um impulso emocional, não de uma estrutura real. Quando o desconforto natural do processo aparece, não há sistema interno que sustente a ação.',
+        triggers: ['Perda da novidade em um projeto', 'Resultados que demoram', 'Dias de baixa energia emocional', 'Ausência de feedback imediato'],
+        traps: ['"Quando eu estiver mais motivado, eu retomo"', '"Talvez esse projeto não era para mim"', '"Amanhã eu recomeço com força total"'],
+        self_sabotage_cycle: ['Surge uma ideia nova', 'Explosão de energia inicial', 'Desconforto do processo aparece', 'Motivação cai', 'Abandono silencioso', 'Culpa e frustração'],
+        blocking_point: 'O travamento acontece quando a ação deixa de ser estimulante e passa a exigir disciplina.',
+        contradiction: 'Você quer resultados consistentes, mas opera em ciclos de intensidade e abandono.',
+        life_impact: [
+          { pillar: 'Carreira', impact: 'Projetos profissionais são abandonados antes de gerar resultados.' },
+          { pillar: 'Saúde', impact: 'Dietas e exercícios duram dias ou semanas.' },
+          { pillar: 'Finanças', impact: 'Investimentos em cursos e projetos sem retorno.' },
+          { pillar: 'Relacionamentos', impact: 'As pessoas ao redor perdem confiança nas suas promessas.' },
+          { pillar: 'Autoconfiança', impact: 'Cada ciclo interrompido reforça a narrativa de que "não consegue".' },
+        ],
+        exit_strategy: [
+          { step: 'Definir uma única meta micro por dia', detail: 'Reduza a ação ao mínimo viável.' },
+          { step: 'Registrar execução diária', detail: 'Apenas sim/não — sem julgamento.' },
+          { step: 'Eliminar novos projetos por 30 dias', detail: 'Foco total no que já começou.' },
+        ],
+        all_scores: mockScores,
+        direction: 'Sustentação da ação após o desaparecimento da motivação inicial.',
+        combined_title: 'Execução Instável + Autocrítica Excessiva',
+      });
+      if (resultErr) throw resultErr;
+
+      // 4. Create/update central profile
+      const aggregated: Record<string, number> = {};
+      mockScores.forEach(s => { aggregated[s.key] = s.percentage; });
+
+      const { data: existing } = await supabase
+        .from('user_central_profile')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase.from('user_central_profile').update({
+          dominant_patterns: [{ key: 'unstable_execution', score: 72 }, { key: 'low_routine_sustenance', score: 74 }],
+          aggregated_scores: aggregated,
+          tests_completed: 1,
+          last_test_at: new Date().toISOString(),
+          mental_state: 'Entusiasmo intermitente seguido de esgotamento',
+          core_pain: 'Sensação constante de que nunca termina nada',
+          key_unlock_area: 'Sustentação da ação pós-motivação inicial',
+          profile_name: 'O Velocista sem Linha de Chegada',
+        }).eq('user_id', user.id);
+      } else {
+        await supabase.from('user_central_profile').insert({
+          user_id: user.id,
+          dominant_patterns: [{ key: 'unstable_execution', score: 72 }, { key: 'low_routine_sustenance', score: 74 }],
+          aggregated_scores: aggregated,
+          tests_completed: 1,
+          last_test_at: new Date().toISOString(),
+          mental_state: 'Entusiasmo intermitente seguido de esgotamento',
+          core_pain: 'Sensação constante de que nunca termina nada',
+          key_unlock_area: 'Sustentação da ação pós-motivação inicial',
+          profile_name: 'O Velocista sem Linha de Chegada',
+        });
+      }
+
+      toast.success('Dados de teste gerados com sucesso');
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao gerar dados de teste');
+    } finally {
+      setGenerating(false);
+    }
+  };
 
   useEffect(() => {
     if (!user) return;
