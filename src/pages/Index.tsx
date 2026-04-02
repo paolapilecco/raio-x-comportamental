@@ -146,10 +146,11 @@ const Index = () => {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-50px' }}
             transition={{ duration: 0.6 }}
-            className="space-y-3"
+            className="space-y-4"
           >
-            <h2 className="text-2xl md:text-3xl font-serif">Como funciona</h2>
-            <p className="text-sm text-muted-foreground max-w-md mx-auto">
+            <p className="text-[10px] tracking-[0.3em] uppercase text-primary/60 font-semibold">Metodologia</p>
+            <h2 className="text-3xl md:text-4xl">Como funciona</h2>
+            <p className="text-[0.9rem] text-muted-foreground/70 max-w-md mx-auto leading-[1.7]">
               Um sistema em 3 etapas que revela o que você não consegue ver sozinha.
             </p>
           </motion.div>
@@ -178,11 +179,11 @@ const Index = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1, duration: 0.5 }}
-                className="bg-card border border-border rounded-xl p-6 text-left space-y-3 hover:border-primary/20 transition-colors"
+                className="bg-card/80 backdrop-blur-sm border border-border/60 rounded-xl p-7 text-left space-y-3 hover:border-primary/15 transition-colors"
               >
-                <span className="text-xs font-mono text-primary/60 tracking-widest">{item.step}</span>
-                <h3 className="text-base font-serif text-foreground">{item.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                <span className="text-[10px] font-mono text-primary/50 tracking-[0.2em]">{item.step}</span>
+                <h3 className="text-lg text-foreground tracking-[-0.02em]">{item.title}</h3>
+                <p className="text-[0.82rem] text-muted-foreground/70 leading-[1.75]">{item.desc}</p>
               </motion.div>
             ))}
           </div>
