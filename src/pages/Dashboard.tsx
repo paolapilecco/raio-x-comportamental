@@ -81,7 +81,7 @@ const Dashboard = () => {
   const [generating, setGenerating] = useState(false);
 
   const generateTestData = async () => {
-    if (!user || !isAdmin) return;
+    if (!user || !isSuperAdmin) return;
     setGenerating(true);
     try {
       // 1. Create session
