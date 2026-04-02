@@ -21,9 +21,12 @@ const Diagnostic = () => {
   const [step, setStep] = useState<Step>('questionnaire');
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
-  const { user, profile } = useAuth();
+  const { user, profile, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
+
+  const isFreeTest = !moduleSlug || moduleSlug === 'padrao-comportamental';
+  const canAccessTest = isSuperAdmin || isPremium || isFreeTest;
 
   const isPurposeTest = moduleSlug === PURPOSE_SLUG;
 
