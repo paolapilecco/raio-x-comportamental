@@ -33,7 +33,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
           transition={{ delay: 0.4, duration: 0.6 }}
           className="text-lg md:text-xl text-subtle leading-relaxed max-w-xl mx-auto"
         >
-          Descubra com clareza qual padrão comportamental está dirigindo suas decisões, travas e repetições.
+          Uma análise estruturada que identifica os padrões invisíveis que estão dirigindo suas decisões, travas e repetições.
         </motion.p>
 
         <motion.p
