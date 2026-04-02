@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { ScanLine, Crosshair, Eye, Compass, ArrowRight } from 'lucide-react';
+import { ScanLine, Crosshair, Eye, Compass, ArrowRight, Brain, Target, Zap } from 'lucide-react';
 
 const features = [
   { icon: Crosshair, text: 'Identifica seu padrão dominante' },
