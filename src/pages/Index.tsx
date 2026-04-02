@@ -197,9 +197,11 @@ const Index = () => {
           >
             <button
               onClick={handleStart}
-              className="px-10 py-4 bg-primary text-primary-foreground rounded-xl text-base font-medium tracking-wide hover:opacity-90 transition-all duration-200 shadow-lg shadow-primary/10"
+              className="group relative px-12 py-[1.1rem] bg-primary text-primary-foreground rounded-2xl text-[1.05rem] font-semibold tracking-[0.02em] transition-all duration-300 shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] active:translate-y-[0px] flex items-center gap-2.5 overflow-hidden"
             >
-              Iniciar minha análise
+              <span className="relative z-10">Iniciar minha análise</span>
+              <ArrowRight className="w-[1.1rem] h-[1.1rem] relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
+              <div className="absolute inset-0 bg-gradient-to-b from-white/[0.08] to-transparent pointer-events-none rounded-2xl" />
             </button>
           </motion.div>
         </div>
