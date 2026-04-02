@@ -465,7 +465,7 @@ const CentralReport = () => {
 
           {!aiInsights && !insightsLoading && (
             <p className="text-sm text-muted-foreground">
-              A IA analisará todo o seu histórico de testes para gerar interpretações personalizadas, padrões invisíveis e recomendações práticas.
+              A IA analisará todo o seu histórico de leituras para gerar interpretações personalizadas, padrões invisíveis e recomendações práticas.
             </p>
           )}
 
