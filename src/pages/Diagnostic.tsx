@@ -31,6 +31,13 @@ const Diagnostic = () => {
   const isPurposeTest = moduleSlug === PURPOSE_SLUG;
 
   useEffect(() => {
+    if (!canAccessTest) {
+      toast.error('Este teste requer o plano Premium');
+      navigate('/tests');
+    }
+  }, [canAccessTest, navigate]);
+
+  useEffect(() => {
     const fetchModule = async () => {
       if (!moduleSlug) return;
       const { data } = await supabase
