@@ -13,6 +13,7 @@ import DiagnosticHistory from "./pages/DiagnosticHistory";
 import TestCatalog from "./pages/TestCatalog";
 import CentralReport from "./pages/CentralReport";
 import Profile from "./pages/Profile";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
