@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { questions } from '@/data/questions';
+import { questions as defaultQuestions } from '@/data/questions';
 import { Answer } from '@/types/diagnostic';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface QuestionnaireProps {
   onComplete: (answers: Answer[]) => void;
+  questions?: { id: number; text: string }[];
 }
 
 const scaleLabels = [
