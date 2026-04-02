@@ -185,6 +185,44 @@ export type Database = {
         }
         Relationships: []
       }
+      questions: {
+        Row: {
+          axes: string[]
+          created_at: string
+          id: string
+          sort_order: number
+          test_id: string
+          text: string
+          weight: number
+        }
+        Insert: {
+          axes?: string[]
+          created_at?: string
+          id?: string
+          sort_order?: number
+          test_id: string
+          text: string
+          weight?: number
+        }
+        Update: {
+          axes?: string[]
+          created_at?: string
+          id?: string
+          sort_order?: number
+          test_id?: string
+          text?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_modules: {
         Row: {
           category: string
@@ -221,6 +259,68 @@ export type Database = {
           question_count?: number
           slug?: string
           sort_order?: number
+        }
+        Relationships: []
+      }
+      test_results: {
+        Row: {
+          created_at: string
+          id: string
+          normalized_score: Json
+          raw_score: Json
+          test_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          normalized_score?: Json
+          raw_score?: Json
+          test_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          normalized_score?: Json
+          raw_score?: Json
+          test_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_results_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          name: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          name?: string
         }
         Relationships: []
       }
@@ -265,6 +365,36 @@ export type Database = {
           profile_name?: string | null
           tests_completed?: number
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profile: {
+        Row: {
+          behavioral_profile: Json
+          dominant_pattern: string | null
+          emotional_profile: Json
+          id: string
+          last_updated: string
+          secondary_patterns: string[] | null
+          user_id: string
+        }
+        Insert: {
+          behavioral_profile?: Json
+          dominant_pattern?: string | null
+          emotional_profile?: Json
+          id?: string
+          last_updated?: string
+          secondary_patterns?: string[] | null
+          user_id: string
+        }
+        Update: {
+          behavioral_profile?: Json
+          dominant_pattern?: string | null
+          emotional_profile?: Json
+          id?: string
+          last_updated?: string
+          secondary_patterns?: string[] | null
           user_id?: string
         }
         Relationships: []
