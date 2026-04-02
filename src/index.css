@@ -151,8 +151,24 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'DM Serif Display', serif;
+    font-family: 'Instrument Serif', serif;
     color: hsl(var(--heading));
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+  }
+
+  h1 {
+    letter-spacing: -0.035em;
+    line-height: 1.05;
+  }
+
+  h2 {
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+  }
+
+  p {
+    line-height: 1.75;
   }
 }
 
