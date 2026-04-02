@@ -136,22 +136,34 @@ const TestCatalog = () => {
           {filtered.map((mod, i) => {
             const Icon = iconMap[mod.icon] || Brain;
             const isCompleted = completedModules.has(mod.id);
+            const isFreeTest = mod.slug === 'padrao-comportamental';
+            const canAccess = isSuperAdmin || isPremium || isFreeTest;
             return (
               <motion.div
                 key={mod.id}
                 {...fadeUp}
                 transition={{ delay: 0.05 * (i + 1), duration: 0.4 }}
-                className="bg-card/70 backdrop-blur-sm rounded-2xl border border-border/50 p-5 hover:border-primary/20 transition-all duration-300 cursor-pointer group relative"
-                onClick={() => navigate(`/diagnostic/${mod.slug}`)}
+                className={`bg-card/70 backdrop-blur-sm rounded-2xl border p-5 transition-all duration-300 relative ${
+                  canAccess
+                    ? 'border-border/50 hover:border-primary/20 cursor-pointer group'
+                    : 'border-border/30 opacity-70 cursor-default'
+                }`}
+                onClick={() => canAccess && navigate(`/diagnostic/${mod.slug}`)}
               >
-                {isCompleted && (
+                {isCompleted && canAccess && (
                   <div className="absolute top-3 right-3">
                     <CheckCircle2 className="w-4.5 h-4.5 text-primary/60" />
                   </div>
                 )}
+                {!canAccess && (
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
+                    <Crown className="w-3 h-3 text-amber-500/70" />
+                    <span className="text-[0.65rem] font-semibold text-amber-500/80 tracking-wide uppercase">Premium</span>
+                  </div>
+                )}
                 <div className="space-y-4">
                   <div className="p-2.5 rounded-xl bg-primary/[0.04] border border-primary/10 w-fit">
-                    <Icon className="w-5 h-5 text-primary/50" />
+                    {canAccess ? <Icon className="w-5 h-5 text-primary/50" /> : <Lock className="w-5 h-5 text-muted-foreground/40" />}
                   </div>
                   <div>
                     <h3 className="text-[0.95rem] font-medium text-foreground/85 mb-1.5 tracking-[-0.01em]">{mod.name}</h3>
@@ -163,6 +175,7 @@ const TestCatalog = () => {
                       ~{Math.ceil(mod.question_count * 0.5)} min
                     </span>
                     <span>{mod.question_count} itens</span>
+                    {!canAccess && <span className="text-amber-500/60 font-medium">Requer Premium</span>}
                   </div>
                 </div>
               </motion.div>
