@@ -141,6 +141,11 @@
     -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 30%, black 0%, transparent 80%);
   }
 
+  #root {
+    position: relative;
+    z-index: 1;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: 'DM Serif Display', serif;
     color: hsl(var(--heading));
