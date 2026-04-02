@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { ScanLine, Crosshair, Eye, Compass, ArrowRight } from 'lucide-react';
+import { ScanLine, Crosshair, Eye, Compass, ArrowRight, Brain, Target, Zap } from 'lucide-react';
 
 const features = [
   { icon: Crosshair, text: 'Identifica seu padrão dominante' },
@@ -136,6 +136,46 @@ const Index = () => {
           >
             Gratuito · Sem cartão de crédito · Resultados imediatos
           </motion.p>
+        </div>
+      </section>
+
+      {/* Value proposition */}
+      <section className="px-4 pb-28">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: Brain,
+                label: 'Leitura atual',
+                text: 'Entenda como sua mente está funcionando hoje',
+              },
+              {
+                icon: Target,
+                label: 'Padrão dominante',
+                text: 'Descubra o que está dirigindo seus bloqueios e repetições',
+              },
+              {
+                icon: Zap,
+                label: 'Direção prática',
+                text: 'Saiba qual área destravar primeiro para gerar efeito no resto',
+              },
+            ].map((card, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: '-40px' }}
+                transition={{ delay: i * 0.12, duration: 0.5 }}
+                className="relative bg-card/70 backdrop-blur-sm border border-border/50 rounded-2xl p-7 space-y-4 hover:border-primary/15 transition-colors duration-300"
+              >
+                <div className="w-10 h-10 rounded-xl bg-primary/[0.06] flex items-center justify-center">
+                  <card.icon className="w-[1.15rem] h-[1.15rem] text-primary/60" />
+                </div>
+                <p className="text-[0.7rem] tracking-[0.25em] uppercase text-primary/50 font-semibold">{card.label}</p>
+                <p className="text-[0.92rem] text-foreground/75 leading-[1.7]">{card.text}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
