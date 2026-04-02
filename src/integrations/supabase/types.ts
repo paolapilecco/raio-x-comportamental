@@ -128,21 +128,32 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          test_module_id: string | null
           user_id: string
         }
         Insert: {
           completed_at?: string | null
           created_at?: string
           id?: string
+          test_module_id?: string | null
           user_id: string
         }
         Update: {
           completed_at?: string | null
           created_at?: string
           id?: string
+          test_module_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_sessions_test_module_id_fkey"
+            columns: ["test_module_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -169,6 +180,90 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      test_modules: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          icon: string
+          id: string
+          is_active: boolean
+          name: string
+          question_count: number
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          question_count?: number
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          question_count?: number
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      user_central_profile: {
+        Row: {
+          aggregated_scores: Json
+          core_pain: string | null
+          created_at: string
+          dominant_patterns: Json
+          id: string
+          key_unlock_area: string | null
+          last_test_at: string | null
+          mental_state: string | null
+          profile_name: string | null
+          tests_completed: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          aggregated_scores?: Json
+          core_pain?: string | null
+          created_at?: string
+          dominant_patterns?: Json
+          id?: string
+          key_unlock_area?: string | null
+          last_test_at?: string | null
+          mental_state?: string | null
+          profile_name?: string | null
+          tests_completed?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          aggregated_scores?: Json
+          core_pain?: string | null
+          created_at?: string
+          dominant_patterns?: Json
+          id?: string
+          key_unlock_area?: string | null
+          last_test_at?: string | null
+          mental_state?: string | null
+          profile_name?: string | null
+          tests_completed?: number
           updated_at?: string
           user_id?: string
         }
