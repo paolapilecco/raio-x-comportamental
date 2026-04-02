@@ -135,7 +135,7 @@ const Profile = () => {
                   ? new Date(centralProfile.last_test_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
                   : '-'}
               </p>
-              <p className="text-xs text-muted-foreground">Último teste</p>
+              <p className="text-xs text-muted-foreground">Última leitura</p>
             </div>
           </div>
         </motion.div>

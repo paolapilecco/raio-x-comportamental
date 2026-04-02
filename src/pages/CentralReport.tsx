@@ -564,7 +564,7 @@ const CentralReport = () => {
             Voltar ao Dashboard
           </button>
           <button onClick={() => navigate('/tests')} className="px-8 py-3 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
-            Fazer novo teste
+            Nova leitura
           </button>
         </motion.div>
       </div>

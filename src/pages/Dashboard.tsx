@@ -408,7 +408,7 @@ const Dashboard = () => {
             onClick={() => navigate('/tests')}
             className="flex items-center justify-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            <LayoutGrid className="w-4 h-4" /> Fazer novo teste
+            <LayoutGrid className="w-4 h-4" /> Nova leitura
           </button>
           <button
             onClick={() => navigate('/history')}

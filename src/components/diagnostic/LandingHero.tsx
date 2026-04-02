@@ -64,7 +64,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
           transition={{ delay: 1, duration: 0.5 }}
           className="text-xs text-subtle pt-4"
         >
-          Múltiplos módulos · Perfil Central · Análise contínua
+          Múltiplos módulos · Perfil Central · Leitura contínua
         </motion.p>
       </motion.div>
     </div>
