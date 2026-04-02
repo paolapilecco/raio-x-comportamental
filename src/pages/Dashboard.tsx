@@ -72,7 +72,7 @@ const radarAxisLabels: Record<string, string> = {
 };
 
 const Dashboard = () => {
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
@@ -137,7 +137,7 @@ const Dashboard = () => {
     );
   }
 
-  if (!latestResult) {
+  if (!latestResult && !isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center space-y-6 max-w-md">
@@ -235,6 +235,21 @@ const Dashboard = () => {
             </button>
           </div>
         </motion.div>
+
+        {/* Admin empty state notice */}
+        {isAdmin && !latestResult && (
+          <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6 text-center">
+            <p className="text-[0.85rem] text-muted-foreground/60 leading-[1.7]">
+              Você ainda não realizou análises. Os dados aparecerão conforme os testes forem feitos.
+            </p>
+            <button
+              onClick={() => navigate('/tests')}
+              className="mt-4 px-6 py-2.5 bg-primary/10 text-primary rounded-xl text-[0.8rem] font-medium hover:bg-primary/15 transition-colors"
+            >
+              Ver módulos disponíveis
+            </button>
+          </motion.div>
+        )}
 
         {/* Central Profile Card */}
         {centralProfile && centralProfile.tests_completed > 0 && (
