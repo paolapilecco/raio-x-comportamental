@@ -239,7 +239,7 @@ const CentralReport = () => {
           </button>
           <div>
             <h1 className="text-2xl md:text-3xl font-serif">Relatório Central</h1>
-            <p className="text-sm text-muted-foreground">Análise unificada de {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'teste' : 'testes'}</p>
+            <p className="text-sm text-muted-foreground">Análise unificada de {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}</p>
           </div>
         </motion.div>
 
