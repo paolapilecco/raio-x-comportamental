@@ -132,13 +132,13 @@ const Auth = () => {
                 </button>
               )}
             </div>
-          )
+          )}
           <button
             type="submit"
             disabled={submitting}
             className="w-full h-12 bg-primary text-primary-foreground rounded-xl text-[0.9rem] font-semibold tracking-[0.02em] hover:opacity-90 transition-all duration-300 shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.3)] disabled:opacity-50"
           >
-            {submitting ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
+            {submitting ? 'Aguarde...' : forgotMode ? 'Enviar link' : isLogin ? 'Entrar' : 'Criar conta'}
           </button>
 
           <div className="relative my-3">
