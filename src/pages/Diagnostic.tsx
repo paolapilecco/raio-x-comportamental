@@ -6,28 +6,27 @@ import Report from '@/components/diagnostic/Report';
 import { Answer, DiagnosticResult } from '@/types/diagnostic';
 import { analyzeAnswers } from '@/lib/analysis';
 import { analyzePurposeAnswers } from '@/lib/purposeAnalysis';
-import { purposeQuestions } from '@/data/purposeQuestions';
 import { updateCentralProfile } from '@/lib/centralProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
-type Step = 'questionnaire' | 'analyzing' | 'report';
+type Step = 'loading' | 'questionnaire' | 'analyzing' | 'report';
 
 const PURPOSE_SLUG = 'proposito-sentido';
 
 const Diagnostic = () => {
-  const [step, setStep] = useState<Step>('questionnaire');
+  const [step, setStep] = useState<Step>('loading');
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
+  const [dbQuestions, setDbQuestions] = useState<{ id: number; text: string }[]>([]);
   const { user, profile, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
 
   const isFreeTest = !moduleSlug || moduleSlug === 'padrao-comportamental';
   const canAccessTest = isSuperAdmin || isPremium || isFreeTest;
-
   const isPurposeTest = moduleSlug === PURPOSE_SLUG;
 
   useEffect(() => {
@@ -37,18 +36,43 @@ const Diagnostic = () => {
     }
   }, [canAccessTest, navigate]);
 
+  // Fetch module and its questions from DB
   useEffect(() => {
-    const fetchModule = async () => {
-      if (!moduleSlug) return;
-      const { data } = await supabase
+    const fetchModuleAndQuestions = async () => {
+      const slug = moduleSlug || 'padrao-comportamental';
+
+      const { data: mod } = await supabase
         .from('test_modules')
         .select('id')
-        .eq('slug', moduleSlug)
+        .eq('slug', slug)
         .maybeSingle();
-      if (data) setModuleId(data.id);
+
+      if (!mod) {
+        toast.error('Teste não encontrado');
+        navigate('/tests');
+        return;
+      }
+
+      setModuleId(mod.id);
+
+      const { data: questions, error } = await supabase
+        .from('questions')
+        .select('sort_order, text')
+        .eq('test_id', mod.id)
+        .order('sort_order', { ascending: true });
+
+      if (error || !questions || questions.length === 0) {
+        toast.error('Perguntas não encontradas para este teste');
+        navigate('/tests');
+        return;
+      }
+
+      setDbQuestions(questions.map((q, i) => ({ id: q.sort_order || i + 1, text: q.text })));
+      setStep('questionnaire');
     };
-    fetchModule();
-  }, [moduleSlug]);
+
+    fetchModuleAndQuestions();
+  }, [moduleSlug, navigate]);
 
   const saveToDatabase = useCallback(async (answers: Answer[], analysisResult: DiagnosticResult) => {
     if (!user) return;
@@ -116,7 +140,6 @@ const Diagnostic = () => {
 
       if (isPurposeTest) {
         const purposeResult = analyzePurposeAnswers(answers);
-        // Map PurposeResult to DiagnosticResult shape for the Report component
         analysisResult = {
           dominantPattern: {
             key: purposeResult.dominantPattern.key as any,
@@ -199,11 +222,16 @@ const Diagnostic = () => {
   return (
     <div className="min-h-screen bg-background">
       <AnimatePresence mode="wait">
-        {step === 'questionnaire' && (
+        {step === 'loading' && (
+          <div key="loading" className="min-h-screen flex items-center justify-center">
+            <div className="animate-pulse text-muted-foreground text-sm tracking-wide">Carregando perguntas...</div>
+          </div>
+        )}
+        {step === 'questionnaire' && dbQuestions.length > 0 && (
           <Questionnaire
             key="q"
             onComplete={handleComplete}
-            questions={isPurposeTest ? purposeQuestions : undefined}
+            questions={dbQuestions}
           />
         )}
         {step === 'analyzing' && <AnalyzingScreen key="a" />}
