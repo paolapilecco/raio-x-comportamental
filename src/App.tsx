@@ -11,6 +11,7 @@ import Diagnostic from "./pages/Diagnostic";
 import Dashboard from "./pages/Dashboard";
 import DiagnosticHistory from "./pages/DiagnosticHistory";
 import TestCatalog from "./pages/TestCatalog";
+import CentralReport from "./pages/CentralReport";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/diagnostic" element={<ProtectedRoute><RequireProfile><Diagnostic /></RequireProfile></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><RequireProfile><Dashboard /></RequireProfile></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><RequireProfile><DiagnosticHistory /></RequireProfile></ProtectedRoute>} />
+            <Route path="/central-report" element={<ProtectedRoute><RequireProfile><CentralReport /></RequireProfile></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
