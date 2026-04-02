@@ -72,7 +72,7 @@ const DiagnosticHistory = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -80,7 +80,6 @@ const DiagnosticHistory = () => {
   const latest = history[0];
   const previous = history.length > 1 ? history[1] : null;
 
-  // Comparison radar data
   const comparisonData = latest ? ((latest.all_scores as any[]) || []).map((s: any) => {
     const prevScore = previous ? ((previous.all_scores as any[]) || []).find((ps: any) => ps.key === s.key) : null;
     return {
@@ -105,43 +104,45 @@ const DiagnosticHistory = () => {
     <div className="min-h-screen px-4 py-8 md:py-12">
       <div className="max-w-4xl mx-auto space-y-8">
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => navigate('/dashboard')} className="text-muted-foreground/60 hover:text-foreground/80 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl md:text-3xl">Histórico de Diagnósticos</h1>
+          <div>
+            <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Evolução</p>
+            <h1 className="text-2xl md:text-3xl mt-1">Histórico de Leituras</h1>
+          </div>
         </motion.div>
 
         {history.length === 0 ? (
           <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="text-center py-16">
-            <p className="text-muted-foreground">Nenhum diagnóstico realizado ainda.</p>
+            <p className="text-muted-foreground/60 text-[0.9rem]">Nenhuma leitura realizada ainda.</p>
           </motion.div>
         ) : (
           <>
-            {/* Evolution Comparison */}
             {previous && (
-              <motion.div {...fadeUp} transition={{ delay: 0.05, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+              <motion.div {...fadeUp} transition={{ delay: 0.05, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6 md:p-8">
                 <h3 className="text-xl mb-2">Comparação de Evolução</h3>
                 <div className="flex items-center gap-3 mb-6">
                   {trend === 'improved' && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <TrendingDown className="w-4 h-4 text-primary" />
-                      <span className="text-primary">Intensidade reduziu</span>
+                    <div className="flex items-center gap-2 text-[0.8rem]">
+                      <TrendingDown className="w-4 h-4 text-primary/70" />
+                      <span className="text-primary/80">Intensidade reduziu</span>
                     </div>
                   )}
                   {trend === 'worsened' && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <TrendingUp className="w-4 h-4 text-destructive" />
-                      <span className="text-destructive">Intensidade aumentou</span>
+                    <div className="flex items-center gap-2 text-[0.8rem]">
+                      <TrendingUp className="w-4 h-4 text-destructive/70" />
+                      <span className="text-destructive/80">Intensidade aumentou</span>
                     </div>
                   )}
                   {trend === 'stable' && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Minus className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Intensidade estável</span>
+                    <div className="flex items-center gap-2 text-[0.8rem]">
+                      <Minus className="w-4 h-4 text-muted-foreground/50" />
+                      <span className="text-muted-foreground/60">Intensidade estável</span>
                     </div>
                   )}
                   {latest.dominant_pattern !== previous.dominant_pattern && (
-                    <span className="text-xs bg-accent/10 text-accent px-2 py-1 rounded">
+                    <span className="text-[10px] tracking-[0.15em] uppercase bg-accent/[0.08] text-accent/80 px-2.5 py-1 rounded-full font-medium">
                       Padrão dominante mudou
                     </span>
                   )}
@@ -149,26 +150,25 @@ const DiagnosticHistory = () => {
                 <ResponsiveContainer width="100%" height={300}>
                   <RadarChart data={comparisonData}>
                     <PolarGrid stroke="hsl(var(--border))" />
-                    <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                    <Radar name="Atual" dataKey="atual" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} />
-                    <Radar name="Anterior" dataKey="anterior" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.1} strokeWidth={2} strokeDasharray="5 5" />
+                    <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                    <Radar name="Atual" dataKey="atual" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.12} strokeWidth={1.5} />
+                    <Radar name="Anterior" dataKey="anterior" stroke="hsl(var(--accent))" fill="hsl(var(--accent))" fillOpacity={0.08} strokeWidth={1.5} strokeDasharray="5 5" />
                     <Legend />
                   </RadarChart>
                 </ResponsiveContainer>
               </motion.div>
             )}
 
-            {/* History List */}
             <motion.div {...fadeUp} transition={{ delay: 0.1, duration: 0.5 }} className="space-y-4">
-              <h3 className="text-xl">Todos os Diagnósticos</h3>
+              <h3 className="text-xl">Todas as Leituras</h3>
               {history.map((entry, i) => (
-                <div key={entry.id} className="bg-card rounded-xl border border-border p-5 shadow-sm flex items-center justify-between">
+                <div key={entry.id} className="bg-card/70 backdrop-blur-sm rounded-2xl border border-border/50 p-5 flex items-center justify-between hover:border-primary/15 transition-colors">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground">{entry.combined_title}</span>
-                      {i === 0 && <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">Mais recente</span>}
+                      <span className="font-medium text-foreground/85 text-[0.9rem]">{entry.combined_title}</span>
+                      {i === 0 && <span className="text-[10px] tracking-[0.15em] uppercase bg-primary/[0.06] text-primary/60 px-2 py-0.5 rounded-full font-semibold">Mais recente</span>}
                     </div>
-                    <div className="flex items-center gap-3 text-xs text-subtle">
+                    <div className="flex items-center gap-3 text-[0.75rem] text-muted-foreground/50">
                       <span className="flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {new Date(entry.created_at).toLocaleDateString('pt-BR')}
@@ -176,7 +176,7 @@ const DiagnosticHistory = () => {
                       <span>Intensidade: {intensityLabel[entry.intensity] || entry.intensity}</span>
                     </div>
                   </div>
-                  <span className="text-xs text-subtle italic hidden sm:block">{entry.profile_name}</span>
+                  <span className="text-[0.75rem] text-muted-foreground/40 italic hidden sm:block">{entry.profile_name}</span>
                 </div>
               ))}
             </motion.div>
@@ -186,9 +186,9 @@ const DiagnosticHistory = () => {
         <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="text-center pb-12">
           <button
             onClick={() => navigate('/diagnostic')}
-            className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            className="px-10 py-[1rem] bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold tracking-[0.02em] shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300"
           >
-            Refazer diagnóstico
+            Iniciar nova leitura
           </button>
         </motion.div>
       </div>

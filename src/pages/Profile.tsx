@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Calendar, Brain, Layers, TrendingUp } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Layers, TrendingUp } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import type { PatternKey } from '@/types/diagnostic';
 
@@ -76,7 +76,7 @@ const Profile = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -88,23 +88,26 @@ const Profile = () => {
     <div className="min-h-screen px-4 py-8 md:py-12">
       <div className="max-w-3xl mx-auto space-y-8">
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
+          <button onClick={() => navigate('/dashboard')} className="text-muted-foreground/60 hover:text-foreground/80 transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-2xl md:text-3xl font-serif">Meu Perfil</h1>
+          <div>
+            <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Visão Pessoal</p>
+            <h1 className="text-2xl md:text-3xl mt-1">Meu Perfil</h1>
+          </div>
         </motion.div>
 
         {/* User Info */}
-        <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
+        <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-7 h-7 text-primary" />
+            <div className="w-14 h-14 rounded-2xl bg-primary/[0.06] border border-primary/12 flex items-center justify-center">
+              <User className="w-6 h-6 text-primary/50" />
             </div>
             <div>
-              <h2 className="text-xl font-medium text-foreground">{profile?.name || 'Usuário'}</h2>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <h2 className="text-xl font-medium text-foreground/90">{profile?.name || 'Usuário'}</h2>
+              <p className="text-[0.8rem] text-muted-foreground/60">{user?.email}</p>
               {profile?.birth_date && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                <p className="text-[0.75rem] text-muted-foreground/45 flex items-center gap-1 mt-1">
                   <Calendar className="w-3 h-3" />
                   {new Date(profile.birth_date).toLocaleDateString('pt-BR')}
                   {profile.age != null && ` · ${profile.age} anos`}
@@ -115,58 +118,58 @@ const Profile = () => {
         </motion.div>
 
         {/* Progress */}
-        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-serif">Progresso</h3>
+        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <TrendingUp className="w-5 h-5 text-primary/60" />
+            <h3 className="text-lg">Progresso</h3>
           </div>
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
-              <p className="text-2xl font-serif text-foreground">{centralProfile?.tests_completed || 0}</p>
-              <p className="text-xs text-muted-foreground">Leituras feitas</p>
+              <p className="text-2xl text-foreground/85">{centralProfile?.tests_completed || 0}</p>
+              <p className="text-[0.7rem] text-muted-foreground/50 tracking-[0.1em] uppercase mt-1">Leituras</p>
             </div>
             <div>
-              <p className="text-2xl font-serif text-foreground">{completedCount}/{totalModules}</p>
-              <p className="text-xs text-muted-foreground">Módulos</p>
+              <p className="text-2xl text-foreground/85">{completedCount}/{totalModules}</p>
+              <p className="text-[0.7rem] text-muted-foreground/50 tracking-[0.1em] uppercase mt-1">Módulos</p>
             </div>
             <div>
-              <p className="text-2xl font-serif text-foreground">
+              <p className="text-2xl text-foreground/85">
                 {centralProfile?.last_test_at
                   ? new Date(centralProfile.last_test_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
                   : '-'}
               </p>
-              <p className="text-xs text-muted-foreground">Última leitura</p>
+              <p className="text-[0.7rem] text-muted-foreground/50 tracking-[0.1em] uppercase mt-1">Última</p>
             </div>
           </div>
         </motion.div>
 
         {/* Central Profile Summary */}
         {centralProfile && dominantDef && (
-          <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 p-6 shadow-sm">
+          <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="bg-gradient-to-br from-primary/[0.04] to-primary/[0.08] rounded-2xl border border-primary/15 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <Layers className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-serif">Perfil Comportamental</h3>
+              <Layers className="w-5 h-5 text-primary/60" />
+              <h3 className="text-lg">Perfil Comportamental</h3>
             </div>
             <div className="space-y-3">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Padrão Dominante</p>
-                <p className="text-base font-medium text-foreground">{dominantDef.label}</p>
+                <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/50 mb-1 font-medium">Padrão Dominante</p>
+                <p className="text-base font-medium text-foreground/85">{dominantDef.label}</p>
               </div>
               {centralProfile.core_pain && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Dor Central</p>
-                  <p className="text-sm text-foreground/80">{centralProfile.core_pain}</p>
+                  <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/50 mb-1 font-medium">Dor Central</p>
+                  <p className="text-[0.82rem] text-foreground/70 leading-[1.6]">{centralProfile.core_pain}</p>
                 </div>
               )}
               {centralProfile.key_unlock_area && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Área-chave</p>
-                  <p className="text-sm text-foreground/80">{centralProfile.key_unlock_area}</p>
+                  <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/50 mb-1 font-medium">Área-chave</p>
+                  <p className="text-[0.82rem] text-foreground/70 leading-[1.6]">{centralProfile.key_unlock_area}</p>
                 </div>
               )}
               <button
                 onClick={() => navigate('/central-report')}
-                className="mt-2 text-sm text-primary hover:underline"
+                className="mt-2 text-[0.82rem] text-primary/70 hover:text-primary hover:underline transition-colors"
               >
                 Ver relatório central completo →
               </button>
@@ -176,10 +179,10 @@ const Profile = () => {
 
         {/* Actions */}
         <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="flex flex-col sm:flex-row gap-4 justify-center pb-12">
-          <button onClick={() => navigate('/tests')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+          <button onClick={() => navigate('/tests')} className="px-10 py-[1rem] bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold tracking-[0.02em] shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300">
             Ver módulos
           </button>
-          <button onClick={() => navigate('/history')} className="px-8 py-3 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
+          <button onClick={() => navigate('/history')} className="px-10 py-[1rem] border border-border/50 rounded-2xl text-[0.85rem] font-medium text-muted-foreground/70 hover:text-foreground/80 hover:border-border hover:bg-card/60 transition-all duration-300">
             Ver histórico
           </button>
         </motion.div>

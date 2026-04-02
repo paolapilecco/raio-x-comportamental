@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, RefreshCw, ArrowRight, Download, LayoutGrid, Layers } from 'lucide-react';
+import { Brain, AlertTriangle, Eye, Target, Compass, LogOut, History, ArrowRight, Download, LayoutGrid, Layers, User } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
@@ -82,7 +82,6 @@ const Dashboard = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      // Fetch central profile
       const { data: cp } = await supabase
         .from('user_central_profile')
         .select('*')
@@ -102,7 +101,6 @@ const Dashboard = () => {
         });
       }
 
-      // Fetch latest result
       const { data: sessions } = await supabase
         .from('diagnostic_sessions')
         .select('id')
@@ -134,7 +132,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
@@ -143,11 +141,11 @@ const Dashboard = () => {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} transition={{ duration: 0.6 }} className="text-center space-y-6 max-w-md">
-          <h1 className="text-3xl font-serif">Bem-vindo, {profile?.name?.split(' ')[0]}</h1>
-          <p className="text-muted-foreground">Você ainda não completou nenhuma leitura. Escolha um módulo para começar seu raio-x comportamental.</p>
+          <h1 className="text-3xl md:text-4xl">Bem-vindo, {profile?.name?.split(' ')[0]}</h1>
+          <p className="text-[0.9rem] text-muted-foreground/70 leading-[1.7]">Você ainda não completou nenhuma leitura. Escolha um módulo para começar seu raio-x comportamental.</p>
           <button
             onClick={() => navigate('/tests')}
-            className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            className="px-10 py-[1rem] bg-primary text-primary-foreground rounded-2xl text-[0.95rem] font-semibold tracking-[0.02em] shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300"
           >
             Ver módulos disponíveis
           </button>
@@ -158,7 +156,6 @@ const Dashboard = () => {
 
   const allScores = (latestResult.all_scores as any[]) || [];
 
-  // Use central profile aggregated scores for radar if available
   const radarData = centralProfile
     ? Object.entries(centralProfile.aggregated_scores).map(([key, value]) => ({
         axis: radarAxisLabels[key] || key,
@@ -188,13 +185,20 @@ const Dashboard = () => {
         {/* Header */}
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Olá, {profile?.name?.split(' ')[0]}</p>
-            <h1 className="text-2xl md:text-3xl font-serif">Dashboard</h1>
+            <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Painel de Leitura</p>
+            <h1 className="text-2xl md:text-3xl mt-1">Olá, {profile?.name?.split(' ')[0]}</h1>
           </div>
-          <div className="flex items-center gap-3 flex-wrap justify-end">
-            <button onClick={() => navigate('/tests')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <LayoutGrid className="w-4 h-4" /> Módulos
-            </button>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {[
+              { icon: LayoutGrid, label: 'Módulos', path: '/tests' },
+              { icon: Layers, label: 'Relatório', path: '/central-report' },
+              { icon: History, label: 'Histórico', path: '/history' },
+              { icon: User, label: 'Perfil', path: '/profile' },
+            ].map((item) => (
+              <button key={item.path} onClick={() => navigate(item.path)} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/60 hover:text-foreground/80 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-card/60">
+                <item.icon className="w-3.5 h-3.5" /> {item.label}
+              </button>
+            ))}
             <button onClick={() => {
               const dominantDef = patternDefinitions[latestResult.dominant_pattern as PatternKey];
               const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions[k as PatternKey]).filter(Boolean);
@@ -223,46 +227,40 @@ const Dashboard = () => {
                 whatNotToDo: dominantDef?.whatNotToDo || [],
               };
               generateDiagnosticPdf(diagResult, profile?.name);
-            }} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <Download className="w-4 h-4" /> PDF
+            }} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/60 hover:text-foreground/80 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-card/60">
+              <Download className="w-3.5 h-3.5" /> PDF
             </button>
-            <button onClick={() => navigate('/central-report')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <Layers className="w-4 h-4" /> Relatório Central
-            </button>
-            <button onClick={() => navigate('/history')} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <History className="w-4 h-4" /> Histórico
-            </button>
-            <button onClick={handleSignOut} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-              <LogOut className="w-4 h-4" /> Sair
+            <button onClick={handleSignOut} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/60 hover:text-foreground/80 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-card/60">
+              <LogOut className="w-3.5 h-3.5" /> Sair
             </button>
           </div>
         </motion.div>
 
         {/* Central Profile Card */}
         {centralProfile && centralProfile.tests_completed > 0 && (
-          <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 p-6 md:p-8 shadow-sm">
+          <motion.div {...fadeUp} transition={{ delay: 0.03, duration: 0.5 }} className="bg-gradient-to-br from-primary/[0.04] to-primary/[0.08] rounded-2xl border border-primary/15 p-6 md:p-8">
             <div className="flex items-center gap-3 mb-4">
-              <Layers className="w-5 h-5 text-primary" />
-              <h3 className="text-xl font-serif">Perfil Central Unificado</h3>
-              <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded ml-auto">
-                {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura realizada' : 'leituras realizadas'}
+              <Layers className="w-5 h-5 text-primary/60" />
+              <h3 className="text-xl">Perfil Central Unificado</h3>
+              <span className="text-[10px] tracking-[0.2em] uppercase bg-primary/[0.08] text-primary/70 px-3 py-1 rounded-full ml-auto font-semibold">
+                {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}
               </span>
             </div>
             <div className="grid sm:grid-cols-3 gap-4">
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Perfil</p>
+                <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/50 mb-1 font-medium">Perfil</p>
                 <p className="text-lg font-medium text-foreground">{centralProfile.profile_name || '-'}</p>
               </div>
               {centralProfile.core_pain && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Dor Central</p>
-                  <p className="text-sm text-foreground/80">{centralProfile.core_pain.slice(0, 100)}...</p>
+                  <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/50 mb-1 font-medium">Dor Central</p>
+                  <p className="text-[0.82rem] text-foreground/75 leading-[1.6]">{centralProfile.core_pain.slice(0, 100)}...</p>
                 </div>
               )}
               {centralProfile.key_unlock_area && (
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Área-chave</p>
-                  <p className="text-sm text-foreground/80">{centralProfile.key_unlock_area.slice(0, 100)}...</p>
+                  <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/50 mb-1 font-medium">Área-chave</p>
+                  <p className="text-[0.82rem] text-foreground/75 leading-[1.6]">{centralProfile.key_unlock_area.slice(0, 100)}...</p>
                 </div>
               )}
             </div>
@@ -270,52 +268,50 @@ const Dashboard = () => {
         )}
 
         {/* Current State Summary */}
-        <motion.div {...fadeUp} transition={{ delay: 0.05, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+        <motion.div {...fadeUp} transition={{ delay: 0.05, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6 md:p-8">
           <div className="flex items-center gap-3 mb-4">
-            <Brain className="w-5 h-5 text-primary" />
-            <h3 className="text-xl font-serif">Último Diagnóstico</h3>
+            <Brain className="w-5 h-5 text-primary/60" />
+            <h3 className="text-xl">Última Leitura</h3>
           </div>
           <div className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl font-serif text-foreground">{latestResult.profile_name}</span>
+            <span className="text-2xl text-foreground">{latestResult.profile_name}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[0.8rem] text-muted-foreground/60">Padrão dominante:</span>
+              <span className="text-[0.8rem] font-medium text-foreground/80">{latestResult.combined_title}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Padrão dominante:</span>
-              <span className="text-sm font-medium text-foreground">{latestResult.combined_title}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">Intensidade:</span>
-              <span className="text-sm font-semibold" style={{ color: intensityColor[latestResult.intensity] }}>
+              <span className="text-[0.8rem] text-muted-foreground/60">Intensidade:</span>
+              <span className="text-[0.8rem] font-semibold" style={{ color: intensityColor[latestResult.intensity] }}>
                 {intensityLabel[latestResult.intensity] || latestResult.intensity}
               </span>
             </div>
-            <p className="text-sm text-foreground/70 leading-relaxed mt-2">{latestResult.state_summary}</p>
+            <p className="text-[0.85rem] text-foreground/65 leading-[1.75] mt-2">{latestResult.state_summary}</p>
           </div>
         </motion.div>
 
         {/* Charts */}
         <div className="grid md:grid-cols-2 gap-6">
-          <motion.div {...fadeUp} transition={{ delay: 0.1, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <h3 className="text-lg mb-1 font-serif">Gráfico de Funcionamento</h3>
+          <motion.div {...fadeUp} transition={{ delay: 0.1, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6">
+            <h3 className="text-lg mb-1">Gráfico de Funcionamento</h3>
             {centralProfile && centralProfile.tests_completed > 1 && (
-              <p className="text-xs text-muted-foreground mb-3">Agregado de {centralProfile.tests_completed} leituras</p>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/50 mb-3 font-medium">Agregado de {centralProfile.tests_completed} leituras</p>
             )}
             <ResponsiveContainer width="100%" height={280}>
               <RadarChart data={radarData}>
                 <PolarGrid stroke="hsl(var(--border))" />
-                <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                <Radar name="Intensidade" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} />
+                <PolarAngleAxis dataKey="axis" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                <Radar name="Intensidade" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.12} strokeWidth={1.5} />
               </RadarChart>
             </ResponsiveContainer>
           </motion.div>
 
-          <motion.div {...fadeUp} transition={{ delay: 0.15, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <h3 className="text-lg mb-4 font-serif">Eixos Comportamentais</h3>
+          <motion.div {...fadeUp} transition={{ delay: 0.15, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6">
+            <h3 className="text-lg mb-4">Eixos Comportamentais</h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={pillarData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} />
                 <Tooltip />
                 <Bar dataKey="value" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -324,54 +320,54 @@ const Dashboard = () => {
         </div>
 
         {/* Self-sabotage Cycle */}
-        <motion.div {...fadeUp} transition={{ delay: 0.2, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+        <motion.div {...fadeUp} transition={{ delay: 0.2, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6 md:p-8">
           <div className="flex items-center gap-3 mb-4">
-            <Target className="w-5 h-5 text-primary" />
-            <h3 className="text-xl font-serif">Ciclo de Comportamento</h3>
+            <Target className="w-5 h-5 text-primary/60" />
+            <h3 className="text-xl">Ciclo de Comportamento</h3>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {cycle.map((step, i) => (
               <div key={i} className="flex items-center gap-2">
-                <span className={`px-3 py-1.5 rounded-lg text-xs font-medium border ${
-                  i === Math.floor(cycle.length / 2) ? 'bg-destructive/10 border-destructive/30 text-destructive' : 'bg-muted/50 border-border text-foreground/80'
+                <span className={`px-3 py-1.5 rounded-xl text-[0.75rem] font-medium border ${
+                  i === Math.floor(cycle.length / 2) ? 'bg-destructive/[0.06] border-destructive/20 text-destructive' : 'bg-muted/30 border-border/50 text-foreground/70'
                 }`}>
                   {step}
                 </span>
-                {i < cycle.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground shrink-0" />}
+                {i < cycle.length - 1 && <ArrowRight className="w-3 h-3 text-muted-foreground/40 shrink-0" />}
               </div>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground mt-4 italic">
-            O ponto destacado em vermelho indica onde o travamento é mais intenso.
+          <p className="text-[0.75rem] text-muted-foreground/50 mt-4 italic">
+            O ponto destacado indica onde o travamento é mais intenso.
           </p>
         </motion.div>
 
-        {/* Triggers + Traps side by side */}
+        {/* Triggers + Traps */}
         <div className="grid md:grid-cols-2 gap-6">
-          <motion.div {...fadeUp} transition={{ delay: 0.25, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
+          <motion.div {...fadeUp} transition={{ delay: 0.25, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <AlertTriangle className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-serif">Gatilhos</h3>
+              <AlertTriangle className="w-5 h-5 text-primary/60" />
+              <h3 className="text-lg">Gatilhos</h3>
             </div>
             <div className="space-y-2">
               {triggers.map((t, i) => (
                 <div key={i} className="flex items-start gap-3 py-1.5">
-                  <span className="mt-1.5 w-2 h-2 rounded-full bg-primary/60 shrink-0" />
-                  <p className="text-sm text-foreground/80">{t}</p>
+                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-primary/50 shrink-0" />
+                  <p className="text-[0.82rem] text-foreground/70 leading-[1.65]">{t}</p>
                 </div>
               ))}
             </div>
           </motion.div>
 
-          <motion.div {...fadeUp} transition={{ delay: 0.3, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
+          <motion.div {...fadeUp} transition={{ delay: 0.3, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6">
             <div className="flex items-center gap-3 mb-4">
-              <Eye className="w-5 h-5 text-primary" />
-              <h3 className="text-lg font-serif">Armadilhas Mentais</h3>
+              <Eye className="w-5 h-5 text-primary/60" />
+              <h3 className="text-lg">Armadilhas Mentais</h3>
             </div>
             <div className="space-y-2">
               {traps.map((t, i) => (
-                <div key={i} className="bg-muted/30 border border-border rounded-lg px-4 py-2.5">
-                  <p className="text-sm text-foreground/90 italic">{t}</p>
+                <div key={i} className="bg-muted/20 border border-border/40 rounded-xl px-4 py-2.5">
+                  <p className="text-[0.82rem] text-foreground/75 italic leading-[1.65]">{t}</p>
                 </div>
               ))}
             </div>
@@ -379,26 +375,26 @@ const Dashboard = () => {
         </div>
 
         {/* Life Impact */}
-        <motion.div {...fadeUp} transition={{ delay: 0.35, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
-          <h3 className="text-xl mb-4 font-serif">Impacto nos Pilares</h3>
+        <motion.div {...fadeUp} transition={{ delay: 0.35, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6 md:p-8">
+          <h3 className="text-xl mb-4">Impacto nos Pilares</h3>
           <div className="grid sm:grid-cols-2 gap-4">
             {lifeImpact.slice(0, 4).map((item: any, i: number) => (
-              <div key={i} className="border border-border rounded-lg p-4">
-                <h4 className="font-sans font-semibold text-sm uppercase tracking-wide text-foreground mb-1">{item.pillar}</h4>
-                <p className="text-xs text-foreground/70 leading-relaxed">{item.impact}</p>
+              <div key={i} className="border border-border/50 rounded-xl p-4">
+                <h4 className="font-sans font-semibold text-[0.75rem] uppercase tracking-[0.15em] text-foreground/60 mb-1.5">{item.pillar}</h4>
+                <p className="text-[0.82rem] text-foreground/65 leading-[1.65]">{item.impact}</p>
               </div>
             ))}
           </div>
         </motion.div>
 
         {/* Current Focus */}
-        <motion.div {...fadeUp} transition={{ delay: 0.4, duration: 0.5 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
+        <motion.div {...fadeUp} transition={{ delay: 0.4, duration: 0.5 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6 md:p-8">
           <div className="flex items-center gap-3 mb-4">
-            <Compass className="w-5 h-5 text-primary" />
-            <h3 className="text-xl font-serif">Foco Atual</h3>
+            <Compass className="w-5 h-5 text-primary/60" />
+            <h3 className="text-xl">Foco Atual</h3>
           </div>
-          <div className="border-l-2 border-primary pl-5">
-            <p className="text-foreground/90 leading-relaxed italic">{latestResult.direction}</p>
+          <div className="border-l-2 border-primary/30 pl-5">
+            <p className="text-foreground/75 leading-[1.75] italic text-[0.9rem]">{latestResult.direction}</p>
           </div>
         </motion.div>
 
@@ -406,13 +402,13 @@ const Dashboard = () => {
         <motion.div {...fadeUp} transition={{ delay: 0.45, duration: 0.5 }} className="flex flex-col sm:flex-row gap-4 justify-center pb-12">
           <button
             onClick={() => navigate('/tests')}
-            className="flex items-center justify-center gap-2 px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+            className="flex items-center justify-center gap-2.5 px-10 py-[1rem] bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold tracking-[0.02em] shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300"
           >
             <LayoutGrid className="w-4 h-4" /> Nova leitura
           </button>
           <button
             onClick={() => navigate('/history')}
-            className="flex items-center justify-center gap-2 px-8 py-3 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+            className="flex items-center justify-center gap-2.5 px-10 py-[1rem] border border-border/50 rounded-2xl text-[0.85rem] font-medium text-muted-foreground/70 hover:text-foreground/80 hover:border-border hover:bg-card/60 transition-all duration-300"
           >
             <History className="w-4 h-4" /> Ver histórico
           </button>

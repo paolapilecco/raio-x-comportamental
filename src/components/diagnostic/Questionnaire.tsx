@@ -56,14 +56,18 @@ const Questionnaire = ({ onComplete }: QuestionnaireProps) => {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-8">
       <div className="w-full max-w-xl space-y-8">
         {/* Progress */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center text-xs text-subtle">
-            <span>Pergunta {currentIndex + 1} de {questions.length}</span>
-            <span>{Math.round(progress)}% concluído</span>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] tracking-[0.3em] uppercase text-primary/60 font-semibold">
+              Leitura {currentIndex + 1} de {questions.length}
+            </span>
+            <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/50 font-medium">
+              {Math.round(progress)}% concluído
+            </span>
           </div>
-          <div className="h-1 rounded-full bg-border overflow-hidden">
+          <div className="h-[3px] rounded-full bg-border/60 overflow-hidden">
             <motion.div
-              className="h-full rounded-full bg-primary"
+              className="h-full rounded-full bg-primary/80"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -80,13 +84,13 @@ const Questionnaire = ({ onComplete }: QuestionnaireProps) => {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: direction * -40 }}
             transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="bg-card rounded-xl p-8 border border-border shadow-sm"
+            className="bg-card/80 backdrop-blur-sm rounded-2xl p-8 border border-border/60 shadow-sm"
           >
-            <p className="text-lg md:text-xl leading-relaxed font-medium text-foreground">
+            <p className="text-[1.1rem] md:text-[1.2rem] leading-[1.65] font-medium text-foreground/90 tracking-[-0.01em]">
               {question.text}
             </p>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-8 space-y-2.5">
               {scaleLabels.map((label, index) => {
                 const value = index + 1;
                 const isSelected = currentAnswer === value;
@@ -94,23 +98,23 @@ const Questionnaire = ({ onComplete }: QuestionnaireProps) => {
                   <button
                     key={value}
                     onClick={() => handleSelect(value)}
-                    className={`w-full text-left px-5 py-3.5 rounded-lg border transition-all duration-200 text-sm ${
+                    className={`w-full text-left px-5 py-3.5 rounded-xl border transition-all duration-200 text-[0.85rem] ${
                       isSelected
-                        ? 'border-primary bg-primary/5 text-foreground font-medium'
-                        : 'border-border hover:border-primary/30 text-muted-foreground hover:text-foreground'
+                        ? 'border-primary/40 bg-primary/[0.05] text-foreground font-medium'
+                        : 'border-border/50 hover:border-primary/20 text-muted-foreground/70 hover:text-foreground/80'
                     }`}
                   >
-                    <span className="inline-flex items-center gap-3">
+                    <span className="inline-flex items-center gap-3.5">
                       <span
-                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                          isSelected ? 'border-primary' : 'border-border'
+                        className={`w-[18px] h-[18px] rounded-full border-2 flex items-center justify-center transition-all ${
+                          isSelected ? 'border-primary' : 'border-border/60'
                         }`}
                       >
                         {isSelected && (
                           <motion.span
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="w-2.5 h-2.5 rounded-full bg-primary"
+                            className="w-2 h-2 rounded-full bg-primary"
                           />
                         )}
                       </span>
@@ -128,7 +132,7 @@ const Questionnaire = ({ onComplete }: QuestionnaireProps) => {
           <button
             onClick={handlePrev}
             disabled={currentIndex === 0}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 text-[0.82rem] text-muted-foreground/60 hover:text-foreground/80 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
             Anterior
@@ -136,10 +140,10 @@ const Questionnaire = ({ onComplete }: QuestionnaireProps) => {
           <button
             onClick={handleNext}
             disabled={!canGoNext}
-            className={`flex items-center gap-1 px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+            className={`flex items-center gap-1.5 px-7 py-3 rounded-xl text-[0.85rem] font-semibold tracking-[0.02em] transition-all duration-300 ${
               canGoNext
-                ? 'bg-primary text-primary-foreground hover:opacity-90'
-                : 'bg-muted text-muted-foreground cursor-not-allowed'
+                ? 'bg-primary text-primary-foreground shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.3)] hover:shadow-[0_8px_30px_-4px_hsl(var(--primary)/0.4)] hover:translate-y-[-1px]'
+                : 'bg-muted/50 text-muted-foreground/40 cursor-not-allowed'
             }`}
           >
             {isLast ? 'Ver resultado' : 'Próxima'}

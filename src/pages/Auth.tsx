@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { lovable } from '@/integrations/lovable/index';
+import { ScanLine } from 'lucide-react';
 
 const emailSchema = z.string().trim().email('Email inválido').max(255);
 const passwordSchema = z.string().min(6, 'Mínimo de 6 caracteres').max(128);
@@ -60,35 +61,38 @@ const Auth = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md space-y-8"
+        className="w-full max-w-md space-y-10"
       >
-        <div className="text-center space-y-2">
-          <p className="text-sm tracking-[0.25em] uppercase text-subtle font-medium">
-            Mapa de Funcionamento Comportamental
-          </p>
+        <div className="text-center space-y-4">
+          <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/12 bg-primary/[0.03]">
+            <ScanLine className="w-3.5 h-3.5 text-primary/70" />
+            <span className="text-[10px] tracking-[0.35em] uppercase text-primary/80 font-semibold">
+              Sistema de Leitura Comportamental
+            </span>
+          </div>
           <h1 className="text-3xl md:text-4xl">
             {isLogin ? 'Entrar' : 'Criar conta'}
           </h1>
-          <p className="text-muted-foreground text-sm">
-            {isLogin ? 'Acesse seu diagnóstico e acompanhe sua evolução.' : 'Comece sua jornada de autoconhecimento.'}
+          <p className="text-[0.85rem] text-muted-foreground/70 leading-[1.7] max-w-sm mx-auto">
+            {isLogin ? 'Acesse sua leitura comportamental e acompanhe sua evolução.' : 'Comece sua jornada de autoconhecimento profundo.'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border p-8 space-y-5 shadow-sm">
+        <form onSubmit={handleSubmit} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-8 space-y-5 shadow-sm">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Email</label>
+            <label className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               maxLength={255}
-              className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
               placeholder="seu@email.com"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Senha</label>
+            <label className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Senha</label>
             <input
               type="password"
               value={password}
@@ -96,24 +100,24 @@ const Auth = () => {
               required
               minLength={6}
               maxLength={128}
-              className="flex h-11 w-full rounded-lg border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
               placeholder="Mínimo 6 caracteres"
             />
           </div>
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-11 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full h-12 bg-primary text-primary-foreground rounded-xl text-[0.9rem] font-semibold tracking-[0.02em] hover:opacity-90 transition-all duration-300 shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.3)] disabled:opacity-50"
           >
             {submitting ? 'Aguarde...' : isLogin ? 'Entrar' : 'Criar conta'}
           </button>
 
-          <div className="relative my-2">
+          <div className="relative my-3">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
+              <span className="w-full border-t border-border/50" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">ou</span>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-[0.15em]">
+              <span className="bg-card/80 px-3 text-muted-foreground/50">ou</span>
             </div>
           </div>
 
@@ -125,7 +129,7 @@ const Auth = () => {
               });
               if (error) toast.error('Erro ao entrar com Google');
             }}
-            className="w-full h-11 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors flex items-center justify-center gap-2"
+            className="w-full h-12 border border-border/60 rounded-xl text-[0.85rem] font-medium text-foreground/80 hover:bg-muted/30 hover:border-border transition-all duration-300 flex items-center justify-center gap-2.5"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -137,11 +141,11 @@ const Auth = () => {
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted-foreground">
+        <p className="text-center text-[0.82rem] text-muted-foreground/60">
           {isLogin ? 'Não tem conta?' : 'Já tem conta?'}{' '}
           <button
             onClick={() => setIsLogin(!isLogin)}
-            className="text-primary hover:underline font-medium"
+            className="text-primary/80 hover:text-primary hover:underline font-medium transition-colors"
           >
             {isLogin ? 'Criar conta' : 'Entrar'}
           </button>
