@@ -166,25 +166,34 @@ const TestCatalog = () => {
             const Icon = iconMap[mod.icon] || Brain;
             const isCompleted = completedModules.has(mod.id);
             const isFreeTest = mod.slug === 'padrao-comportamental';
-            const canAccess = isSuperAdmin || isPremium || isFreeTest;
+            const isIncomplete = mod._isIncomplete;
+            const canAccess = !isIncomplete && (isSuperAdmin || isPremium || isFreeTest);
             return (
               <motion.div
                 key={mod.id}
                 {...fadeUp}
                 transition={{ delay: 0.05 * (i + 1), duration: 0.4 }}
                 className={`bg-card/70 backdrop-blur-sm rounded-2xl border p-5 transition-all duration-300 relative ${
-                  canAccess
-                    ? 'border-border/50 hover:border-primary/20 cursor-pointer group'
-                    : 'border-border/30 opacity-70 cursor-default'
+                  isIncomplete
+                    ? 'border-destructive/30 opacity-60 cursor-default'
+                    : canAccess
+                      ? 'border-border/50 hover:border-primary/20 cursor-pointer group'
+                      : 'border-border/30 opacity-70 cursor-default'
                 }`}
                 onClick={() => canAccess && navigate(`/diagnostic/${mod.slug}`)}
               >
-                {isCompleted && canAccess && (
+                {isIncomplete && isSuperAdmin && (
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20">
+                    <AlertTriangle className="w-3 h-3 text-destructive/70" />
+                    <span className="text-[0.65rem] font-semibold text-destructive/80 tracking-wide uppercase">Incompleto</span>
+                  </div>
+                )}
+                {isCompleted && canAccess && !isIncomplete && (
                   <div className="absolute top-3 right-3">
                     <CheckCircle2 className="w-4.5 h-4.5 text-primary/60" />
                   </div>
                 )}
-                {!canAccess && (
+                {!canAccess && !isIncomplete && (
                   <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
                     <Crown className="w-3 h-3 text-amber-500/70" />
                     <span className="text-[0.65rem] font-semibold text-amber-500/80 tracking-wide uppercase">Premium</span>
@@ -192,11 +201,21 @@ const TestCatalog = () => {
                 )}
                 <div className="space-y-4">
                   <div className="p-2.5 rounded-xl bg-primary/[0.04] border border-primary/10 w-fit">
-                    {canAccess ? <Icon className="w-5 h-5 text-primary/50" /> : <Lock className="w-5 h-5 text-muted-foreground/40" />}
+                    {isIncomplete
+                      ? <AlertTriangle className="w-5 h-5 text-destructive/50" />
+                      : canAccess
+                        ? <Icon className="w-5 h-5 text-primary/50" />
+                        : <Lock className="w-5 h-5 text-muted-foreground/40" />}
                   </div>
                   <div>
                     <h3 className="text-[0.95rem] font-medium text-foreground/85 mb-1.5 tracking-[-0.01em]">{mod.name}</h3>
-                    <p className="text-[0.78rem] text-muted-foreground/60 leading-[1.65] line-clamp-3">{mod.description}</p>
+                    {isIncomplete && isSuperAdmin ? (
+                      <p className="text-[0.78rem] text-destructive/60 leading-[1.65]">
+                        Este teste ainda não possui estrutura completa de perguntas ({mod._actualQuestionCount || 0} encontradas, mínimo: 10)
+                      </p>
+                    ) : (
+                      <p className="text-[0.78rem] text-muted-foreground/60 leading-[1.65] line-clamp-3">{mod.description}</p>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 text-[0.7rem] text-muted-foreground/45 pt-1">
                     <span className="flex items-center gap-1">
@@ -204,7 +223,7 @@ const TestCatalog = () => {
                       ~{Math.ceil(mod.question_count * 0.5)} min
                     </span>
                     <span>{mod.question_count} itens</span>
-                    {!canAccess && <span className="text-amber-500/60 font-medium">Requer Premium</span>}
+                    {!canAccess && !isIncomplete && <span className="text-amber-500/60 font-medium">Requer Premium</span>}
                   </div>
                 </div>
               </motion.div>
