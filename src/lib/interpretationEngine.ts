@@ -156,25 +156,18 @@ export function detectContradictions(
   questions: QuestionMeta[],
   overallScores: Record<string, number>
 ): ResponseContradiction[] {
-  const grouped = groupAnswersByType(answers, questions);
+  const allAnswers = groupAnswersByAxes(answers, questions);
   const contradictions: ResponseContradiction[] = [];
 
-  // If no behavior_choice answers, use frequency as behavioral proxy
-  const behavioralAnswers = grouped.behavior_choice.length > 0
-    ? grouped.behavior_choice
-    : grouped.frequency;
-  const perceptualAnswers = grouped.likert;
-
-  if (perceptualAnswers.length === 0 || behavioralAnswers.length === 0) {
+  if (allAnswers.length === 0) {
     return contradictions;
   }
 
-  const perceptionByAxis = calculateAxisAvgByType(perceptualAnswers);
-  const behaviorByAxis = calculateAxisAvgByType(behavioralAnswers);
+  const axisByAvg = calculateAxisAvgByType(allAnswers);
 
   for (const rule of CONTRADICTION_RULES) {
-    const perceptionData = perceptionByAxis[rule.perceptionAxis];
-    const behaviorData = behaviorByAxis[rule.behaviorAxis];
+    const perceptionData = axisByAvg[rule.perceptionAxis];
+    const behaviorData = axisByAvg[rule.behaviorAxis];
 
     if (!perceptionData || !behaviorData) continue;
 
@@ -191,7 +184,7 @@ export function detectContradictions(
         type: rule.type,
         label: rule.label,
         description: rule.description,
-        evidence: `Percepção: ${Math.round(perceptionAvg)}% | Comportamento: ${Math.round(behaviorAvg)}% (gap: ${Math.round(gap)}%)`,
+        evidence: `Eixo A: ${Math.round(perceptionAvg)}% | Eixo B: ${Math.round(behaviorAvg)}% (gap: ${Math.round(gap)}%)`,
       });
     }
   }
