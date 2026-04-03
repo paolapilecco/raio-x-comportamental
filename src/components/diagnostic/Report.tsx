@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download, XCircle, Crosshair, Flame, Key, UserCheck } from 'lucide-react';
+import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download, XCircle, Crosshair, Flame, Key, UserCheck, EyeOff } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { useAuth } from '@/contexts/AuthContext';
 
