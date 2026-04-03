@@ -113,6 +113,26 @@ export default function AdminUsers() {
           />
         </div>
 
+        {/* Plan filter */}
+        <div className="flex gap-2 mb-4">
+          {([['all', 'Todos'], ['standard', 'Padrão'], ['premium', 'Premium']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setPlanFilter(value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                planFilter === value
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              {label}
+              <span className="ml-1.5 opacity-60">
+                {value === 'all' ? users.length : value === 'premium' ? users.filter(isPremium).length : users.filter(u => !isPremium(u)).length}
+              </span>
+            </button>
+          ))}
+        </div>
+
         {/* Table */}
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">
