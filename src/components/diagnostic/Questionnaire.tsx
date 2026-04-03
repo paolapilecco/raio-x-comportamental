@@ -64,7 +64,7 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
 
   const question = questions[currentIndex];
   const questionType: QuestionType = question.type || 'likert';
-  const labels = labelsByType[questionType];
+  const labels = (question.options && question.options.length === 5) ? question.options : labelsByType[questionType];
   const progress = ((Object.keys(answers).length) / questions.length) * 100;
   const currentAnswer = answers[question.id];
   const canGoNext = currentAnswer !== undefined;
