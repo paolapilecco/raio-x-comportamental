@@ -105,6 +105,7 @@ const AdminPrompts = () => {
   const [previewScores, setPreviewScores] = useState<Record<string, number>>({});
   const [previewRunning, setPreviewRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<any>(null);
+  const [previewSentData, setPreviewSentData] = useState<{ scores: any[]; dominant: any; contradictions: string[] } | null>(null);
   // History state
   const [historyTestId, setHistoryTestId] = useState<string>('');
   const [historyEntries, setHistoryEntries] = useState<any[]>([]);
