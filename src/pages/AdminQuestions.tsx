@@ -39,8 +39,10 @@ const typeLabels: Record<string, string> = {
   intensity: 'Intensidade',
 };
 
-const emptyQuestion = {
-  text: '', type: 'likert' as const, axes: [''], weight: 1, sort_order: 0, options: null as string[] | null,
+type QuestionType = 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
+
+const emptyQuestion: { text: string; type: QuestionType; axes: string[]; weight: number; sort_order: number; options: string[] | null } = {
+  text: '', type: 'likert', axes: [''], weight: 1, sort_order: 0, options: null,
 };
 
 export default function AdminQuestions() {
