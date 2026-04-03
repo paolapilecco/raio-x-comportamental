@@ -23,6 +23,8 @@ interface DbQuestion {
   id: number;
   text: string;
   axes: string[];
+  type?: string;
+  options?: string[] | null;
 }
 
 /**
