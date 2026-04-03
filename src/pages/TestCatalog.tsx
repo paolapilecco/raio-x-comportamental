@@ -15,6 +15,8 @@ interface TestModule {
   question_count: number;
   is_active: boolean;
   sort_order: number;
+  _actualQuestionCount?: number;
+  _isIncomplete?: boolean;
 }
 
 const iconMap: Record<string, any> = {
