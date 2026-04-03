@@ -139,8 +139,9 @@ const AdminPrompts = () => {
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!authLoading && !isSuperAdmin) { navigate('/dashboard', { replace: true }); return; }
-    if (!authLoading && isSuperAdmin) fetchData();
+    if (authLoading) return;
+    if (!isSuperAdmin) { navigate('/dashboard', { replace: true }); return; }
+    fetchData();
   }, [authLoading, isSuperAdmin]);
 
   const fetchData = async () => {
