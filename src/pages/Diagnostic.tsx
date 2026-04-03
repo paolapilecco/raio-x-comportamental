@@ -149,6 +149,8 @@ const Diagnostic = () => {
         id: q.sort_order || i + 1,
         text: q.text,
         axes: q.axes || [],
+        type: q.type || 'likert',
+        options: q.options,
       })));
       setStep('questionnaire');
     };

@@ -7,6 +7,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface QuestionItem {
   id: number;
   text: string;
+  type?: string;
+  options?: string[] | null;
 }
 
 interface QuestionnaireProps {
@@ -14,13 +16,46 @@ interface QuestionnaireProps {
   questions?: QuestionItem[];
 }
 
-const RESPONSE_LABELS = [
+const LIKERT_LABELS = [
   'Discordo totalmente',
   'Discordo',
   'Neutro',
   'Concordo',
   'Concordo totalmente',
 ];
+
+const FREQUENCY_LABELS = [
+  'Nunca',
+  'Raramente',
+  'Às vezes',
+  'Frequentemente',
+  'Sempre',
+];
+
+function getResponseLabels(question: QuestionItem): string[] {
+  const type = question.type || 'likert';
+
+  if (type === 'behavior_choice' && question.options && question.options.length >= 2) {
+    return question.options;
+  }
+
+  if (type === 'frequency') {
+    return FREQUENCY_LABELS;
+  }
+
+  return LIKERT_LABELS;
+}
+
+function getScaleLabel(type: string | undefined): string {
+  switch (type) {
+    case 'frequency':
+      return 'Com que frequência?';
+    case 'behavior_choice':
+      return 'O que você faria?';
+    default:
+      return 'Quanto você concorda?';
+  }
+}
 
 const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnaireProps) => {
   const questions: QuestionItem[] = questionsProp || defaultQuestions;
@@ -30,6 +65,7 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
 
   const question = questions[currentIndex];
   const progress = ((Object.keys(answers).length) / questions.length) * 100;
+  const responseLabels = getResponseLabels(question);
   const currentAnswer = answers[question.id];
   const canGoNext = currentAnswer !== undefined;
   const isLast = currentIndex === questions.length - 1;
@@ -98,11 +134,11 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
             </p>
 
             <p className="mt-4 mb-2 text-[0.72rem] tracking-[0.15em] uppercase text-muted-foreground/50 font-semibold">
-              Quanto você concorda?
+              {getScaleLabel(question.type)}
             </p>
 
             <div className="mt-4 space-y-2.5">
-              {RESPONSE_LABELS.map((label, index) => {
+              {responseLabels.map((label, index) => {
                 const value = index + 1;
                 const isSelected = currentAnswer === value;
                 return (
