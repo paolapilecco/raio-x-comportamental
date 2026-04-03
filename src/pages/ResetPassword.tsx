@@ -8,31 +8,64 @@ import { ScanLine } from 'lucide-react';
 
 const passwordSchema = z.string().min(6, 'Mínimo de 6 caracteres').max(128);
 
-// Capture hash before React/Supabase can clear it
 const initialHash = window.location.hash;
+const initialRecoveryParams = new URLSearchParams(initialHash.replace(/^#/, ''));
+const hasInitialRecoveryToken =
+  initialRecoveryParams.get('type') === 'recovery' ||
+  initialRecoveryParams.has('access_token') ||
+  initialRecoveryParams.has('refresh_token');
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [ready, setReady] = useState(() => initialHash.includes('type=recovery'));
+  const [ready, setReady] = useState(hasInitialRecoveryToken);
+  const [checkingLink, setCheckingLink] = useState(!hasInitialRecoveryToken);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (ready) return;
+    let isMounted = true;
 
-    // Check if session already exists (recovery link was already processed)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setReady(true);
+    const verifyRecoverySession = async () => {
+      for (let attempt = 0; attempt < 10; attempt += 1) {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!isMounted) return;
+
+        if (session) {
+          setReady(true);
+          setCheckingLink(false);
+          return;
+        }
+
+        await new Promise((resolve) => window.setTimeout(resolve, 300));
+      }
+
+      if (isMounted) {
+        setCheckingLink(false);
+      }
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+
+      if (event === 'PASSWORD_RECOVERY' || session) {
+        setReady(true);
+        setCheckingLink(false);
+      }
     });
 
-    // Also listen for the PASSWORD_RECOVERY event
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true);
-    });
+    if (hasInitialRecoveryToken) {
+      setCheckingLink(false);
+    } else {
+      void verifyRecoverySession();
+    }
 
-    return () => subscription.unsubscribe();
-  }, [ready]);
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,10 +89,30 @@ const ResetPassword = () => {
     }
   };
 
-  if (!ready) {
+  if (checkingLink) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-muted-foreground">Verificando link de recuperação...</p>
+      </div>
+    );
+  }
+
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/80 p-8 text-center shadow-sm">
+          <h1 className="text-2xl mb-3">Link inválido ou expirado</h1>
+          <p className="text-sm text-muted-foreground mb-6">
+            Solicite um novo email de recuperação para redefinir sua senha.
+          </p>
+          <button
+            type="button"
+            onClick={() => navigate('/auth')}
+            className="w-full h-12 bg-primary text-primary-foreground rounded-xl text-[0.9rem] font-semibold tracking-[0.02em] hover:opacity-90 transition-all duration-300 shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.3)]"
+          >
+            Voltar ao login
+          </button>
+        </div>
       </div>
     );
   }
