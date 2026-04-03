@@ -89,10 +89,10 @@ function generateTasks(): RoadmapTask[] {
     {
       id: 'inc-test-modules-no-crud',
       title: 'Super admin não consegue gerenciar test_modules via app',
-      description: 'A tabela test_modules só tem política SELECT. O super admin não pode criar, editar ou deletar módulos de teste pela interface. Falta políticas de INSERT/UPDATE/DELETE para super_admins e UI para gerenciamento.',
+      description: 'CORRIGIDO — Políticas RLS (INSERT/UPDATE/DELETE) adicionadas para super_admins. Interface de gerenciamento criada em /admin/test-modules.',
       priority: 'high',
       category: 'inconsistency',
-      status: 'pending',
+      status: 'done',
       copyText: 'Adicionar políticas RLS de INSERT, UPDATE e DELETE na tabela test_modules para super_admins. Também criar interface no admin para gerenciar módulos de teste (criar, editar, ativar/desativar, reordenar). Atualmente só existe política SELECT.',
     },
     {
