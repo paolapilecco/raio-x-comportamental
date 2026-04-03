@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_prompts: {
+        Row: {
+          context: string
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          prompt_text: string
+          updated_at: string
+        }
+        Insert: {
+          context: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          prompt_text?: string
+          updated_at?: string
+        }
+        Update: {
+          context?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          prompt_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diagnostic_answers: {
         Row: {
           answer_value: number
