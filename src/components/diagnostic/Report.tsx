@@ -153,8 +153,8 @@ const Report = ({ result, onRestart }: ReportProps) => {
             <div className="bg-primary/[0.04] border border-primary/12 rounded-xl p-5">
               <p className="text-[0.7rem] tracking-[0.2em] uppercase text-primary/50 font-semibold mb-2">Por que essa área destrava o resto</p>
               <p className="text-foreground/70 leading-[1.75] text-[0.85rem]">
-                {result.interpretation?.conflicts && result.interpretation.conflicts.length > 0
-                  ? `Seus conflitos internos convergem para esta área. Resolver aqui reduz a tensão em ${result.interpretation.conflicts.length} ponto${result.interpretation.conflicts.length > 1 ? 's' : ''} de atrito simultâneos.`
+                {result.interpretation?.internalConflicts && result.interpretation.internalConflicts.length > 0
+                  ? `Seus conflitos internos convergem para esta área. Resolver aqui reduz a tensão em ${result.interpretation.internalConflicts.length} ponto${result.interpretation.internalConflicts.length > 1 ? 's' : ''} de atrito simultâneos.`
                   : `Este é o ponto que mais alimenta seus outros padrões. Corrigi-lo primeiro cria um efeito cascata positivo nas demais áreas.`
                 }
               </p>
