@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Questionnaire from '@/components/diagnostic/Questionnaire';
 import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
@@ -6,6 +6,8 @@ import Report from '@/components/diagnostic/Report';
 import { Answer, DiagnosticResult } from '@/types/diagnostic';
 import { analyzeAnswers } from '@/lib/analysis';
 import { analyzePurposeAnswers } from '@/lib/purposeAnalysis';
+import { analyzeGenericTest } from '@/lib/genericAnalysis';
+import { getTestEngine } from '@/lib/testEngineRegistry';
 import { updateCentralProfile } from '@/lib/centralProfile';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,19 +17,26 @@ import { toast } from 'sonner';
 type Step = 'loading' | 'questionnaire' | 'analyzing' | 'report';
 
 const PURPOSE_SLUG = 'proposito-sentido';
+const BEHAVIORAL_SLUG = 'padrao-comportamental';
+
+interface DbQuestion {
+  id: number;
+  text: string;
+  axes: string[];
+}
 
 const Diagnostic = () => {
   const [step, setStep] = useState<Step>('loading');
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
-  const [dbQuestions, setDbQuestions] = useState<{ id: number; text: string }[]>([]);
-  const { user, profile, isPremium, isSuperAdmin } = useAuth();
+  const [dbQuestions, setDbQuestions] = useState<DbQuestion[]>([]);
+  const { user, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
 
-  const isFreeTest = !moduleSlug || moduleSlug === 'padrao-comportamental';
+  const slug = moduleSlug || BEHAVIORAL_SLUG;
+  const isFreeTest = slug === BEHAVIORAL_SLUG;
   const canAccessTest = isSuperAdmin || isPremium || isFreeTest;
-  const isPurposeTest = moduleSlug === PURPOSE_SLUG;
 
   useEffect(() => {
     if (!canAccessTest) {
@@ -36,11 +45,8 @@ const Diagnostic = () => {
     }
   }, [canAccessTest, navigate]);
 
-  // Fetch module and its questions from DB
   useEffect(() => {
     const fetchModuleAndQuestions = async () => {
-      const slug = moduleSlug || 'padrao-comportamental';
-
       const { data: mod } = await supabase
         .from('test_modules')
         .select('id')
@@ -57,7 +63,7 @@ const Diagnostic = () => {
 
       const { data: questions, error } = await supabase
         .from('questions')
-        .select('sort_order, text')
+        .select('sort_order, text, axes')
         .eq('test_id', mod.id)
         .order('sort_order', { ascending: true });
 
@@ -67,16 +73,19 @@ const Diagnostic = () => {
         return;
       }
 
-      setDbQuestions(questions.map((q, i) => ({ id: q.sort_order || i + 1, text: q.text })));
+      setDbQuestions(questions.map((q, i) => ({
+        id: q.sort_order || i + 1,
+        text: q.text,
+        axes: q.axes || [],
+      })));
       setStep('questionnaire');
     };
 
     fetchModuleAndQuestions();
-  }, [moduleSlug, navigate]);
+  }, [slug, navigate]);
 
   const saveToDatabase = useCallback(async (answers: Answer[], analysisResult: DiagnosticResult) => {
     if (!user) return;
-
     try {
       const sessionInsert: any = { user_id: user.id };
       if (moduleId) sessionInsert.test_module_id = moduleId;
@@ -124,96 +133,64 @@ const Diagnostic = () => {
         .eq('id', session.id);
 
       await updateCentralProfile(user.id);
-
     } catch (err) {
       console.error('Error saving diagnostic:', err);
       toast.error('Erro ao salvar diagnóstico, mas seu resultado está disponível.');
     }
   }, [user, moduleId]);
 
+  const runAnalysis = useCallback((answers: Answer[]): DiagnosticResult => {
+    // 1. Purpose test has its own dedicated engine
+    if (slug === PURPOSE_SLUG) {
+      const r = analyzePurposeAnswers(answers);
+      return {
+        dominantPattern: { ...r.dominantPattern, key: r.dominantPattern.key as any },
+        secondaryPatterns: r.secondaryPatterns.map(p => ({ ...p, key: p.key as any })),
+        intensity: r.intensity,
+        allScores: r.allScores as any,
+        summary: r.summary,
+        mechanism: r.mechanism,
+        contradiction: r.contradiction,
+        impact: r.impact,
+        direction: r.direction,
+        combinedTitle: r.combinedTitle,
+        profileName: r.profileName,
+        mentalState: r.mentalState,
+        triggers: r.triggers,
+        mentalTraps: r.mentalTraps,
+        selfSabotageCycle: r.selfSabotageCycle,
+        blockingPoint: r.blockingPoint,
+        lifeImpact: r.lifeImpact,
+        exitStrategy: r.exitStrategy,
+        corePain: r.corePain,
+        keyUnlockArea: r.keyUnlockArea,
+        criticalDiagnosis: r.criticalDiagnosis,
+        whatNotToDo: r.whatNotToDo,
+      };
+    }
+
+    // 2. Check for module-specific engine (premium tests)
+    const engine = getTestEngine(slug);
+    if (engine) {
+      return analyzeGenericTest(answers, dbQuestions, engine.axes, engine.definitions);
+    }
+
+    // 3. Default behavioral test engine
+    return analyzeAnswers(answers);
+  }, [slug, dbQuestions]);
+
   const handleComplete = useCallback((answers: Answer[]) => {
     setStep('analyzing');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     setTimeout(() => {
-      let analysisResult: DiagnosticResult;
-
-      if (isPurposeTest) {
-        const purposeResult = analyzePurposeAnswers(answers);
-        analysisResult = {
-          dominantPattern: {
-            key: purposeResult.dominantPattern.key as any,
-            label: purposeResult.dominantPattern.label,
-            description: purposeResult.dominantPattern.description,
-            mechanism: purposeResult.dominantPattern.mechanism,
-            contradiction: purposeResult.dominantPattern.contradiction,
-            impact: purposeResult.dominantPattern.impact,
-            direction: purposeResult.dominantPattern.direction,
-            profileName: purposeResult.dominantPattern.profileName,
-            mentalState: purposeResult.dominantPattern.mentalState,
-            triggers: purposeResult.dominantPattern.triggers,
-            mentalTraps: purposeResult.dominantPattern.mentalTraps,
-            selfSabotageCycle: purposeResult.dominantPattern.selfSabotageCycle,
-            blockingPoint: purposeResult.dominantPattern.blockingPoint,
-            lifeImpact: purposeResult.dominantPattern.lifeImpact,
-            exitStrategy: purposeResult.dominantPattern.exitStrategy,
-            corePain: purposeResult.dominantPattern.corePain,
-            keyUnlockArea: purposeResult.dominantPattern.keyUnlockArea,
-            criticalDiagnosis: purposeResult.dominantPattern.criticalDiagnosis,
-            whatNotToDo: purposeResult.dominantPattern.whatNotToDo,
-          },
-          secondaryPatterns: purposeResult.secondaryPatterns.map(p => ({
-            key: p.key as any,
-            label: p.label,
-            description: p.description,
-            mechanism: p.mechanism,
-            contradiction: p.contradiction,
-            impact: p.impact,
-            direction: p.direction,
-            profileName: p.profileName,
-            mentalState: p.mentalState,
-            triggers: p.triggers,
-            mentalTraps: p.mentalTraps,
-            selfSabotageCycle: p.selfSabotageCycle,
-            blockingPoint: p.blockingPoint,
-            lifeImpact: p.lifeImpact,
-            exitStrategy: p.exitStrategy,
-            corePain: p.corePain,
-            keyUnlockArea: p.keyUnlockArea,
-            criticalDiagnosis: p.criticalDiagnosis,
-            whatNotToDo: p.whatNotToDo,
-          })),
-          intensity: purposeResult.intensity,
-          allScores: purposeResult.allScores as any,
-          summary: purposeResult.summary,
-          mechanism: purposeResult.mechanism,
-          contradiction: purposeResult.contradiction,
-          impact: purposeResult.impact,
-          direction: purposeResult.direction,
-          combinedTitle: purposeResult.combinedTitle,
-          profileName: purposeResult.profileName,
-          mentalState: purposeResult.mentalState,
-          triggers: purposeResult.triggers,
-          mentalTraps: purposeResult.mentalTraps,
-          selfSabotageCycle: purposeResult.selfSabotageCycle,
-          blockingPoint: purposeResult.blockingPoint,
-          lifeImpact: purposeResult.lifeImpact,
-          exitStrategy: purposeResult.exitStrategy,
-          corePain: purposeResult.corePain,
-          keyUnlockArea: purposeResult.keyUnlockArea,
-          criticalDiagnosis: purposeResult.criticalDiagnosis,
-          whatNotToDo: purposeResult.whatNotToDo,
-        };
-      } else {
-        analysisResult = analyzeAnswers(answers);
-      }
-
+      const analysisResult = runAnalysis(answers);
       setResult(analysisResult);
       setStep('report');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       saveToDatabase(answers, analysisResult);
     }, 2500);
-  }, [saveToDatabase, isPurposeTest]);
+  }, [saveToDatabase, runAnalysis]);
 
   const handleGoToDashboard = useCallback(() => {
     navigate('/dashboard');
