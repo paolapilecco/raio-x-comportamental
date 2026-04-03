@@ -757,7 +757,7 @@ const AdminPrompts = () => {
               ];
 
               return (
-                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.02] overflow-hidden">
+                <>
                   <div className="px-5 py-4 bg-emerald-500/[0.05] border-b border-emerald-500/15 flex items-start justify-between gap-3">
                     <div>
                       <h4 className="text-[0.9rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Simulação</h4>
