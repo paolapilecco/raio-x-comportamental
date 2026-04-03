@@ -224,42 +224,40 @@ export function calculateSelfDeceptionIndex(
   answers: Answer[],
   questions: QuestionMeta[]
 ): { selfDeceptionIndex: number; behaviorVsPerceptionGap: number } {
-  const grouped = groupAnswersByType(answers, questions);
+  const allAnswers = groupAnswersByAxes(answers, questions);
 
-  if (grouped.likert.length === 0 || (grouped.behavior_choice.length === 0 && grouped.frequency.length === 0)) {
+  if (allAnswers.length === 0) {
     return { selfDeceptionIndex: 0, behaviorVsPerceptionGap: 0 };
   }
 
-  // Calculate average score per axis for each type
-  const perceptionByAxis = calculateAxisAvgByType(grouped.likert);
-  const behavioralAnswers = [...grouped.behavior_choice, ...grouped.frequency];
-  const behaviorByAxis = calculateAxisAvgByType(behavioralAnswers);
+  const axisByAvg = calculateAxisAvgByType(allAnswers);
+  const axes = Object.keys(axisByAvg);
+  if (axes.length < 2) return { selfDeceptionIndex: 0, behaviorVsPerceptionGap: 0 };
 
-  // Find axes that appear in both types
-  const commonAxes = Object.keys(perceptionByAxis).filter(k => behaviorByAxis[k]);
-  if (commonAxes.length === 0) return { selfDeceptionIndex: 0, behaviorVsPerceptionGap: 0 };
-
-  // Calculate average gap
+  // Calculate internal consistency gaps between related axes
   let totalGap = 0;
   let deceptionSignals = 0;
+  let comparisons = 0;
 
-  commonAxes.forEach(axis => {
-    const percAvg = perceptionByAxis[axis].avg;
-    const behavAvg = behaviorByAxis[axis].avg;
-    const gap = Math.abs(percAvg - behavAvg);
-    totalGap += gap;
+  for (let i = 0; i < axes.length; i++) {
+    for (let j = i + 1; j < axes.length; j++) {
+      const avgA = axisByAvg[axes[i]].avg;
+      const avgB = axisByAvg[axes[j]].avg;
+      const gap = Math.abs(avgA - avgB);
+      totalGap += gap;
+      comparisons++;
 
-    // Self-deception: perception LOW but behavior HIGH (doesn't recognize own pattern)
-    if (percAvg < 40 && behavAvg > 60) {
-      deceptionSignals += 1;
+      // High divergence between axes suggests inconsistency
+      if (gap > 40) {
+        deceptionSignals += 1;
+      }
     }
-  });
+  }
 
-  const avgGap = totalGap / commonAxes.length;
+  const avgGap = comparisons > 0 ? totalGap / comparisons : 0;
   const behaviorVsPerceptionGap = Math.min(Math.round(avgGap), 100);
 
-  // Self-deception index: combination of gap size + number of blind spots
-  const blindSpotRatio = commonAxes.length > 0 ? deceptionSignals / commonAxes.length : 0;
+  const blindSpotRatio = comparisons > 0 ? deceptionSignals / comparisons : 0;
   const selfDeceptionIndex = Math.min(Math.round((avgGap * 0.6 + blindSpotRatio * 100 * 0.4)), 100);
 
   return { selfDeceptionIndex, behaviorVsPerceptionGap };
