@@ -103,6 +103,11 @@ const AdminPrompts = () => {
   const [previewScores, setPreviewScores] = useState<Record<string, number>>({});
   const [previewRunning, setPreviewRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<any>(null);
+  // History state
+  const [historyTestId, setHistoryTestId] = useState<string>('');
+  const [historyEntries, setHistoryEntries] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isSuperAdmin) { navigate('/dashboard', { replace: true }); return; }
