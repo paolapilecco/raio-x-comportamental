@@ -52,6 +52,7 @@ const App = () => (
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/admin/prompts" element={<ProtectedRoute><AdminPrompts /></ProtectedRoute>} />
             <Route path="/admin/roadmap" element={<ProtectedRoute><AdminRoadmap /></ProtectedRoute>} />
+            <Route path="/admin/test-modules" element={<ProtectedRoute><AdminTestModules /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
