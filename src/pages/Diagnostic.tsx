@@ -23,8 +23,6 @@ interface DbQuestion {
   id: number;
   text: string;
   axes: string[];
-  type?: 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
-  options?: string[];
 }
 
 /**
@@ -131,38 +129,17 @@ const Diagnostic = () => {
       }
 
       const validationErrors: string[] = [];
-      const typeCounts: Record<string, number> = { likert: 0, behavior_choice: 0, frequency: 0 };
       questions.forEach((q, i) => {
-        const qType = (q as any).type || 'likert';
-        const qOptions = (q as any).options;
         const order = q.sort_order || i + 1;
-        if (qType === 'behavior_choice' && (!qOptions || qOptions.length !== 5)) {
-          validationErrors.push(`Pergunta ${order}: behavior_choice sem opções`);
+        if (q.text.trim().endsWith('?')) {
+          validationErrors.push(`Pergunta ${order}: formato de pergunta detectado (use afirmações)`);
         }
-        if (qType === 'likert' && q.text.trim().endsWith('?')) {
-          validationErrors.push(`Pergunta ${order}: likert em formato de pergunta`);
-        }
-        if (qType in typeCounts) typeCounts[qType]++;
       });
-
-      // Validate type diversity: no test should be 100% subjective (likert-only)
-      const total = questions.length;
-      const likertPct = Math.round((typeCounts.likert / total) * 100);
-      const behaviorPct = Math.round((typeCounts.behavior_choice / total) * 100);
-      const frequencyPct = Math.round((typeCounts.frequency / total) * 100);
-
-      if (typeCounts.behavior_choice === 0 || typeCounts.frequency === 0) {
-        validationErrors.push(`Diversidade insuficiente: L=${likertPct}% B=${behaviorPct}% F=${frequencyPct}%`);
-      }
 
       if (validationErrors.length > 0) {
         console.warn(`[Diagnostic] Validation errors in "${slug}":`, validationErrors);
         if (isSuperAdmin) {
           toast.error(`${validationErrors.length} incompatibilidade(s). Verifique o console.`);
-        } else {
-          toast.error('Análise indisponível no momento');
-          navigate('/tests');
-          return;
         }
       }
 
@@ -170,8 +147,6 @@ const Diagnostic = () => {
         id: q.sort_order || i + 1,
         text: q.text,
         axes: q.axes || [],
-        type: (q as any).type || 'likert',
-        options: (q as any).options || undefined,
       })));
       setStep('questionnaire');
     };

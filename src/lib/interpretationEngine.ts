@@ -13,7 +13,6 @@ import { Answer, PatternScore, InternalConflict, ResponseContradiction, Interpre
 interface QuestionMeta {
   id: number;
   axes: string[];
-  type?: string;
 }
 
 // ──────────────────────────────────────────────
@@ -65,28 +64,14 @@ export function detectConflicts(
 // 2. CONTRADICTION DETECTION
 // ──────────────────────────────────────────────
 
-interface AnswersByType {
-  likert: { questionId: number; value: number; axes: string[] }[];
-  behavior_choice: { questionId: number; value: number; axes: string[] }[];
-  frequency: { questionId: number; value: number; axes: string[] }[];
-}
-
-function groupAnswersByType(
+function groupAnswersByAxes(
   answers: Answer[],
   questions: QuestionMeta[]
-): AnswersByType {
-  const grouped: AnswersByType = { likert: [], behavior_choice: [], frequency: [] };
-
-  answers.forEach(answer => {
+): { questionId: number; value: number; axes: string[] }[] {
+  return answers.map(answer => {
     const q = questions.find(qq => qq.id === answer.questionId);
-    if (!q) return;
-    const type = (q.type || 'likert') as keyof AnswersByType;
-    if (grouped[type]) {
-      grouped[type].push({ questionId: answer.questionId, value: answer.value, axes: q.axes });
-    }
-  });
-
-  return grouped;
+    return q ? { questionId: answer.questionId, value: answer.value, axes: q.axes } : null;
+  }).filter(Boolean) as { questionId: number; value: number; axes: string[] }[];
 }
 
 function calculateAxisAvgByType(
@@ -171,25 +156,18 @@ export function detectContradictions(
   questions: QuestionMeta[],
   overallScores: Record<string, number>
 ): ResponseContradiction[] {
-  const grouped = groupAnswersByType(answers, questions);
+  const allAnswers = groupAnswersByAxes(answers, questions);
   const contradictions: ResponseContradiction[] = [];
 
-  // If no behavior_choice answers, use frequency as behavioral proxy
-  const behavioralAnswers = grouped.behavior_choice.length > 0
-    ? grouped.behavior_choice
-    : grouped.frequency;
-  const perceptualAnswers = grouped.likert;
-
-  if (perceptualAnswers.length === 0 || behavioralAnswers.length === 0) {
+  if (allAnswers.length === 0) {
     return contradictions;
   }
 
-  const perceptionByAxis = calculateAxisAvgByType(perceptualAnswers);
-  const behaviorByAxis = calculateAxisAvgByType(behavioralAnswers);
+  const axisByAvg = calculateAxisAvgByType(allAnswers);
 
   for (const rule of CONTRADICTION_RULES) {
-    const perceptionData = perceptionByAxis[rule.perceptionAxis];
-    const behaviorData = behaviorByAxis[rule.behaviorAxis];
+    const perceptionData = axisByAvg[rule.perceptionAxis];
+    const behaviorData = axisByAvg[rule.behaviorAxis];
 
     if (!perceptionData || !behaviorData) continue;
 
@@ -206,34 +184,34 @@ export function detectContradictions(
         type: rule.type,
         label: rule.label,
         description: rule.description,
-        evidence: `Percepção: ${Math.round(perceptionAvg)}% | Comportamento: ${Math.round(behaviorAvg)}% (gap: ${Math.round(gap)}%)`,
+        evidence: `Eixo A: ${Math.round(perceptionAvg)}% | Eixo B: ${Math.round(behaviorAvg)}% (gap: ${Math.round(gap)}%)`,
       });
     }
   }
 
-  // Also check for cross-type divergence on same axis
-  Object.keys(overallScores).forEach(axis => {
-    const perc = perceptionByAxis[axis];
-    const behav = behaviorByAxis[axis];
-    if (!perc || !behav) return;
-
-    const gap = Math.abs(perc.avg - behav.avg);
-    if (gap >= 30) {
-      const direction = perc.avg > behav.avg
-        ? 'Você se percebe mais afetado do que seus comportamentos indicam — possível dramatização.'
-        : 'Seus comportamentos revelam mais do padrão do que você reconhece — ponto cego ativo.';
-
-      const alreadyExists = contradictions.find(c => c.type === `axis_gap_${axis}`);
-      if (!alreadyExists) {
-        contradictions.push({
-          type: `axis_gap_${axis}`,
-          label: `Divergência em ${axis}`,
-          description: direction,
-          evidence: `Likert: ${Math.round(perc.avg)}% | Comportamental: ${Math.round(behav.avg)}% (gap: ${Math.round(gap)}%)`,
-        });
+  // Check for high divergence between related axes (score-based)
+  const axisEntries = Object.entries(overallScores);
+  for (let i = 0; i < axisEntries.length; i++) {
+    for (let j = i + 1; j < axisEntries.length; j++) {
+      const [axisA, scoreA] = axisEntries[i];
+      const [axisB, scoreB] = axisEntries[j];
+      const gap = Math.abs(scoreA - scoreB);
+      if (gap >= 30) {
+        const direction = scoreA > scoreB
+          ? `${axisA} significativamente mais alto que ${axisB} — possível ponto cego.`
+          : `${axisB} significativamente mais alto que ${axisA} — possível ponto cego.`;
+        const alreadyExists = contradictions.find(c => c.type === `axis_gap_${axisA}_${axisB}`);
+        if (!alreadyExists) {
+          contradictions.push({
+            type: `axis_gap_${axisA}_${axisB}`,
+            label: `Divergência entre eixos`,
+            description: direction,
+            evidence: `${axisA}: ${Math.round(scoreA)}% | ${axisB}: ${Math.round(scoreB)}% (gap: ${Math.round(gap)}%)`,
+          });
+        }
       }
     }
-  });
+  }
 
   return contradictions;
 }
@@ -246,42 +224,40 @@ export function calculateSelfDeceptionIndex(
   answers: Answer[],
   questions: QuestionMeta[]
 ): { selfDeceptionIndex: number; behaviorVsPerceptionGap: number } {
-  const grouped = groupAnswersByType(answers, questions);
+  const allAnswers = groupAnswersByAxes(answers, questions);
 
-  if (grouped.likert.length === 0 || (grouped.behavior_choice.length === 0 && grouped.frequency.length === 0)) {
+  if (allAnswers.length === 0) {
     return { selfDeceptionIndex: 0, behaviorVsPerceptionGap: 0 };
   }
 
-  // Calculate average score per axis for each type
-  const perceptionByAxis = calculateAxisAvgByType(grouped.likert);
-  const behavioralAnswers = [...grouped.behavior_choice, ...grouped.frequency];
-  const behaviorByAxis = calculateAxisAvgByType(behavioralAnswers);
+  const axisByAvg = calculateAxisAvgByType(allAnswers);
+  const axes = Object.keys(axisByAvg);
+  if (axes.length < 2) return { selfDeceptionIndex: 0, behaviorVsPerceptionGap: 0 };
 
-  // Find axes that appear in both types
-  const commonAxes = Object.keys(perceptionByAxis).filter(k => behaviorByAxis[k]);
-  if (commonAxes.length === 0) return { selfDeceptionIndex: 0, behaviorVsPerceptionGap: 0 };
-
-  // Calculate average gap
+  // Calculate internal consistency gaps between related axes
   let totalGap = 0;
   let deceptionSignals = 0;
+  let comparisons = 0;
 
-  commonAxes.forEach(axis => {
-    const percAvg = perceptionByAxis[axis].avg;
-    const behavAvg = behaviorByAxis[axis].avg;
-    const gap = Math.abs(percAvg - behavAvg);
-    totalGap += gap;
+  for (let i = 0; i < axes.length; i++) {
+    for (let j = i + 1; j < axes.length; j++) {
+      const avgA = axisByAvg[axes[i]].avg;
+      const avgB = axisByAvg[axes[j]].avg;
+      const gap = Math.abs(avgA - avgB);
+      totalGap += gap;
+      comparisons++;
 
-    // Self-deception: perception LOW but behavior HIGH (doesn't recognize own pattern)
-    if (percAvg < 40 && behavAvg > 60) {
-      deceptionSignals += 1;
+      // High divergence between axes suggests inconsistency
+      if (gap > 40) {
+        deceptionSignals += 1;
+      }
     }
-  });
+  }
 
-  const avgGap = totalGap / commonAxes.length;
+  const avgGap = comparisons > 0 ? totalGap / comparisons : 0;
   const behaviorVsPerceptionGap = Math.min(Math.round(avgGap), 100);
 
-  // Self-deception index: combination of gap size + number of blind spots
-  const blindSpotRatio = commonAxes.length > 0 ? deceptionSignals / commonAxes.length : 0;
+  const blindSpotRatio = comparisons > 0 ? deceptionSignals / comparisons : 0;
   const selfDeceptionIndex = Math.min(Math.round((avgGap * 0.6 + blindSpotRatio * 100 * 0.4)), 100);
 
   return { selfDeceptionIndex, behaviorVsPerceptionGap };

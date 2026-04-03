@@ -4,13 +4,9 @@ import { questions as defaultQuestions } from '@/data/questions';
 import { Answer } from '@/types/diagnostic';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-type QuestionType = 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
-
 interface QuestionItem {
   id: number;
   text: string;
-  type?: QuestionType;
-  options?: string[];
 }
 
 interface QuestionnaireProps {
@@ -18,43 +14,13 @@ interface QuestionnaireProps {
   questions?: QuestionItem[];
 }
 
-const labelsByType: Record<QuestionType, string[]> = {
-  likert: [
-    'Discordo totalmente',
-    'Discordo',
-    'Neutro',
-    'Concordo',
-    'Concordo totalmente',
-  ],
-  frequency: [
-    'Nunca',
-    'Raramente',
-    'Às vezes',
-    'Frequentemente',
-    'Sempre',
-  ],
-  intensity: [
-    'Muito baixo',
-    'Baixo',
-    'Médio',
-    'Alto',
-    'Muito alto',
-  ],
-  behavior_choice: [
-    'Opção A',
-    'Opção B',
-    'Opção C',
-    'Opção D',
-    'Opção E',
-  ],
-};
-
-const typeHeaders: Record<QuestionType, string> = {
-  likert: 'Quanto você concorda?',
-  frequency: 'Com que frequência isso acontece?',
-  intensity: 'Qual a intensidade?',
-  behavior_choice: 'Qual comportamento mais se aproxima do seu?',
-};
+const RESPONSE_LABELS = [
+  'Discordo totalmente',
+  'Discordo',
+  'Neutro',
+  'Concordo',
+  'Concordo totalmente',
+];
 
 const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnaireProps) => {
   const questions: QuestionItem[] = questionsProp || defaultQuestions;
@@ -63,8 +29,6 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
   const [direction, setDirection] = useState(1);
 
   const question = questions[currentIndex];
-  const questionType: QuestionType = question.type || 'likert';
-  const labels = (question.options && question.options.length === 5) ? question.options : labelsByType[questionType];
   const progress = ((Object.keys(answers).length) / questions.length) * 100;
   const currentAnswer = answers[question.id];
   const canGoNext = currentAnswer !== undefined;
@@ -134,11 +98,11 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
             </p>
 
             <p className="mt-4 mb-2 text-[0.72rem] tracking-[0.15em] uppercase text-muted-foreground/50 font-semibold">
-              {typeHeaders[questionType]}
+              Quanto você concorda?
             </p>
 
             <div className="mt-4 space-y-2.5">
-              {labels.map((label, index) => {
+              {RESPONSE_LABELS.map((label, index) => {
                 const value = index + 1;
                 const isSelected = currentAnswer === value;
                 return (
