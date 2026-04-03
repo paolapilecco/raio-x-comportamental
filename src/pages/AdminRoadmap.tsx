@@ -80,10 +80,10 @@ function generateTasks(): RoadmapTask[] {
     {
       id: 'bug-db-triggers-missing',
       title: 'Triggers do banco não estão registrados',
-      description: 'A seção db-triggers mostra "There are no triggers in the database" mas existem funções de trigger definidas (log_prompt_change, handle_new_user_role, assign_admin_on_signup, calculate_age, update_updated_at_column). Os triggers precisam ser criados/recriados.',
+      description: 'CORRIGIDO — Todos os triggers estão registrados: log_prompt_change, handle_new_user_role, assign_admin_on_signup, calculate_age e update_updated_at em todas as tabelas necessárias.',
       priority: 'high',
       category: 'bug',
-      status: 'pending',
+      status: 'done',
       copyText: 'Os triggers do banco de dados não estão registrados apesar das funções existirem. Criar os triggers: (1) log_prompt_change em test_prompts BEFORE UPDATE, (2) handle_new_user_role em auth.users AFTER INSERT, (3) assign_admin_on_signup em auth.users AFTER INSERT, (4) calculate_age em profiles BEFORE INSERT OR UPDATE, (5) update_updated_at_column nas tabelas que precisam.',
     },
     {
