@@ -56,40 +56,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('role')
         .eq('user_id', userId),
     ]);
-    setProfile(profileRes.data);
+
+    if (profileRes.error) {
+      console.error('Failed to load profile', profileRes.error);
+      setProfile(null);
+    } else {
+      setProfile(profileRes.data);
+    }
+
+    if (roleRes.error) {
+      console.error('Failed to load user roles', roleRes.error);
+      setRole('user');
+      return;
+    }
+
     const roles = (roleRes.data ?? []).map((r: { role: string }) => r.role);
     setRole(resolveRole(roles));
   }, []);
 
-  useEffect(() => {
-    // Listen for auth changes AFTER initial load
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      // Skip the initial event — we handle that via getSession below
-      if (!initializedRef.current) return;
+  const applySession = useCallback(async (nextSession: Session | null) => {
+    setSession(nextSession);
+    setUser(nextSession?.user ?? null);
 
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setRole('user');
-      }
+    if (nextSession?.user) {
+      await fetchProfile(nextSession.user.id);
+    } else {
+      setProfile(null);
+      setRole('user');
+    }
+  }, [fetchProfile]);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!initializedRef.current) return;
+      void applySession(nextSession);
     });
 
-    // Use getSession as the single source of truth for initial load
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      }
+    void supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
+      await applySession(initialSession);
       initializedRef.current = true;
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [applySession]);
 
   const signUp = async (email: string, password: string) => {
     const { error } = await supabase.auth.signUp({
