@@ -234,6 +234,51 @@ const AdminPrompts = () => {
   };
 
   const toggleSection = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
+
+  // ── Preview / Simulation ──
+  const runPreview = async () => {
+    if (!previewTestId) { toast.error('Selecione um teste'); return; }
+    const mod = modules.find(m => m.id === previewTestId);
+    if (!mod) return;
+
+    // Build simulated scores from sliders
+    const activePrompts = testPrompts.filter(p => p.test_id === previewTestId && p.is_active);
+    if (activePrompts.length === 0) { toast.error('Nenhum prompt ativo para este teste'); return; }
+
+    // Get axes from questions for this test
+    const { data: questions } = await supabase.from('questions').select('axes').eq('test_id', previewTestId);
+    const allAxes = new Set<string>();
+    (questions || []).forEach((q: any) => (q.axes || []).forEach((a: string) => allAxes.add(a)));
+    const axisKeys = Array.from(allAxes);
+
+    if (axisKeys.length === 0) { toast.error('Teste sem eixos configurados'); return; }
+
+    const scores = axisKeys.map(key => {
+      const pct = previewScores[key] ?? 50;
+      return { key, label: key, score: Math.round(pct * 5 / 100), maxScore: 5, percentage: pct };
+    }).sort((a, b) => b.percentage - a.percentage);
+
+    setPreviewRunning(true);
+    setPreviewResult(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('analyze-test', {
+        body: { test_module_id: previewTestId, scores, slug: mod.slug },
+      });
+
+      if (error) { toast.error('Erro na simulação'); console.error(error); setPreviewRunning(false); return; }
+      if (data?.useFallback) { toast.warning('Sem prompts ativos — usaria fallback local'); setPreviewRunning(false); return; }
+      if (data?.error) { toast.error(data.error); setPreviewRunning(false); return; }
+
+      setPreviewResult(data?.analysis || data);
+      toast.success('Simulação concluída');
+    } catch (err) {
+      console.error('Preview error:', err);
+      toast.error('Erro inesperado na simulação');
+    }
+    setPreviewRunning(false);
+  };
+
   const fadeUp = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
   // ── AI Config UI Component ──
