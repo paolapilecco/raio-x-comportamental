@@ -606,15 +606,86 @@ const AdminPrompts = () => {
                 {previewRunning ? 'Gerando...' : 'Simular Resposta da IA'}
               </button>
             )}
-            {previewResult && (
-              <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.03] space-y-3">
-                <h4 className="text-[0.85rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Simulação</h4>
-                {previewResult.profileName && <div className="space-y-1"><span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Perfil</span><p className="text-[0.85rem] font-semibold">{previewResult.profileName}</p></div>}
-                {previewResult.summary && <div className="space-y-1"><span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Resumo</span><p className="text-[0.75rem] text-foreground/60 leading-relaxed whitespace-pre-wrap">{previewResult.summary}</p></div>}
-                {previewResult.corePain && <div className="space-y-1"><span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Dor Central</span><p className="text-[0.75rem] text-foreground/60">{previewResult.corePain}</p></div>}
-                <details className="mt-2"><summary className="text-[0.65rem] cursor-pointer text-muted-foreground/40 hover:text-muted-foreground/60">Ver JSON completo</summary><pre className="mt-2 p-3 bg-background/60 rounded-lg text-[0.65rem] overflow-x-auto max-h-80 text-foreground/50 font-mono leading-relaxed">{JSON.stringify(previewResult, null, 2)}</pre></details>
-              </div>
-            )}
+            {previewResult && (() => {
+              const blocks: { key: string; label: string; color: string; borderColor: string; render: () => React.ReactNode }[] = [
+                { key: 'criticalDiagnosis', label: 'Diagnóstico Crítico', color: 'text-red-600 dark:text-red-400', borderColor: 'border-red-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.criticalDiagnosis}</p> },
+                { key: 'corePain', label: 'Dor Central', color: 'text-rose-600 dark:text-rose-400', borderColor: 'border-rose-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.corePain}</p> },
+                { key: 'profileName', label: 'Perfil', color: 'text-purple-600 dark:text-purple-400', borderColor: 'border-purple-500/20', render: () => (
+                  <div className="space-y-1">
+                    <p className="text-[0.9rem] font-bold">{previewResult.profileName}</p>
+                    {previewResult.mentalState && <p className="text-[0.72rem] text-muted-foreground/60 italic">{previewResult.mentalState}</p>}
+                    {previewResult.combinedTitle && <p className="text-[0.7rem] text-muted-foreground/50">{previewResult.combinedTitle}</p>}
+                  </div>
+                )},
+                { key: 'summary', label: 'Funcionamento do Padrão', color: 'text-blue-600 dark:text-blue-400', borderColor: 'border-blue-500/20', render: () => (
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] text-foreground/70 leading-relaxed whitespace-pre-wrap">{previewResult.summary}</p>
+                    {previewResult.mechanism && <p className="text-[0.75rem] text-foreground/60 leading-relaxed border-l-2 border-blue-500/20 pl-3 italic">{previewResult.mechanism}</p>}
+                  </div>
+                )},
+                { key: 'contradiction', label: 'Contradição Interna', color: 'text-amber-600 dark:text-amber-400', borderColor: 'border-amber-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.contradiction}</p> },
+                { key: 'blindSpot', label: 'Ponto Cego', color: 'text-orange-600 dark:text-orange-400', borderColor: 'border-orange-500/20', render: () => (
+                  previewResult.blindSpot && typeof previewResult.blindSpot === 'object' ? (
+                    <div className="space-y-2">
+                      <div className="p-2.5 rounded-lg bg-muted/20"><span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">O que você acredita</span><p className="text-[0.75rem] text-foreground/60 italic mt-1">{previewResult.blindSpot.perceivedProblem}</p></div>
+                      <div className="p-2.5 rounded-lg bg-orange-500/[0.05] border border-orange-500/10"><span className="text-[0.65rem] uppercase tracking-wider text-orange-600/60 font-semibold">O que realmente acontece</span><p className="text-[0.75rem] text-foreground/70 font-medium mt-1">{previewResult.blindSpot.realProblem}</p></div>
+                    </div>
+                  ) : <p className="text-[0.78rem] text-foreground/70">{String(previewResult.blindSpot)}</p>
+                )},
+                { key: 'impact', label: 'Impacto', color: 'text-indigo-600 dark:text-indigo-400', borderColor: 'border-indigo-500/20', render: () => (
+                  <div className="space-y-2">
+                    <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.impact}</p>
+                    {previewResult.lifeImpact?.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mt-2">
+                        {previewResult.lifeImpact.map((li: any, i: number) => (
+                          <div key={i} className="text-[0.7rem] p-2 rounded-lg bg-muted/15 border border-border/15">
+                            <span className="font-semibold text-foreground/60">{li.pillar}:</span> <span className="text-foreground/50">{li.impact}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )},
+                { key: 'keyUnlockArea', label: 'Área-chave de Destravamento', color: 'text-emerald-600 dark:text-emerald-400', borderColor: 'border-emerald-500/20', render: () => (
+                  <div className="space-y-1">
+                    <p className="text-[0.78rem] text-foreground/70 leading-relaxed font-medium">{previewResult.keyUnlockArea}</p>
+                    {previewResult.blockingPoint && <p className="text-[0.72rem] text-muted-foreground/50 mt-1">Ponto de bloqueio: {previewResult.blockingPoint}</p>}
+                  </div>
+                )},
+                { key: 'whatNotToDo', label: 'O que NÃO fazer', color: 'text-red-500 dark:text-red-400', borderColor: 'border-red-500/20', render: () => (
+                  previewResult.whatNotToDo?.length > 0 ? (
+                    <ul className="space-y-1">{previewResult.whatNotToDo.map((item: string, i: number) => <li key={i} className="text-[0.75rem] text-foreground/60 flex gap-2"><span className="text-red-500/60 shrink-0">✕</span>{item}</li>)}</ul>
+                  ) : null
+                )},
+                { key: 'firstAction', label: 'Primeira Ação', color: 'text-teal-600 dark:text-teal-400', borderColor: 'border-teal-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed font-medium">{previewResult.firstAction || previewResult.direction}</p> },
+              ];
+
+              return (
+                <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.02] overflow-hidden">
+                  <div className="px-5 py-4 bg-emerald-500/[0.05] border-b border-emerald-500/15">
+                    <h4 className="text-[0.9rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Simulação</h4>
+                    <p className="text-[0.68rem] text-muted-foreground/50 mt-0.5">{blocks.filter(b => previewResult[b.key]).length} blocos gerados</p>
+                  </div>
+                  <div className="p-5 space-y-4">
+                    {blocks.map(block => {
+                      if (!previewResult[block.key]) return null;
+                      const content = block.render();
+                      if (!content) return null;
+                      return (
+                        <div key={block.key} className={`border-l-3 ${block.borderColor} pl-4 space-y-1.5`} style={{ borderLeftWidth: '3px' }}>
+                          <h5 className={`text-[0.75rem] font-bold uppercase tracking-wider ${block.color}`}>{block.label}</h5>
+                          {content}
+                        </div>
+                      );
+                    })}
+                    <details className="mt-4 pt-3 border-t border-border/15">
+                      <summary className="text-[0.65rem] cursor-pointer text-muted-foreground/40 hover:text-muted-foreground/60">Ver JSON completo</summary>
+                      <pre className="mt-2 p-3 bg-background/60 rounded-lg text-[0.65rem] overflow-x-auto max-h-80 text-foreground/50 font-mono leading-relaxed">{JSON.stringify(previewResult, null, 2)}</pre>
+                    </details>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </motion.div>
