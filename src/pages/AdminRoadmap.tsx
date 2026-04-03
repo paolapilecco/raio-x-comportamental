@@ -219,21 +219,8 @@ function generateTasks(): RoadmapTask[] {
   ];
 }
 
-const STORAGE_KEY = 'admin_roadmap_status';
-
-function loadStatuses(): Record<string, Status> {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch { return {}; }
-}
-
-function saveStatuses(statuses: Record<string, Status>) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(statuses));
-}
-
-const AdminRoadmap = () => {
-  const { isSuperAdmin, loading: authLoading } = useAuth();
+const AdminRoadmapInner = () => {
+  const { isSuperAdmin, loading: authLoading, user } = useAuth();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<RoadmapTask[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -242,32 +229,65 @@ const AdminRoadmap = () => {
   });
   const [filterCategory, setFilterCategory] = useState<Category | 'all'>('all');
   const [filterStatus, setFilterStatus] = useState<Status | 'all'>('all');
+  const [dbLoading, setDbLoading] = useState(true);
 
+  // Load statuses from DB and merge with generated tasks
   useEffect(() => {
     if (!authLoading && !isSuperAdmin) {
       navigate('/dashboard', { replace: true });
       return;
     }
     if (!authLoading && isSuperAdmin) {
-      const generated = generateTasks();
-      const savedStatuses = loadStatuses();
-      const withSavedStatus = generated.map(t => ({
-        ...t,
-        status: savedStatuses[t.id] || t.status,
-      }));
-      setTasks(withSavedStatus);
+      loadFromDb();
     }
   }, [authLoading, isSuperAdmin]);
 
-  const updateTaskStatus = (taskId: string, newStatus: Status) => {
-    setTasks(prev => {
-      const updated = prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t);
-      const statuses = loadStatuses();
-      statuses[taskId] = newStatus;
-      saveStatuses(statuses);
-      return updated;
-    });
-    toast.success(`Status atualizado para "${statusConfig[newStatus].label}"`);
+  const loadFromDb = async () => {
+    setDbLoading(true);
+    const generated = generateTasks();
+    const { data } = await supabase.from('roadmap_tasks').select('task_key, status');
+    const dbStatuses: Record<string, Status> = {};
+    if (data) {
+      data.forEach((row: any) => { dbStatuses[row.task_key] = row.status as Status; });
+    }
+    const merged = generated.map(t => ({
+      ...t,
+      status: (dbStatuses[t.id] as Status) || t.status,
+    }));
+    setTasks(merged);
+    setDbLoading(false);
+  };
+
+  // Realtime subscription
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    const channel = supabase
+      .channel('roadmap_tasks_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'roadmap_tasks' }, (payload: any) => {
+        const row = payload.new as any;
+        if (row?.task_key && row?.status) {
+          setTasks(prev => prev.map(t => t.id === row.task_key ? { ...t, status: row.status as Status } : t));
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [isSuperAdmin]);
+
+  const updateTaskStatus = async (taskId: string, newStatus: Status) => {
+    // Optimistic update
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+
+    // Upsert to DB
+    const { error } = await supabase.from('roadmap_tasks').upsert(
+      { task_key: taskId, status: newStatus, updated_by: user?.id || null },
+      { onConflict: 'task_key' }
+    );
+    if (error) {
+      toast.error('Erro ao salvar status');
+      loadFromDb(); // revert
+    } else {
+      toast.success(`Status atualizado para "${statusConfig[newStatus].label}"`);
+    }
   };
 
   const handleCopy = async (task: RoadmapTask) => {
@@ -281,13 +301,15 @@ const AdminRoadmap = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || dbLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
+
+  if (!isSuperAdmin) return null;
 
   const filtered = tasks.filter(t => {
     if (filterCategory !== 'all' && t.category !== filterCategory) return false;
@@ -496,4 +518,4 @@ const AdminRoadmap = () => {
   );
 };
 
-export default AdminRoadmap;
+export default AdminRoadmapInner;

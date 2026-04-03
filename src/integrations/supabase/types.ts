@@ -354,6 +354,30 @@ export type Database = {
           },
         ]
       }
+      roadmap_tasks: {
+        Row: {
+          id: string
+          status: string
+          task_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          status?: string
+          task_key: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          status?: string
+          task_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       test_ai_config: {
         Row: {
           ai_enabled: boolean
