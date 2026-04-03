@@ -13,7 +13,6 @@ import { Answer, PatternScore, InternalConflict, ResponseContradiction, Interpre
 interface QuestionMeta {
   id: number;
   axes: string[];
-  type?: string;
 }
 
 // ──────────────────────────────────────────────
