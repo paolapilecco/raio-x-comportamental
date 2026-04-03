@@ -196,6 +196,42 @@ export type Database = {
           },
         ]
       }
+      global_ai_config: {
+        Row: {
+          ai_enabled: boolean
+          created_at: string
+          depth_level: number
+          id: string
+          max_tokens: number
+          report_style: string
+          temperature: number
+          tone: string
+          updated_at: string
+        }
+        Insert: {
+          ai_enabled?: boolean
+          created_at?: string
+          depth_level?: number
+          id?: string
+          max_tokens?: number
+          report_style?: string
+          temperature?: number
+          tone?: string
+          updated_at?: string
+        }
+        Update: {
+          ai_enabled?: boolean
+          created_at?: string
+          depth_level?: number
+          id?: string
+          max_tokens?: number
+          report_style?: string
+          temperature?: number
+          tone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
@@ -265,6 +301,56 @@ export type Database = {
             foreignKeyName: "questions_test_module_id_fkey"
             columns: ["test_id"]
             isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_ai_config: {
+        Row: {
+          ai_enabled: boolean
+          created_at: string
+          depth_level: number
+          id: string
+          max_tokens: number
+          report_style: string
+          temperature: number
+          test_id: string
+          tone: string
+          updated_at: string
+          use_global_defaults: boolean
+        }
+        Insert: {
+          ai_enabled?: boolean
+          created_at?: string
+          depth_level?: number
+          id?: string
+          max_tokens?: number
+          report_style?: string
+          temperature?: number
+          test_id: string
+          tone?: string
+          updated_at?: string
+          use_global_defaults?: boolean
+        }
+        Update: {
+          ai_enabled?: boolean
+          created_at?: string
+          depth_level?: number
+          id?: string
+          max_tokens?: number
+          report_style?: string
+          temperature?: number
+          test_id?: string
+          tone?: string
+          updated_at?: string
+          use_global_defaults?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_ai_config_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: true
             referencedRelation: "test_modules"
             referencedColumns: ["id"]
           },
