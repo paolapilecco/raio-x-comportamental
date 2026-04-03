@@ -280,7 +280,7 @@ const AdminPrompts = () => {
     setPreviewResult(null);
     try {
       const { data, error } = await supabase.functions.invoke('analyze-test', {
-        body: { test_module_id: previewTestId, scores, slug: mod.slug },
+        body: { test_module_id: previewTestId, scores, slug: mod.slug, refine_level: refineLevel },
       });
       if (error) { toast.error('Erro na simulação'); setPreviewRunning(false); return; }
       if (data?.useFallback) { toast.warning('Sem prompts ativos — usaria fallback local'); setPreviewRunning(false); return; }
