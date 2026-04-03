@@ -24,6 +24,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState<'all' | 'standard' | 'premium'>('all');
 
   useEffect(() => {
     if (authLoading) return;
