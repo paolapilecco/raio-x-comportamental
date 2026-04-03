@@ -902,7 +902,6 @@ const AdminPrompts = () => {
                       </div>
                     </div>
                   )}
-                    )}
                   </div>
                   <div className="p-5 space-y-4">
                     {blocks.map(block => {
