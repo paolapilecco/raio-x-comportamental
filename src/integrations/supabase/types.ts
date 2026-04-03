@@ -193,6 +193,7 @@ export type Database = {
           sort_order: number
           test_id: string
           text: string
+          type: Database["public"]["Enums"]["question_type"]
           weight: number
         }
         Insert: {
@@ -202,6 +203,7 @@ export type Database = {
           sort_order?: number
           test_id: string
           text: string
+          type?: Database["public"]["Enums"]["question_type"]
           weight?: number
         }
         Update: {
@@ -211,6 +213,7 @@ export type Database = {
           sort_order?: number
           test_id?: string
           text?: string
+          type?: Database["public"]["Enums"]["question_type"]
           weight?: number
         }
         Relationships: [
@@ -435,6 +438,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "premium" | "super_admin"
+      question_type: "likert" | "behavior_choice" | "frequency" | "intensity"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -563,6 +567,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "premium", "super_admin"],
+      question_type: ["likert", "behavior_choice", "frequency", "intensity"],
     },
   },
 } as const
