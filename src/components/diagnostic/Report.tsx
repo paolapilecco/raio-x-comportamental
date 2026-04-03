@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download, XCircle, Crosshair, Flame, Key, UserCheck } from 'lucide-react';
+import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download, XCircle, Crosshair, Flame, Key, UserCheck, EyeOff } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -162,7 +162,22 @@ const Report = ({ result, onRestart }: ReportProps) => {
           </div>
         </ReportSection>
 
-        {/* Mental State */}
+        {/* Blind Spot */}
+        {result.interpretation?.blindSpot && (
+          <ReportSection title="Ponto Cego" delay={0.13} icon={<EyeOff className="w-5 h-5 text-destructive/60" />}>
+            <div className="space-y-4">
+              <div className="border-l-2 border-muted-foreground/30 pl-5">
+                <p className="text-[0.7rem] tracking-[0.2em] uppercase text-muted-foreground/50 font-semibold mb-1.5">O que você acredita</p>
+                <p className="text-foreground/70 leading-[1.75] text-[0.9rem] italic">{result.interpretation.blindSpot.perceivedProblem}</p>
+              </div>
+              <div className="border-l-2 border-destructive/40 pl-5 bg-destructive/[0.04] rounded-r-xl py-3 pr-4">
+                <p className="text-[0.7rem] tracking-[0.2em] uppercase text-destructive/50 font-semibold mb-1.5">O que realmente está acontecendo</p>
+                <p className="text-foreground/80 leading-[1.75] text-[0.9rem] font-medium">{result.interpretation.blindSpot.realProblem}</p>
+              </div>
+            </div>
+          </ReportSection>
+        )}
+
         <ReportSection title="Seu estado mental atual" delay={0.15} icon={<Brain className="w-5 h-5 text-primary/60" />}>
           <p className="text-foreground/70 leading-[1.75] text-[0.9rem]">{result.mentalState}</p>
         </ReportSection>

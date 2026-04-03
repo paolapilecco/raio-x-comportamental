@@ -8,7 +8,7 @@
  * - Derived core pain and key unlock area from cross-pattern analysis
  */
 
-import { Answer, PatternScore, InternalConflict, ResponseContradiction, InterpretiveInsight, BehavioralProfile } from '@/types/diagnostic';
+import { Answer, PatternScore, InternalConflict, ResponseContradiction, InterpretiveInsight, BehavioralProfile, BlindSpot } from '@/types/diagnostic';
 
 interface QuestionMeta {
   id: number;
@@ -582,7 +582,106 @@ export function classifyBehavioralProfile(
 }
 
 // ──────────────────────────────────────────────
-// 7. MAIN ENTRY POINT
+// 7. BLIND SPOT DETECTION
+// ──────────────────────────────────────────────
+
+const BLIND_SPOT_RULES: { condition: (s: Record<string, number>, conflicts: InternalConflict[], selfDeception: number) => boolean; perceived: string; real: string }[] = [
+  {
+    condition: (s) => (s['paralyzing_perfectionism'] || 0) >= 60 && (s['unstable_execution'] || 0) >= 55,
+    perceived: 'Você acredita que precisa se organizar melhor e criar um plano perfeito antes de agir.',
+    real: 'Mas o problema real é que o planejamento virou uma forma de evitar a execução — o plano perfeito nunca chega porque sua função é proteger você do risco de falhar.',
+  },
+  {
+    condition: (s) => (s['discomfort_escape'] || 0) >= 60 && (s['low_routine_sustenance'] || 0) >= 55,
+    perceived: 'Você acredita que falta disciplina e força de vontade para manter uma rotina.',
+    real: 'Mas o problema real é que você abandona no momento exato em que o desconforto aparece — não é falta de disciplina, é intolerância ao atrito inicial da mudança.',
+  },
+  {
+    condition: (s) => (s['validation_dependency'] || 0) >= 60 && (s['excessive_self_criticism'] || 0) >= 55,
+    perceived: 'Você acredita que é exigente consigo mesmo porque tem padrões altos.',
+    real: 'Mas o problema real é que você usa a autocrítica como escudo — se você se criticar primeiro, a rejeição dos outros dói menos. O padrão alto é uma armadura, não uma ambição.',
+  },
+  {
+    condition: (s) => (s['functional_overload'] || 0) >= 60 && (s['emotional_self_sabotage'] || 0) >= 50,
+    perceived: 'Você acredita que está sobrecarregado porque tem muitas responsabilidades.',
+    real: 'Mas o problema real é que você acumula tarefas para não ter tempo de confrontar o que realmente te incomoda. A ocupação é uma fuga disfarçada de produtividade.',
+  },
+  {
+    condition: (s) => (s['emotional_self_sabotage'] || 0) >= 60 && (s['unstable_execution'] || 0) >= 50,
+    perceived: 'Você acredita que precisa encontrar mais motivação para manter seus projetos.',
+    real: 'Mas o problema real é que você destrói o que começa a funcionar. Não falta motivação — sobra medo de manter algo que pode dar errado.',
+  },
+  {
+    condition: (s) => (s['excessive_self_criticism'] || 0) >= 60 && (s['low_routine_sustenance'] || 0) >= 50,
+    perceived: 'Você acredita que precisa se cobrar mais para conseguir resultados.',
+    real: 'Mas o problema real é que a cobrança excessiva está consumindo a energia que deveria ir para a ação. Quanto mais se cobra, menos faz — e interpreta isso como prova de que precisa se cobrar ainda mais.',
+  },
+  {
+    condition: (s, c) => c.length >= 2,
+    perceived: 'Você acredita que precisa "escolher um caminho" e se comprometer de verdade.',
+    real: 'Mas o problema real é que você está em guerra consigo mesmo — partes suas querem coisas opostas ao mesmo tempo. Não é indecisão, é conflito interno não resolvido que paralisa qualquer escolha.',
+  },
+  {
+    condition: (s, _, sd) => sd >= 45,
+    perceived: 'Você acredita que se conhece bem e sabe o que precisa mudar.',
+    real: 'Mas o problema real é que existe uma distância significativa entre como você se percebe e como realmente se comporta. Seu autoconhecimento tem pontos cegos que impedem mudanças reais.',
+  },
+  {
+    condition: (s) => (s['discomfort_escape'] || 0) >= 65,
+    perceived: 'Você acredita que precisa de condições ideais para conseguir agir com consistência.',
+    real: 'Mas o problema real é que você evita desconforto antes da ação. A condição ideal nunca chega porque qualquer condição real envolve atrito — e atrito é exatamente o que você foge.',
+  },
+  {
+    condition: (s) => (s['validation_dependency'] || 0) >= 65,
+    perceived: 'Você acredita que valoriza a opinião dos outros porque é humilde e aberto a feedback.',
+    real: 'Mas o problema real é que você transferiu para os outros a autoridade sobre seu próprio valor. Sem validação externa, você não confia nas próprias decisões.',
+  },
+];
+
+function deriveBlindSpot(
+  scores: Record<string, number>,
+  conflicts: InternalConflict[],
+  selfDeceptionIndex: number
+): BlindSpot {
+  for (const rule of BLIND_SPOT_RULES) {
+    if (rule.condition(scores, conflicts, selfDeceptionIndex)) {
+      return { perceivedProblem: rule.perceived, realProblem: rule.real };
+    }
+  }
+
+  // Fallback based on dominant pattern
+  const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
+  const topKey = sorted[0]?.[0] || '';
+
+  const FALLBACK_MAP: Record<string, BlindSpot> = {
+    paralyzing_perfectionism: {
+      perceivedProblem: 'Você acredita que só precisa encontrar o método certo para ser produtivo.',
+      realProblem: 'Mas o problema real é que a busca pelo método perfeito é o próprio mecanismo de procrastinação — agir de forma imperfeita é o que realmente precisa acontecer.',
+    },
+    unstable_execution: {
+      perceivedProblem: 'Você acredita que começa muitas coisas porque tem muitos interesses.',
+      realProblem: 'Mas o problema real é que você abandona antes que o resultado possa te julgar. Começar é fácil porque não tem risco — o risco está em continuar.',
+    },
+    functional_overload: {
+      perceivedProblem: 'Você acredita que precisa aprender a delegar e gerenciar melhor seu tempo.',
+      realProblem: 'Mas o problema real é que você precisa ser indispensável para se sentir seguro. Soltar o controle não é sobre gestão — é sobre enfrentar o medo de não ser necessário.',
+    },
+    low_routine_sustenance: {
+      perceivedProblem: 'Você acredita que falta consistência porque ainda não encontrou a rotina certa.',
+      realProblem: 'Mas o problema real é que toda rotina vai gerar tédio e desconforto em algum momento — e esse é exatamente o momento em que você abandona e começa algo novo.',
+    },
+  };
+
+  if (FALLBACK_MAP[topKey]) return FALLBACK_MAP[topKey];
+
+  return {
+    perceivedProblem: 'Você acredita que sabe qual é o problema e que é uma questão de tempo até resolver.',
+    realProblem: 'Mas o problema real é que o padrão que te trava opera abaixo da sua consciência — enquanto você tenta resolver o sintoma visível, a causa real continua intocada.',
+  };
+}
+
+// ──────────────────────────────────────────────
+// 8. MAIN ENTRY POINT
 // ──────────────────────────────────────────────
 
 export function generateInterpretation(
@@ -619,6 +718,9 @@ export function generateInterpretation(
     dominantLabel
   );
 
+  // 7. Derive blind spot
+  const blindSpot = deriveBlindSpot(scoresMap, internalConflicts, selfDeceptionIndex);
+
   return {
     internalConflicts,
     contradictions,
@@ -628,5 +730,6 @@ export function generateInterpretation(
     selfDeceptionIndex,
     interpretiveSummary,
     behavioralProfile,
+    blindSpot,
   };
 }
