@@ -64,28 +64,14 @@ export function detectConflicts(
 // 2. CONTRADICTION DETECTION
 // ──────────────────────────────────────────────
 
-interface AnswersByType {
-  likert: { questionId: number; value: number; axes: string[] }[];
-  behavior_choice: { questionId: number; value: number; axes: string[] }[];
-  frequency: { questionId: number; value: number; axes: string[] }[];
-}
-
-function groupAnswersByType(
+function groupAnswersByAxes(
   answers: Answer[],
   questions: QuestionMeta[]
-): AnswersByType {
-  const grouped: AnswersByType = { likert: [], behavior_choice: [], frequency: [] };
-
-  answers.forEach(answer => {
+): { questionId: number; value: number; axes: string[] }[] {
+  return answers.map(answer => {
     const q = questions.find(qq => qq.id === answer.questionId);
-    if (!q) return;
-    const type = (q.type || 'likert') as keyof AnswersByType;
-    if (grouped[type]) {
-      grouped[type].push({ questionId: answer.questionId, value: answer.value, axes: q.axes });
-    }
-  });
-
-  return grouped;
+    return q ? { questionId: answer.questionId, value: answer.value, axes: q.axes } : null;
+  }).filter(Boolean) as { questionId: number; value: number; axes: string[] }[];
 }
 
 function calculateAxisAvgByType(
