@@ -309,6 +309,50 @@ export type Database = {
         }
         Relationships: []
       }
+      test_prompts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_active: boolean
+          prompt_type: Database["public"]["Enums"]["prompt_type"]
+          test_id: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          prompt_type: Database["public"]["Enums"]["prompt_type"]
+          test_id: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          prompt_type?: Database["public"]["Enums"]["prompt_type"]
+          test_id?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_prompts_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_results: {
         Row: {
           created_at: string
@@ -482,6 +526,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "premium" | "super_admin"
+      prompt_type:
+        | "interpretation"
+        | "diagnosis"
+        | "profile"
+        | "core_pain"
+        | "triggers"
+        | "direction"
+        | "restrictions"
       question_type: "likert" | "behavior_choice" | "frequency" | "intensity"
     }
     CompositeTypes: {
@@ -611,6 +663,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "premium", "super_admin"],
+      prompt_type: [
+        "interpretation",
+        "diagnosis",
+        "profile",
+        "core_pain",
+        "triggers",
+        "direction",
+        "restrictions",
+      ],
       question_type: ["likert", "behavior_choice", "frequency", "intensity"],
     },
   },

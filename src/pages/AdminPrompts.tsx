@@ -3,8 +3,19 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Plus, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban } from 'lucide-react';
+import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban } from 'lucide-react';
 import { toast } from 'sonner';
+
+interface TestPrompt {
+  id: string;
+  test_id: string;
+  prompt_type: string;
+  title: string;
+  content: string;
+  is_active: boolean;
+  updated_at: string;
+  updated_by: string | null;
+}
 
 interface AdminPrompt {
   id: string;
@@ -29,14 +40,14 @@ const iconMap: Record<string, any> = {
   target: Target, sparkles: Sparkles,
 };
 
-const MODULE_FIELDS = [
-  { context: 'prompt_base', label: 'Prompt Base de Interpretação', icon: Brain, description: 'Instruções base para interpretar as respostas do usuário neste teste.', rows: 4 },
-  { context: 'prompt_diagnostic', label: 'Prompt do Diagnóstico Final', icon: FileText, description: 'Prompt para gerar o diagnóstico final com base nos scores.', rows: 4 },
-  { context: 'prompt_profile', label: 'Prompt de Identificação de Perfil', icon: Target, description: 'Prompt para identificar o perfil comportamental dominante.', rows: 4 },
-  { context: 'prompt_core_pain', label: 'Prompt de Dor Central', icon: Crosshair, description: 'Prompt para identificar a dor central por trás dos padrões.', rows: 3 },
-  { context: 'prompt_triggers', label: 'Prompt de Gatilhos e Armadilhas', icon: AlertTriangle, description: 'Prompt para mapear gatilhos que ativam padrões e armadilhas que os mantêm.', rows: 3 },
-  { context: 'prompt_direction', label: 'Prompt de Direção Prática', icon: ArrowUpRight, description: 'Prompt para sugerir ações práticas e caminhos de transformação.', rows: 3 },
-  { context: 'prompt_restrictions', label: 'Regras Negativas / Restrições', icon: Ban, description: 'O que a IA NÃO deve fazer ao gerar resultados para este teste.', rows: 3 },
+const PROMPT_FIELDS = [
+  { type: 'interpretation', label: 'Prompt Base de Interpretação', icon: Brain, description: 'Instruções base para interpretar as respostas do usuário.', rows: 4 },
+  { type: 'diagnosis', label: 'Prompt do Diagnóstico Final', icon: FileText, description: 'Prompt para gerar o diagnóstico final com base nos scores.', rows: 4 },
+  { type: 'profile', label: 'Prompt de Identificação de Perfil', icon: Target, description: 'Prompt para identificar o perfil comportamental dominante.', rows: 4 },
+  { type: 'core_pain', label: 'Prompt de Dor Central', icon: Crosshair, description: 'Prompt para identificar a dor central por trás dos padrões.', rows: 3 },
+  { type: 'triggers', label: 'Prompt de Gatilhos e Armadilhas', icon: AlertTriangle, description: 'Mapear gatilhos que ativam padrões e armadilhas que os mantêm.', rows: 3 },
+  { type: 'direction', label: 'Prompt de Direção Prática', icon: ArrowUpRight, description: 'Sugerir ações práticas e caminhos de transformação.', rows: 3 },
+  { type: 'restrictions', label: 'Regras Negativas / Restrições', icon: Ban, description: 'O que a IA NÃO deve fazer ao gerar resultados.', rows: 3 },
 ];
 
 const GLOBAL_META: Record<string, { icon: any; description: string }> = {
@@ -48,9 +59,10 @@ const GLOBAL_META: Record<string, { icon: any; description: string }> = {
 };
 
 const AdminPrompts = () => {
-  const { isSuperAdmin, loading: authLoading } = useAuth();
+  const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [prompts, setPrompts] = useState<AdminPrompt[]>([]);
+  const [testPrompts, setTestPrompts] = useState<TestPrompt[]>([]);
+  const [globalPrompts, setGlobalPrompts] = useState<AdminPrompt[]>([]);
   const [modules, setModules] = useState<TestModule[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -63,23 +75,43 @@ const AdminPrompts = () => {
   }, [authLoading, isSuperAdmin]);
 
   const fetchData = async () => {
-    const [pRes, mRes] = await Promise.all([
-      supabase.from('admin_prompts').select('*').order('created_at', { ascending: true }),
+    const [tpRes, gpRes, mRes] = await Promise.all([
+      supabase.from('test_prompts').select('*').order('created_at', { ascending: true }),
+      supabase.from('admin_prompts').select('*').is('test_module_id', null).order('created_at', { ascending: true }),
       supabase.from('test_modules').select('id, slug, name, icon').eq('is_active', true).order('sort_order'),
     ]);
-    if (pRes.error) toast.error('Erro ao carregar prompts');
+    if (tpRes.error) toast.error('Erro ao carregar prompts de teste');
+    if (gpRes.error) toast.error('Erro ao carregar prompts globais');
     if (mRes.error) toast.error('Erro ao carregar módulos');
-    const p = (pRes.data || []) as AdminPrompt[];
-    setPrompts(p);
+
+    const tp = (tpRes.data || []) as TestPrompt[];
+    const gp = (gpRes.data || []) as AdminPrompt[];
+    setTestPrompts(tp);
+    setGlobalPrompts(gp);
     setModules((mRes.data || []) as TestModule[]);
+
     const texts: Record<string, string> = {};
-    p.forEach(pr => { texts[pr.id] = pr.prompt_text; });
+    tp.forEach(p => { texts[`tp_${p.id}`] = p.content; });
+    gp.forEach(p => { texts[`gp_${p.id}`] = p.prompt_text; });
     setEditedTexts(texts);
     setLoading(false);
   };
 
-  const handleSave = async (prompt: AdminPrompt) => {
-    const text = editedTexts[prompt.id];
+  const handleSaveTestPrompt = async (prompt: TestPrompt) => {
+    const key = `tp_${prompt.id}`;
+    const text = editedTexts[key];
+    if (text === undefined || text === prompt.content) { toast.info('Sem alterações'); return; }
+    if (!text.trim()) { toast.error('Prompt vazio'); return; }
+    setSaving(prompt.id);
+    const { error } = await supabase.from('test_prompts').update({ content: text.trim(), updated_by: user?.id }).eq('id', prompt.id);
+    if (error) toast.error('Erro ao salvar');
+    else { toast.success('Salvo'); await fetchData(); }
+    setSaving(null);
+  };
+
+  const handleSaveGlobal = async (prompt: AdminPrompt) => {
+    const key = `gp_${prompt.id}`;
+    const text = editedTexts[key];
     if (text === undefined || text === prompt.prompt_text) { toast.info('Sem alterações'); return; }
     if (!text.trim()) { toast.error('Prompt vazio'); return; }
     setSaving(prompt.id);
@@ -89,24 +121,29 @@ const AdminPrompts = () => {
     setSaving(null);
   };
 
-  const handleToggle = async (prompt: AdminPrompt) => {
+  const handleToggleTestPrompt = async (prompt: TestPrompt) => {
+    const { error } = await supabase.from('test_prompts').update({ is_active: !prompt.is_active, updated_by: user?.id }).eq('id', prompt.id);
+    if (error) toast.error('Erro');
+    else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
+  };
+
+  const handleToggleGlobal = async (prompt: AdminPrompt) => {
     const { error } = await supabase.from('admin_prompts').update({ is_active: !prompt.is_active }).eq('id', prompt.id);
     if (error) toast.error('Erro');
     else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
   };
 
   const toggleSection = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
-
-  const globalPrompts = prompts.filter(p => !p.test_module_id);
   const fadeUp = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
-  const renderField = (prompt: AdminPrompt, meta: { icon: any; description: string }, rows = 4) => {
+  const renderTestPromptField = (prompt: TestPrompt, meta: { icon: any; description: string; rows: number }) => {
     const Icon = meta.icon;
-    const hasChanges = editedTexts[prompt.id] !== prompt.prompt_text;
-    const isRestriction = prompt.context === 'prompt_restrictions';
+    const key = `tp_${prompt.id}`;
+    const hasChanges = editedTexts[key] !== prompt.content;
+    const isRestriction = prompt.prompt_type === 'restrictions';
     return (
       <div key={prompt.id} className={`border rounded-xl p-4 space-y-2.5 transition-colors ${
-        isRestriction 
+        isRestriction
           ? (prompt.is_active ? 'border-red-500/20 bg-red-500/[0.03]' : 'border-border/15 bg-card/20 opacity-50')
           : (prompt.is_active ? 'border-border/30 bg-card/40' : 'border-border/15 bg-card/20 opacity-50')
       }`}>
@@ -114,21 +151,21 @@ const AdminPrompts = () => {
           <div className="flex items-center gap-2">
             <Icon className={`w-3.5 h-3.5 shrink-0 ${isRestriction ? 'text-red-500/60' : (prompt.is_active ? 'text-primary/70' : 'text-muted-foreground/30')}`} />
             <div>
-              <h4 className="text-[0.8rem] font-semibold leading-tight">{prompt.label}</h4>
+              <h4 className="text-[0.8rem] font-semibold leading-tight">{prompt.title}</h4>
               <p className="text-[0.65rem] text-muted-foreground/40">{meta.description}</p>
             </div>
           </div>
-          <button onClick={() => handleToggle(prompt)} className="p-1 hover:bg-muted/30 rounded-lg transition-colors">
+          <button onClick={() => handleToggleTestPrompt(prompt)} className="p-1 hover:bg-muted/30 rounded-lg transition-colors">
             {prompt.is_active ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground/30" />}
           </button>
         </div>
         <textarea
-          value={editedTexts[prompt.id] ?? prompt.prompt_text}
-          onChange={(e) => setEditedTexts(prev => ({ ...prev, [prompt.id]: e.target.value }))}
-          rows={rows}
+          value={editedTexts[key] ?? prompt.content}
+          onChange={(e) => setEditedTexts(prev => ({ ...prev, [key]: e.target.value }))}
+          rows={meta.rows}
           className={`w-full border rounded-lg p-3 text-[0.78rem] leading-[1.7] resize-y focus:outline-none focus:ring-2 transition-all font-mono ${
-            isRestriction 
-              ? 'bg-red-500/[0.02] border-red-500/10 text-red-900/70 dark:text-red-300/70 focus:ring-red-500/20' 
+            isRestriction
+              ? 'bg-red-500/[0.02] border-red-500/10 text-red-900/70 dark:text-red-300/70 focus:ring-red-500/20'
               : 'bg-background/50 border-border/20 text-foreground/80 focus:ring-primary/20'
           }`}
         />
@@ -136,7 +173,43 @@ const AdminPrompts = () => {
           <span className="text-[0.6rem] text-muted-foreground/25">
             {new Date(prompt.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </span>
-          <button onClick={() => handleSave(prompt)} disabled={!hasChanges || saving === prompt.id} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-[0.7rem] font-semibold disabled:opacity-20 hover:opacity-90 transition-all">
+          <button onClick={() => handleSaveTestPrompt(prompt)} disabled={!hasChanges || saving === prompt.id} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-[0.7rem] font-semibold disabled:opacity-20 hover:opacity-90 transition-all">
+            <Save className="w-3 h-3" /> {saving === prompt.id ? '...' : 'Salvar'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const renderGlobalField = (prompt: AdminPrompt, meta: { icon: any; description: string }) => {
+    const Icon = meta.icon;
+    const key = `gp_${prompt.id}`;
+    const hasChanges = editedTexts[key] !== prompt.prompt_text;
+    return (
+      <div key={prompt.id} className={`border rounded-xl p-4 space-y-2.5 transition-colors ${prompt.is_active ? 'border-border/30 bg-card/40' : 'border-border/15 bg-card/20 opacity-50'}`}>
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Icon className={`w-3.5 h-3.5 shrink-0 ${prompt.is_active ? 'text-primary/70' : 'text-muted-foreground/30'}`} />
+            <div>
+              <h4 className="text-[0.8rem] font-semibold leading-tight">{prompt.label}</h4>
+              <p className="text-[0.65rem] text-muted-foreground/40">{meta.description}</p>
+            </div>
+          </div>
+          <button onClick={() => handleToggleGlobal(prompt)} className="p-1 hover:bg-muted/30 rounded-lg transition-colors">
+            {prompt.is_active ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground/30" />}
+          </button>
+        </div>
+        <textarea
+          value={editedTexts[key] ?? prompt.prompt_text}
+          onChange={(e) => setEditedTexts(prev => ({ ...prev, [key]: e.target.value }))}
+          rows={4}
+          className="w-full bg-background/50 border border-border/20 rounded-lg p-3 text-[0.78rem] leading-[1.7] text-foreground/80 resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-mono"
+        />
+        <div className="flex items-center justify-between">
+          <span className="text-[0.6rem] text-muted-foreground/25">
+            {new Date(prompt.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </span>
+          <button onClick={() => handleSaveGlobal(prompt)} disabled={!hasChanges || saving === prompt.id} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-[0.7rem] font-semibold disabled:opacity-20 hover:opacity-90 transition-all">
             <Save className="w-3 h-3" /> {saving === prompt.id ? '...' : 'Salvar'}
           </button>
         </div>
@@ -150,7 +223,6 @@ const AdminPrompts = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground px-4 py-8 max-w-4xl mx-auto space-y-6">
-      {/* Header */}
       <motion.div {...fadeUp} className="space-y-2">
         <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-muted-foreground/60 hover:text-foreground/80 text-[0.8rem] transition-colors mb-4">
           <ArrowLeft className="w-4 h-4" /> Voltar ao Dashboard
@@ -161,7 +233,7 @@ const AdminPrompts = () => {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Central de Prompts e Inteligência</h1>
-            <p className="text-[0.78rem] text-muted-foreground/60">7 campos editáveis por teste · Controle total da IA</p>
+            <p className="text-[0.78rem] text-muted-foreground/60">7 prompts por teste · Tabela dedicada test_prompts</p>
           </div>
         </div>
       </motion.div>
@@ -173,26 +245,26 @@ const AdminPrompts = () => {
             <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><Sparkles className="w-4 h-4 text-primary" /></div>
             <div className="text-left">
               <h2 className="text-[0.9rem] font-semibold">Prompts Globais</h2>
-              <p className="text-[0.7rem] text-muted-foreground/50">{globalPrompts.length} prompts · Aplicados a toda a plataforma</p>
+              <p className="text-[0.7rem] text-muted-foreground/50">{globalPrompts.length} prompts · Plataforma inteira</p>
             </div>
           </div>
           {expandedSections['global'] ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
         </button>
         {expandedSections['global'] && (
           <div className="space-y-3 pl-2">
-            {globalPrompts.map(p => renderField(p, GLOBAL_META[p.context] || { icon: Brain, description: 'Prompt personalizado.' }))}
+            {globalPrompts.map(p => renderGlobalField(p, GLOBAL_META[p.context] || { icon: Brain, description: 'Prompt personalizado.' }))}
           </div>
         )}
       </motion.div>
 
-      {/* ── Per-Module: 7 fields each ── */}
+      {/* ── Per-Module: 7 prompts from test_prompts ── */}
       {modules.map((mod, mi) => {
-        const modulePrompts = prompts.filter(p => p.test_module_id === mod.id);
+        const modPrompts = testPrompts.filter(p => p.test_id === mod.id);
         const ModIcon = iconMap[mod.icon] || Brain;
         const isExpanded = expandedSections[mod.id] ?? false;
-        const promptsByContext: Record<string, AdminPrompt> = {};
-        modulePrompts.forEach(p => { promptsByContext[p.context] = p; });
-        const configuredCount = MODULE_FIELDS.filter(f => promptsByContext[f.context]).length;
+        const byType: Record<string, TestPrompt> = {};
+        modPrompts.forEach(p => { byType[p.prompt_type] = p; });
+        const configuredCount = PROMPT_FIELDS.filter(f => byType[f.type]).length;
 
         return (
           <motion.div key={mod.id} {...fadeUp} transition={{ delay: 0.08 + 0.03 * mi }} className="space-y-3">
@@ -203,33 +275,25 @@ const AdminPrompts = () => {
                 </div>
                 <div className="text-left">
                   <h2 className="text-[0.9rem] font-semibold">{mod.name}</h2>
-                  <p className="text-[0.7rem] text-muted-foreground/50">
-                    {configuredCount}/7 campos · <span className="font-mono">{mod.slug}</span>
-                  </p>
+                  <p className="text-[0.7rem] text-muted-foreground/50">{configuredCount}/7 prompts · <span className="font-mono">{mod.slug}</span></p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {configuredCount < 7 && (
-                  <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium">
-                    {7 - configuredCount} faltando
-                  </span>
-                )}
-                {configuredCount === 7 && (
-                  <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
-                    Completo
-                  </span>
-                )}
+                {configuredCount === 7
+                  ? <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">Completo</span>
+                  : <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium">{7 - configuredCount} faltando</span>
+                }
                 {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
               </div>
             </button>
 
             {isExpanded && (
               <div className="space-y-3 pl-2">
-                {MODULE_FIELDS.map((field) => {
-                  const prompt = promptsByContext[field.context];
+                {PROMPT_FIELDS.map((field) => {
+                  const prompt = byType[field.type];
                   if (!prompt) {
                     return (
-                      <div key={field.context} className="border border-dashed border-border/25 rounded-xl p-4 flex items-center gap-3 opacity-40">
+                      <div key={field.type} className="border border-dashed border-border/25 rounded-xl p-4 flex items-center gap-3 opacity-40">
                         <field.icon className="w-3.5 h-3.5 text-muted-foreground/30" />
                         <div>
                           <p className="text-[0.78rem] font-medium text-muted-foreground/50">{field.label}</p>
@@ -238,7 +302,7 @@ const AdminPrompts = () => {
                       </div>
                     );
                   }
-                  return renderField(prompt, { icon: field.icon, description: field.description }, field.rows);
+                  return renderTestPromptField(prompt, { icon: field.icon, description: field.description, rows: field.rows });
                 })}
               </div>
             )}
