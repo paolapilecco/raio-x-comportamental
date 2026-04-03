@@ -782,6 +782,47 @@ const AdminPrompts = () => {
                       <p className="text-[0.65rem] text-muted-foreground/40 mt-2 italic">Revise os prompts deste teste para melhorar a especificidade.</p>
                     </div>
                   )}
+                  {/* Refine button */}
+                  <div className="px-5 pt-2 flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const nextLevel = Math.min(refineLevel + 1, 3);
+                        setRefineLevel(nextLevel);
+                        // Re-run with higher refine level using stored data
+                        if (previewSentData) {
+                          setPreviewRunning(true);
+                          setPreviewResult(null);
+                          const mod = modules.find(m => m.id === previewTestId);
+                          if (mod) {
+                            supabase.functions.invoke('analyze-test', {
+                              body: { test_module_id: previewTestId, scores: previewSentData.scores, slug: mod.slug, refine_level: nextLevel },
+                            }).then(({ data, error }) => {
+                              if (error || data?.useFallback || data?.error) {
+                                toast.error(data?.error || 'Erro ao refinar');
+                              } else {
+                                setPreviewResult(data?.analysis || data);
+                                toast.success(`Refinamento nível ${nextLevel} concluído`);
+                              }
+                              setPreviewRunning(false);
+                            });
+                          }
+                        }
+                      }}
+                      disabled={previewRunning || refineLevel >= 3}
+                      className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 text-white rounded-xl text-[0.78rem] font-semibold disabled:opacity-30 hover:bg-amber-700 transition-all"
+                    >
+                      {previewRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                      {previewRunning ? 'Refinando...' : 'Refinar Resposta'}
+                    </button>
+                    {refineLevel > 0 && (
+                      <span className="text-[0.68rem] text-amber-600 font-medium">
+                        Nível de refinamento: {refineLevel}/3
+                      </span>
+                    )}
+                    {refineLevel >= 3 && (
+                      <span className="text-[0.62rem] text-muted-foreground/40 italic">Nível máximo atingido</span>
+                    )}
+                  </div>
                   <div className="p-5 space-y-4">
                     {blocks.map(block => {
                       if (!previewResult[block.key]) return null;
