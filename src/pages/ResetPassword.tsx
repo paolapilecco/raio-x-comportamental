@@ -8,23 +8,31 @@ import { ScanLine } from 'lucide-react';
 
 const passwordSchema = z.string().min(6, 'Mínimo de 6 caracteres').max(128);
 
+// Capture hash before React/Supabase can clear it
+const initialHash = window.location.hash;
+
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(() => initialHash.includes('type=recovery'));
   const navigate = useNavigate();
 
   useEffect(() => {
-    const hash = window.location.hash;
-    if (hash.includes('type=recovery')) {
-      setReady(true);
-    } else {
-      supabase.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') setReady(true);
-      });
-    }
-  }, []);
+    if (ready) return;
+
+    // Check if session already exists (recovery link was already processed)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setReady(true);
+    });
+
+    // Also listen for the PASSWORD_RECOVERY event
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setReady(true);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [ready]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
