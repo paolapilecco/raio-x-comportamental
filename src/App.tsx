@@ -15,6 +15,7 @@ import CentralReport from "./pages/CentralReport";
 import Profile from "./pages/Profile";
 import Premium from "./pages/Premium";
 import ResetPassword from "./pages/ResetPassword";
+import AdminPrompts from "./pages/AdminPrompts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
