@@ -679,6 +679,22 @@ const AdminPrompts = () => {
               </div>
             )}
             {previewResult && (() => {
+              // ── Quality check ──
+              const GENERIC_PHRASES = ['tenha mais foco', 'acredite em si', 'saia da zona de conforto', 'você precisa melhorar', 'busque equilíbrio', 'tente se organizar', 'seja mais disciplinado', 'confie no processo'];
+              const allText = [previewResult.criticalDiagnosis, previewResult.corePain, previewResult.summary, previewResult.mechanism, previewResult.contradiction, previewResult.direction, previewResult.firstAction, previewResult.keyUnlockArea].filter(Boolean).join(' ').toLowerCase();
+              const issues: string[] = [];
+              const hasCause = /porque|raiz|causa|origem|sustenta|alimenta|mantém/.test(allText);
+              const hasConflict = /mas |porém|contradição|conflito|ao mesmo tempo|enquanto/.test(allText);
+              const hasDirection = /primeiro passo|nos próximos|ação|começar por|parar de|específic/.test(allText);
+              const genericFound = GENERIC_PHRASES.filter(p => allText.includes(p));
+              if (!hasCause) issues.push('Sem causa clara identificada');
+              if (!hasConflict) issues.push('Sem conflito ou contradição');
+              if (!hasDirection) issues.push('Sem direção prática específica');
+              if (genericFound.length > 0) issues.push(`Frases genéricas: "${genericFound.join('", "')}"`);
+              if (!previewResult.blindSpot?.realProblem) issues.push('Ponto cego vazio ou ausente');
+              if ((previewResult.whatNotToDo?.length ?? 0) === 0) issues.push('Sem restrições (o que não fazer)');
+              const qualityScore = Math.max(0, 100 - issues.length * 18);
+
               const blocks: { key: string; label: string; color: string; borderColor: string; render: () => React.ReactNode }[] = [
                 { key: 'criticalDiagnosis', label: 'Diagnóstico Crítico', color: 'text-red-600 dark:text-red-400', borderColor: 'border-red-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.criticalDiagnosis}</p> },
                 { key: 'corePain', label: 'Dor Central', color: 'text-rose-600 dark:text-rose-400', borderColor: 'border-rose-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.corePain}</p> },
