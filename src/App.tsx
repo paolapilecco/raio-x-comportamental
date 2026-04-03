@@ -18,6 +18,7 @@ import ResetPassword from "./pages/ResetPassword";
 import AdminPrompts from "./pages/AdminPrompts";
 import AdminTestModules from "./pages/AdminTestModules";
 import AdminQuestions from "./pages/AdminQuestions";
+import AdminUsers from "./pages/AdminUsers";
 import AdminRoadmap from "./pages/AdminRoadmap";
 import NotFound from "./pages/NotFound";
 
