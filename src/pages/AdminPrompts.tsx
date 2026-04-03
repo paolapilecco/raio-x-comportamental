@@ -105,6 +105,7 @@ const AdminPrompts = () => {
   const [previewScores, setPreviewScores] = useState<Record<string, number>>({});
   const [previewRunning, setPreviewRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<any>(null);
+  const [previewSentData, setPreviewSentData] = useState<{ scores: any[]; dominant: any; contradictions: string[] } | null>(null);
   // History state
   const [historyTestId, setHistoryTestId] = useState<string>('');
   const [historyEntries, setHistoryEntries] = useState<any[]>([]);
@@ -261,6 +262,19 @@ const AdminPrompts = () => {
       const pct = previewScores[key] ?? 50;
       return { key, label: key, score: Math.round(pct * 5 / 100), maxScore: 5, percentage: pct };
     }).sort((a, b) => b.percentage - a.percentage);
+    // Detect contradictions for display
+    const detectContradictions = (s: any[]) => {
+      const m: Record<string, number> = {};
+      s.forEach(x => { m[x.key] = x.percentage; });
+      const c: string[] = [];
+      if ((m['excessive_self_criticism'] ?? 0) >= 60 && (m['validation_dependency'] ?? 0) >= 60) c.push('Autocrítica alta + Dependência de validação');
+      if ((m['paralyzing_perfectionism'] ?? 0) >= 60 && (m['unstable_execution'] ?? 0) >= 60) c.push('Perfeccionismo + Execução instável');
+      if ((m['discomfort_escape'] ?? 0) >= 60 && (m['functional_overload'] ?? 0) >= 60) c.push('Fuga do desconforto + Sobrecarga funcional');
+      if ((m['excessive_self_criticism'] ?? 0) >= 60 && (m['low_routine_sustenance'] ?? 0) >= 60) c.push('Autocrítica alta + Baixa sustentação de rotina');
+      if ((m['emotional_self_sabotage'] ?? 0) >= 60 && (m['validation_dependency'] ?? 0) >= 60) c.push('Autossabotagem emocional + Dependência de validação');
+      return c;
+    };
+    setPreviewSentData({ scores, dominant: scores[0], contradictions: detectContradictions(scores) });
     setPreviewRunning(true);
     setPreviewResult(null);
     try {
@@ -605,6 +619,64 @@ const AdminPrompts = () => {
                 {previewRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
                 {previewRunning ? 'Gerando...' : 'Simular Resposta da IA'}
               </button>
+            )}
+            {/* Dados utilizados pela IA */}
+            {previewResult && previewSentData && (
+              <div className="rounded-2xl border border-sky-500/25 bg-sky-500/[0.02] overflow-hidden">
+                <div className="px-5 py-3 bg-sky-500/[0.05] border-b border-sky-500/15 flex items-center gap-2">
+                  <Eye className="w-4 h-4 text-sky-500" />
+                  <h4 className="text-[0.85rem] font-bold text-sky-700 dark:text-sky-400">Dados utilizados pela IA</h4>
+                </div>
+                <div className="p-5 space-y-4">
+                  {/* Scores por eixo */}
+                  <div className="space-y-2">
+                    <h5 className="text-[0.72rem] font-bold uppercase tracking-wider text-sky-600/70">Valores dos Eixos</h5>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {previewSentData.scores.map((s: any) => (
+                        <div key={s.key} className="flex items-center gap-2 text-[0.72rem]">
+                          <div className="flex-1 flex items-center gap-2">
+                            <span className="text-foreground/60 font-medium truncate">{s.label}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-16 h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                              <div className={`h-full rounded-full ${s.percentage >= 75 ? 'bg-red-500' : s.percentage >= 50 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${s.percentage}%` }} />
+                            </div>
+                            <span className="font-mono text-muted-foreground/50 w-8 text-right">{s.percentage}%</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Padrão dominante */}
+                  <div className="space-y-1.5">
+                    <h5 className="text-[0.72rem] font-bold uppercase tracking-wider text-sky-600/70">Padrão Dominante</h5>
+                    <div className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/15 border border-border/15">
+                      <span className="text-[0.8rem] font-semibold text-foreground/70">{previewSentData.dominant.label}</span>
+                      <span className={`text-[0.65rem] px-2 py-0.5 rounded-full font-medium ${previewSentData.dominant.percentage >= 75 ? 'bg-red-500/10 text-red-600' : previewSentData.dominant.percentage >= 50 ? 'bg-amber-500/10 text-amber-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                        {previewSentData.dominant.percentage >= 75 ? 'ALTA' : previewSentData.dominant.percentage >= 50 ? 'MODERADA' : 'LEVE'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Conflitos */}
+                  <div className="space-y-1.5">
+                    <h5 className="text-[0.72rem] font-bold uppercase tracking-wider text-sky-600/70">Conflitos Identificados</h5>
+                    {previewSentData.contradictions.length > 0 ? (
+                      <div className="space-y-1">
+                        {previewSentData.contradictions.map((c: string, i: number) => (
+                          <div key={i} className="flex items-start gap-2 p-2 rounded-lg bg-amber-500/[0.04] border border-amber-500/15 text-[0.72rem]">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                            <span className="text-foreground/60">{c}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[0.72rem] text-muted-foreground/40 italic">Nenhum conflito extremo detectado nos scores atuais.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
             {previewResult && (() => {
               const blocks: { key: string; label: string; color: string; borderColor: string; render: () => React.ReactNode }[] = [
