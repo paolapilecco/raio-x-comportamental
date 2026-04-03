@@ -516,4 +516,4 @@ const AdminRoadmapInner = () => {
   );
 };
 
-export default AdminRoadmap;
+export default AdminRoadmapInner;
