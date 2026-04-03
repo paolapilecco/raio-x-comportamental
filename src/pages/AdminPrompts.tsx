@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban, Settings, Sliders, PlayCircle, Loader2, CheckCircle2, History, Clock, Plus } from 'lucide-react';
+import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban, Settings, Sliders, PlayCircle, Loader2, CheckCircle2, History, Clock, Plus, GitCompare } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
@@ -107,6 +107,8 @@ const AdminPrompts = () => {
   const [previewResult, setPreviewResult] = useState<any>(null);
   const [previewSentData, setPreviewSentData] = useState<{ scores: any[]; dominant: any; contradictions: string[] } | null>(null);
   const [refineLevel, setRefineLevel] = useState(0);
+  const [resultHistory, setResultHistory] = useState<{ level: number; result: any }[]>([]);
+  const [showComparison, setShowComparison] = useState(false);
   // History state
   const [historyTestId, setHistoryTestId] = useState<string>('');
   const [historyEntries, setHistoryEntries] = useState<any[]>([]);
@@ -279,6 +281,8 @@ const AdminPrompts = () => {
     setRefineLevel(0);
     setPreviewRunning(true);
     setPreviewResult(null);
+    setResultHistory([]);
+    setShowComparison(false);
     try {
       const { data, error } = await supabase.functions.invoke('analyze-test', {
         body: { test_module_id: previewTestId, scores, slug: mod.slug, refine_level: refineLevel },
@@ -286,7 +290,9 @@ const AdminPrompts = () => {
       if (error) { toast.error('Erro na simulação'); setPreviewRunning(false); return; }
       if (data?.useFallback) { toast.warning('Sem prompts ativos — usaria fallback local'); setPreviewRunning(false); return; }
       if (data?.error) { toast.error(data.error); setPreviewRunning(false); return; }
-      setPreviewResult(data?.analysis || data);
+      const analysis = data?.analysis || data;
+      setPreviewResult(analysis);
+      setResultHistory([{ level: 0, result: analysis }]);
       toast.success('Simulação concluída');
     } catch { toast.error('Erro inesperado na simulação'); }
     setPreviewRunning(false);
@@ -783,16 +789,14 @@ const AdminPrompts = () => {
                       <p className="text-[0.65rem] text-muted-foreground/40 mt-2 italic">Revise os prompts deste teste para melhorar a especificidade.</p>
                     </div>
                   )}
-                  {/* Refine button */}
-                  <div className="px-5 pt-2 flex items-center gap-3">
+                  {/* Refine & Compare buttons */}
+                  <div className="px-5 pt-2 flex items-center gap-3 flex-wrap">
                     <button
                       onClick={() => {
                         const nextLevel = Math.min(refineLevel + 1, 3);
                         setRefineLevel(nextLevel);
-                        // Re-run with higher refine level using stored data
                         if (previewSentData) {
                           setPreviewRunning(true);
-                          setPreviewResult(null);
                           const mod = modules.find(m => m.id === previewTestId);
                           if (mod) {
                             supabase.functions.invoke('analyze-test', {
@@ -801,7 +805,9 @@ const AdminPrompts = () => {
                               if (error || data?.useFallback || data?.error) {
                                 toast.error(data?.error || 'Erro ao refinar');
                               } else {
-                                setPreviewResult(data?.analysis || data);
+                                const analysis = data?.analysis || data;
+                                setResultHistory(prev => [...prev, { level: nextLevel, result: analysis }]);
+                                setPreviewResult(analysis);
                                 toast.success(`Refinamento nível ${nextLevel} concluído`);
                               }
                               setPreviewRunning(false);
@@ -815,6 +821,15 @@ const AdminPrompts = () => {
                       {previewRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
                       {previewRunning ? 'Refinando...' : 'Refinar Resposta'}
                     </button>
+                    {resultHistory.length >= 2 && (
+                      <button
+                        onClick={() => setShowComparison(prev => !prev)}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[0.78rem] font-semibold transition-all ${showComparison ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-foreground/70 hover:bg-muted/60'}`}
+                      >
+                        <GitCompare className="w-4 h-4" />
+                        {showComparison ? 'Ocultar Comparação' : 'Comparar Respostas'}
+                      </button>
+                    )}
                     {refineLevel > 0 && (
                       <span className="text-[0.68rem] text-amber-600 font-medium">
                         Nível de refinamento: {refineLevel}/3
@@ -824,6 +839,69 @@ const AdminPrompts = () => {
                       <span className="text-[0.62rem] text-muted-foreground/40 italic">Nível máximo atingido</span>
                     )}
                   </div>
+                  {/* Comparison View */}
+                  {showComparison && resultHistory.length >= 2 && (
+                    <div className="px-5 pt-4">
+                      <div className="rounded-xl border border-primary/20 bg-primary/[0.02] p-4 space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <GitCompare className="w-4 h-4 text-primary" />
+                          <h5 className="text-[0.85rem] font-bold text-foreground/80">Comparação de Respostas</h5>
+                        </div>
+                        {(() => {
+                          const compareFields: { key: string; label: string }[] = [
+                            { key: 'criticalDiagnosis', label: 'Diagnóstico Crítico' },
+                            { key: 'corePain', label: 'Dor Central' },
+                            { key: 'profileName', label: 'Perfil' },
+                            { key: 'summary', label: 'Funcionamento do Padrão' },
+                            { key: 'contradiction', label: 'Contradição Interna' },
+                            { key: 'keyUnlockArea', label: 'Área-chave de Destravamento' },
+                            { key: 'direction', label: 'Direção' },
+                            { key: 'firstAction', label: 'Primeira Ação' },
+                          ];
+                          const prev = resultHistory[resultHistory.length - 2];
+                          const curr = resultHistory[resultHistory.length - 1];
+                          return (
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-3 mb-3">
+                                <div className="text-center p-2 rounded-lg bg-muted/20 border border-border/20">
+                                  <span className="text-[0.65rem] text-muted-foreground/50 uppercase tracking-wider font-semibold">
+                                    {prev.level === 0 ? 'Original' : `Nível ${prev.level}`}
+                                  </span>
+                                </div>
+                                <div className="text-center p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                  <span className="text-[0.65rem] text-emerald-600 uppercase tracking-wider font-semibold">
+                                    {curr.level === 0 ? 'Original' : `Nível ${curr.level}`}
+                                  </span>
+                                </div>
+                              </div>
+                              {compareFields.map(field => {
+                                const prevVal = typeof prev.result[field.key] === 'string' ? prev.result[field.key] : JSON.stringify(prev.result[field.key]);
+                                const currVal = typeof curr.result[field.key] === 'string' ? curr.result[field.key] : JSON.stringify(curr.result[field.key]);
+                                if (!prevVal && !currVal) return null;
+                                const changed = prevVal !== currVal;
+                                return (
+                                  <div key={field.key} className={`rounded-lg border p-3 space-y-2 ${changed ? 'border-amber-500/25 bg-amber-500/[0.02]' : 'border-border/15 bg-card/20'}`}>
+                                    <div className="flex items-center gap-2">
+                                      <h6 className="text-[0.72rem] font-bold text-foreground/70 uppercase tracking-wider">{field.label}</h6>
+                                      {changed && <span className="text-[0.58rem] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-semibold">alterado</span>}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                      <div className="p-2 rounded-lg bg-muted/10 border border-border/10">
+                                        <p className="text-[0.7rem] text-foreground/50 leading-relaxed">{prevVal || '—'}</p>
+                                      </div>
+                                      <div className={`p-2 rounded-lg border ${changed ? 'bg-emerald-500/[0.03] border-emerald-500/15' : 'bg-muted/10 border-border/10'}`}>
+                                        <p className={`text-[0.7rem] leading-relaxed ${changed ? 'text-foreground/70 font-medium' : 'text-foreground/50'}`}>{currVal || '—'}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  )}
                   <div className="p-5 space-y-4">
                     {blocks.map(block => {
                       if (!previewResult[block.key]) return null;
