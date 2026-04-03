@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban } from 'lucide-react';
+import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban, Settings, Sliders } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface TestPrompt {
@@ -34,6 +34,28 @@ interface TestModule {
   icon: string;
 }
 
+interface GlobalAiConfig {
+  id: string;
+  ai_enabled: boolean;
+  temperature: number;
+  max_tokens: number;
+  tone: string;
+  depth_level: number;
+  report_style: string;
+}
+
+interface TestAiConfig {
+  id: string;
+  test_id: string;
+  use_global_defaults: boolean;
+  ai_enabled: boolean;
+  temperature: number;
+  max_tokens: number;
+  tone: string;
+  depth_level: number;
+  report_style: string;
+}
+
 const iconMap: Record<string, any> = {
   brain: Brain, zap: Zap, heart: Heart, shield: Shield,
   'dollar-sign': DollarSign, eye: Eye, compass: Compass,
@@ -58,12 +80,20 @@ const GLOBAL_META: Record<string, { icon: any; description: string }> = {
   exit_strategy: { icon: Route, description: 'Prompt para estratégias de saída.' },
 };
 
+const TONE_OPTIONS = ['empático e direto', 'clínico e técnico', 'casual e acolhedor', 'provocativo e desafiador', 'analítico e neutro'];
+const STYLE_OPTIONS = ['narrativo', 'bullet-points', 'estruturado', 'misto', 'conversacional'];
+const DEPTH_LABELS: Record<number, string> = { 1: 'Superficial', 2: 'Leve', 3: 'Moderado', 4: 'Profundo', 5: 'Máximo' };
+
 const AdminPrompts = () => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [testPrompts, setTestPrompts] = useState<TestPrompt[]>([]);
   const [globalPrompts, setGlobalPrompts] = useState<AdminPrompt[]>([]);
   const [modules, setModules] = useState<TestModule[]>([]);
+  const [globalAiConfig, setGlobalAiConfig] = useState<GlobalAiConfig | null>(null);
+  const [testAiConfigs, setTestAiConfigs] = useState<TestAiConfig[]>([]);
+  const [editedGlobalAi, setEditedGlobalAi] = useState<Partial<GlobalAiConfig>>({});
+  const [editedTestAi, setEditedTestAi] = useState<Record<string, Partial<TestAiConfig>>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [editedTexts, setEditedTexts] = useState<Record<string, string>>({});
@@ -75,20 +105,25 @@ const AdminPrompts = () => {
   }, [authLoading, isSuperAdmin]);
 
   const fetchData = async () => {
-    const [tpRes, gpRes, mRes] = await Promise.all([
+    const [tpRes, gpRes, mRes, gaiRes, taiRes] = await Promise.all([
       supabase.from('test_prompts').select('*').order('created_at', { ascending: true }),
       supabase.from('admin_prompts').select('*').is('test_module_id', null).order('created_at', { ascending: true }),
       supabase.from('test_modules').select('id, slug, name, icon').eq('is_active', true).order('sort_order'),
+      supabase.from('global_ai_config').select('*').limit(1).maybeSingle(),
+      supabase.from('test_ai_config').select('*'),
     ]);
-    if (tpRes.error) toast.error('Erro ao carregar prompts de teste');
-    if (gpRes.error) toast.error('Erro ao carregar prompts globais');
-    if (mRes.error) toast.error('Erro ao carregar módulos');
 
     const tp = (tpRes.data || []) as TestPrompt[];
     const gp = (gpRes.data || []) as AdminPrompt[];
     setTestPrompts(tp);
     setGlobalPrompts(gp);
     setModules((mRes.data || []) as TestModule[]);
+    setGlobalAiConfig(gaiRes.data as GlobalAiConfig | null);
+    setTestAiConfigs((taiRes.data || []) as TestAiConfig[]);
+    setEditedGlobalAi(gaiRes.data ? { ...gaiRes.data } : {});
+    const tai: Record<string, Partial<TestAiConfig>> = {};
+    (taiRes.data || []).forEach((c: TestAiConfig) => { tai[c.test_id] = { ...c }; });
+    setEditedTestAi(tai);
 
     const texts: Record<string, string> = {};
     tp.forEach(p => { texts[`tp_${p.id}`] = p.content; });
@@ -97,6 +132,7 @@ const AdminPrompts = () => {
     setLoading(false);
   };
 
+  // ── Save handlers for prompts ──
   const handleSaveTestPrompt = async (prompt: TestPrompt) => {
     const key = `tp_${prompt.id}`;
     const text = editedTexts[key];
@@ -133,9 +169,174 @@ const AdminPrompts = () => {
     else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
   };
 
+  // ── AI Config save handlers ──
+  const handleSaveGlobalAi = async () => {
+    if (!globalAiConfig) return;
+    setSaving('global_ai');
+    const { id, ...fields } = editedGlobalAi as GlobalAiConfig;
+    const { error } = await supabase.from('global_ai_config').update({
+      ai_enabled: fields.ai_enabled,
+      temperature: fields.temperature,
+      max_tokens: fields.max_tokens,
+      tone: fields.tone,
+      depth_level: fields.depth_level,
+      report_style: fields.report_style,
+    }).eq('id', globalAiConfig.id);
+    if (error) toast.error('Erro ao salvar config global');
+    else { toast.success('Config global salva'); await fetchData(); }
+    setSaving(null);
+  };
+
+  const handleSaveTestAi = async (testId: string) => {
+    const edited = editedTestAi[testId];
+    if (!edited) return;
+    setSaving(`tai_${testId}`);
+    const existing = testAiConfigs.find(c => c.test_id === testId);
+    if (existing) {
+      const { error } = await supabase.from('test_ai_config').update({
+        use_global_defaults: edited.use_global_defaults,
+        ai_enabled: edited.ai_enabled,
+        temperature: edited.temperature,
+        max_tokens: edited.max_tokens,
+        tone: edited.tone,
+        depth_level: edited.depth_level,
+        report_style: edited.report_style,
+      }).eq('id', existing.id);
+      if (error) toast.error('Erro ao salvar');
+      else { toast.success('Config salva'); await fetchData(); }
+    } else {
+      const { error } = await supabase.from('test_ai_config').insert({
+        test_id: testId,
+        use_global_defaults: edited.use_global_defaults ?? true,
+        ai_enabled: edited.ai_enabled ?? true,
+        temperature: edited.temperature ?? 0.7,
+        max_tokens: edited.max_tokens ?? 2000,
+        tone: edited.tone ?? 'empático e direto',
+        depth_level: edited.depth_level ?? 3,
+        report_style: edited.report_style ?? 'narrativo',
+      });
+      if (error) toast.error('Erro ao criar config');
+      else { toast.success('Config criada'); await fetchData(); }
+    }
+    setSaving(null);
+  };
+
+  const updateTestAiField = (testId: string, field: string, value: any) => {
+    setEditedTestAi(prev => ({
+      ...prev,
+      [testId]: { ...(prev[testId] || {}), test_id: testId, [field]: value },
+    }));
+  };
+
   const toggleSection = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
   const fadeUp = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
+  // ── AI Config UI Component ──
+  const renderAiConfigPanel = (
+    config: Partial<GlobalAiConfig | TestAiConfig>,
+    onChange: (field: string, value: any) => void,
+    onSave: () => void,
+    savingKey: string,
+    isTest?: boolean,
+    useGlobal?: boolean,
+    onToggleGlobal?: (val: boolean) => void
+  ) => {
+    const disabled = isTest && useGlobal;
+    return (
+      <div className="space-y-4">
+        {isTest && onToggleGlobal && (
+          <div className="flex items-center justify-between p-3 rounded-xl border border-border/30 bg-card/40">
+            <div>
+              <p className="text-[0.8rem] font-semibold">Herdar configuração global</p>
+              <p className="text-[0.65rem] text-muted-foreground/50">Usar os mesmos parâmetros da config padrão</p>
+            </div>
+            <button onClick={() => onToggleGlobal(!useGlobal)} className="p-1 hover:bg-muted/30 rounded-lg transition-colors">
+              {useGlobal ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground/40" />}
+            </button>
+          </div>
+        )}
+
+        <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 ${disabled ? 'opacity-30 pointer-events-none' : ''}`}>
+          {/* AI Enabled */}
+          <div className="p-3 rounded-xl border border-border/30 bg-card/40 space-y-1.5">
+            <label className="text-[0.75rem] font-semibold text-foreground/80">IA Ativa</label>
+            <button onClick={() => onChange('ai_enabled', !config.ai_enabled)} className="flex items-center gap-2">
+              {config.ai_enabled ? <ToggleRight className="w-5 h-5 text-emerald-500" /> : <ToggleLeft className="w-5 h-5 text-muted-foreground/40" />}
+              <span className="text-[0.7rem] text-muted-foreground/60">{config.ai_enabled ? 'Ativada' : 'Desativada'}</span>
+            </button>
+          </div>
+
+          {/* Temperature */}
+          <div className="p-3 rounded-xl border border-border/30 bg-card/40 space-y-1.5">
+            <label className="text-[0.75rem] font-semibold text-foreground/80">Temperatura / Criatividade</label>
+            <input
+              type="range" min="0" max="1" step="0.05"
+              value={config.temperature ?? 0.7}
+              onChange={(e) => onChange('temperature', parseFloat(e.target.value))}
+              className="w-full accent-primary h-1.5"
+            />
+            <p className="text-[0.65rem] text-muted-foreground/50 text-right">{(config.temperature ?? 0.7).toFixed(2)}</p>
+          </div>
+
+          {/* Max Tokens */}
+          <div className="p-3 rounded-xl border border-border/30 bg-card/40 space-y-1.5">
+            <label className="text-[0.75rem] font-semibold text-foreground/80">Tamanho Máximo da Resposta</label>
+            <input
+              type="number" min={500} max={8000} step={100}
+              value={config.max_tokens ?? 2000}
+              onChange={(e) => onChange('max_tokens', parseInt(e.target.value) || 2000)}
+              className="w-full bg-background/50 border border-border/20 rounded-lg px-3 py-1.5 text-[0.78rem] focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <p className="text-[0.6rem] text-muted-foreground/40">tokens (500–8000)</p>
+          </div>
+
+          {/* Depth Level */}
+          <div className="p-3 rounded-xl border border-border/30 bg-card/40 space-y-1.5">
+            <label className="text-[0.75rem] font-semibold text-foreground/80">Nível de Profundidade</label>
+            <input
+              type="range" min="1" max="5" step="1"
+              value={config.depth_level ?? 3}
+              onChange={(e) => onChange('depth_level', parseInt(e.target.value))}
+              className="w-full accent-primary h-1.5"
+            />
+            <p className="text-[0.65rem] text-muted-foreground/50 text-right">{DEPTH_LABELS[config.depth_level ?? 3]} ({config.depth_level ?? 3}/5)</p>
+          </div>
+
+          {/* Tone */}
+          <div className="p-3 rounded-xl border border-border/30 bg-card/40 space-y-1.5">
+            <label className="text-[0.75rem] font-semibold text-foreground/80">Tom da Resposta</label>
+            <select
+              value={config.tone ?? 'empático e direto'}
+              onChange={(e) => onChange('tone', e.target.value)}
+              className="w-full bg-background/50 border border-border/20 rounded-lg px-3 py-1.5 text-[0.78rem] focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              {TONE_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          </div>
+
+          {/* Report Style */}
+          <div className="p-3 rounded-xl border border-border/30 bg-card/40 space-y-1.5">
+            <label className="text-[0.75rem] font-semibold text-foreground/80">Estilo do Relatório</label>
+            <select
+              value={config.report_style ?? 'narrativo'}
+              onChange={(e) => onChange('report_style', e.target.value)}
+              className="w-full bg-background/50 border border-border/20 rounded-lg px-3 py-1.5 text-[0.78rem] focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              {STYLE_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex justify-end">
+          <button onClick={onSave} disabled={saving === savingKey} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[0.75rem] font-semibold disabled:opacity-30 hover:opacity-90 transition-all">
+            <Save className="w-3.5 h-3.5" /> {saving === savingKey ? 'Salvando...' : 'Salvar Configuração'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  // ── Prompt renderers (unchanged) ──
   const renderTestPromptField = (prompt: TestPrompt, meta: { icon: any; description: string; rows: number }) => {
     const Icon = meta.icon;
     const key = `tp_${prompt.id}`;
@@ -233,9 +434,33 @@ const AdminPrompts = () => {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Central de Prompts e Inteligência</h1>
-            <p className="text-[0.78rem] text-muted-foreground/60">7 prompts por teste · Tabela dedicada test_prompts</p>
+            <p className="text-[0.78rem] text-muted-foreground/60">Prompts · Configuração de IA · Por teste</p>
           </div>
         </div>
+      </motion.div>
+
+      {/* ── IA / Configuração de Resposta (Global) ── */}
+      <motion.div {...fadeUp} transition={{ delay: 0.03 }} className="space-y-3">
+        <button onClick={() => toggleSection('ai_config')} className="w-full flex items-center justify-between bg-card/70 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4 hover:bg-card/90 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center"><Sliders className="w-4 h-4 text-violet-500" /></div>
+            <div className="text-left">
+              <h2 className="text-[0.9rem] font-semibold">IA / Configuração de Resposta</h2>
+              <p className="text-[0.7rem] text-muted-foreground/50">Configuração global · Herdada por todos os testes</p>
+            </div>
+          </div>
+          {expandedSections['ai_config'] ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
+        </button>
+        {expandedSections['ai_config'] && globalAiConfig && (
+          <div className="pl-2">
+            {renderAiConfigPanel(
+              editedGlobalAi,
+              (field, value) => setEditedGlobalAi(prev => ({ ...prev, [field]: value })),
+              handleSaveGlobalAi,
+              'global_ai'
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* ── Global Prompts ── */}
@@ -257,7 +482,7 @@ const AdminPrompts = () => {
         )}
       </motion.div>
 
-      {/* ── Per-Module: 7 prompts from test_prompts ── */}
+      {/* ── Per-Module: Prompts + AI Config ── */}
       {modules.map((mod, mi) => {
         const modPrompts = testPrompts.filter(p => p.test_id === mod.id);
         const ModIcon = iconMap[mod.icon] || Brain;
@@ -265,6 +490,8 @@ const AdminPrompts = () => {
         const byType: Record<string, TestPrompt> = {};
         modPrompts.forEach(p => { byType[p.prompt_type] = p; });
         const configuredCount = PROMPT_FIELDS.filter(f => byType[f.type]).length;
+        const testAi = testAiConfigs.find(c => c.test_id === mod.id);
+        const editedTai = editedTestAi[mod.id] || (testAi ? { ...testAi } : { test_id: mod.id, use_global_defaults: true, ai_enabled: true, temperature: 0.7, max_tokens: 2000, tone: 'empático e direto', depth_level: 3, report_style: 'narrativo' });
 
         return (
           <motion.div key={mod.id} {...fadeUp} transition={{ delay: 0.08 + 0.03 * mi }} className="space-y-3">
@@ -288,7 +515,25 @@ const AdminPrompts = () => {
             </button>
 
             {isExpanded && (
-              <div className="space-y-3 pl-2">
+              <div className="space-y-4 pl-2">
+                {/* AI Config for this test */}
+                <div className="border border-violet-500/20 rounded-2xl p-4 bg-violet-500/[0.02] space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Settings className="w-3.5 h-3.5 text-violet-500/60" />
+                    <h3 className="text-[0.8rem] font-semibold text-violet-600 dark:text-violet-400">Config de IA deste teste</h3>
+                  </div>
+                  {renderAiConfigPanel(
+                    editedTai,
+                    (field, value) => updateTestAiField(mod.id, field, value),
+                    () => handleSaveTestAi(mod.id),
+                    `tai_${mod.id}`,
+                    true,
+                    editedTai.use_global_defaults ?? true,
+                    (val) => updateTestAiField(mod.id, 'use_global_defaults', val)
+                  )}
+                </div>
+
+                {/* Prompts */}
                 {PROMPT_FIELDS.map((field) => {
                   const prompt = byType[field.type];
                   if (!prompt) {
