@@ -276,6 +276,7 @@ const AdminPrompts = () => {
       return c;
     };
     setPreviewSentData({ scores, dominant: scores[0], contradictions: detectContradictions(scores) });
+    setRefineLevel(0);
     setPreviewRunning(true);
     setPreviewResult(null);
     try {
