@@ -98,10 +98,10 @@ function generateTasks(): RoadmapTask[] {
     {
       id: 'inc-questions-no-crud',
       title: 'Super admin não consegue gerenciar perguntas via app',
-      description: 'A tabela questions só tem política SELECT. O super admin precisa de interface e permissões para criar/editar/deletar perguntas dos testes.',
+      description: 'CORRIGIDO — Políticas RLS (INSERT/UPDATE/DELETE) adicionadas para super_admins. Interface de gerenciamento criada em /admin/questions.',
       priority: 'high',
       category: 'inconsistency',
-      status: 'pending',
+      status: 'done',
       copyText: 'Adicionar políticas RLS de INSERT, UPDATE e DELETE na tabela questions para super_admins. Criar interface no admin para gerenciar perguntas de cada teste (adicionar, editar texto/eixos/tipo, reordenar, deletar). Atualmente só existe política SELECT para autenticados.',
     },
 
