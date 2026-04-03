@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Plus, Trash2, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, ListChecks, BookOpen } from 'lucide-react';
+import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Plus, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface AdminPrompt {
@@ -29,22 +29,22 @@ const iconMap: Record<string, any> = {
   target: Target, sparkles: Sparkles,
 };
 
-// 6 structured fields per module in display order
 const MODULE_FIELDS = [
-  { context: 'module_analysis', label: 'Prompt Principal da IA', icon: Brain, description: 'Prompt usado para analisar os resultados brutos e gerar o diagnóstico.' },
-  { context: 'module_objective', label: 'Objetivo do Teste', icon: Target, description: 'O que este teste se propõe a medir e identificar.' },
-  { context: 'module_axes', label: 'Eixos Analisados', icon: ListChecks, description: 'Lista de eixos comportamentais avaliados neste módulo.' },
-  { context: 'module_interpretation', label: 'Instruções de Interpretação', icon: BookOpen, description: 'Regras e diretrizes para interpretar os resultados.' },
-  { context: 'module_report', label: 'Prompt de Relatório', icon: FileText, description: 'Prompt usado para gerar relatórios detalhados e personalizados.' },
-  { context: 'module_core_pain', label: 'Prompt de Dor Central', icon: Crosshair, description: 'Prompt para identificar a dor central por trás dos padrões.' },
+  { context: 'prompt_base', label: 'Prompt Base de Interpretação', icon: Brain, description: 'Instruções base para interpretar as respostas do usuário neste teste.', rows: 4 },
+  { context: 'prompt_diagnostic', label: 'Prompt do Diagnóstico Final', icon: FileText, description: 'Prompt para gerar o diagnóstico final com base nos scores.', rows: 4 },
+  { context: 'prompt_profile', label: 'Prompt de Identificação de Perfil', icon: Target, description: 'Prompt para identificar o perfil comportamental dominante.', rows: 4 },
+  { context: 'prompt_core_pain', label: 'Prompt de Dor Central', icon: Crosshair, description: 'Prompt para identificar a dor central por trás dos padrões.', rows: 3 },
+  { context: 'prompt_triggers', label: 'Prompt de Gatilhos e Armadilhas', icon: AlertTriangle, description: 'Prompt para mapear gatilhos que ativam padrões e armadilhas que os mantêm.', rows: 3 },
+  { context: 'prompt_direction', label: 'Prompt de Direção Prática', icon: ArrowUpRight, description: 'Prompt para sugerir ações práticas e caminhos de transformação.', rows: 3 },
+  { context: 'prompt_restrictions', label: 'Regras Negativas / Restrições', icon: Ban, description: 'O que a IA NÃO deve fazer ao gerar resultados para este teste.', rows: 3 },
 ];
 
-const GLOBAL_CONTEXT_META: Record<string, { icon: any; description: string }> = {
+const GLOBAL_META: Record<string, { icon: any; description: string }> = {
   test_analysis: { icon: Brain, description: 'Prompt base de análise aplicado a todos os testes.' },
   report_generation: { icon: FileText, description: 'Prompt base de geração de relatórios.' },
   central_profile: { icon: Target, description: 'Prompt para consolidação do perfil central.' },
   insight_generation: { icon: Lightbulb, description: 'Prompt para geração de insights comportamentais.' },
-  exit_strategy: { icon: Route, description: 'Prompt para sugestão de estratégias de saída.' },
+  exit_strategy: { icon: Route, description: 'Prompt para estratégias de saída.' },
 };
 
 const AdminPrompts = () => {
@@ -56,14 +56,9 @@ const AdminPrompts = () => {
   const [saving, setSaving] = useState<string | null>(null);
   const [editedTexts, setEditedTexts] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ global: true });
-  const [showNewForm, setShowNewForm] = useState(false);
-  const [newPrompt, setNewPrompt] = useState({ context: '', label: '', prompt_text: '', test_module_id: '' });
 
   useEffect(() => {
-    if (!authLoading && !isSuperAdmin) {
-      navigate('/dashboard', { replace: true });
-      return;
-    }
+    if (!authLoading && !isSuperAdmin) { navigate('/dashboard', { replace: true }); return; }
     if (!authLoading && isSuperAdmin) fetchData();
   }, [authLoading, isSuperAdmin]);
 
@@ -72,8 +67,8 @@ const AdminPrompts = () => {
       supabase.from('admin_prompts').select('*').order('created_at', { ascending: true }),
       supabase.from('test_modules').select('id, slug, name, icon').eq('is_active', true).order('sort_order'),
     ]);
-    if (pRes.error) { toast.error('Erro ao carregar prompts'); console.error(pRes.error); }
-    if (mRes.error) { toast.error('Erro ao carregar módulos'); console.error(mRes.error); }
+    if (pRes.error) toast.error('Erro ao carregar prompts');
+    if (mRes.error) toast.error('Erro ao carregar módulos');
     const p = (pRes.data || []) as AdminPrompt[];
     setPrompts(p);
     setModules((mRes.data || []) as TestModule[]);
@@ -100,54 +95,47 @@ const AdminPrompts = () => {
     else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
   };
 
-  const handleDelete = async (prompt: AdminPrompt) => {
-    if (!confirm(`Excluir "${prompt.label}"?`)) return;
-    const { error } = await supabase.from('admin_prompts').delete().eq('id', prompt.id);
-    if (error) toast.error('Erro');
-    else { toast.success('Excluído'); await fetchData(); }
-  };
-
-  const handleCreate = async () => {
-    if (!newPrompt.context.trim() || !newPrompt.label.trim()) { toast.error('Campos obrigatórios'); return; }
-    const insert: any = { context: newPrompt.context.trim(), label: newPrompt.label.trim(), prompt_text: newPrompt.prompt_text.trim() };
-    if (newPrompt.test_module_id) insert.test_module_id = newPrompt.test_module_id;
-    const { error } = await supabase.from('admin_prompts').insert(insert);
-    if (error) toast.error(error.message.includes('duplicate') ? 'Já existe' : 'Erro');
-    else { toast.success('Criado'); setNewPrompt({ context: '', label: '', prompt_text: '', test_module_id: '' }); setShowNewForm(false); await fetchData(); }
-  };
-
   const toggleSection = (key: string) => setExpandedSections(prev => ({ ...prev, [key]: !prev[key] }));
 
   const globalPrompts = prompts.filter(p => !p.test_module_id);
   const fadeUp = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
-  const renderField = (prompt: AdminPrompt, fieldMeta: { icon: any; description: string }, isSmall?: boolean) => {
-    const Icon = fieldMeta.icon;
+  const renderField = (prompt: AdminPrompt, meta: { icon: any; description: string }, rows = 4) => {
+    const Icon = meta.icon;
     const hasChanges = editedTexts[prompt.id] !== prompt.prompt_text;
+    const isRestriction = prompt.context === 'prompt_restrictions';
     return (
-      <div key={prompt.id} className={`border rounded-xl p-4 space-y-2.5 transition-colors ${prompt.is_active ? 'border-border/30 bg-card/40' : 'border-border/15 bg-card/20 opacity-50'}`}>
+      <div key={prompt.id} className={`border rounded-xl p-4 space-y-2.5 transition-colors ${
+        isRestriction 
+          ? (prompt.is_active ? 'border-red-500/20 bg-red-500/[0.03]' : 'border-border/15 bg-card/20 opacity-50')
+          : (prompt.is_active ? 'border-border/30 bg-card/40' : 'border-border/15 bg-card/20 opacity-50')
+      }`}>
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Icon className={`w-3.5 h-3.5 shrink-0 ${prompt.is_active ? 'text-primary/70' : 'text-muted-foreground/30'}`} />
+            <Icon className={`w-3.5 h-3.5 shrink-0 ${isRestriction ? 'text-red-500/60' : (prompt.is_active ? 'text-primary/70' : 'text-muted-foreground/30')}`} />
             <div>
               <h4 className="text-[0.8rem] font-semibold leading-tight">{prompt.label}</h4>
-              <p className="text-[0.65rem] text-muted-foreground/40">{fieldMeta.description}</p>
+              <p className="text-[0.65rem] text-muted-foreground/40">{meta.description}</p>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button onClick={() => handleToggle(prompt)} className="p-1 hover:bg-muted/30 rounded-lg transition-colors">
-              {prompt.is_active ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground/30" />}
-            </button>
-          </div>
+          <button onClick={() => handleToggle(prompt)} className="p-1 hover:bg-muted/30 rounded-lg transition-colors">
+            {prompt.is_active ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground/30" />}
+          </button>
         </div>
         <textarea
           value={editedTexts[prompt.id] ?? prompt.prompt_text}
           onChange={(e) => setEditedTexts(prev => ({ ...prev, [prompt.id]: e.target.value }))}
-          rows={isSmall ? 2 : 4}
-          className="w-full bg-background/50 border border-border/20 rounded-lg p-3 text-[0.78rem] leading-[1.7] text-foreground/80 resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-mono"
+          rows={rows}
+          className={`w-full border rounded-lg p-3 text-[0.78rem] leading-[1.7] resize-y focus:outline-none focus:ring-2 transition-all font-mono ${
+            isRestriction 
+              ? 'bg-red-500/[0.02] border-red-500/10 text-red-900/70 dark:text-red-300/70 focus:ring-red-500/20' 
+              : 'bg-background/50 border-border/20 text-foreground/80 focus:ring-primary/20'
+          }`}
         />
         <div className="flex items-center justify-between">
-          <span className="text-[0.6rem] text-muted-foreground/25">{new Date(prompt.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+          <span className="text-[0.6rem] text-muted-foreground/25">
+            {new Date(prompt.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+          </span>
           <button onClick={() => handleSave(prompt)} disabled={!hasChanges || saving === prompt.id} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-[0.7rem] font-semibold disabled:opacity-20 hover:opacity-90 transition-all">
             <Save className="w-3 h-3" /> {saving === prompt.id ? '...' : 'Salvar'}
           </button>
@@ -173,7 +161,7 @@ const AdminPrompts = () => {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight">Central de Prompts e Inteligência</h1>
-            <p className="text-[0.78rem] text-muted-foreground/60">Configure prompts globais e a estrutura de cada teste</p>
+            <p className="text-[0.78rem] text-muted-foreground/60">7 campos editáveis por teste · Controle total da IA</p>
           </div>
         </div>
       </motion.div>
@@ -192,23 +180,19 @@ const AdminPrompts = () => {
         </button>
         {expandedSections['global'] && (
           <div className="space-y-3 pl-2">
-            {globalPrompts.map(p => {
-              const meta = GLOBAL_CONTEXT_META[p.context] || { icon: Brain, description: 'Prompt personalizado.' };
-              return renderField(p, meta);
-            })}
+            {globalPrompts.map(p => renderField(p, GLOBAL_META[p.context] || { icon: Brain, description: 'Prompt personalizado.' }))}
           </div>
         )}
       </motion.div>
 
-      {/* ── Per-Module Structured Sections ── */}
+      {/* ── Per-Module: 7 fields each ── */}
       {modules.map((mod, mi) => {
         const modulePrompts = prompts.filter(p => p.test_module_id === mod.id);
         const ModIcon = iconMap[mod.icon] || Brain;
         const isExpanded = expandedSections[mod.id] ?? false;
-
-        // Map prompts by context for structured rendering
         const promptsByContext: Record<string, AdminPrompt> = {};
         modulePrompts.forEach(p => { promptsByContext[p.context] = p; });
+        const configuredCount = MODULE_FIELDS.filter(f => promptsByContext[f.context]).length;
 
         return (
           <motion.div key={mod.id} {...fadeUp} transition={{ delay: 0.08 + 0.03 * mi }} className="space-y-3">
@@ -220,14 +204,19 @@ const AdminPrompts = () => {
                 <div className="text-left">
                   <h2 className="text-[0.9rem] font-semibold">{mod.name}</h2>
                   <p className="text-[0.7rem] text-muted-foreground/50">
-                    {modulePrompts.length} campos · <span className="font-mono">{mod.slug}</span>
+                    {configuredCount}/7 campos · <span className="font-mono">{mod.slug}</span>
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {modulePrompts.length < 6 && (
+                {configuredCount < 7 && (
                   <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium">
-                    {6 - modulePrompts.length} faltando
+                    {7 - configuredCount} faltando
+                  </span>
+                )}
+                {configuredCount === 7 && (
+                  <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
+                    Completo
                   </span>
                 )}
                 {isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
@@ -236,8 +225,7 @@ const AdminPrompts = () => {
 
             {isExpanded && (
               <div className="space-y-3 pl-2">
-                {/* Render fields in structured order */}
-                {MODULE_FIELDS.map((field, fi) => {
+                {MODULE_FIELDS.map((field) => {
                   const prompt = promptsByContext[field.context];
                   if (!prompt) {
                     return (
@@ -250,49 +238,13 @@ const AdminPrompts = () => {
                       </div>
                     );
                   }
-                  const isSmall = field.context === 'module_axes';
-                  return renderField(prompt, { icon: field.icon, description: field.description }, isSmall);
+                  return renderField(prompt, { icon: field.icon, description: field.description }, field.rows);
                 })}
-
-                {/* Any extra custom prompts not in the standard 6 */}
-                {modulePrompts
-                  .filter(p => !MODULE_FIELDS.some(f => f.context === p.context))
-                  .map(p => renderField(p, { icon: Brain, description: 'Prompt personalizado.' }))}
               </div>
             )}
           </motion.div>
         );
       })}
-
-      {/* ── New Prompt ── */}
-      {showNewForm ? (
-        <motion.div {...fadeUp} className="bg-card/70 backdrop-blur-sm border border-primary/20 rounded-2xl p-5 space-y-4">
-          <h3 className="text-[0.9rem] font-semibold">Novo Prompt</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <select value={newPrompt.context} onChange={(e) => setNewPrompt(prev => ({ ...prev, context: e.target.value }))} className="bg-background/60 border border-border/30 rounded-xl px-4 py-2.5 text-[0.82rem] focus:outline-none focus:ring-2 focus:ring-primary/20">
-              <option value="">Tipo de campo</option>
-              {MODULE_FIELDS.map(f => <option key={f.context} value={f.context}>{f.label}</option>)}
-              <option value="custom">Personalizado</option>
-            </select>
-            <input value={newPrompt.label} onChange={(e) => setNewPrompt(prev => ({ ...prev, label: e.target.value }))} placeholder="Label" className="bg-background/60 border border-border/30 rounded-xl px-4 py-2.5 text-[0.82rem] focus:outline-none focus:ring-2 focus:ring-primary/20" />
-          </div>
-          <select value={newPrompt.test_module_id} onChange={(e) => setNewPrompt(prev => ({ ...prev, test_module_id: e.target.value }))} className="w-full bg-background/60 border border-border/30 rounded-xl px-4 py-2.5 text-[0.82rem] focus:outline-none focus:ring-2 focus:ring-primary/20">
-            <option value="">Global (sem módulo)</option>
-            {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-          </select>
-          <textarea value={newPrompt.prompt_text} onChange={(e) => setNewPrompt(prev => ({ ...prev, prompt_text: e.target.value }))} placeholder="Conteúdo..." className="w-full min-h-[100px] bg-background/60 border border-border/30 rounded-xl p-4 text-[0.82rem] leading-[1.7] resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono" />
-          <div className="flex gap-3 justify-end">
-            <button onClick={() => setShowNewForm(false)} className="px-4 py-2 text-[0.78rem] text-muted-foreground hover:text-foreground transition-colors">Cancelar</button>
-            <button onClick={handleCreate} className="flex items-center gap-2 px-5 py-2 bg-primary text-primary-foreground rounded-xl text-[0.78rem] font-semibold hover:opacity-90 transition-all"><Plus className="w-3.5 h-3.5" /> Criar</button>
-          </div>
-        </motion.div>
-      ) : (
-        <motion.div {...fadeUp} transition={{ delay: 0.5 }}>
-          <button onClick={() => setShowNewForm(true)} className="w-full flex items-center justify-center gap-2 py-3.5 border border-dashed border-border/40 rounded-2xl text-[0.82rem] text-muted-foreground/50 hover:text-foreground/70 hover:border-border/60 transition-all">
-            <Plus className="w-4 h-4" /> Adicionar novo prompt
-          </button>
-        </motion.div>
-      )}
     </div>
   );
 };
