@@ -17,6 +17,7 @@ import Premium from "./pages/Premium";
 import ResetPassword from "./pages/ResetPassword";
 import AdminPrompts from "./pages/AdminPrompts";
 import AdminTestModules from "./pages/AdminTestModules";
+import AdminQuestions from "./pages/AdminQuestions";
 import AdminRoadmap from "./pages/AdminRoadmap";
 import NotFound from "./pages/NotFound";
 
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/admin/prompts" element={<ProtectedRoute><AdminPrompts /></ProtectedRoute>} />
             <Route path="/admin/roadmap" element={<ProtectedRoute><AdminRoadmap /></ProtectedRoute>} />
             <Route path="/admin/test-modules" element={<ProtectedRoute><AdminTestModules /></ProtectedRoute>} />
+            <Route path="/admin/questions" element={<ProtectedRoute><AdminQuestions /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
