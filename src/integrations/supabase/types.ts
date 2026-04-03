@@ -232,6 +232,33 @@ export type Database = {
         }
         Relationships: []
       }
+      plan_change_history: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          id: string
+          new_plan: string
+          previous_plan: string
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_plan: string
+          previous_plan: string
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_plan?: string
+          previous_plan?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           age: number | null
