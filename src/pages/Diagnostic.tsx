@@ -24,6 +24,7 @@ interface DbQuestion {
   text: string;
   axes: string[];
   type?: 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
+  options?: string[];
 }
 
 const Diagnostic = () => {
