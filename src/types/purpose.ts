@@ -1,3 +1,5 @@
+import { InterpretiveInsight } from './diagnostic';
+
 export type PurposePatternKey =
   | 'meaning_orientation'
   | 'identity_alignment'
@@ -74,6 +76,7 @@ export interface PurposeResult {
   impact: string;
   direction: string;
   intensity: 'leve' | 'moderado' | 'alto';
+  interpretation?: InterpretiveInsight;
 }
 
 export interface PurposePatternDefinition {

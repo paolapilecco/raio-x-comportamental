@@ -29,6 +29,30 @@ export interface PatternScore {
 
 export type IntensityLevel = 'leve' | 'moderado' | 'alto';
 
+export interface InternalConflict {
+  patternA: string;
+  patternB: string;
+  description: string;
+  severity: 'moderate' | 'high' | 'critical';
+}
+
+export interface ResponseContradiction {
+  type: string;
+  label: string;
+  description: string;
+  evidence: string;
+}
+
+export interface InterpretiveInsight {
+  internalConflicts: InternalConflict[];
+  contradictions: ResponseContradiction[];
+  derivedCorePain: string;
+  derivedKeyUnlockArea: string;
+  behaviorVsPerceptionGap: number; // 0-100
+  selfDeceptionIndex: number; // 0-100
+  interpretiveSummary: string;
+}
+
 export interface DiagnosticResult {
   dominantPattern: PatternDefinition;
   secondaryPatterns: PatternDefinition[];
@@ -52,6 +76,7 @@ export interface DiagnosticResult {
   keyUnlockArea: string;
   criticalDiagnosis: string;
   whatNotToDo: string[];
+  interpretation?: InterpretiveInsight;
 }
 
 export interface LifePillarImpact {
