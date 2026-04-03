@@ -65,7 +65,7 @@ const Diagnostic = () => {
 
       const { data: questions, error } = await supabase
         .from('questions')
-        .select('sort_order, text, axes, type')
+        .select('sort_order, text, axes, type, options')
         .eq('test_id', mod.id)
         .order('sort_order', { ascending: true });
 
