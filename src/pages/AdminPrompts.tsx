@@ -489,6 +489,188 @@ const AdminPrompts = () => {
         </div>
       </motion.div>
 
+      {/* ── Pré-visualização / Simulação ── */}
+      <motion.div {...fadeUp} transition={{ delay: 0.02 }} className="space-y-3">
+        <button onClick={() => toggleSection('preview')} className="w-full flex items-center justify-between bg-card/70 backdrop-blur-sm border border-emerald-500/20 rounded-2xl px-5 py-4 hover:bg-card/90 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center"><PlayCircle className="w-4 h-4 text-emerald-500" /></div>
+            <div className="text-left">
+              <h2 className="text-[0.9rem] font-semibold">Pré-visualização de Resposta</h2>
+              <p className="text-[0.7rem] text-muted-foreground/50">Simular resposta da IA antes de impactar o usuário</p>
+            </div>
+          </div>
+          {expandedSections['preview'] ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
+        </button>
+
+        {expandedSections['preview'] && (
+          <div className="space-y-4 pl-2">
+            {/* Test selector */}
+            <div className="p-4 rounded-xl border border-border/30 bg-card/40 space-y-3">
+              <label className="text-[0.8rem] font-semibold">Selecionar Teste</label>
+              <select
+                value={previewTestId}
+                onChange={(e) => { setPreviewTestId(e.target.value); setPreviewResult(null); setPreviewScores({}); }}
+                className="w-full bg-background/50 border border-border/20 rounded-lg px-3 py-2 text-[0.8rem] focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Escolha um teste...</option>
+                {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+            </div>
+
+            {/* Active prompts summary */}
+            {previewTestId && (() => {
+              const activePrompts = testPrompts.filter(p => p.test_id === previewTestId && p.is_active);
+              return (
+                <div className="p-4 rounded-xl border border-border/30 bg-card/40 space-y-2">
+                  <h4 className="text-[0.8rem] font-semibold flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                    Prompts Ativos ({activePrompts.length}/7)
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {PROMPT_FIELDS.map(f => {
+                      const active = activePrompts.find(p => p.prompt_type === f.type);
+                      return (
+                        <span key={f.type} className={`text-[0.65rem] px-2 py-0.5 rounded-full font-medium ${
+                          active ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted/30 text-muted-foreground/40 line-through'
+                        }`}>{f.label.replace('Prompt de ', '').replace('Prompt ', '')}</span>
+                      );
+                    })}
+                  </div>
+                  {activePrompts.length === 0 && (
+                    <p className="text-[0.7rem] text-amber-600">⚠ Sem prompts ativos. A simulação usará fallback local.</p>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Score sliders */}
+            {previewTestId && (() => {
+              const modPrompts = testPrompts.filter(p => p.test_id === previewTestId);
+              // Get unique axes from prompts content or use defaults
+              const axes = Array.from(new Set(
+                testPrompts
+                  .filter(p => p.test_id === previewTestId)
+                  .flatMap(() => {
+                    // We'll populate from questions on runPreview, show basic sliders
+                    return Object.keys(previewScores).length > 0 ? Object.keys(previewScores) : [];
+                  })
+              ));
+
+              return (
+                <div className="p-4 rounded-xl border border-border/30 bg-card/40 space-y-3">
+                  <h4 className="text-[0.8rem] font-semibold flex items-center gap-2">
+                    <Sliders className="w-3.5 h-3.5 text-primary/70" />
+                    Simular Scores por Eixo
+                  </h4>
+                  <p className="text-[0.65rem] text-muted-foreground/50">Ajuste os percentuais para simular diferentes cenários. Clique "Carregar Eixos" para buscar do banco.</p>
+                  
+                  <button
+                    onClick={async () => {
+                      const { data: questions } = await supabase.from('questions').select('axes').eq('test_id', previewTestId);
+                      const allAxes = new Set<string>();
+                      (questions || []).forEach((q: any) => (q.axes || []).forEach((a: string) => allAxes.add(a)));
+                      const newScores: Record<string, number> = {};
+                      allAxes.forEach(a => { newScores[a] = previewScores[a] ?? 50; });
+                      setPreviewScores(newScores);
+                      if (allAxes.size === 0) toast.warning('Nenhum eixo encontrado nas perguntas deste teste');
+                      else toast.success(`${allAxes.size} eixos carregados`);
+                    }}
+                    className="px-3 py-1.5 text-[0.7rem] font-semibold bg-muted/40 hover:bg-muted/60 rounded-lg transition-colors"
+                  >
+                    Carregar Eixos
+                  </button>
+
+                  {Object.keys(previewScores).length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {Object.entries(previewScores).map(([axis, val]) => (
+                        <div key={axis} className="space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-[0.7rem] font-medium text-foreground/70">{axis}</span>
+                            <span className="text-[0.65rem] text-muted-foreground/50 font-mono">{val}%</span>
+                          </div>
+                          <input
+                            type="range" min="0" max="100" step="5"
+                            value={val}
+                            onChange={(e) => setPreviewScores(prev => ({ ...prev, [axis]: parseInt(e.target.value) }))}
+                            className="w-full accent-primary h-1.5"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
+            {/* Run simulation */}
+            {previewTestId && (
+              <button
+                onClick={runPreview}
+                disabled={previewRunning}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-[0.85rem] font-semibold disabled:opacity-40 hover:bg-emerald-700 transition-colors"
+              >
+                {previewRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlayCircle className="w-4 h-4" />}
+                {previewRunning ? 'Gerando simulação...' : 'Simular Resposta da IA'}
+              </button>
+            )}
+
+            {/* Preview result */}
+            {previewResult && (
+              <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.03] space-y-3">
+                <h4 className="text-[0.85rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Simulação</h4>
+                
+                {previewResult.profileName && (
+                  <div className="space-y-1">
+                    <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Perfil</span>
+                    <p className="text-[0.85rem] font-semibold">{previewResult.profileName}</p>
+                  </div>
+                )}
+                {previewResult.mentalState && (
+                  <div className="space-y-1">
+                    <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Estado Mental</span>
+                    <p className="text-[0.78rem] text-foreground/70">{previewResult.mentalState}</p>
+                  </div>
+                )}
+                {previewResult.summary && (
+                  <div className="space-y-1">
+                    <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Resumo</span>
+                    <p className="text-[0.75rem] text-foreground/60 leading-relaxed whitespace-pre-wrap">{previewResult.summary}</p>
+                  </div>
+                )}
+                {previewResult.corePain && (
+                  <div className="space-y-1">
+                    <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Dor Central</span>
+                    <p className="text-[0.75rem] text-foreground/60">{previewResult.corePain}</p>
+                  </div>
+                )}
+                {previewResult.direction && (
+                  <div className="space-y-1">
+                    <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Direção</span>
+                    <p className="text-[0.75rem] text-foreground/60">{previewResult.direction}</p>
+                  </div>
+                )}
+                {previewResult.triggers?.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Gatilhos</span>
+                    <ul className="list-disc list-inside text-[0.72rem] text-foreground/55 space-y-0.5">
+                      {previewResult.triggers.map((t: string, i: number) => <li key={i}>{t}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Raw JSON toggle */}
+                <details className="mt-2">
+                  <summary className="text-[0.65rem] cursor-pointer text-muted-foreground/40 hover:text-muted-foreground/60">Ver JSON completo</summary>
+                  <pre className="mt-2 p-3 bg-background/60 rounded-lg text-[0.65rem] overflow-x-auto max-h-80 text-foreground/50 font-mono leading-relaxed">
+                    {JSON.stringify(previewResult, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
+          </div>
+        )}
+      </motion.div>
+
       {/* ── IA / Configuração de Resposta (Global) ── */}
       <motion.div {...fadeUp} transition={{ delay: 0.03 }} className="space-y-3">
         <button onClick={() => toggleSection('ai_config')} className="w-full flex items-center justify-between bg-card/70 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4 hover:bg-card/90 transition-colors">
