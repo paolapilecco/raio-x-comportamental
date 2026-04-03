@@ -65,9 +65,48 @@ const Report = ({ result, onRestart }: ReportProps) => {
           </div>
         </ReportSection>
 
-        {/* Core Pain */}
-        <ReportSection title="Dor central" delay={0.1} icon={<Flame className="w-5 h-5 text-primary/60" />}>
-          <p className="text-foreground/70 leading-[1.75] text-[0.9rem]">{result.corePain}</p>
+        {/* Core Pain — Enhanced */}
+        <ReportSection title="Dor Central" delay={0.1} icon={<Flame className="w-5 h-5 text-destructive/60" />}>
+          <div className="space-y-5">
+            {/* Main problem */}
+            <div className="border-l-2 border-destructive/30 pl-5">
+              <p className="text-[0.7rem] tracking-[0.2em] uppercase text-destructive/50 font-semibold mb-1.5">O problema principal</p>
+              <p className="text-foreground/80 leading-[1.75] text-[0.9rem] font-medium">{result.corePain}</p>
+            </div>
+
+            {/* Blocking pattern */}
+            <div className="border-l-2 border-primary/30 pl-5">
+              <p className="text-[0.7rem] tracking-[0.2em] uppercase text-primary/50 font-semibold mb-1.5">Padrão que causa o travamento</p>
+              <p className="text-foreground/70 leading-[1.75] text-[0.9rem]">
+                {result.dominantPattern.label}: {result.blockingPoint}
+              </p>
+            </div>
+
+            {/* Sustaining behavior */}
+            <div className="border-l-2 border-muted-foreground/20 pl-5">
+              <p className="text-[0.7rem] tracking-[0.2em] uppercase text-muted-foreground/50 font-semibold mb-1.5">Comportamento que sustenta o ciclo</p>
+              <p className="text-foreground/70 leading-[1.75] text-[0.9rem]">
+                {result.selfSabotageCycle.length > 0
+                  ? result.selfSabotageCycle[result.selfSabotageCycle.length - 1]
+                  : result.mechanism}
+              </p>
+            </div>
+
+            {/* Self-deception alert if present */}
+            {result.interpretation && result.interpretation.selfDeceptionIndex >= 40 && (
+              <div className="bg-destructive/[0.05] border border-destructive/15 rounded-xl p-4 mt-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive/60" />
+                  <p className="text-[0.75rem] font-semibold text-destructive/70">
+                    Índice de autoengano: {result.interpretation.selfDeceptionIndex}%
+                  </p>
+                </div>
+                <p className="text-[0.82rem] text-foreground/60 leading-[1.7]">
+                  Existe uma divergência de {result.interpretation.behaviorVsPerceptionGap}% entre como você se percebe e como realmente se comporta. Isso indica pontos cegos que impedem mudanças reais.
+                </p>
+              </div>
+            )}
+          </div>
         </ReportSection>
 
         {/* Key Unlock Area */}
