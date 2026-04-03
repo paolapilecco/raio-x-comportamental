@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import Premium from "./pages/Premium";
 import ResetPassword from "./pages/ResetPassword";
 import AdminPrompts from "./pages/AdminPrompts";
+import AdminTestModules from "./pages/AdminTestModules";
 import AdminRoadmap from "./pages/AdminRoadmap";
 import NotFound from "./pages/NotFound";
 
