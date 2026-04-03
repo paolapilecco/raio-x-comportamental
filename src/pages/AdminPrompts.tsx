@@ -281,6 +281,8 @@ const AdminPrompts = () => {
     setRefineLevel(0);
     setPreviewRunning(true);
     setPreviewResult(null);
+    setResultHistory([]);
+    setShowComparison(false);
     try {
       const { data, error } = await supabase.functions.invoke('analyze-test', {
         body: { test_module_id: previewTestId, scores, slug: mod.slug, refine_level: refineLevel },
