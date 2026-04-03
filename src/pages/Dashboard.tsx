@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Brain, LogOut, History, LayoutGrid, Layers, User, FlaskConical, Crown, Lock, ArrowRight, FileText, TrendingUp, Sparkles, Shield, Zap, Heart, Clock, CheckCircle2, X } from 'lucide-react';
+import { Brain, LogOut, History, LayoutGrid, Layers, User, FlaskConical, Crown, Lock, ArrowRight, FileText, TrendingUp, Sparkles, Shield, Zap, Heart, Clock, CheckCircle2, X, Users } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
@@ -307,6 +307,10 @@ const Dashboard = () => {
               <button onClick={() => navigate('/admin/prompts')} className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 rounded-lg text-[0.72rem] font-semibold transition-colors">
                 <Sparkles className="w-3 h-3" />
                 Central de IA
+              </button>
+              <button onClick={() => navigate('/admin/users')} className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 rounded-lg text-[0.72rem] font-semibold transition-colors">
+                <Users className="w-3 h-3" />
+                Usuários
               </button>
               {!hasData && (
                 <button onClick={generateTestData} disabled={generating} className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 rounded-lg text-[0.72rem] font-semibold transition-colors disabled:opacity-50">
