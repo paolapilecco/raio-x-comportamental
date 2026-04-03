@@ -227,10 +227,11 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { test_module_id, scores, slug } = await req.json() as {
+    const { test_module_id, scores, slug, refine_level } = await req.json() as {
       test_module_id: string;
       scores: ScoreEntry[];
       slug: string;
+      refine_level?: number; // 0 = normal, 1+ = progressively stricter
     };
 
     if (!test_module_id || !scores || !Array.isArray(scores)) {
@@ -292,6 +293,29 @@ serve(async (req) => {
       userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions
     );
 
+    // Build refine instruction if needed
+    const refineLevel = refine_level ?? 0;
+    const refineInstruction = refineLevel > 0 ? `
+
+---
+
+# INSTRUÇÃO DE REFINAMENTO (nível ${refineLevel})
+
+A resposta anterior foi considerada GENÉRICA ou VAGA. Aplique estas exigências adicionais:
+
+${refineLevel >= 1 ? `- PROIBIDO usar frases como "tenha mais foco", "acredite em si", "busque equilíbrio", "saia da zona de conforto"
+- Cada frase DEVE conter uma referência direta ao padrão específico detectado nos dados
+- O diagnóstico crítico deve incluir uma CAUSA raiz e uma CONSEQUÊNCIA observável
+- A contradição deve ser entre dois comportamentos CONCRETOS, não entre conceitos abstratos` : ""}
+${refineLevel >= 2 ? `- A dor central deve explicar o MECANISMO que sustenta o problema — não apenas nomeá-lo
+- O ponto cego deve surpreender — não pode ser óbvio
+- A primeira ação deve ser executável em 72h com critério de sucesso mensurável
+- As restrições (o que não fazer) devem ser contra-intuitivas, não óbvias` : ""}
+${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário deve se sentir lido com precisão cirúrgica
+- Cada seção deve conter pelo menos uma frase que o usuário NÃO esperaria ler
+- O resumo deve funcionar como um espelho — o usuário deve reconhecer seus comportamentos reais` : ""}
+` : "";
+
     // Call AI
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
@@ -309,7 +333,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: systemPrompt + (refineLevel > 0 ? refineInstruction : "") },
           { role: "user", content: userPrompt },
         ],
       }),
