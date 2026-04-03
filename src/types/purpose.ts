@@ -1,3 +1,5 @@
+import { InterpretiveInsight } from './diagnostic';
+
 export type PurposePatternKey =
   | 'meaning_orientation'
   | 'identity_alignment'
