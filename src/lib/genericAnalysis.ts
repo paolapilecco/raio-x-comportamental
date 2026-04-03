@@ -1,5 +1,6 @@
 import { Answer, DiagnosticResult, IntensityLevel, PatternScore } from '@/types/diagnostic';
 import { generateInterpretation } from './interpretationEngine';
+import { validateAndRefineReport } from './reportQualityValidator';
 
 export interface GenericPatternDefinition {
   key: string;
