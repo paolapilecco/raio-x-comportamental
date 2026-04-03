@@ -2,6 +2,7 @@ import { PurposePatternKey, PurposePatternScore, PurposeResult, PurposeConnectio
 import { purposeQuestions } from '@/data/purposeQuestions';
 import { purposePatternDefinitions } from '@/data/purposePatterns';
 import { Answer } from '@/types/diagnostic';
+import { generateInterpretation } from './interpretationEngine';
 
 const ALL_PURPOSE_PATTERNS: PurposePatternKey[] = [
   'meaning_orientation',
@@ -14,7 +15,6 @@ const ALL_PURPOSE_PATTERNS: PurposePatternKey[] = [
   'fulfillment_level',
 ];
 
-// These axes are "inverted" — high score = good (connected), so we invert for problem detection
 const POSITIVE_AXES: PurposePatternKey[] = [
   'meaning_orientation',
   'identity_alignment',
@@ -36,8 +36,6 @@ function calculatePurposeScores(answers: Answer[]): PurposePatternScore[] {
     if (!question) return;
 
     question.axes.forEach((axis) => {
-      // For positive axes, invert the score (5 becomes 1, 1 becomes 5)
-      // so that high percentage = more problematic / disconnected
       if (POSITIVE_AXES.includes(axis)) {
         rawScores[axis] += (6 - answer.value);
       } else {
@@ -63,7 +61,6 @@ function getConnectionLevel(avgPercentage: number): PurposeConnectionLevel {
 }
 
 function determineMeaningType(scores: PurposePatternScore[]): MeaningConstructionType {
-  // Determine based on which positive axes are strongest (least problematic)
   const positiveScores = scores.filter(s => POSITIVE_AXES.includes(s.key));
   const leastProblematic = positiveScores.sort((a, b) => a.percentage - b.percentage)[0];
 
@@ -98,6 +95,17 @@ export function analyzePurposeAnswers(answers: Answer[]): PurposeResult {
 
   const intensity = dominant.percentage >= 75 ? 'alto' as const : dominant.percentage >= 50 ? 'moderado' as const : 'leve' as const;
 
+  // ── INTERPRETATION ENGINE ──
+  const questionMeta = purposeQuestions.map(q => ({
+    id: q.id,
+    axes: q.axes as string[],
+    type: (q as any).type || 'likert',
+  }));
+  const interpretation = generateInterpretation(answers, questionMeta, allScores as any, dominant.label);
+
+  const corePain = interpretation.derivedCorePain || dominantDef.corePain;
+  const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;
+
   const combinedTitle = secondary.length > 0
     ? `${dominantDef.label} com ${secondaryDefs[0].label}`
     : dominantDef.label;
@@ -106,10 +114,18 @@ export function analyzePurposeAnswers(answers: Answer[]): PurposeResult {
   if (secondaryDefs.length > 0) {
     summary += ` Além disso, há traços significativos de ${secondaryDefs.map(d => d.label.toLowerCase()).join(' e ')}, o que aprofunda a desconexão.`;
   }
+  if (interpretation.interpretiveSummary) {
+    summary += `\n\n${interpretation.interpretiveSummary}`;
+  }
 
   let mechanism = dominantDef.mechanism;
   if (secondaryDefs.length > 0) {
     mechanism += ` Esse mecanismo é intensificado pela presença de ${secondaryDefs[0].label.toLowerCase()}: ${secondaryDefs[0].mechanism.charAt(0).toLowerCase() + secondaryDefs[0].mechanism.slice(1)}`;
+  }
+
+  let contradiction = dominantDef.contradiction;
+  if (interpretation.contradictions.length > 0) {
+    contradiction = `${interpretation.contradictions[0].label}: ${interpretation.contradictions[0].description}`;
   }
 
   const triggers = [...dominantDef.triggers];
@@ -143,6 +159,11 @@ export function analyzePurposeAnswers(answers: Answer[]): PurposeResult {
     sd.whatNotToDo.slice(0, 1).forEach(w => { if (!whatNotToDo.includes(w)) whatNotToDo.push(w); });
   });
 
+  let criticalDiagnosis = dominantDef.criticalDiagnosis;
+  if (interpretation.selfDeceptionIndex >= 50) {
+    criticalDiagnosis += ` Índice de autoengano: ${interpretation.selfDeceptionIndex}%.`;
+  }
+
   return {
     connectionLevel,
     meaningType,
@@ -165,14 +186,15 @@ export function analyzePurposeAnswers(answers: Answer[]): PurposeResult {
     blockingPoint: dominantDef.blockingPoint,
     lifeImpact,
     exitStrategy,
-    corePain: dominantDef.corePain,
-    keyUnlockArea: dominantDef.keyUnlockArea,
-    criticalDiagnosis: dominantDef.criticalDiagnosis,
+    corePain,
+    keyUnlockArea,
+    criticalDiagnosis,
     whatNotToDo,
-    contradiction: dominantDef.contradiction,
+    contradiction,
     mechanism,
     impact: dominantDef.impact,
     direction: dominantDef.direction,
     intensity,
+    interpretation,
   };
 }

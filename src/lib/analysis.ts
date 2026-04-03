@@ -1,6 +1,7 @@
 import { Answer, DiagnosticResult, IntensityLevel, PatternKey, PatternScore } from '@/types/diagnostic';
 import { questions } from '@/data/questions';
 import { patternDefinitions } from '@/data/patterns';
+import { generateInterpretation } from './interpretationEngine';
 
 const ALL_PATTERNS: PatternKey[] = [
   'unstable_execution',
@@ -62,14 +63,37 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     ? `${dominantDef.label} com ${secondaryDefs[0].label}`
     : dominantDef.label;
 
+  // ── INTERPRETATION ENGINE ──
+  const questionMeta = questions.map(q => ({
+    id: q.id,
+    axes: q.axes as string[],
+    type: (q as any).type || 'likert',
+  }));
+  const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label);
+
+  // Use derived insights when available, fallback to pattern definitions
+  const corePain = interpretation.derivedCorePain || dominantDef.corePain;
+  const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;
+
   let summary = dominantDef.description;
   if (secondaryDefs.length > 0) {
     summary += ` Além disso, há traços significativos de ${secondaryDefs.map(d => d.label.toLowerCase()).join(' e ')}, o que intensifica a complexidade do seu funcionamento.`;
+  }
+  // Append interpretive layer
+  if (interpretation.interpretiveSummary) {
+    summary += `\n\n${interpretation.interpretiveSummary}`;
   }
 
   let mechanism = dominantDef.mechanism;
   if (secondaryDefs.length > 0) {
     mechanism += ` Esse mecanismo é amplificado pela presença de ${secondaryDefs[0].label.toLowerCase()}: ${secondaryDefs[0].mechanism.charAt(0).toLowerCase() + secondaryDefs[0].mechanism.slice(1)}`;
+  }
+
+  // Enhanced contradiction from interpretation
+  let contradiction = dominantDef.contradiction;
+  if (interpretation.contradictions.length > 0) {
+    const mainContradiction = interpretation.contradictions[0];
+    contradiction = `${mainContradiction.label}: ${mainContradiction.description}`;
   }
 
   // Combine triggers from dominant + secondary
@@ -125,6 +149,12 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     });
   }
 
+  // Enhanced critical diagnosis with self-deception insight
+  let criticalDiagnosis = dominantDef.criticalDiagnosis;
+  if (interpretation.selfDeceptionIndex >= 50) {
+    criticalDiagnosis += ` Atenção: índice de autoengano em ${interpretation.selfDeceptionIndex}% — há uma desconexão significativa entre sua autopercepção e seus comportamentos reais.`;
+  }
+
   return {
     dominantPattern: dominantDef,
     secondaryPatterns: secondaryDefs,
@@ -132,7 +162,7 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     allScores,
     summary,
     mechanism,
-    contradiction: dominantDef.contradiction,
+    contradiction,
     impact: dominantDef.impact,
     direction: dominantDef.direction,
     combinedTitle,
@@ -144,9 +174,10 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     blockingPoint: dominantDef.blockingPoint,
     lifeImpact,
     exitStrategy,
-    corePain: dominantDef.corePain,
-    keyUnlockArea: dominantDef.keyUnlockArea,
-    criticalDiagnosis: dominantDef.criticalDiagnosis,
+    corePain,
+    keyUnlockArea,
+    criticalDiagnosis,
     whatNotToDo,
+    interpretation,
   };
 }

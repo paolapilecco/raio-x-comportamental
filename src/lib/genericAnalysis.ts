@@ -1,4 +1,5 @@
 import { Answer, DiagnosticResult, IntensityLevel, PatternScore } from '@/types/diagnostic';
+import { generateInterpretation } from './interpretationEngine';
 
 export interface GenericPatternDefinition {
   key: string;
@@ -26,6 +27,7 @@ interface DbQuestion {
   id: number;
   text: string;
   axes: string[];
+  type?: string;
 }
 
 function getIntensity(percentage: number): IntensityLevel {
@@ -72,6 +74,17 @@ export function analyzeGenericTest(
 
   const intensity = getIntensity(dominant.percentage);
 
+  // ── INTERPRETATION ENGINE ──
+  const questionMeta = questions.map(q => ({
+    id: q.id,
+    axes: q.axes,
+    type: q.type || 'likert',
+  }));
+  const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label);
+
+  const corePain = interpretation.derivedCorePain || dominantDef.corePain;
+  const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;
+
   const combinedTitle = secondary.length > 0
     ? `${dominantDef.label} com ${secondaryDefs[0]?.label}`
     : dominantDef.label;
@@ -80,10 +93,18 @@ export function analyzeGenericTest(
   if (secondaryDefs.length > 0) {
     summary += ` Além disso, há traços significativos de ${secondaryDefs.map(d => d.label.toLowerCase()).join(' e ')}, o que intensifica a complexidade do seu funcionamento.`;
   }
+  if (interpretation.interpretiveSummary) {
+    summary += `\n\n${interpretation.interpretiveSummary}`;
+  }
 
   let mechanism = dominantDef.mechanism;
   if (secondaryDefs.length > 0) {
     mechanism += ` Esse mecanismo é amplificado pela presença de ${secondaryDefs[0].label.toLowerCase()}: ${secondaryDefs[0].mechanism.charAt(0).toLowerCase() + secondaryDefs[0].mechanism.slice(1)}`;
+  }
+
+  let contradiction = dominantDef.contradiction;
+  if (interpretation.contradictions.length > 0) {
+    contradiction = `${interpretation.contradictions[0].label}: ${interpretation.contradictions[0].description}`;
   }
 
   const triggers = [...dominantDef.triggers];
@@ -117,6 +138,11 @@ export function analyzeGenericTest(
     sd.whatNotToDo.slice(0, 1).forEach(w => { if (!whatNotToDo.includes(w)) whatNotToDo.push(w); });
   });
 
+  let criticalDiagnosis = dominantDef.criticalDiagnosis;
+  if (interpretation.selfDeceptionIndex >= 50) {
+    criticalDiagnosis += ` Índice de autoengano: ${interpretation.selfDeceptionIndex}%.`;
+  }
+
   const toPatternDef = (d: GenericPatternDefinition) => ({
     key: d.key as any,
     label: d.label,
@@ -146,7 +172,7 @@ export function analyzeGenericTest(
     allScores,
     summary,
     mechanism,
-    contradiction: dominantDef.contradiction,
+    contradiction,
     impact: dominantDef.impact,
     direction: dominantDef.direction,
     combinedTitle,
@@ -158,9 +184,10 @@ export function analyzeGenericTest(
     blockingPoint: dominantDef.blockingPoint,
     lifeImpact,
     exitStrategy,
-    corePain: dominantDef.corePain,
-    keyUnlockArea: dominantDef.keyUnlockArea,
-    criticalDiagnosis: dominantDef.criticalDiagnosis,
+    corePain,
+    keyUnlockArea,
+    criticalDiagnosis,
     whatNotToDo,
+    interpretation,
   };
 }
