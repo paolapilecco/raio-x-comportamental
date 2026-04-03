@@ -679,6 +679,22 @@ const AdminPrompts = () => {
               </div>
             )}
             {previewResult && (() => {
+              // ── Quality check ──
+              const GENERIC_PHRASES = ['tenha mais foco', 'acredite em si', 'saia da zona de conforto', 'você precisa melhorar', 'busque equilíbrio', 'tente se organizar', 'seja mais disciplinado', 'confie no processo'];
+              const allText = [previewResult.criticalDiagnosis, previewResult.corePain, previewResult.summary, previewResult.mechanism, previewResult.contradiction, previewResult.direction, previewResult.firstAction, previewResult.keyUnlockArea].filter(Boolean).join(' ').toLowerCase();
+              const issues: string[] = [];
+              const hasCause = /porque|raiz|causa|origem|sustenta|alimenta|mantém/.test(allText);
+              const hasConflict = /mas |porém|contradição|conflito|ao mesmo tempo|enquanto/.test(allText);
+              const hasDirection = /primeiro passo|nos próximos|ação|começar por|parar de|específic/.test(allText);
+              const genericFound = GENERIC_PHRASES.filter(p => allText.includes(p));
+              if (!hasCause) issues.push('Sem causa clara identificada');
+              if (!hasConflict) issues.push('Sem conflito ou contradição');
+              if (!hasDirection) issues.push('Sem direção prática específica');
+              if (genericFound.length > 0) issues.push(`Frases genéricas: "${genericFound.join('", "')}"`);
+              if (!previewResult.blindSpot?.realProblem) issues.push('Ponto cego vazio ou ausente');
+              if ((previewResult.whatNotToDo?.length ?? 0) === 0) issues.push('Sem restrições (o que não fazer)');
+              const qualityScore = Math.max(0, 100 - issues.length * 18);
+
               const blocks: { key: string; label: string; color: string; borderColor: string; render: () => React.ReactNode }[] = [
                 { key: 'criticalDiagnosis', label: 'Diagnóstico Crítico', color: 'text-red-600 dark:text-red-400', borderColor: 'border-red-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.criticalDiagnosis}</p> },
                 { key: 'corePain', label: 'Dor Central', color: 'text-rose-600 dark:text-rose-400', borderColor: 'border-rose-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.corePain}</p> },
@@ -734,10 +750,37 @@ const AdminPrompts = () => {
 
               return (
                 <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.02] overflow-hidden">
-                  <div className="px-5 py-4 bg-emerald-500/[0.05] border-b border-emerald-500/15">
-                    <h4 className="text-[0.9rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Simulação</h4>
-                    <p className="text-[0.68rem] text-muted-foreground/50 mt-0.5">{blocks.filter(b => previewResult[b.key]).length} blocos gerados</p>
+                  <div className="px-5 py-4 bg-emerald-500/[0.05] border-b border-emerald-500/15 flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-[0.9rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Simulação</h4>
+                      <p className="text-[0.68rem] text-muted-foreground/50 mt-0.5">{blocks.filter(b => previewResult[b.key]).length} blocos gerados</p>
+                    </div>
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.7rem] font-semibold ${
+                      qualityScore >= 80 ? 'bg-emerald-500/10 text-emerald-600' : qualityScore >= 50 ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-600'
+                    }`}>
+                      {qualityScore >= 80 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+                      Qualidade: {qualityScore}%
+                    </div>
                   </div>
+                  {issues.length > 0 && (
+                    <div className={`mx-5 mt-4 p-4 rounded-xl border ${qualityScore < 50 ? 'border-red-500/25 bg-red-500/[0.04]' : 'border-amber-500/25 bg-amber-500/[0.04]'}`}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className={`w-4 h-4 ${qualityScore < 50 ? 'text-red-500' : 'text-amber-500'}`} />
+                        <h5 className={`text-[0.8rem] font-bold ${qualityScore < 50 ? 'text-red-600 dark:text-red-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                          {qualityScore < 50 ? 'Resposta com baixo nível de especificidade' : 'Resposta pode ser mais específica'}
+                        </h5>
+                      </div>
+                      <ul className="space-y-1">
+                        {issues.map((issue, i) => (
+                          <li key={i} className="flex items-start gap-2 text-[0.72rem] text-foreground/60">
+                            <span className={`shrink-0 mt-0.5 ${qualityScore < 50 ? 'text-red-500/60' : 'text-amber-500/60'}`}>•</span>
+                            {issue}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="text-[0.65rem] text-muted-foreground/40 mt-2 italic">Revise os prompts deste teste para melhorar a especificidade.</p>
+                    </div>
+                  )}
                   <div className="p-5 space-y-4">
                     {blocks.map(block => {
                       if (!previewResult[block.key]) return null;
