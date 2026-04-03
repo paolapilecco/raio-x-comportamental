@@ -300,6 +300,10 @@ const Dashboard = () => {
           <motion.div {...fadeUp} transition={{ delay: 0.02 }} className="flex items-center justify-between bg-amber-500/[0.06] border border-amber-500/15 rounded-xl px-5 py-3">
             <span className="text-[0.78rem] text-amber-600 font-medium">⚡ Modo super admin ativo</span>
             <div className="flex items-center gap-2">
+              <button onClick={() => navigate('/admin/roadmap')} className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 rounded-lg text-[0.72rem] font-semibold transition-colors">
+                <TrendingUp className="w-3 h-3" />
+                Roadmap
+              </button>
               <button onClick={() => navigate('/admin/prompts')} className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 rounded-lg text-[0.72rem] font-semibold transition-colors">
                 <Sparkles className="w-3 h-3" />
                 Central de IA
