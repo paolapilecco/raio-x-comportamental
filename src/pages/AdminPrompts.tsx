@@ -85,6 +85,29 @@ const TONE_OPTIONS = ['empático e direto', 'clínico e técnico', 'casual e aco
 const STYLE_OPTIONS = ['narrativo', 'bullet-points', 'estruturado', 'misto', 'conversacional'];
 const DEPTH_LABELS: Record<number, string> = { 1: 'Superficial', 2: 'Leve', 3: 'Moderado', 4: 'Profundo', 5: 'Máximo' };
 
+const SIMULATION_PRESETS: { label: string; icon: string; description: string; scores: Record<string, number> }[] = [
+  {
+    label: 'Baixa Execução', icon: '🐢', description: 'Dificuldade em iniciar e manter ações',
+    scores: { unstable_execution: 85, low_routine_sustenance: 80, discomfort_escape: 70, paralyzing_perfectionism: 45, excessive_self_criticism: 40, validation_dependency: 35, functional_overload: 25, emotional_self_sabotage: 30 },
+  },
+  {
+    label: 'Alta Procrastinação', icon: '⏳', description: 'Adiamento crônico com autocrítica',
+    scores: { discomfort_escape: 90, unstable_execution: 75, excessive_self_criticism: 70, paralyzing_perfectionism: 65, low_routine_sustenance: 60, validation_dependency: 50, emotional_self_sabotage: 45, functional_overload: 30 },
+  },
+  {
+    label: 'Alta Disciplina', icon: '🎯', description: 'Perfil funcional com possível rigidez',
+    scores: { unstable_execution: 15, low_routine_sustenance: 10, paralyzing_perfectionism: 55, excessive_self_criticism: 50, functional_overload: 65, discomfort_escape: 15, validation_dependency: 20, emotional_self_sabotage: 10 },
+  },
+  {
+    label: 'Perfil Inconsistente', icon: '🔀', description: 'Oscilação entre extremos sem padrão estável',
+    scores: { unstable_execution: 80, low_routine_sustenance: 75, emotional_self_sabotage: 70, discomfort_escape: 60, excessive_self_criticism: 55, validation_dependency: 65, paralyzing_perfectionism: 40, functional_overload: 45 },
+  },
+  {
+    label: 'Perfil Evitativo', icon: '🛡️', description: 'Fuga sistemática de desconforto e confronto',
+    scores: { discomfort_escape: 90, emotional_self_sabotage: 75, validation_dependency: 70, unstable_execution: 60, low_routine_sustenance: 55, excessive_self_criticism: 50, paralyzing_perfectionism: 35, functional_overload: 20 },
+  },
+];
+
 const AdminPrompts = () => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -610,6 +633,39 @@ const AdminPrompts = () => {
                   if (allAxes.size === 0) toast.warning('Nenhum eixo encontrado');
                   else toast.success(`${allAxes.size} eixos carregados`);
                 }} className="px-3 py-1.5 text-[0.7rem] font-semibold bg-muted/40 hover:bg-muted/60 rounded-lg transition-colors">Carregar Eixos</button>
+                {/* Presets */}
+                <div className="space-y-1.5">
+                  <label className="text-[0.72rem] font-semibold text-foreground/60">Presets de Simulação</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SIMULATION_PRESETS.map(preset => (
+                      <button
+                        key={preset.label}
+                        onClick={async () => {
+                          // Load axes first if not loaded
+                          if (Object.keys(previewScores).length === 0) {
+                            const { data: questions } = await supabase.from('questions').select('axes').eq('test_id', previewTestId);
+                            const allAxes = new Set<string>();
+                            (questions || []).forEach((q: any) => (q.axes || []).forEach((a: string) => allAxes.add(a)));
+                            if (allAxes.size === 0) { toast.warning('Nenhum eixo encontrado'); return; }
+                            const newScores: Record<string, number> = {};
+                            allAxes.forEach(a => { newScores[a] = preset.scores[a] ?? 30; });
+                            setPreviewScores(newScores);
+                          } else {
+                            const newScores: Record<string, number> = {};
+                            Object.keys(previewScores).forEach(a => { newScores[a] = preset.scores[a] ?? 30; });
+                            setPreviewScores(newScores);
+                          }
+                          toast.success(`Preset "${preset.label}" aplicado`);
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/25 bg-card/30 hover:bg-primary/10 hover:border-primary/30 text-[0.7rem] font-medium transition-all"
+                        title={preset.description}
+                      >
+                        <span>{preset.icon}</span>
+                        <span>{preset.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
                 {Object.keys(previewScores).length > 0 && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {Object.entries(previewScores).map(([axis, val]) => (
