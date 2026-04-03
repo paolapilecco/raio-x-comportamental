@@ -63,13 +63,22 @@ const iconMap: Record<string, any> = {
 };
 
 const PROMPT_FIELDS = [
-  { type: 'interpretation', label: 'Prompt Base de Interpretação', icon: Brain, description: 'Instruções base para interpretar as respostas do usuário.', rows: 4 },
-  { type: 'diagnosis', label: 'Prompt do Diagnóstico Final', icon: FileText, description: 'Prompt para gerar o diagnóstico final com base nos scores.', rows: 4 },
-  { type: 'profile', label: 'Prompt de Identificação de Perfil', icon: Target, description: 'Prompt para identificar o perfil comportamental dominante.', rows: 4 },
-  { type: 'core_pain', label: 'Prompt de Dor Central', icon: Crosshair, description: 'Prompt para identificar a dor central por trás dos padrões.', rows: 3 },
-  { type: 'triggers', label: 'Prompt de Gatilhos e Armadilhas', icon: AlertTriangle, description: 'Mapear gatilhos que ativam padrões e armadilhas que os mantêm.', rows: 3 },
-  { type: 'direction', label: 'Prompt de Direção Prática', icon: ArrowUpRight, description: 'Sugerir ações práticas e caminhos de transformação.', rows: 3 },
-  { type: 'restrictions', label: 'Regras Negativas / Restrições', icon: Ban, description: 'O que a IA NÃO deve fazer ao gerar resultados.', rows: 3 },
+  { type: 'interpretation', label: 'Prompt Base de Interpretação', icon: Brain, description: 'Instruções base para interpretar as respostas do usuário.', rows: 4, category: 'interpretation' },
+  { type: 'diagnosis', label: 'Prompt do Diagnóstico Final', icon: FileText, description: 'Prompt para gerar o diagnóstico final com base nos scores.', rows: 4, category: 'interpretation' },
+  { type: 'profile', label: 'Prompt de Identificação de Perfil', icon: Target, description: 'Prompt para identificar o perfil comportamental dominante.', rows: 4, category: 'profile' },
+  { type: 'core_pain', label: 'Prompt de Dor Central', icon: Crosshair, description: 'Prompt para identificar a dor central por trás dos padrões.', rows: 3, category: 'pain' },
+  { type: 'triggers', label: 'Prompt de Gatilhos e Armadilhas', icon: AlertTriangle, description: 'Mapear gatilhos que ativam padrões e armadilhas que os mantêm.', rows: 3, category: 'triggers' },
+  { type: 'direction', label: 'Prompt de Direção Prática', icon: ArrowUpRight, description: 'Sugerir ações práticas e caminhos de transformação.', rows: 3, category: 'direction' },
+  { type: 'restrictions', label: 'Regras Negativas / Restrições', icon: Ban, description: 'O que a IA NÃO deve fazer ao gerar resultados.', rows: 3, category: 'restrictions' },
+];
+
+const PROMPT_CATEGORIES = [
+  { id: 'interpretation', label: 'Interpretação & Diagnóstico', icon: Brain, color: 'text-blue-500', bgColor: 'bg-blue-500/10', borderColor: 'border-blue-500/15', types: ['interpretation', 'diagnosis'] },
+  { id: 'profile', label: 'Perfil', icon: Target, color: 'text-purple-500', bgColor: 'bg-purple-500/10', borderColor: 'border-purple-500/15', types: ['profile'] },
+  { id: 'pain', label: 'Dor Central', icon: Crosshair, color: 'text-rose-500', bgColor: 'bg-rose-500/10', borderColor: 'border-rose-500/15', types: ['core_pain'] },
+  { id: 'triggers', label: 'Gatilhos & Armadilhas', icon: AlertTriangle, color: 'text-amber-500', bgColor: 'bg-amber-500/10', borderColor: 'border-amber-500/15', types: ['triggers'] },
+  { id: 'direction', label: 'Direção Prática', icon: ArrowUpRight, color: 'text-emerald-500', bgColor: 'bg-emerald-500/10', borderColor: 'border-emerald-500/15', types: ['direction'] },
+  { id: 'restrictions', label: 'Restrições', icon: Ban, color: 'text-red-500', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/15', types: ['restrictions'] },
 ];
 
 const GLOBAL_META: Record<string, { icon: any; description: string }> = {
@@ -783,21 +792,40 @@ const AdminPrompts = () => {
                   )}
                 </div>
 
-                {/* Prompts */}
-                {PROMPT_FIELDS.map((field) => {
-                  const prompt = byType[field.type];
-                  if (!prompt) {
-                    return (
-                      <div key={field.type} className="border border-dashed border-border/25 rounded-xl p-4 flex items-center gap-3 opacity-40">
-                        <field.icon className="w-3.5 h-3.5 text-muted-foreground/30" />
-                        <div>
-                          <p className="text-[0.78rem] font-medium text-muted-foreground/50">{field.label}</p>
-                          <p className="text-[0.65rem] text-muted-foreground/30">Não configurado</p>
-                        </div>
+                {/* Prompts by Category */}
+                {PROMPT_CATEGORIES.map((cat) => {
+                  const catFields = PROMPT_FIELDS.filter(f => cat.types.includes(f.type));
+                  const CatIcon = cat.icon;
+                  const allConfigured = catFields.every(f => byType[f.type]);
+                  return (
+                    <div key={cat.id} className={`rounded-2xl border ${cat.borderColor} overflow-hidden`}>
+                      <div className={`flex items-center gap-2.5 px-4 py-2.5 ${cat.bgColor}`}>
+                        <CatIcon className={`w-3.5 h-3.5 ${cat.color}`} />
+                        <h3 className="text-[0.78rem] font-semibold text-foreground/80">{cat.label}</h3>
+                        {allConfigured
+                          ? <span className="ml-auto text-[0.6rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">✓</span>
+                          : <span className="ml-auto text-[0.6rem] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium">Pendente</span>
+                        }
                       </div>
-                    );
-                  }
-                  return renderTestPromptField(prompt, { icon: field.icon, description: field.description, rows: field.rows });
+                      <div className="p-3 space-y-3">
+                        {catFields.map((field) => {
+                          const prompt = byType[field.type];
+                          if (!prompt) {
+                            return (
+                              <div key={field.type} className="border border-dashed border-border/25 rounded-xl p-4 flex items-center gap-3 opacity-40">
+                                <field.icon className="w-3.5 h-3.5 text-muted-foreground/30" />
+                                <div>
+                                  <p className="text-[0.78rem] font-medium text-muted-foreground/50">{field.label}</p>
+                                  <p className="text-[0.65rem] text-muted-foreground/30">Não configurado</p>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return renderTestPromptField(prompt, { icon: field.icon, description: field.description, rows: field.rows });
+                        })}
+                      </div>
+                    </div>
+                  );
                 })}
               </div>
             )}
