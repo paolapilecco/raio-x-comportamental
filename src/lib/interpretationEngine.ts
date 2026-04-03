@@ -189,29 +189,29 @@ export function detectContradictions(
     }
   }
 
-  // Also check for cross-type divergence on same axis
-  Object.keys(overallScores).forEach(axis => {
-    const perc = perceptionByAxis[axis];
-    const behav = behaviorByAxis[axis];
-    if (!perc || !behav) return;
-
-    const gap = Math.abs(perc.avg - behav.avg);
-    if (gap >= 30) {
-      const direction = perc.avg > behav.avg
-        ? 'Você se percebe mais afetado do que seus comportamentos indicam — possível dramatização.'
-        : 'Seus comportamentos revelam mais do padrão do que você reconhece — ponto cego ativo.';
-
-      const alreadyExists = contradictions.find(c => c.type === `axis_gap_${axis}`);
-      if (!alreadyExists) {
-        contradictions.push({
-          type: `axis_gap_${axis}`,
-          label: `Divergência em ${axis}`,
-          description: direction,
-          evidence: `Likert: ${Math.round(perc.avg)}% | Comportamental: ${Math.round(behav.avg)}% (gap: ${Math.round(gap)}%)`,
-        });
+  // Check for high divergence between related axes (score-based)
+  const axisEntries = Object.entries(overallScores);
+  for (let i = 0; i < axisEntries.length; i++) {
+    for (let j = i + 1; j < axisEntries.length; j++) {
+      const [axisA, scoreA] = axisEntries[i];
+      const [axisB, scoreB] = axisEntries[j];
+      const gap = Math.abs(scoreA - scoreB);
+      if (gap >= 30) {
+        const direction = scoreA > scoreB
+          ? `${axisA} significativamente mais alto que ${axisB} — possível ponto cego.`
+          : `${axisB} significativamente mais alto que ${axisA} — possível ponto cego.`;
+        const alreadyExists = contradictions.find(c => c.type === `axis_gap_${axisA}_${axisB}`);
+        if (!alreadyExists) {
+          contradictions.push({
+            type: `axis_gap_${axisA}_${axisB}`,
+            label: `Divergência entre eixos`,
+            description: direction,
+            evidence: `${axisA}: ${Math.round(scoreA)}% | ${axisB}: ${Math.round(scoreB)}% (gap: ${Math.round(gap)}%)`,
+          });
+        }
       }
     }
-  });
+  }
 
   return contradictions;
 }
