@@ -43,6 +43,14 @@ export interface ResponseContradiction {
   evidence: string;
 }
 
+export interface BehavioralProfile {
+  id: string;
+  name: string;
+  description: string;
+  dominantTraits: string[];
+  riskLevel: 'low' | 'moderate' | 'high' | 'critical';
+}
+
 export interface InterpretiveInsight {
   internalConflicts: InternalConflict[];
   contradictions: ResponseContradiction[];
@@ -51,6 +59,7 @@ export interface InterpretiveInsight {
   behaviorVsPerceptionGap: number; // 0-100
   selfDeceptionIndex: number; // 0-100
   interpretiveSummary: string;
+  behavioralProfile: BehavioralProfile;
 }
 
 export interface DiagnosticResult {
