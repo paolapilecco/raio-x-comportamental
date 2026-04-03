@@ -284,6 +284,19 @@ const AdminPrompts = () => {
     setPreviewRunning(false);
   };
 
+  const fetchHistory = async (testId: string) => {
+    setHistoryLoading(true);
+    const { data, error } = await supabase
+      .from('prompt_history')
+      .select('*')
+      .eq('test_id', testId)
+      .order('changed_at', { ascending: false })
+      .limit(50);
+    if (error) toast.error('Erro ao carregar histórico');
+    setHistoryEntries((data || []) as any[]);
+    setHistoryLoading(false);
+  };
+
   const fadeUp = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
 
   // ── AI Config UI Component ──
