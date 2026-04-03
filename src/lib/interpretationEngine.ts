@@ -8,7 +8,7 @@
  * - Derived core pain and key unlock area from cross-pattern analysis
  */
 
-import { Answer, PatternScore, InternalConflict, ResponseContradiction, InterpretiveInsight } from '@/types/diagnostic';
+import { Answer, PatternScore, InternalConflict, ResponseContradiction, InterpretiveInsight, BehavioralProfile } from '@/types/diagnostic';
 
 interface QuestionMeta {
   id: number;
@@ -408,7 +408,118 @@ function buildInterpretiveSummary(
 }
 
 // ──────────────────────────────────────────────
-// 6. MAIN ENTRY POINT
+// 6. BEHAVIORAL PROFILE CLASSIFICATION
+// ──────────────────────────────────────────────
+
+const PROFILE_DEFINITIONS: {
+  id: string;
+  name: string;
+  description: string;
+  condition: (scores: Record<string, number>, conflicts: InternalConflict[]) => { match: boolean; strength: number };
+  dominantTraits: string[];
+}[] = [
+  {
+    id: 'evitativo',
+    name: 'Perfil Evitativo',
+    description: 'Você foge do desconforto antes mesmo de processá-lo. Tarefas difíceis, conversas incômodas e decisões arriscadas são sistematicamente adiadas. O problema não é falta de capacidade — é aversão à fricção.',
+    dominantTraits: ['Procrastinação crônica', 'Troca de atividade sob pressão', 'Conforto como prioridade inconsciente'],
+    condition: (s) => {
+      const score = ((s['discomfort_escape'] || 0) * 0.5) + ((s['low_routine_sustenance'] || 0) * 0.3) + ((s['emotional_self_sabotage'] || 0) * 0.2);
+      return { match: (s['discomfort_escape'] || 0) >= 55, strength: score };
+    },
+  },
+  {
+    id: 'inconsistente',
+    name: 'Perfil Inconsistente',
+    description: 'Você funciona em sprints intensos seguidos de abandonos abruptos. Começa com energia, mas não sustenta. O padrão não é de preguiça — é de esgotamento por intensidade mal distribuída.',
+    dominantTraits: ['Ciclos de começo/abandono', 'Dependência de motivação', 'Rotina instável'],
+    condition: (s) => {
+      const score = ((s['unstable_execution'] || 0) * 0.5) + ((s['low_routine_sustenance'] || 0) * 0.35) + ((s['emotional_self_sabotage'] || 0) * 0.15);
+      return { match: (s['unstable_execution'] || 0) >= 55, strength: score };
+    },
+  },
+  {
+    id: 'sobrecarregado',
+    name: 'Perfil Sobrecarregado',
+    description: 'Você acumula mais do que pode processar. Está sempre ocupado, mas raramente avança no que importa. A sobrecarga virou identidade — parar parece fraqueza.',
+    dominantTraits: ['Dificuldade em dizer não', 'Ocupação como escudo', 'Exaustão crônica disfarçada de produtividade'],
+    condition: (s) => {
+      const score = ((s['functional_overload'] || 0) * 0.5) + ((s['excessive_self_criticism'] || 0) * 0.25) + ((s['validation_dependency'] || 0) * 0.25);
+      return { match: (s['functional_overload'] || 0) >= 55, strength: score };
+    },
+  },
+  {
+    id: 'autocritico',
+    name: 'Perfil Autocrítico',
+    description: 'Sua voz interna é mais dura que qualquer crítica externa. Você se cobra com uma intensidade que paralisa a ação. O perfeccionismo não é sobre qualidade — é sobre medo de exposição.',
+    dominantTraits: ['Cobrança interna desproporcional', 'Perfeccionismo paralisante', 'Culpa por descansar'],
+    condition: (s) => {
+      const score = ((s['excessive_self_criticism'] || 0) * 0.4) + ((s['paralyzing_perfectionism'] || 0) * 0.4) + ((s['emotional_self_sabotage'] || 0) * 0.2);
+      return { match: ((s['excessive_self_criticism'] || 0) >= 55 || (s['paralyzing_perfectionism'] || 0) >= 55), strength: score };
+    },
+  },
+  {
+    id: 'dependente_estimulo',
+    name: 'Perfil Dependente de Estímulo',
+    description: 'Você só age quando há pressão externa: prazo, cobrança, urgência ou validação. Sem estímulo, a inércia domina. Não falta vontade — falta motor interno.',
+    dominantTraits: ['Ação condicionada a urgência', 'Busca constante por aprovação', 'Dificuldade de automotivação'],
+    condition: (s) => {
+      const score = ((s['validation_dependency'] || 0) * 0.4) + ((s['low_routine_sustenance'] || 0) * 0.3) + ((s['discomfort_escape'] || 0) * 0.3);
+      return { match: (s['validation_dependency'] || 0) >= 55, strength: score };
+    },
+  },
+  {
+    id: 'autossabotador',
+    name: 'Perfil Autossabotador',
+    description: 'Você destrói o que constrói. Quando as coisas começam a funcionar, algo dentro de você encontra um motivo para parar. Não é azar — é um padrão ativo de proteção contra o sucesso.',
+    dominantTraits: ['Abandono na reta final', 'Criação inconsciente de obstáculos', 'Medo de manter conquistas'],
+    condition: (s) => {
+      const score = ((s['emotional_self_sabotage'] || 0) * 0.5) + ((s['unstable_execution'] || 0) * 0.25) + ((s['discomfort_escape'] || 0) * 0.25);
+      return { match: (s['emotional_self_sabotage'] || 0) >= 55, strength: score };
+    },
+  },
+  {
+    id: 'fragmentado',
+    name: 'Perfil Fragmentado',
+    description: 'Múltiplos conflitos internos dividem sua energia em direções opostas. Você quer avançar e recuar ao mesmo tempo. O resultado é estagnação por guerra interna.',
+    dominantTraits: ['Conflitos internos simultâneos', 'Indecisão crônica', 'Energia dispersa'],
+    condition: (s, conflicts) => {
+      const score = conflicts.length * 25 + 20;
+      return { match: conflicts.length >= 2, strength: Math.min(score, 100) };
+    },
+  },
+];
+
+export function classifyBehavioralProfile(
+  scores: Record<string, number>,
+  conflicts: InternalConflict[]
+): BehavioralProfile {
+  let bestProfile = PROFILE_DEFINITIONS[0];
+  let bestStrength = 0;
+
+  for (const profile of PROFILE_DEFINITIONS) {
+    const { match, strength } = profile.condition(scores, conflicts);
+    if (match && strength > bestStrength) {
+      bestProfile = profile;
+      bestStrength = strength;
+    }
+  }
+
+  // Determine risk level from strength
+  const riskLevel: BehavioralProfile['riskLevel'] =
+    bestStrength >= 75 ? 'critical' : bestStrength >= 60 ? 'high' : bestStrength >= 45 ? 'moderate' : 'low';
+
+  return {
+    id: bestProfile.id,
+    name: bestProfile.name,
+    description: bestProfile.description,
+    dominantTraits: bestProfile.dominantTraits,
+    riskLevel,
+  };
+}
+
+// ──────────────────────────────────────────────
+// 7. MAIN ENTRY POINT
 // ──────────────────────────────────────────────
 
 export function generateInterpretation(
@@ -433,7 +544,10 @@ export function generateInterpretation(
   // 4. Derive core pain and unlock area from cross-analysis
   const { derivedCorePain, derivedKeyUnlockArea } = deriveCorePainAndUnlock(scoresMap, internalConflicts);
 
-  // 5. Build interpretive summary
+  // 5. Classify behavioral profile
+  const behavioralProfile = classifyBehavioralProfile(scoresMap, internalConflicts);
+
+  // 6. Build interpretive summary
   const interpretiveSummary = buildInterpretiveSummary(
     internalConflicts,
     contradictions,
@@ -450,5 +564,6 @@ export function generateInterpretation(
     behaviorVsPerceptionGap,
     selfDeceptionIndex,
     interpretiveSummary,
+    behavioralProfile,
   };
 }

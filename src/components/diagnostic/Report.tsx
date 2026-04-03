@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download, XCircle, Crosshair, Flame, Key } from 'lucide-react';
+import { AlertTriangle, Brain, Target, Shield, ArrowRight, Zap, Eye, Compass, LifeBuoy, MapPin, Download, XCircle, Crosshair, Flame, Key, UserCheck } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -47,6 +47,40 @@ const Report = ({ result, onRestart }: ReportProps) => {
             <span className={`w-2 h-2 rounded-full ${intensityInfo.bgClass}`} />
           </div>
         </motion.div>
+
+        {/* Behavioral Profile Classification */}
+        {result.interpretation?.behavioralProfile && (
+          <ReportSection title="Seu perfil hoje é:" delay={0.04} icon={<UserCheck className="w-5 h-5 text-primary/60" />}>
+            <div className="text-center py-4 space-y-4">
+              <p className="text-2xl md:text-3xl font-semibold text-foreground/90">
+                {result.interpretation.behavioralProfile.name}
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-[0.75rem] text-muted-foreground/50">Nível de risco:</span>
+                <span className={`text-[0.75rem] font-semibold ${
+                  result.interpretation.behavioralProfile.riskLevel === 'critical' ? 'text-destructive' :
+                  result.interpretation.behavioralProfile.riskLevel === 'high' ? 'text-orange-500' :
+                  result.interpretation.behavioralProfile.riskLevel === 'moderate' ? 'text-yellow-500' :
+                  'text-green-500'
+                }`}>
+                  {result.interpretation.behavioralProfile.riskLevel === 'critical' ? 'Crítico' :
+                   result.interpretation.behavioralProfile.riskLevel === 'high' ? 'Alto' :
+                   result.interpretation.behavioralProfile.riskLevel === 'moderate' ? 'Moderado' : 'Baixo'}
+                </span>
+              </div>
+              <p className="text-foreground/70 leading-[1.75] text-[0.9rem] max-w-xl mx-auto">
+                {result.interpretation.behavioralProfile.description}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                {result.interpretation.behavioralProfile.dominantTraits.map((trait, i) => (
+                  <span key={i} className="text-[0.75rem] bg-primary/[0.06] border border-primary/12 rounded-full px-3 py-1 text-foreground/60">
+                    {trait}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </ReportSection>
+        )}
 
         {/* Profile Name */}
         <ReportSection title="Seu perfil comportamental" delay={0.05} icon={<Shield className="w-5 h-5 text-primary/60" />}>
