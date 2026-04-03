@@ -3,7 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import Questionnaire from '@/components/diagnostic/Questionnaire';
 import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
 import Report from '@/components/diagnostic/Report';
-import { Answer, DiagnosticResult } from '@/types/diagnostic';
+import { Answer, DiagnosticResult, PatternScore } from '@/types/diagnostic';
 import { analyzeAnswers } from '@/lib/analysis';
 import { analyzePurposeAnswers } from '@/lib/purposeAnalysis';
 import { analyzeGenericTest } from '@/lib/genericAnalysis';
@@ -25,6 +25,35 @@ interface DbQuestion {
   axes: string[];
   type?: 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
   options?: string[];
+}
+
+/**
+ * Calculate raw scores from answers using question axes.
+ * This is pure math — no interpretation.
+ */
+function calculateRawScores(answers: Answer[], questions: DbQuestion[], axisKeys: string[]): PatternScore[] {
+  const rawScores: Record<string, number> = {};
+  const maxScores: Record<string, number> = {};
+  axisKeys.forEach(k => { rawScores[k] = 0; maxScores[k] = 0; });
+
+  answers.forEach(answer => {
+    const question = questions.find(q => q.id === answer.questionId);
+    if (!question) return;
+    question.axes.forEach(axis => {
+      if (axis in rawScores) {
+        rawScores[axis] += answer.value;
+        maxScores[axis] += 5;
+      }
+    });
+  });
+
+  return axisKeys.map(key => ({
+    key: key as any,
+    label: key,
+    score: rawScores[key],
+    maxScore: maxScores[key],
+    percentage: maxScores[key] > 0 ? Math.round((rawScores[key] / maxScores[key]) * 100) : 0,
+  })).sort((a, b) => b.percentage - a.percentage);
 }
 
 const Diagnostic = () => {
@@ -79,11 +108,10 @@ const Diagnostic = () => {
         return;
       }
 
-      // Minimum question threshold
       const MIN_QUESTIONS = 10;
       if (questions.length < MIN_QUESTIONS) {
         if (isSuperAdmin) {
-          toast.error(`Este teste possui apenas ${questions.length} perguntas (mínimo: ${MIN_QUESTIONS}). Estrutura incompleta.`);
+          toast.error(`Este teste possui apenas ${questions.length} perguntas (mínimo: ${MIN_QUESTIONS}).`);
         } else {
           toast.error('Teste indisponível no momento');
         }
@@ -91,53 +119,34 @@ const Diagnostic = () => {
         return;
       }
 
-      // Integrity check: ensure all questions have axes
       const missingAxes = questions.filter(q => !q.axes || q.axes.length === 0);
-      if (missingAxes.length > 0) {
-        console.warn(`[Diagnostic] ${missingAxes.length} questions without axes in module "${slug}"`);
-        if (missingAxes.length > questions.length * 0.5) {
-          if (isSuperAdmin) {
-            toast.error(`Mais de 50% das perguntas sem eixos configurados. Teste bloqueado.`);
-          } else {
-            toast.error('Teste indisponível no momento');
-          }
-          navigate('/tests');
-          return;
+      if (missingAxes.length > questions.length * 0.5) {
+        if (isSuperAdmin) {
+          toast.error(`Mais de 50% das perguntas sem eixos configurados.`);
+        } else {
+          toast.error('Teste indisponível no momento');
         }
+        navigate('/tests');
+        return;
       }
 
-      // Integrity check: detect duplicate question texts
-      const texts = questions.map(q => q.text);
-      const uniqueTexts = new Set(texts);
-      if (uniqueTexts.size !== texts.length) {
-        console.warn(`[Diagnostic] ${texts.length - uniqueTexts.size} duplicate questions detected in module "${slug}"`);
-      }
-
-      // Type-format validation
       const validationErrors: string[] = [];
-
       questions.forEach((q, i) => {
         const qType = (q as any).type || 'likert';
         const qOptions = (q as any).options;
-        const qText = q.text;
         const order = q.sort_order || i + 1;
-
-        // behavior_choice MUST have custom options
         if (qType === 'behavior_choice' && (!qOptions || qOptions.length !== 5)) {
-          validationErrors.push(`Pergunta ${order}: behavior_choice sem opções customizadas definidas`);
+          validationErrors.push(`Pergunta ${order}: behavior_choice sem opções`);
         }
-
-        // likert questions should be affirmation statements (not end with ?)
-        if (qType === 'likert' && qText.trim().endsWith('?')) {
-          validationErrors.push(`Pergunta ${order}: likert em formato de pergunta (deveria ser afirmação)`);
+        if (qType === 'likert' && q.text.trim().endsWith('?')) {
+          validationErrors.push(`Pergunta ${order}: likert em formato de pergunta`);
         }
       });
 
       if (validationErrors.length > 0) {
         console.warn(`[Diagnostic] Validation errors in "${slug}":`, validationErrors);
         if (isSuperAdmin) {
-          toast.error(`Teste com ${validationErrors.length} incompatibilidade(s) de tipo/formato. Verifique o console.`);
-          // Allow super admin to proceed despite warnings
+          toast.error(`${validationErrors.length} incompatibilidade(s). Verifique o console.`);
         } else {
           toast.error('Teste indisponível no momento');
           navigate('/tests');
@@ -213,8 +222,11 @@ const Diagnostic = () => {
     }
   }, [user, moduleId]);
 
-  const runAnalysis = useCallback((answers: Answer[]): DiagnosticResult => {
-    // 1. Purpose test has its own dedicated engine
+  /**
+   * Local fallback analysis (hardcoded patterns).
+   * Used when AI prompts aren't configured or AI call fails.
+   */
+  const runLocalAnalysis = useCallback((answers: Answer[]): DiagnosticResult => {
     if (slug === PURPOSE_SLUG) {
       const r = analyzePurposeAnswers(answers);
       return {
@@ -243,28 +255,140 @@ const Diagnostic = () => {
       };
     }
 
-    // 2. Check for module-specific engine (premium tests)
     const engine = getTestEngine(slug);
     if (engine) {
       return analyzeGenericTest(answers, dbQuestions, engine.axes, engine.definitions);
     }
 
-    // 3. Default behavioral test engine
     return analyzeAnswers(answers);
   }, [slug, dbQuestions]);
 
-  const handleComplete = useCallback((answers: Answer[]) => {
+  /**
+   * Try AI-powered analysis using admin-configured prompts.
+   * Returns null if AI is unavailable or fails.
+   */
+  const runAIAnalysis = useCallback(async (answers: Answer[]): Promise<DiagnosticResult | null> => {
+    if (!moduleId) return null;
+
+    try {
+      // Calculate raw scores to send to the AI
+      const allAxes = new Set<string>();
+      dbQuestions.forEach(q => q.axes.forEach(a => allAxes.add(a)));
+      const axisKeys = Array.from(allAxes);
+
+      // Get labels from engine if available
+      const engine = getTestEngine(slug);
+      const scores = calculateRawScores(answers, dbQuestions, axisKeys).map(s => ({
+        ...s,
+        label: engine?.definitions[s.key]?.label || s.key,
+      }));
+
+      const { data, error } = await supabase.functions.invoke('analyze-test', {
+        body: { test_module_id: moduleId, scores, slug },
+      });
+
+      if (error) {
+        console.warn('[AI Analysis] Edge function error:', error);
+        return null;
+      }
+
+      // Check if AI told us to use fallback
+      if (data?.useFallback) {
+        console.log('[AI Analysis] No prompts configured, using local fallback');
+        return null;
+      }
+
+      if (data?.error) {
+        console.warn('[AI Analysis] Error:', data.error);
+        if (data.error.includes('Limite') || data.error.includes('429')) {
+          toast.error('Análise IA temporariamente indisponível. Usando análise local.');
+        }
+        return null;
+      }
+
+      const ai = data?.analysis;
+      if (!ai) return null;
+
+      // Build DiagnosticResult from AI response
+      const dominant = scores[0];
+      const secondary = scores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 2);
+      const intensity = dominant.percentage >= 75 ? 'alto' : dominant.percentage >= 50 ? 'moderado' : 'leve';
+
+      const dominantPattern = {
+        key: dominant.key as any,
+        label: dominant.label,
+        description: ai.summary || '',
+        mechanism: ai.mechanism || '',
+        contradiction: ai.contradiction || '',
+        impact: ai.impact || '',
+        direction: ai.direction || '',
+        profileName: ai.profileName || '',
+        mentalState: ai.mentalState || '',
+        triggers: ai.triggers || [],
+        mentalTraps: ai.mentalTraps || [],
+        selfSabotageCycle: ai.selfSabotageCycle || [],
+        blockingPoint: ai.blockingPoint || '',
+        lifeImpact: ai.lifeImpact || [],
+        exitStrategy: ai.exitStrategy || [],
+        corePain: ai.corePain || '',
+        keyUnlockArea: ai.keyUnlockArea || '',
+        criticalDiagnosis: ai.criticalDiagnosis || '',
+        whatNotToDo: ai.whatNotToDo || [],
+      };
+
+      return {
+        dominantPattern,
+        secondaryPatterns: secondary.map(s => ({
+          ...dominantPattern,
+          key: s.key as any,
+          label: s.label,
+        })),
+        intensity: intensity as any,
+        allScores: scores,
+        summary: ai.summary || '',
+        mechanism: ai.mechanism || '',
+        contradiction: ai.contradiction || '',
+        impact: ai.impact || '',
+        direction: ai.direction || '',
+        combinedTitle: ai.combinedTitle || dominant.label,
+        profileName: ai.profileName || '',
+        mentalState: ai.mentalState || '',
+        triggers: ai.triggers || [],
+        mentalTraps: ai.mentalTraps || [],
+        selfSabotageCycle: ai.selfSabotageCycle || [],
+        blockingPoint: ai.blockingPoint || '',
+        lifeImpact: ai.lifeImpact || [],
+        exitStrategy: ai.exitStrategy || [],
+        corePain: ai.corePain || '',
+        keyUnlockArea: ai.keyUnlockArea || '',
+        criticalDiagnosis: ai.criticalDiagnosis || '',
+        whatNotToDo: ai.whatNotToDo || [],
+      };
+    } catch (err) {
+      console.warn('[AI Analysis] Unexpected error:', err);
+      return null;
+    }
+  }, [moduleId, slug, dbQuestions]);
+
+  const handleComplete = useCallback(async (answers: Answer[]) => {
     setStep('analyzing');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    setTimeout(() => {
-      const analysisResult = runAnalysis(answers);
-      setResult(analysisResult);
-      setStep('report');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      saveToDatabase(answers, analysisResult);
-    }, 2500);
-  }, [saveToDatabase, runAnalysis]);
+    // Try AI-powered analysis first, fall back to local
+    let analysisResult = await runAIAnalysis(answers);
+    
+    if (!analysisResult) {
+      console.log('[Diagnostic] Using local analysis fallback');
+      analysisResult = runLocalAnalysis(answers);
+    } else {
+      console.log('[Diagnostic] Using AI-powered analysis from admin prompts');
+    }
+
+    setResult(analysisResult);
+    setStep('report');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    saveToDatabase(answers, analysisResult);
+  }, [saveToDatabase, runAIAnalysis, runLocalAnalysis]);
 
   const handleGoToDashboard = useCallback(() => {
     navigate('/dashboard');
