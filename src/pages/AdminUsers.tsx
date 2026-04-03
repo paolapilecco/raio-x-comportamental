@@ -64,6 +64,10 @@ export default function AdminUsers() {
   const isSuperAdminUser = (u: UserEntry) => u.roles.includes('super_admin');
 
   const filtered = users.filter(u => {
+    // Plan filter
+    if (planFilter === 'premium' && !isPremium(u)) return false;
+    if (planFilter === 'standard' && isPremium(u)) return false;
+    // Search
     if (!search) return true;
     const q = search.toLowerCase();
     return u.email?.toLowerCase().includes(q) || u.profile?.name?.toLowerCase().includes(q);
