@@ -227,10 +227,11 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { test_module_id, scores, slug } = await req.json() as {
+    const { test_module_id, scores, slug, refine_level } = await req.json() as {
       test_module_id: string;
       scores: ScoreEntry[];
       slug: string;
+      refine_level?: number; // 0 = normal, 1+ = progressively stricter
     };
 
     if (!test_module_id || !scores || !Array.isArray(scores)) {
