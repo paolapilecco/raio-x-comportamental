@@ -2,6 +2,7 @@ import { Answer, DiagnosticResult, IntensityLevel, PatternKey, PatternScore } fr
 import { questions } from '@/data/questions';
 import { patternDefinitions } from '@/data/patterns';
 import { generateInterpretation } from './interpretationEngine';
+import { validateAndRefineReport } from './reportQualityValidator';
 
 const ALL_PATTERNS: PatternKey[] = [
   'unstable_execution',
@@ -155,7 +156,7 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     criticalDiagnosis += ` Atenção: índice de autoengano em ${interpretation.selfDeceptionIndex}% — há uma desconexão significativa entre sua autopercepção e seus comportamentos reais.`;
   }
 
-  return {
+  const rawResult: DiagnosticResult = {
     dominantPattern: dominantDef,
     secondaryPatterns: secondaryDefs,
     intensity,
@@ -180,4 +181,6 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     whatNotToDo,
     interpretation,
   };
+
+  return validateAndRefineReport(rawResult);
 }

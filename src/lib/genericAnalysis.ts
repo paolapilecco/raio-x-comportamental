@@ -1,5 +1,6 @@
 import { Answer, DiagnosticResult, IntensityLevel, PatternScore } from '@/types/diagnostic';
 import { generateInterpretation } from './interpretationEngine';
+import { validateAndRefineReport } from './reportQualityValidator';
 
 export interface GenericPatternDefinition {
   key: string;
@@ -165,7 +166,7 @@ export function analyzeGenericTest(
     whatNotToDo: d.whatNotToDo,
   });
 
-  return {
+  const rawResult: DiagnosticResult = {
     dominantPattern: toPatternDef(dominantDef),
     secondaryPatterns: secondaryDefs.map(toPatternDef),
     intensity,
@@ -190,4 +191,6 @@ export function analyzeGenericTest(
     whatNotToDo,
     interpretation,
   };
+
+  return validateAndRefineReport(rawResult);
 }
