@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -42,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole>('user');
   const [loading, setLoading] = useState(true);
+  const initializedRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const [profileRes, roleRes] = await Promise.all([
@@ -61,7 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Listen for auth changes AFTER initial load
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      // Skip the initial event — we handle that via getSession below
+      if (!initializedRef.current) return;
+
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -70,15 +75,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setProfile(null);
         setRole('user');
       }
-      setLoading(false);
     });
 
+    // Use getSession as the single source of truth for initial load
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
         await fetchProfile(session.user.id);
       }
+      initializedRef.current = true;
       setLoading(false);
     });
 
