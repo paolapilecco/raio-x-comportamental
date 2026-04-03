@@ -262,6 +262,54 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_content: string
+          old_content: string
+          prompt_id: string
+          prompt_type: string
+          test_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_content: string
+          old_content: string
+          prompt_id: string
+          prompt_type: string
+          test_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_content?: string
+          old_content?: string
+          prompt_id?: string
+          prompt_type?: string
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prompt_history_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "test_prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prompt_history_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           axes: string[]

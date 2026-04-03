@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban, Settings, Sliders, PlayCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban, Settings, Sliders, PlayCircle, Loader2, CheckCircle2, History, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface TestPrompt {
@@ -103,6 +103,11 @@ const AdminPrompts = () => {
   const [previewScores, setPreviewScores] = useState<Record<string, number>>({});
   const [previewRunning, setPreviewRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<any>(null);
+  // History state
+  const [historyTestId, setHistoryTestId] = useState<string>('');
+  const [historyEntries, setHistoryEntries] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isSuperAdmin) { navigate('/dashboard', { replace: true }); return; }
@@ -277,6 +282,19 @@ const AdminPrompts = () => {
       toast.error('Erro inesperado na simulação');
     }
     setPreviewRunning(false);
+  };
+
+  const fetchHistory = async (testId: string) => {
+    setHistoryLoading(true);
+    const { data, error } = await supabase
+      .from('prompt_history')
+      .select('*')
+      .eq('test_id', testId)
+      .order('changed_at', { ascending: false })
+      .limit(50);
+    if (error) toast.error('Erro ao carregar histórico');
+    setHistoryEntries((data || []) as any[]);
+    setHistoryLoading(false);
   };
 
   const fadeUp = { initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } };
@@ -786,6 +804,80 @@ const AdminPrompts = () => {
           </motion.div>
         );
       })}
+
+      {/* ── Histórico de Alterações ── */}
+      <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="space-y-3">
+        <button onClick={() => toggleSection('history')} className="w-full flex items-center justify-between bg-card/70 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4 hover:bg-card/90 transition-colors">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-orange-500/10 flex items-center justify-center"><History className="w-4 h-4 text-orange-500" /></div>
+            <div className="text-left">
+              <h2 className="text-[0.9rem] font-semibold">Histórico de Alterações</h2>
+              <p className="text-[0.7rem] text-muted-foreground/50">Auditoria de mudanças nos prompts</p>
+            </div>
+          </div>
+          {expandedSections['history'] ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
+        </button>
+
+        {expandedSections['history'] && (
+          <div className="space-y-3 pl-2">
+            <div className="flex items-center gap-2">
+              <select
+                value={historyTestId}
+                onChange={(e) => { setHistoryTestId(e.target.value); if (e.target.value) fetchHistory(e.target.value); else setHistoryEntries([]); }}
+                className="flex-1 bg-background/50 border border-border/20 rounded-lg px-3 py-2 text-[0.8rem] focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="">Selecione um teste...</option>
+                {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+              </select>
+              {historyTestId && (
+                <button onClick={() => fetchHistory(historyTestId)} className="px-3 py-2 text-[0.7rem] font-semibold bg-muted/40 hover:bg-muted/60 rounded-lg transition-colors">
+                  Atualizar
+                </button>
+              )}
+            </div>
+
+            {historyLoading && <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground/40" /></div>}
+
+            {!historyLoading && historyTestId && historyEntries.length === 0 && (
+              <p className="text-[0.75rem] text-muted-foreground/40 text-center py-4">Nenhuma alteração registrada para este teste.</p>
+            )}
+
+            {historyEntries.map((entry) => (
+              <div key={entry.id} className="border border-border/25 rounded-xl p-3 space-y-2 bg-card/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-muted-foreground/40" />
+                    <span className="text-[0.7rem] font-semibold text-foreground/70">
+                      {PROMPT_FIELDS.find(f => f.type === entry.prompt_type)?.label || entry.prompt_type}
+                    </span>
+                  </div>
+                  <span className="text-[0.6rem] text-muted-foreground/40">
+                    {new Date(entry.changed_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setExpandedHistoryId(expandedHistoryId === entry.id ? null : entry.id)}
+                  className="text-[0.65rem] text-primary/60 hover:text-primary/80 transition-colors"
+                >
+                  {expandedHistoryId === entry.id ? 'Ocultar diff' : 'Ver alterações'}
+                </button>
+                {expandedHistoryId === entry.id && (
+                  <div className="space-y-2 mt-1">
+                    <div className="p-2 rounded-lg bg-red-500/[0.04] border border-red-500/10">
+                      <span className="text-[0.6rem] uppercase tracking-wider text-red-500/50 font-semibold">Antes</span>
+                      <p className="text-[0.7rem] text-foreground/50 font-mono whitespace-pre-wrap mt-1 max-h-32 overflow-y-auto">{entry.old_content || '(vazio)'}</p>
+                    </div>
+                    <div className="p-2 rounded-lg bg-emerald-500/[0.04] border border-emerald-500/10">
+                      <span className="text-[0.6rem] uppercase tracking-wider text-emerald-500/50 font-semibold">Depois</span>
+                      <p className="text-[0.7rem] text-foreground/50 font-mono whitespace-pre-wrap mt-1 max-h-32 overflow-y-auto">{entry.new_content || '(vazio)'}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </motion.div>
     </div>
   );
 };
