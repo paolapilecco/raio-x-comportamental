@@ -51,6 +51,11 @@ export interface BehavioralProfile {
   riskLevel: 'low' | 'moderate' | 'high' | 'critical';
 }
 
+export interface BlindSpot {
+  perceivedProblem: string;
+  realProblem: string;
+}
+
 export interface InterpretiveInsight {
   internalConflicts: InternalConflict[];
   contradictions: ResponseContradiction[];
@@ -60,6 +65,7 @@ export interface InterpretiveInsight {
   selfDeceptionIndex: number; // 0-100
   interpretiveSummary: string;
   behavioralProfile: BehavioralProfile;
+  blindSpot: BlindSpot;
 }
 
 export interface DiagnosticResult {

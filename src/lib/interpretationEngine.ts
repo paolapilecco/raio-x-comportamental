@@ -8,7 +8,7 @@
  * - Derived core pain and key unlock area from cross-pattern analysis
  */
 
-import { Answer, PatternScore, InternalConflict, ResponseContradiction, InterpretiveInsight, BehavioralProfile } from '@/types/diagnostic';
+import { Answer, PatternScore, InternalConflict, ResponseContradiction, InterpretiveInsight, BehavioralProfile, BlindSpot } from '@/types/diagnostic';
 
 interface QuestionMeta {
   id: number;
