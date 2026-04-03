@@ -262,6 +262,19 @@ const AdminPrompts = () => {
       const pct = previewScores[key] ?? 50;
       return { key, label: key, score: Math.round(pct * 5 / 100), maxScore: 5, percentage: pct };
     }).sort((a, b) => b.percentage - a.percentage);
+    // Detect contradictions for display
+    const detectContradictions = (s: any[]) => {
+      const m: Record<string, number> = {};
+      s.forEach(x => { m[x.key] = x.percentage; });
+      const c: string[] = [];
+      if ((m['excessive_self_criticism'] ?? 0) >= 60 && (m['validation_dependency'] ?? 0) >= 60) c.push('Autocrítica alta + Dependência de validação');
+      if ((m['paralyzing_perfectionism'] ?? 0) >= 60 && (m['unstable_execution'] ?? 0) >= 60) c.push('Perfeccionismo + Execução instável');
+      if ((m['discomfort_escape'] ?? 0) >= 60 && (m['functional_overload'] ?? 0) >= 60) c.push('Fuga do desconforto + Sobrecarga funcional');
+      if ((m['excessive_self_criticism'] ?? 0) >= 60 && (m['low_routine_sustenance'] ?? 0) >= 60) c.push('Autocrítica alta + Baixa sustentação de rotina');
+      if ((m['emotional_self_sabotage'] ?? 0) >= 60 && (m['validation_dependency'] ?? 0) >= 60) c.push('Autossabotagem emocional + Dependência de validação');
+      return c;
+    };
+    setPreviewSentData({ scores, dominant: scores[0], contradictions: detectContradictions(scores) });
     setPreviewRunning(true);
     setPreviewResult(null);
     try {
