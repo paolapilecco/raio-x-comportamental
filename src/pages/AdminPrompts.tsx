@@ -290,7 +290,9 @@ const AdminPrompts = () => {
       if (error) { toast.error('Erro na simulação'); setPreviewRunning(false); return; }
       if (data?.useFallback) { toast.warning('Sem prompts ativos — usaria fallback local'); setPreviewRunning(false); return; }
       if (data?.error) { toast.error(data.error); setPreviewRunning(false); return; }
-      setPreviewResult(data?.analysis || data);
+      const analysis = data?.analysis || data;
+      setPreviewResult(analysis);
+      setResultHistory([{ level: 0, result: analysis }]);
       toast.success('Simulação concluída');
     } catch { toast.error('Erro inesperado na simulação'); }
     setPreviewRunning(false);
