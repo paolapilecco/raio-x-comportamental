@@ -301,13 +301,15 @@ const AdminRoadmapInner = () => {
     }
   };
 
-  if (authLoading) {
+  if (authLoading || dbLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
       </div>
     );
   }
+
+  if (!isSuperAdmin) return null;
 
   const filtered = tasks.filter(t => {
     if (filterCategory !== 'all' && t.category !== filterCategory) return false;
