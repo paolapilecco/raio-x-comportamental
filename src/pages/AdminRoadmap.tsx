@@ -71,10 +71,10 @@ function generateTasks(): RoadmapTask[] {
     {
       id: 'bug-prompt-history-insert',
       title: 'Trigger prompt_history não consegue inserir (RLS bloqueando)',
-      description: 'A tabela prompt_history não tem política INSERT. O trigger log_prompt_change usa SECURITY DEFINER mas a tabela pode bloquear inserções via RLS. Verificar se o trigger bypassa RLS corretamente.',
+      description: 'CORRIGIDO — O trigger log_prompt_change foi criado na tabela test_prompts. A função SECURITY DEFINER bypassa RLS, registrando alterações automaticamente no prompt_history.',
       priority: 'high',
       category: 'bug',
-      status: 'pending',
+      status: 'done',
       copyText: 'Verificar e corrigir a inserção na tabela prompt_history. O trigger log_prompt_change é SECURITY DEFINER e deveria bypassar RLS, mas a tabela não tem política INSERT. Confirmar que o trigger funciona corretamente ou adicionar política INSERT para o trigger/service role.',
     },
     {
