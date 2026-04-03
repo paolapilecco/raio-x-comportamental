@@ -23,6 +23,8 @@ interface DbQuestion {
   id: number;
   text: string;
   axes: string[];
+  type?: string;
+  options?: string[] | null;
 }
 
 /**
@@ -131,8 +133,14 @@ const Diagnostic = () => {
       const validationErrors: string[] = [];
       questions.forEach((q, i) => {
         const order = q.sort_order || i + 1;
-        if (q.text.trim().endsWith('?')) {
-          validationErrors.push(`Pergunta ${order}: formato de pergunta detectado (use afirmações)`);
+        const type = q.type || 'likert';
+        // Only likert questions must be statements (not end with ?)
+        if (type === 'likert' && q.text.trim().endsWith('?')) {
+          validationErrors.push(`Pergunta ${order}: pergunta Likert deve ser afirmação, não pergunta`);
+        }
+        // Behavior choice questions must have options
+        if (type === 'behavior_choice' && (!q.options || q.options.length < 2)) {
+          validationErrors.push(`Pergunta ${order}: escolha comportamental sem opções configuradas`);
         }
       });
 
@@ -147,6 +155,8 @@ const Diagnostic = () => {
         id: q.sort_order || i + 1,
         text: q.text,
         axes: q.axes || [],
+        type: q.type || 'likert',
+        options: q.options,
       })));
       setStep('questionnaire');
     };
