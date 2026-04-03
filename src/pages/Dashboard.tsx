@@ -308,6 +308,9 @@ const Dashboard = () => {
                 <Sparkles className="w-3 h-3" />
                 Central de IA
               </button>
+              <button onClick={() => navigate('/admin/users')} className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 rounded-lg text-[0.72rem] font-semibold transition-colors">
+                <Users className="w-3 h-3" />
+                Usuários
               {!hasData && (
                 <button onClick={generateTestData} disabled={generating} className="flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 rounded-lg text-[0.72rem] font-semibold transition-colors disabled:opacity-50">
                   <FlaskConical className="w-3 h-3" />
