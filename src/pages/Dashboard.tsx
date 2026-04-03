@@ -276,7 +276,7 @@ const Dashboard = () => {
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {!isPremium && (
+            {!isPremium && !isSuperAdmin && (
               <button
                 onClick={() => navigate('/premium')}
                 className="group flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-xl text-[0.78rem] font-semibold shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.4)] hover:shadow-[0_10px_32px_-4px_hsl(var(--primary)/0.5)] hover:translate-y-[-1px] transition-all duration-300"
@@ -285,6 +285,12 @@ const Dashboard = () => {
                 Acesso Premium
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </button>
+            )}
+            {isPremium && !isSuperAdmin && (
+              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                <Crown className="w-3.5 h-3.5" />
+                Plano Premium ativo
+              </span>
             )}
             <button onClick={() => navigate('/profile')} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/60 hover:text-foreground/80 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-card/60">
               <User className="w-3.5 h-3.5" /> Perfil
