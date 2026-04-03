@@ -118,6 +118,7 @@ const Diagnostic = () => {
         text: q.text,
         axes: q.axes || [],
         type: (q as any).type || 'likert',
+        options: (q as any).options || undefined,
       })));
       setStep('questionnaire');
     };
