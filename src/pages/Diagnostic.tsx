@@ -68,9 +68,40 @@ const Diagnostic = () => {
         .order('sort_order', { ascending: true });
 
       if (error || !questions || questions.length === 0) {
-        toast.error('Perguntas não encontradas para este teste');
+        if (isSuperAdmin) {
+          toast.error('Este teste ainda não possui estrutura completa de perguntas');
+        } else {
+          toast.error('Teste indisponível no momento');
+        }
         navigate('/tests');
         return;
+      }
+
+      // Minimum question threshold
+      const MIN_QUESTIONS = 10;
+      if (questions.length < MIN_QUESTIONS) {
+        if (isSuperAdmin) {
+          toast.error(`Este teste possui apenas ${questions.length} perguntas (mínimo: ${MIN_QUESTIONS}). Estrutura incompleta.`);
+        } else {
+          toast.error('Teste indisponível no momento');
+        }
+        navigate('/tests');
+        return;
+      }
+
+      // Integrity check: ensure all questions have axes
+      const missingAxes = questions.filter(q => !q.axes || q.axes.length === 0);
+      if (missingAxes.length > 0) {
+        console.warn(`[Diagnostic] ${missingAxes.length} questions without axes in module "${slug}"`);
+        if (missingAxes.length > questions.length * 0.5) {
+          if (isSuperAdmin) {
+            toast.error(`Mais de 50% das perguntas sem eixos configurados. Teste bloqueado.`);
+          } else {
+            toast.error('Teste indisponível no momento');
+          }
+          navigate('/tests');
+          return;
+        }
       }
 
       // Integrity check: detect duplicate question texts
@@ -78,12 +109,6 @@ const Diagnostic = () => {
       const uniqueTexts = new Set(texts);
       if (uniqueTexts.size !== texts.length) {
         console.warn(`[Diagnostic] ${texts.length - uniqueTexts.size} duplicate questions detected in module "${slug}"`);
-      }
-
-      // Integrity check: ensure all questions have axes
-      const missingAxes = questions.filter(q => !q.axes || q.axes.length === 0);
-      if (missingAxes.length > 0) {
-        console.warn(`[Diagnostic] ${missingAxes.length} questions without axes in module "${slug}"`);
       }
 
       setDbQuestions(questions.map((q, i) => ({
