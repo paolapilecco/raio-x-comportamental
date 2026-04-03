@@ -42,7 +42,34 @@ const TestCatalog = () => {
         .eq('is_active', true)
         .order('sort_order');
 
-      setModules((mods as TestModule[]) || []);
+      const allModules = (mods as TestModule[]) || [];
+
+      // Check question counts from DB for each module
+      const moduleIds = allModules.map(m => m.id);
+      const { data: questionCounts } = await supabase
+        .from('questions')
+        .select('test_id')
+        .in('test_id', moduleIds);
+
+      const countMap: Record<string, number> = {};
+      questionCounts?.forEach(q => {
+        countMap[q.test_id] = (countMap[q.test_id] || 0) + 1;
+      });
+
+      // Filter out incomplete tests for non-admin users
+      const MIN_QUESTIONS = 10;
+      const validModules = allModules.map(m => ({
+        ...m,
+        _actualQuestionCount: countMap[m.id] || 0,
+        _isIncomplete: (countMap[m.id] || 0) < MIN_QUESTIONS,
+      }));
+
+      // Non-admins only see complete tests
+      if (isSuperAdmin) {
+        setModules(validModules);
+      } else {
+        setModules(validModules.filter(m => !m._isIncomplete));
+      }
 
       if (user) {
         const { data: sessions } = await supabase
@@ -61,7 +88,7 @@ const TestCatalog = () => {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, isSuperAdmin]);
 
   if (loading) {
     return (
