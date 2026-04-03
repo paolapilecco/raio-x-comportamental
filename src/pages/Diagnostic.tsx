@@ -73,6 +73,19 @@ const Diagnostic = () => {
         return;
       }
 
+      // Integrity check: detect duplicate question texts
+      const texts = questions.map(q => q.text);
+      const uniqueTexts = new Set(texts);
+      if (uniqueTexts.size !== texts.length) {
+        console.warn(`[Diagnostic] ${texts.length - uniqueTexts.size} duplicate questions detected in module "${slug}"`);
+      }
+
+      // Integrity check: ensure all questions have axes
+      const missingAxes = questions.filter(q => !q.axes || q.axes.length === 0);
+      if (missingAxes.length > 0) {
+        console.warn(`[Diagnostic] ${missingAxes.length} questions without axes in module "${slug}"`);
+      }
+
       setDbQuestions(questions.map((q, i) => ({
         id: q.sort_order || i + 1,
         text: q.text,
