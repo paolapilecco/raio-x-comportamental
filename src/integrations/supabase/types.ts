@@ -22,6 +22,7 @@ export type Database = {
           is_active: boolean
           label: string
           prompt_text: string
+          test_module_id: string | null
           updated_at: string
         }
         Insert: {
@@ -31,6 +32,7 @@ export type Database = {
           is_active?: boolean
           label: string
           prompt_text?: string
+          test_module_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -40,9 +42,18 @@ export type Database = {
           is_active?: boolean
           label?: string
           prompt_text?: string
+          test_module_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "admin_prompts_test_module_id_fkey"
+            columns: ["test_module_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       diagnostic_answers: {
         Row: {
