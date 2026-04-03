@@ -156,7 +156,7 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     criticalDiagnosis += ` Atenção: índice de autoengano em ${interpretation.selfDeceptionIndex}% — há uma desconexão significativa entre sua autopercepção e seus comportamentos reais.`;
   }
 
-  return {
+  const rawResult: DiagnosticResult = {
     dominantPattern: dominantDef,
     secondaryPatterns: secondaryDefs,
     intensity,
@@ -181,4 +181,6 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     whatNotToDo,
     interpretation,
   };
+
+  return validateAndRefineReport(rawResult);
 }
