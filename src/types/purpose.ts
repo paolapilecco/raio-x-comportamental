@@ -76,6 +76,7 @@ export interface PurposeResult {
   impact: string;
   direction: string;
   intensity: 'leve' | 'moderado' | 'alto';
+  interpretation?: InterpretiveInsight;
 }
 
 export interface PurposePatternDefinition {
