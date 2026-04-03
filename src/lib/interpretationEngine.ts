@@ -327,7 +327,63 @@ const PAIN_MAP: { condition: (scores: Record<string, number>, conflicts: Interna
     pain: 'Incapacidade de sustentar — você funciona em sprints que esgotam e recomeços que frustram.',
     unlock: 'Reduzir pela metade o que você planeja e dobrar o tempo de manutenção — consistência mínima supera intensidade máxima.',
   },
+  {
+    condition: (s) => (s['validation_dependency'] || 0) >= 65 && (s['unstable_execution'] || 0) >= 55,
+    pain: 'Você só age quando tem validação — sem aprovação, a execução trava completamente.',
+    unlock: 'Completar uma tarefa por dia sem mostrar para ninguém durante 14 dias — criar referência interna de conclusão.',
+  },
+  {
+    condition: (s) => (s['emotional_self_sabotage'] || 0) >= 65 && (s['discomfort_escape'] || 0) >= 55,
+    pain: 'Sabota no momento em que precisa avançar — a emoção sequestra a ação antes que ela aconteça.',
+    unlock: 'Tolerância ao desconforto emocional antes da ação: identificar a emoção, nomeá-la em voz alta e agir nos próximos 90 segundos.',
+  },
+  {
+    condition: (s) => (s['excessive_self_criticism'] || 0) >= 65 && (s['paralyzing_perfectionism'] || 0) >= 55,
+    pain: 'A cobrança interna é tão alta que nenhum resultado parece suficiente — tudo vira frustração.',
+    unlock: 'Definir "feito" antes de começar qualquer tarefa — escrever o critério mínimo e parar quando atingir.',
+  },
+  {
+    condition: (s) => (s['functional_overload'] || 0) >= 65 && (s['validation_dependency'] || 0) >= 50,
+    pain: 'Acumula responsabilidades para provar valor — a sobrecarga é uma estratégia de aceitação.',
+    unlock: 'Recusar uma demanda por semana que você normalmente aceitaria — desassociar utilidade de valor pessoal.',
+  },
 ];
+
+// Specific unlock labels per pattern key for fallback
+const PATTERN_UNLOCK_MAP: Record<string, { pain: string; unlock: string }> = {
+  paralyzing_perfectionism: {
+    pain: 'A busca pela perfeição paralisa a ação — nada começa porque nada é bom o suficiente.',
+    unlock: 'Entregar a primeira versão imperfeita de uma tarefa importante dentro de 48h — agir antes de refinar.',
+  },
+  unstable_execution: {
+    pain: 'Execução instável — começa muitas coisas mas sustenta poucas até o fim.',
+    unlock: 'Manter apenas uma prioridade ativa por vez e só avançar para a próxima quando concluir ou abandonar conscientemente.',
+  },
+  validation_dependency: {
+    pain: 'Sem validação externa, a ação perde sentido — dependência de aprovação trava decisões.',
+    unlock: 'Tomar uma decisão por dia sem consultar ninguém e registrar o resultado — construir confiança no próprio julgamento.',
+  },
+  excessive_self_criticism: {
+    pain: 'A autocrítica consome a energia que deveria ir para a ação.',
+    unlock: 'Substituir "eu deveria" por "o que posso fazer agora com o que tenho" — reformular o diálogo interno de cobrança para ação.',
+  },
+  functional_overload: {
+    pain: 'Sobrecarga funcional — fazer demais para evitar confrontar o que realmente importa.',
+    unlock: 'Eliminar 30% das atividades semanais e observar o que surge no espaço vazio — o desconforto revela a real prioridade.',
+  },
+  discomfort_escape: {
+    pain: 'Fuga do desconforto — qualquer fricção aciona retirada automática.',
+    unlock: 'Microexposição diária: permanecer 5 minutos em uma situação desconfortável antes de decidir sair.',
+  },
+  low_routine_sustenance: {
+    pain: 'Incapacidade de manter — rotinas se dissolvem antes de gerar resultado.',
+    unlock: 'Escolher um único hábito e mantê-lo por 21 dias — não adicionar nenhum outro até completar.',
+  },
+  emotional_self_sabotage: {
+    pain: 'Sabotagem emocional no momento da ação — o sentimento destrói o plano.',
+    unlock: 'Criar um protocolo de 90 segundos: quando a emoção surgir, nomeá-la, respirar 3x e executar a menor ação possível.',
+  },
+};
 
 export function deriveCorePainAndUnlock(
   scores: Record<string, number>,
@@ -339,21 +395,28 @@ export function deriveCorePainAndUnlock(
     }
   }
 
-  // Default: use the highest scoring pattern
+  // Fallback: use the highest scoring pattern with specific unlock
   const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
   const topKey = sorted[0]?.[0] || '';
   const topScore = sorted[0]?.[1] || 0;
 
-  if (topScore >= 60) {
+  if (topScore >= 50 && PATTERN_UNLOCK_MAP[topKey]) {
+    return {
+      derivedCorePain: PATTERN_UNLOCK_MAP[topKey].pain,
+      derivedKeyUnlockArea: PATTERN_UNLOCK_MAP[topKey].unlock,
+    };
+  }
+
+  if (topScore >= 50) {
     return {
       derivedCorePain: `Padrão dominante de ${topKey} indica uma dor recorrente que se mantém por repetição inconsciente.`,
-      derivedKeyUnlockArea: 'Quebrar o ciclo automático com consciência ativa sobre o momento exato da repetição.',
+      derivedKeyUnlockArea: 'Mapear em que momento exato do dia o padrão se ativa e interromper com uma ação diferente nos próximos 60 segundos.',
     };
   }
 
   return {
-    derivedCorePain: 'Sem padrão dominante claro — a dor está dispersa e difusa, dificultando o foco.',
-    derivedKeyUnlockArea: 'Identificar qual das suas tendências mais compromete resultados e focar nela por 30 dias.',
+    derivedCorePain: 'Padrões dispersos sem dominância clara — a dificuldade não está em um ponto, mas na falta de foco.',
+    derivedKeyUnlockArea: 'Escolher a área com maior impacto negativo nos últimos 30 dias e dedicar atenção exclusiva a ela por 3 semanas.',
   };
 }
 
