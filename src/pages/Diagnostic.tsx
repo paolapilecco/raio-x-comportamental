@@ -24,6 +24,7 @@ interface DbQuestion {
   text: string;
   axes: string[];
   type?: 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
+  options?: string[];
 }
 
 const Diagnostic = () => {
@@ -64,7 +65,7 @@ const Diagnostic = () => {
 
       const { data: questions, error } = await supabase
         .from('questions')
-        .select('sort_order, text, axes, type')
+        .select('sort_order, text, axes, type, options')
         .eq('test_id', mod.id)
         .order('sort_order', { ascending: true });
 
@@ -117,6 +118,7 @@ const Diagnostic = () => {
         text: q.text,
         axes: q.axes || [],
         type: (q as any).type || 'likert',
+        options: (q as any).options || undefined,
       })));
       setStep('questionnaire');
     };
