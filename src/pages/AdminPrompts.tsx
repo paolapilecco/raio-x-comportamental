@@ -98,6 +98,11 @@ const AdminPrompts = () => {
   const [saving, setSaving] = useState<string | null>(null);
   const [editedTexts, setEditedTexts] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({ global: true });
+  // Preview state
+  const [previewTestId, setPreviewTestId] = useState<string>('');
+  const [previewScores, setPreviewScores] = useState<Record<string, number>>({});
+  const [previewRunning, setPreviewRunning] = useState(false);
+  const [previewResult, setPreviewResult] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !isSuperAdmin) { navigate('/dashboard', { replace: true }); return; }
