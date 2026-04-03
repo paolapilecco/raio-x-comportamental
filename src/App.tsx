@@ -15,6 +15,7 @@ import CentralReport from "./pages/CentralReport";
 import Profile from "./pages/Profile";
 import Premium from "./pages/Premium";
 import ResetPassword from "./pages/ResetPassword";
+import AdminPrompts from "./pages/AdminPrompts";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/central-report" element={<ProtectedRoute><CentralReport /></ProtectedRoute>} />
             <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/admin/prompts" element={<ProtectedRoute><AdminPrompts /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
