@@ -10,6 +10,7 @@ interface QuestionItem {
   id: number;
   text: string;
   type?: QuestionType;
+  options?: string[];
 }
 
 interface QuestionnaireProps {
