@@ -65,7 +65,7 @@ function generateTasks(): RoadmapTask[] {
       description: 'A página /admin/prompts pode não carregar corretamente devido a condição de corrida entre auth loading e fetchData. O isSuperAdmin pode ser false momentaneamente durante o carregamento.',
       priority: 'high',
       category: 'bug',
-      status: 'pending',
+      status: 'done',
       copyText: 'Corrigir bug na página AdminPrompts (/admin/prompts) que não carrega para super admin. O problema é uma condição de corrida: o useEffect depende de authLoading e isSuperAdmin, mas o fetchProfile pode não ter completado quando o useEffect executa. Garantir que o loading state é exibido até que a role esteja confirmada.',
     },
     {
