@@ -792,21 +792,40 @@ const AdminPrompts = () => {
                   )}
                 </div>
 
-                {/* Prompts */}
-                {PROMPT_FIELDS.map((field) => {
-                  const prompt = byType[field.type];
-                  if (!prompt) {
-                    return (
-                      <div key={field.type} className="border border-dashed border-border/25 rounded-xl p-4 flex items-center gap-3 opacity-40">
-                        <field.icon className="w-3.5 h-3.5 text-muted-foreground/30" />
-                        <div>
-                          <p className="text-[0.78rem] font-medium text-muted-foreground/50">{field.label}</p>
-                          <p className="text-[0.65rem] text-muted-foreground/30">Não configurado</p>
-                        </div>
+                {/* Prompts by Category */}
+                {PROMPT_CATEGORIES.map((cat) => {
+                  const catFields = PROMPT_FIELDS.filter(f => cat.types.includes(f.type));
+                  const CatIcon = cat.icon;
+                  const allConfigured = catFields.every(f => byType[f.type]);
+                  return (
+                    <div key={cat.id} className={`rounded-2xl border ${cat.borderColor} overflow-hidden`}>
+                      <div className={`flex items-center gap-2.5 px-4 py-2.5 ${cat.bgColor}`}>
+                        <CatIcon className={`w-3.5 h-3.5 ${cat.color}`} />
+                        <h3 className="text-[0.78rem] font-semibold text-foreground/80">{cat.label}</h3>
+                        {allConfigured
+                          ? <span className="ml-auto text-[0.6rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">✓</span>
+                          : <span className="ml-auto text-[0.6rem] px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 font-medium">Pendente</span>
+                        }
                       </div>
-                    );
-                  }
-                  return renderTestPromptField(prompt, { icon: field.icon, description: field.description, rows: field.rows });
+                      <div className="p-3 space-y-3">
+                        {catFields.map((field) => {
+                          const prompt = byType[field.type];
+                          if (!prompt) {
+                            return (
+                              <div key={field.type} className="border border-dashed border-border/25 rounded-xl p-4 flex items-center gap-3 opacity-40">
+                                <field.icon className="w-3.5 h-3.5 text-muted-foreground/30" />
+                                <div>
+                                  <p className="text-[0.78rem] font-medium text-muted-foreground/50">{field.label}</p>
+                                  <p className="text-[0.65rem] text-muted-foreground/30">Não configurado</p>
+                                </div>
+                              </div>
+                            );
+                          }
+                          return renderTestPromptField(prompt, { icon: field.icon, description: field.description, rows: field.rows });
+                        })}
+                      </div>
+                    </div>
+                  );
                 })}
               </div>
             )}
