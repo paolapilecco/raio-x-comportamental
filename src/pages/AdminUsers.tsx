@@ -24,6 +24,7 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState<'all' | 'standard' | 'premium'>('all');
 
   useEffect(() => {
     if (authLoading) return;
@@ -63,6 +64,10 @@ export default function AdminUsers() {
   const isSuperAdminUser = (u: UserEntry) => u.roles.includes('super_admin');
 
   const filtered = users.filter(u => {
+    // Plan filter
+    if (planFilter === 'premium' && !isPremium(u)) return false;
+    if (planFilter === 'standard' && isPremium(u)) return false;
+    // Search
     if (!search) return true;
     const q = search.toLowerCase();
     return u.email?.toLowerCase().includes(q) || u.profile?.name?.toLowerCase().includes(q);
@@ -106,6 +111,26 @@ export default function AdminUsers() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+        </div>
+
+        {/* Plan filter */}
+        <div className="flex gap-2 mb-4">
+          {([['all', 'Todos'], ['standard', 'Padrão'], ['premium', 'Premium']] as const).map(([value, label]) => (
+            <button
+              key={value}
+              onClick={() => setPlanFilter(value)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
+                planFilter === value
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border text-muted-foreground hover:border-primary/50'
+              }`}
+            >
+              {label}
+              <span className="ml-1.5 opacity-60">
+                {value === 'all' ? users.length : value === 'premium' ? users.filter(isPremium).length : users.filter(u => !isPremium(u)).length}
+              </span>
+            </button>
+          ))}
         </div>
 
         {/* Table */}
