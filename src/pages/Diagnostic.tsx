@@ -113,6 +113,38 @@ const Diagnostic = () => {
         console.warn(`[Diagnostic] ${texts.length - uniqueTexts.size} duplicate questions detected in module "${slug}"`);
       }
 
+      // Type-format validation
+      const validationErrors: string[] = [];
+
+      questions.forEach((q, i) => {
+        const qType = (q as any).type || 'likert';
+        const qOptions = (q as any).options;
+        const qText = q.text;
+        const order = q.sort_order || i + 1;
+
+        // behavior_choice MUST have custom options
+        if (qType === 'behavior_choice' && (!qOptions || qOptions.length !== 5)) {
+          validationErrors.push(`Pergunta ${order}: behavior_choice sem opções customizadas definidas`);
+        }
+
+        // likert questions should be affirmation statements (not end with ?)
+        if (qType === 'likert' && qText.trim().endsWith('?')) {
+          validationErrors.push(`Pergunta ${order}: likert em formato de pergunta (deveria ser afirmação)`);
+        }
+      });
+
+      if (validationErrors.length > 0) {
+        console.warn(`[Diagnostic] Validation errors in "${slug}":`, validationErrors);
+        if (isSuperAdmin) {
+          toast.error(`Teste com ${validationErrors.length} incompatibilidade(s) de tipo/formato. Verifique o console.`);
+          // Allow super admin to proceed despite warnings
+        } else {
+          toast.error('Teste indisponível no momento');
+          navigate('/tests');
+          return;
+        }
+      }
+
       setDbQuestions(questions.map((q, i) => ({
         id: q.sort_order || i + 1,
         text: q.text,
