@@ -126,12 +126,20 @@ serve(async (req) => {
       if (existing) {
         // Remove premium
         await adminClient.from("user_roles").delete().eq("id", existing.id);
+        // Log change
+        await adminClient.from("plan_change_history").insert({
+          user_id: targetUserId, previous_plan: "premium", new_plan: "standard", changed_by: user.id,
+        });
         return new Response(JSON.stringify({ action: "removed", role: "premium" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
         // Add premium
         await adminClient.from("user_roles").insert({ user_id: targetUserId, role: "premium" });
+        // Log change
+        await adminClient.from("plan_change_history").insert({
+          user_id: targetUserId, previous_plan: "standard", new_plan: "premium", changed_by: user.id,
+        });
         return new Response(JSON.stringify({ action: "added", role: "premium" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
