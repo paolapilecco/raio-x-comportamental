@@ -370,7 +370,7 @@ const Dashboard = () => {
               </span>
             </div>
             <div className="grid sm:grid-cols-2 gap-8">
-              <div className="space-y-5">
+              <div className="space-y-6">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Perfil Dominante</p>
                   <p className="text-base font-semibold text-foreground">{centralProfile.profile_name || '-'}</p>
