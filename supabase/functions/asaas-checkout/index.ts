@@ -10,7 +10,7 @@ const corsHeaders = {
 const ASAAS_API_URL = "https://api.asaas.com/v3";
 
 const PLANS = {
-  monthly: { value: 4.99, cycle: "MONTHLY", description: "Plano Premium Mensal" },
+  monthly: { value: 5.00, cycle: "MONTHLY", description: "Plano Premium Mensal" },
   yearly: { value: 49.90, cycle: "YEARLY", description: "Plano Premium Anual" },
 };
 

@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { ScanLine } from 'lucide-react';
 
 const nameSchema = z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100);
+const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido');
 
 const Onboarding = () => {
   const [name, setName] = useState('');
