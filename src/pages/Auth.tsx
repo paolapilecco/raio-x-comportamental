@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { lovable } from '@/integrations/lovable/index';
-import { ScanLine, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 const emailSchema = z.string().trim().email('Email inválido').max(255);
 const passwordSchema = z.string().min(6, 'Mínimo de 6 caracteres').max(128);
@@ -76,52 +76,32 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:py-16 relative overflow-hidden" role="main" aria-label="Autenticação">
-      {/* Ambient background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full bg-primary/[0.04] blur-[120px]" />
-        <div className="absolute bottom-[-15%] left-[-10%] w-[500px] h-[500px] rounded-full bg-gold/[0.03] blur-[100px]" />
-      </div>
-
+    <div className="min-h-screen flex items-center justify-center px-4 py-12" role="main" aria-label="Autenticação">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-md space-y-10 relative z-10"
+        transition={{ duration: 0.4 }}
+        className="w-full max-w-sm space-y-8"
       >
         {/* Header */}
-        <div className="text-center space-y-5">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-primary/10 bg-primary/[0.03]"
-          >
-            <ScanLine className="w-3.5 h-3.5 text-primary/60" />
-            <span className="text-[10px] tracking-[0.35em] uppercase text-primary/70 font-semibold font-display">
-              Sistema de Leitura Comportamental
-            </span>
-          </motion.div>
-          <h1 className="text-4xl md:text-5xl tracking-[-0.04em]">
-            {forgotMode ? 'Recuperar senha' : isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+        <div className="text-center space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Raio-X</p>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {forgotMode ? 'Recuperar senha' : isLogin ? 'Entrar' : 'Criar conta'}
           </h1>
-          <p className="text-[0.85rem] text-muted-foreground/60 leading-[1.7] max-w-sm mx-auto">
+          <p className="text-sm text-muted-foreground">
             {forgotMode
               ? 'Enviaremos um link para redefinir sua senha.'
               : isLogin
-              ? 'Acesse sua leitura e acompanhe sua evolução comportamental.'
-              : 'Comece sua jornada de autoconhecimento profundo.'}
+              ? 'Acesse sua leitura comportamental.'
+              : 'Comece sua jornada de autoconhecimento.'}
           </p>
         </div>
 
         {/* Form */}
-        <form
-          onSubmit={handleSubmit}
-          className="bg-card/60 backdrop-blur-xl rounded-3xl border border-border/40 p-7 sm:p-9 space-y-5 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.08)]"
-          noValidate
-        >
-          <div className="space-y-2">
-            <label htmlFor="auth-email" className="text-[0.78rem] font-semibold text-foreground/70 tracking-[0.04em] uppercase font-display">
+        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <div className="space-y-1.5">
+            <label htmlFor="auth-email" className="text-sm font-medium text-foreground">
               Email
             </label>
             <input
@@ -132,13 +112,13 @@ const Auth = () => {
               required
               maxLength={255}
               autoComplete="email"
-              className="flex h-13 w-full rounded-xl border border-border/50 bg-background/60 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 transition-all duration-300"
+              className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
               placeholder="seu@email.com"
             />
           </div>
           {!forgotMode && (
-            <div className="space-y-2">
-              <label htmlFor="auth-password" className="text-[0.78rem] font-semibold text-foreground/70 tracking-[0.04em] uppercase font-display">
+            <div className="space-y-1.5">
+              <label htmlFor="auth-password" className="text-sm font-medium text-foreground">
                 Senha
               </label>
               <input
@@ -150,14 +130,14 @@ const Auth = () => {
                 minLength={6}
                 maxLength={128}
                 autoComplete={isLogin ? 'current-password' : 'new-password'}
-                className="flex h-13 w-full rounded-xl border border-border/50 bg-background/60 px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/30 transition-all duration-300"
+                className="flex h-10 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-colors"
                 placeholder="Mínimo 6 caracteres"
               />
               {isLogin && (
                 <button
                   type="button"
                   onClick={() => setForgotMode(true)}
-                  className="text-[0.76rem] text-primary/60 hover:text-primary hover:underline transition-colors font-medium"
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Esqueci minha senha
                 </button>
@@ -167,26 +147,26 @@ const Auth = () => {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-13 bg-primary text-primary-foreground rounded-xl text-[0.88rem] font-semibold tracking-[0.02em] hover:opacity-90 transition-all duration-300 shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.5)] hover:translate-y-[-1px] disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none flex items-center justify-center gap-2"
+            className="w-full h-10 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {submitting ? (
               <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
             ) : (
               <>
                 {forgotMode ? 'Enviar link' : isLogin ? 'Entrar' : 'Criar conta'}
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </>
             )}
           </button>
 
           {!forgotMode && (
             <>
-              <div className="relative my-4">
+              <div className="relative my-2">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border/30" />
+                  <span className="w-full border-t border-border" />
                 </div>
-                <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em]">
-                  <span className="bg-card/60 px-4 text-muted-foreground/40 font-display">ou continue com</span>
+                <div className="relative flex justify-center text-xs">
+                  <span className="bg-background px-3 text-muted-foreground/50">ou</span>
                 </div>
               </div>
 
@@ -202,7 +182,7 @@ const Auth = () => {
                     navigate('/dashboard');
                   }
                 }}
-                className="w-full h-13 border border-border/40 rounded-xl text-[0.85rem] font-medium text-foreground/70 hover:bg-muted/20 hover:border-border/60 transition-all duration-300 flex items-center justify-center gap-3"
+                className="w-full h-10 border border-border rounded-lg text-sm font-medium text-foreground/70 hover:bg-secondary transition-colors flex items-center justify-center gap-2.5"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -216,30 +196,21 @@ const Auth = () => {
           )}
         </form>
 
-        {/* Footer toggle */}
-        <p className="text-center text-[0.82rem] text-muted-foreground/50">
+        {/* Footer */}
+        <p className="text-center text-sm text-muted-foreground">
           {forgotMode ? (
-            <button onClick={() => setForgotMode(false)} className="text-primary/70 hover:text-primary hover:underline font-medium transition-colors">
+            <button onClick={() => setForgotMode(false)} className="text-foreground hover:underline font-medium transition-colors">
               Voltar ao login
             </button>
           ) : (
             <>
               {isLogin ? 'Não tem conta?' : 'Já tem conta?'}{' '}
-              <button onClick={() => setIsLogin(!isLogin)} className="text-primary/70 hover:text-primary hover:underline font-medium transition-colors">
+              <button onClick={() => setIsLogin(!isLogin)} className="text-foreground hover:underline font-medium transition-colors">
                 {isLogin ? 'Criar conta' : 'Entrar'}
               </button>
             </>
           )}
         </p>
-
-        {/* Trust strip */}
-        <div className="flex items-center justify-center gap-6 text-[0.68rem] text-muted-foreground/30">
-          <span className="font-display tracking-wide">Criptografia SSL</span>
-          <span className="w-1 h-1 rounded-full bg-muted-foreground/20" />
-          <span className="font-display tracking-wide">Dados protegidos</span>
-          <span className="w-1 h-1 rounded-full bg-muted-foreground/20" />
-          <span className="font-display tracking-wide">LGPD</span>
-        </div>
       </motion.div>
     </div>
   );
