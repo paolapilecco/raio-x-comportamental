@@ -266,8 +266,8 @@ const Dashboard = () => {
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* ── Header ── */}
-        <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
+        <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Raio-X Comportamental</p>
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[0.6rem] font-semibold tracking-wide uppercase ${roleBadge.className}`}>
