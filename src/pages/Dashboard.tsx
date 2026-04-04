@@ -348,8 +348,8 @@ const Dashboard = () => {
             <button
               key={i}
               onClick={() => item.locked ? toast.info('Disponível no plano Premium') : navigate(item.path)}
-              className={`text-left border rounded-lg p-4 transition-colors ${
-                item.locked ? 'border-border/50 opacity-60 cursor-default' : 'border-border hover:bg-secondary/50 cursor-pointer'
+              className={`text-left border rounded-2xl p-5 transition-colors ${
+                item.locked ? 'border-border/30 opacity-60 cursor-default' : 'border-border/40 hover:bg-secondary/50 cursor-pointer'
               }`}
             >
               {item.locked && <Lock className="w-3 h-3 text-muted-foreground/40 float-right" />}
