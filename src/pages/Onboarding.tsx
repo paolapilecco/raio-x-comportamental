@@ -122,6 +122,26 @@ const Onboarding = () => {
               className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
             />
           </div>
+          <div className="space-y-2">
+            <label htmlFor="onboarding-cpf" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">CPF</label>
+            <input
+              id="onboarding-cpf"
+              type="text"
+              value={cpf}
+              onChange={(e) => {
+                let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                setCpf(v);
+              }}
+              required
+              maxLength={14}
+              placeholder="000.000.000-00"
+              inputMode="numeric"
+              className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
+            />
+          </div>
           <button
             type="submit"
             disabled={submitting}
