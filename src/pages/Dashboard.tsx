@@ -309,7 +309,7 @@ const Dashboard = () => {
 
         {/* Complete profile nudge */}
         {!isSuperAdmin && !profile && (
-          <div className="flex items-center justify-between border border-border rounded-lg p-4">
+          <div className="flex items-center justify-between border border-border/40 rounded-2xl p-5">
             <div className="flex items-center gap-3">
               <User className="w-4 h-4 text-muted-foreground" />
               <div>
