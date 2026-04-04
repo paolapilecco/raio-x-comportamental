@@ -605,7 +605,7 @@ const Dashboard = () => {
             transition={{ duration: 0.3 }}
             className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-lg p-8 space-y-6"
           >
-            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 text-muted-foreground/40 hover:text-foreground/70 transition-colors">
+            <button onClick={() => setShowUpgradeModal(false)} aria-label="Fechar modal" className="absolute top-4 right-4 text-muted-foreground/40 hover:text-foreground/70 transition-colors p-1 rounded-lg hover:bg-muted/30">
               <X className="w-5 h-5" />
             </button>
             <div className="text-center space-y-3">
