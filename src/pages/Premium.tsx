@@ -179,7 +179,7 @@ const Premium = () => {
                   6 áreas completas de autoconhecimento — análises avançadas, relatórios, acompanhamento, cronograma, histórico e recomendações.
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {['6 áreas', '10+ testes', 'PDF ilimitado', 'Evolução temporal'].map((tag) => (
+                  {['6 áreas', '10+ análises', 'PDF ilimitado', 'Evolução temporal'].map((tag) => (
                     <span key={tag} className="text-[0.65rem] font-medium text-primary/70 bg-primary/[0.06] px-2.5 py-1 rounded-full border border-primary/10">{tag}</span>
                   ))}
                 </div>
