@@ -58,6 +58,96 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action || "list";
 
+    if (action === "metrics") {
+      // Get counts for admin dashboard
+      const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+      const totalUsers = allUsers?.length || 0;
+
+      const { data: allRoles } = await adminClient.from("user_roles").select("role");
+      const premiumCount = (allRoles || []).filter((r: any) => r.role === "premium" || r.role === "super_admin").length;
+
+      const { data: subs } = await adminClient.from("subscriptions").select("status, plan, value, created_at");
+      const activeSubs = (subs || []).filter((s: any) => s.status === "active");
+      const monthlyRevenue = activeSubs.reduce((acc: number, s: any) => {
+        if (s.plan === "yearly") return acc + (s.value / 12);
+        return acc + s.value;
+      }, 0);
+
+      const { count: totalSessions } = await adminClient
+        .from("diagnostic_sessions")
+        .select("*", { count: "exact", head: true })
+        .not("completed_at", "is", null);
+
+      const { count: totalModules } = await adminClient
+        .from("test_modules")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+
+      // Users created in last 7 days
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const newUsersThisWeek = (allUsers || []).filter((u: any) => u.created_at >= weekAgo).length;
+
+      // Recent signups (last 10)
+      const recentUsers = (allUsers || [])
+        .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(0, 10)
+        .map((u: any) => ({ email: u.email, created_at: u.created_at }));
+
+      return new Response(JSON.stringify({
+        totalUsers,
+        premiumCount,
+        freeCount: totalUsers - premiumCount,
+        activeSubs: activeSubs.length,
+        monthlyRevenue: Math.round(monthlyRevenue * 100) / 100,
+        totalSessions: totalSessions || 0,
+        totalModules: totalModules || 0,
+        newUsersThisWeek,
+        conversionRate: totalUsers > 0 ? Math.round((premiumCount / totalUsers) * 10000) / 100 : 0,
+        recentUsers,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "export_users") {
+      const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
+      const { data: allRoles } = await adminClient.from("user_roles").select("user_id, role");
+      const { data: allProfiles } = await adminClient.from("profiles").select("user_id, name, age, cpf");
+      const { data: allSubs } = await adminClient.from("subscriptions").select("user_id, plan, status, billing_type, value, created_at");
+
+      const roleMap: Record<string, string[]> = {};
+      (allRoles || []).forEach((r: any) => {
+        if (!roleMap[r.user_id]) roleMap[r.user_id] = [];
+        roleMap[r.user_id].push(r.role);
+      });
+      const profileMap: Record<string, any> = {};
+      (allProfiles || []).forEach((p: any) => { profileMap[p.user_id] = p; });
+      const subMap: Record<string, any> = {};
+      (allSubs || []).forEach((s: any) => { subMap[s.user_id] = s; });
+
+      const csvRows = [["Email","Nome","Idade","Roles","Plano Assinatura","Status","Valor","Cadastro","Último Acesso"]];
+      (allUsers || []).forEach((u: any) => {
+        const p = profileMap[u.id];
+        const s = subMap[u.id];
+        csvRows.push([
+          u.email || "",
+          p?.name || "",
+          p?.age?.toString() || "",
+          (roleMap[u.id] || ["user"]).join(";"),
+          s?.plan || "free",
+          s?.status || "-",
+          s?.value?.toString() || "0",
+          u.created_at?.split("T")[0] || "",
+          u.last_sign_in_at?.split("T")[0] || "",
+        ]);
+      });
+
+      const csv = csvRows.map(r => r.map(v => `"${v}"`).join(",")).join("\n");
+      return new Response(JSON.stringify({ csv }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "list") {
       // List all users with their roles and profiles
       const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers({
