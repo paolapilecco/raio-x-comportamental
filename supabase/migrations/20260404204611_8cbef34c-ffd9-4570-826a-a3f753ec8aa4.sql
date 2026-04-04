@@ -1,0 +1,1 @@
+ALTER TABLE public.global_ai_config ADD COLUMN ai_model text NOT NULL DEFAULT 'google/gemini-3-flash-preview';
