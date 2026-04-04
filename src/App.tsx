@@ -14,6 +14,7 @@ import TestCatalog from "./pages/TestCatalog";
 import CentralReport from "./pages/CentralReport";
 import Profile from "./pages/Profile";
 import Premium from "./pages/Premium";
+import Checkout from "./pages/Checkout";
 import ResetPassword from "./pages/ResetPassword";
 import AdminPrompts from "./pages/AdminPrompts";
 import AdminTestModules from "./pages/AdminTestModules";
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/history" element={<ProtectedRoute><DiagnosticHistory /></ProtectedRoute>} />
             <Route path="/central-report" element={<ProtectedRoute><CentralReport /></ProtectedRoute>} />
             <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
+            <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/admin/prompts" element={<ProtectedRoute><AdminPrompts /></ProtectedRoute>} />
             <Route path="/admin/roadmap" element={<ProtectedRoute><AdminRoadmap /></ProtectedRoute>} />
