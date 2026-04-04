@@ -196,7 +196,7 @@ const Premium = () => {
         {/* ── Section Index (quick nav) ── */}
         <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {[
-            { num: '01', label: 'Testes', icon: LayoutGrid },
+            { num: '01', label: 'Análises', icon: LayoutGrid },
             { num: '02', label: 'Relatórios', icon: FileText },
             { num: '03', label: 'Acompanhamento', icon: TrendingUp },
             { num: '04', label: 'Cronograma', icon: CalendarDays },
