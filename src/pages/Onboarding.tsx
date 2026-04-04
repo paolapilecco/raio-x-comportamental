@@ -52,6 +52,7 @@ const Onboarding = () => {
         user_id: user!.id,
         name: nameResult.data,
         birth_date: birthDate,
+        cpf: cleanCpf,
       });
 
       if (error) {
