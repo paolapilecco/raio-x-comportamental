@@ -448,7 +448,7 @@ const Dashboard = () => {
               <X className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Desbloqueie todos os testes</h2>
+              <h2 className="text-xl font-semibold text-foreground">Desbloqueie todas as análises</h2>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                 Acesse todos os módulos, relatórios avançados e acompanhamento de evolução.
               </p>

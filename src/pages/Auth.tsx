@@ -55,7 +55,7 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(emailResult.data, password);
         if (error) {
-          toast.error(error.message === 'Invalid login credentials' ? 'Email ou senha incorretos' : error.message);
+          toast.error('Email ou senha incorretos.');
         } else {
           navigate('/dashboard');
         }

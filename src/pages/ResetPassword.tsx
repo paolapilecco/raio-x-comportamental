@@ -82,7 +82,7 @@ const ResetPassword = () => {
     const { error } = await supabase.auth.updateUser({ password });
     setSubmitting(false);
     if (error) {
-      toast.error(error.message);
+      toast.error('Erro ao atualizar senha. Tente novamente.');
     } else {
       toast.success('Senha atualizada com sucesso!');
       navigate('/dashboard');
