@@ -62,10 +62,12 @@ const Auth = () => {
       } else {
         const { error } = await signUp(emailResult.data, password);
         if (error) {
-          toast.error(error.message);
+          const msg = error.message?.includes('already registered')
+            ? 'Este email já está cadastrado'
+            : 'Erro ao criar conta. Tente novamente.';
+          toast.error(msg);
         } else {
-          toast.success('Conta criada com sucesso!');
-          navigate('/dashboard');
+          toast.success('Conta criada! Verifique seu email para confirmar o cadastro.');
         }
       }
     } finally {

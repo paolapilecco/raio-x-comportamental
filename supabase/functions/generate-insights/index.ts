@@ -182,7 +182,7 @@ Responda em JSON com exatamente esta estrutura:
   } catch (e) {
     console.error("generate-insights error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erro desconhecido" }),
+      JSON.stringify({ error: "Erro interno do servidor" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
