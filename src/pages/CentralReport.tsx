@@ -75,50 +75,55 @@ const CentralReport = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      const { data: cp } = await supabase
-        .from('user_central_profile')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      try {
+        const { data: cp } = await supabase
+          .from('user_central_profile')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (cp) {
-        setCentralProfile({
-          dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
-          aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
-          tests_completed: cp.tests_completed,
-          mental_state: cp.mental_state,
-          core_pain: cp.core_pain,
-          key_unlock_area: cp.key_unlock_area,
-          profile_name: cp.profile_name,
-          last_test_at: cp.last_test_at,
-        });
-      }
-
-      // Fetch all results for timeline
-      const { data: sessions } = await supabase
-        .from('diagnostic_sessions')
-        .select('id, completed_at')
-        .eq('user_id', user.id)
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: true });
-
-      if (sessions && sessions.length > 0) {
-        const { data: results } = await supabase
-          .from('diagnostic_results')
-          .select('all_scores, created_at, dominant_pattern, intensity')
-          .in('session_id', sessions.map(s => s.id));
-
-        if (results) {
-          setHistory(results.map(r => ({
-            all_scores: (r.all_scores as unknown as { key: string; percentage: number; label: string }[]) || [],
-            created_at: r.created_at,
-            dominant_pattern: r.dominant_pattern,
-            intensity: r.intensity,
-          })));
+        if (cp) {
+          setCentralProfile({
+            dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
+            aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
+            tests_completed: cp.tests_completed,
+            mental_state: cp.mental_state,
+            core_pain: cp.core_pain,
+            key_unlock_area: cp.key_unlock_area,
+            profile_name: cp.profile_name,
+            last_test_at: cp.last_test_at,
+          });
         }
-      }
 
-      setLoading(false);
+        // Fetch all results for timeline
+        const { data: sessions } = await supabase
+          .from('diagnostic_sessions')
+          .select('id, completed_at')
+          .eq('user_id', user.id)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: true });
+
+        if (sessions && sessions.length > 0) {
+          const { data: results } = await supabase
+            .from('diagnostic_results')
+            .select('all_scores, created_at, dominant_pattern, intensity')
+            .in('session_id', sessions.map(s => s.id));
+
+          if (results) {
+            setHistory(results.map(r => ({
+              all_scores: (r.all_scores as unknown as { key: string; percentage: number; label: string }[]) || [],
+              created_at: r.created_at,
+              dominant_pattern: r.dominant_pattern,
+              intensity: r.intensity,
+            })));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading central report:', err);
+        toast.error('Erro ao carregar relatório. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();
