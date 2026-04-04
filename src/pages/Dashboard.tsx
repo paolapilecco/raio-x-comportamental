@@ -330,7 +330,7 @@ const Dashboard = () => {
             { value: centralProfile?.dominant_patterns?.length || 0, label: 'Padrões' },
             { value: role === 'super_admin' ? 'Admin' : role === 'premium' ? 'Premium' : 'Free', label: 'Plano' },
           ].map((stat, i) => (
-            <div key={i} className="border border-border rounded-lg p-4 text-center">
+            <div key={i} className="border border-border/40 rounded-2xl p-5 text-center">
               <p className="text-xl font-semibold text-foreground capitalize">{stat.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
             </div>
