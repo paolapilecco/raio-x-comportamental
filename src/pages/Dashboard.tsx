@@ -369,7 +369,7 @@ const Dashboard = () => {
                 {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}
               </span>
             </div>
-            <div className="grid sm:grid-cols-2 gap-6">
+            <div className="grid sm:grid-cols-2 gap-8">
               <div className="space-y-5">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Perfil Dominante</p>
