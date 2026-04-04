@@ -162,7 +162,7 @@ const Diagnostic = () => {
     };
 
     fetchModuleAndQuestions();
-  }, [slug, navigate]);
+  }, [slug, navigate, isSuperAdmin]);
 
   const saveToDatabase = useCallback(async (answers: Answer[], analysisResult: DiagnosticResult) => {
     if (!user) return;

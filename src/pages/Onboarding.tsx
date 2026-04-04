@@ -51,7 +51,8 @@ const Onboarding = () => {
           navigate('/diagnostic');
           return;
         }
-        toast.error('Erro ao salvar perfil: ' + error.message);
+        console.error('Profile save error:', error.message);
+        toast.error('Erro ao salvar perfil. Tente novamente.');
         return;
       }
 
