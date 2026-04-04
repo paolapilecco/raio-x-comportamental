@@ -21,6 +21,9 @@ import AdminTestModules from "./pages/AdminTestModules";
 import AdminQuestions from "./pages/AdminQuestions";
 import AdminUsers from "./pages/AdminUsers";
 import AdminRoadmap from "./pages/AdminRoadmap";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminSubscriptions from "./pages/AdminSubscriptions";
+import AdminAIConfig from "./pages/AdminAIConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
