@@ -90,7 +90,7 @@ export default function AdminUsers() {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate('/admin/prompts')} className="p-2 rounded-lg hover:bg-accent transition-colors">
+          <button onClick={() => navigate('/admin/dashboard')} className="p-2 rounded-lg hover:bg-accent transition-colors">
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div className="flex-1">
