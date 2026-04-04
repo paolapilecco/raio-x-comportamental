@@ -88,67 +88,75 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-8" role="main" aria-label="Questionário">
-      <div className="w-full max-w-xl space-y-8">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12" role="main" aria-label="Questionário">
+      <div className="w-full max-w-lg space-y-10">
+
         {/* Progress */}
-        <div className="space-y-2">
+        <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <span className="text-xs font-light text-muted-foreground" aria-live="polite">
-              {currentIndex + 1} de {questions.length}
+            <span className="text-xs font-light text-muted-foreground tracking-wide" aria-live="polite">
+              Pergunta {currentIndex + 1} de {questions.length}
             </span>
-            <span className="text-xs font-light text-muted-foreground/60">
+            <span className="text-xs font-light text-muted-foreground/50">
               {Math.round(progress)}%
             </span>
           </div>
-          <div className="h-[2px] rounded-full bg-border overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
+          <div className="h-[3px] rounded-full bg-border/60 overflow-hidden" role="progressbar" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
             <motion.div
               className="h-full rounded-full bg-primary"
               initial={{ width: 0 }}
               animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.4, ease: 'easeOut' }}
+              transition={{ duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] }}
             />
           </div>
         </div>
 
-        {/* Question */}
+        {/* Question card */}
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
             key={question.id}
             custom={direction}
-            initial={{ opacity: 0, x: direction * 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -30 }}
-            transition={{ duration: 0.25, ease: 'easeInOut' }}
-            className="border border-border rounded-lg p-6 sm:p-8 bg-card"
+            initial={{ opacity: 0, y: direction * 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: direction * -12 }}
+            transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="space-y-8"
           >
-            <p className="text-base sm:text-lg font-medium text-foreground leading-relaxed tracking-tight" id={`question-${question.id}`}>
-              {question.text}
-            </p>
+            {/* Question text — centered, prominent */}
+            <div className="text-center space-y-3 py-2">
+              <p
+                className="text-xl sm:text-2xl font-medium text-foreground leading-snug tracking-tight"
+                id={`question-${question.id}`}
+              >
+                {question.text}
+              </p>
+              <p className="text-xs font-light text-muted-foreground/50 uppercase tracking-widest">
+                {getScaleLabel(question.type)}
+              </p>
+            </div>
 
-            <p className="mt-5 mb-3 text-xs font-light text-muted-foreground/60 uppercase tracking-wider">
-              {getScaleLabel(question.type)}
-            </p>
-
-            <div className="space-y-2" role="radiogroup" aria-labelledby={`question-${question.id}`}>
+            {/* Response options */}
+            <div className="space-y-3" role="radiogroup" aria-labelledby={`question-${question.id}`}>
               {responseLabels.map((label, index) => {
                 const value = index + 1;
                 const isSelected = currentAnswer === value;
                 return (
-                  <button
+                  <motion.button
                     key={value}
                     onClick={() => handleSelect(value)}
                     role="radio"
                     aria-checked={isSelected}
-                    className={`w-full text-left px-4 py-3 rounded-lg border transition-colors text-sm ${
+                    whileTap={{ scale: 0.98 }}
+                    className={`w-full text-left px-5 py-4 rounded-2xl border transition-all duration-200 ease-out text-sm ${
                       isSelected
-                        ? 'border-primary bg-primary/[0.04] text-foreground font-medium'
-                        : 'border-border hover:border-primary/30 text-muted-foreground hover:text-foreground'
+                        ? 'border-primary bg-primary/[0.06] text-foreground font-medium shadow-sm'
+                        : 'border-border/40 hover:border-primary/20 hover:bg-secondary/30 text-muted-foreground hover:text-foreground'
                     }`}
                   >
-                    <span className="inline-flex items-center gap-3">
+                    <span className="inline-flex items-center gap-4">
                       <span
-                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
-                          isSelected ? 'border-primary' : 'border-border'
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-200 ${
+                          isSelected ? 'border-primary bg-primary/10' : 'border-border/60'
                         }`}
                         aria-hidden="true"
                       >
@@ -156,13 +164,14 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
                           <motion.span
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            className="w-2 h-2 rounded-full bg-primary"
+                            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                            className="w-2.5 h-2.5 rounded-full bg-primary"
                           />
                         )}
                       </span>
-                      {label}
+                      <span className="leading-relaxed">{label}</span>
                     </span>
-                  </button>
+                  </motion.button>
                 );
               })}
             </div>
@@ -170,29 +179,31 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
         </AnimatePresence>
 
         {/* Navigation */}
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center pt-2">
           <button
             onClick={handlePrev}
             disabled={currentIndex === 0}
             aria-label="Pergunta anterior"
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-200"
           >
             <ChevronLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Anterior</span>
           </button>
-          <button
+
+          <motion.button
             onClick={handleNext}
             disabled={!canGoNext}
             aria-label={isLast ? 'Ver resultado' : 'Próxima pergunta'}
-            className={`flex items-center gap-1.5 px-5 py-2.5 rounded-lg text-sm font-medium transition-opacity ${
+            whileTap={canGoNext ? { scale: 0.97 } : {}}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
               canGoNext
-                ? 'bg-primary text-primary-foreground hover:opacity-90'
-                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+                ? 'bg-primary text-primary-foreground hover:brightness-90 shadow-sm'
+                : 'bg-muted text-muted-foreground/30 cursor-not-allowed'
             }`}
           >
             {isLast ? 'Ver resultado' : 'Próxima'}
             {!isLast && <ChevronRight className="w-4 h-4" />}
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>
