@@ -405,6 +405,57 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          asaas_customer_id: string | null
+          asaas_subscription_id: string | null
+          billing_type: string
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          next_due_date: string | null
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status: Database["public"]["Enums"]["subscription_status"]
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          billing_type?: string
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          next_due_date?: string | null
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id: string
+          value?: number
+        }
+        Update: {
+          asaas_customer_id?: string | null
+          asaas_subscription_id?: string | null
+          billing_type?: string
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          next_due_date?: string | null
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: []
+      }
       test_ai_config: {
         Row: {
           ai_enabled: boolean
@@ -720,6 +771,13 @@ export type Database = {
         | "direction"
         | "restrictions"
       question_type: "likert" | "behavior_choice" | "frequency" | "intensity"
+      subscription_plan: "monthly" | "yearly"
+      subscription_status:
+        | "pending"
+        | "active"
+        | "overdue"
+        | "canceled"
+        | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -858,6 +916,14 @@ export const Constants = {
         "restrictions",
       ],
       question_type: ["likert", "behavior_choice", "frequency", "intensity"],
+      subscription_plan: ["monthly", "yearly"],
+      subscription_status: [
+        "pending",
+        "active",
+        "overdue",
+        "canceled",
+        "expired",
+      ],
     },
   },
 } as const
