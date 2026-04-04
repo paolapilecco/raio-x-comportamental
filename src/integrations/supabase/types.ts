@@ -199,6 +199,7 @@ export type Database = {
       global_ai_config: {
         Row: {
           ai_enabled: boolean
+          ai_model: string
           created_at: string
           depth_level: number
           id: string
@@ -210,6 +211,7 @@ export type Database = {
         }
         Insert: {
           ai_enabled?: boolean
+          ai_model?: string
           created_at?: string
           depth_level?: number
           id?: string
@@ -221,6 +223,7 @@ export type Database = {
         }
         Update: {
           ai_enabled?: boolean
+          ai_model?: string
           created_at?: string
           depth_level?: number
           id?: string
