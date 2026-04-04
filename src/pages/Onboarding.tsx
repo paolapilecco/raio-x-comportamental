@@ -101,8 +101,9 @@ const Onboarding = () => {
             />
           </div>
           <div className="space-y-2">
-            <label className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Data de nascimento</label>
+            <label htmlFor="onboarding-birth" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Data de nascimento</label>
             <input
+              id="onboarding-birth"
               type="date"
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
