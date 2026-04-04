@@ -13,6 +13,7 @@ const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF
 const Onboarding = () => {
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [cpf, setCpf] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
