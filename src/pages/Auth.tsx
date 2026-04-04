@@ -115,14 +115,16 @@ const Auth = () => {
           </div>
           {!forgotMode && (
             <div className="space-y-2">
-              <label className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Senha</label>
+            <label htmlFor="auth-password" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Senha</label>
               <input
+                id="auth-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
                 maxLength={128}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
                 className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
                 placeholder="Mínimo 6 caracteres"
               />

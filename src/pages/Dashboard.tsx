@@ -280,7 +280,7 @@ const Dashboard = () => {
               <p className="text-[0.82rem] text-muted-foreground/60 leading-[1.6] max-w-lg">{centralProfile.mental_state}</p>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             {!isPremium && !isSuperAdmin && (
               <button
                 onClick={() => navigate('/premium')}
