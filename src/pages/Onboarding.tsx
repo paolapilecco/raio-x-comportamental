@@ -27,6 +27,13 @@ const Onboarding = () => {
       return;
     }
 
+    const cpfResult = cpfSchema.safeParse(cpf);
+    if (!cpfResult.success) {
+      toast.error(cpfResult.error.errors[0].message);
+      return;
+    }
+    const cleanCpf = cpf.replace(/\D/g, '');
+
     if (!birthDate) {
       toast.error('Informe sua data de nascimento');
       return;
