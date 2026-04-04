@@ -323,7 +323,7 @@ const Dashboard = () => {
                           : 'bg-muted text-muted-foreground cursor-default'
                       }`}
                     >
-                      {canAccess ? 'Iniciar Teste' : 'Premium'}
+                      {canAccess ? 'Iniciar Leitura' : 'Premium'}
                     </button>
                   </div>
                 );
