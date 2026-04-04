@@ -324,7 +324,7 @@ const Dashboard = () => {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-5">
           {[
             { value: sessionCount, label: sessionCount === 1 ? 'Leitura' : 'Leituras' },
             { value: centralProfile?.dominant_patterns?.length || 0, label: 'Padrões' },
