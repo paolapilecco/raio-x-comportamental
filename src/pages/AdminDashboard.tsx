@@ -5,10 +5,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, Crown, TrendingUp, BarChart3, Activity, Download,
-  ArrowLeft, Loader2, RefreshCw, CreditCard, Brain, LayoutGrid,
+  Loader2, RefreshCw, CreditCard, Brain, LayoutGrid,
   Settings, FileText, UserCheck, DollarSign, Percent, Calendar,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { AppLayout } from '@/components/AppLayout';
 
 interface Metrics {
   totalUsers: number;
