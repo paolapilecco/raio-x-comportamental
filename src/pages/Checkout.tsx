@@ -174,7 +174,9 @@ export default function Checkout() {
               {/* Plan Selection */}
               <div className="space-y-3">
                 <h2 className="font-semibold text-foreground">Escolha seu plano</h2>
-                {(Object.entries(PLANS) as [PlanType, typeof PLANS.monthly][]).map(([key, plan]) => (
+                  {(['monthly', 'yearly'] as PlanType[]).map((key) => {
+                    const plan = PLANS[key];
+                    return (
                   <button
                     key={key}
                     onClick={() => setSelectedPlan(key)}
