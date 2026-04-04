@@ -433,7 +433,7 @@ const Dashboard = () => {
 
         {/* Empty state */}
         {!hasData && !isSuperAdmin && (
-          <div className="border border-border border-dashed rounded-lg p-12 text-center space-y-4">
+          <div className="border border-border/40 border-dashed rounded-2xl p-16 text-center space-y-5">
             <Brain className="w-8 h-8 text-muted-foreground/30 mx-auto" />
             <div>
               <h3 className="text-lg font-semibold">Comece sua análise</h3>
