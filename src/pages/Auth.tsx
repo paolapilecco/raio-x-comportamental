@@ -36,7 +36,7 @@ const Auth = () => {
       });
       setSubmitting(false);
       if (error) {
-        toast.error(error.message);
+        toast.error('Erro ao enviar email de recuperação. Tente novamente.');
       } else {
         toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
         setForgotMode(false);
