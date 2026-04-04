@@ -6,8 +6,8 @@ interface LandingHeroProps {
 
 const LandingHero = ({ onStart }: LandingHeroProps) => {
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-16">
-      <div className="max-w-xl w-full text-center space-y-8">
+    <div className="min-h-screen flex items-center justify-center px-6 py-20">
+      <div className="max-w-xl w-full text-center space-y-10">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
           Leitura Comportamental
         </p>
