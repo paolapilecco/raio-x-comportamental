@@ -71,9 +71,11 @@ export default {
         "navy-light": "hsl(var(--navy-light))",
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        "2xl": "1rem",
+        xl: "0.875rem",
+        lg: "0.75rem",
+        md: "0.5rem",
+        sm: "0.375rem",
       },
       keyframes: {
         "accordion-down": {

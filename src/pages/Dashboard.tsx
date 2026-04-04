@@ -283,7 +283,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-6 py-12 space-y-10">
 
         {/* Greeting */}
         <div>
@@ -309,7 +309,7 @@ const Dashboard = () => {
 
         {/* Complete profile nudge */}
         {!isSuperAdmin && !profile && (
-          <div className="flex items-center justify-between border border-border rounded-lg p-4">
+          <div className="flex items-center justify-between border border-border/40 rounded-2xl p-5">
             <div className="flex items-center gap-3">
               <User className="w-4 h-4 text-muted-foreground" />
               <div>
@@ -324,13 +324,13 @@ const Dashboard = () => {
         )}
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-5">
           {[
             { value: sessionCount, label: sessionCount === 1 ? 'Leitura' : 'Leituras' },
             { value: centralProfile?.dominant_patterns?.length || 0, label: 'Padrões' },
             { value: role === 'super_admin' ? 'Admin' : role === 'premium' ? 'Premium' : 'Free', label: 'Plano' },
           ].map((stat, i) => (
-            <div key={i} className="border border-border rounded-lg p-4 text-center">
+            <div key={i} className="border border-border/40 rounded-2xl p-5 text-center">
               <p className="text-xl font-semibold text-foreground capitalize">{stat.value}</p>
               <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
             </div>
@@ -338,7 +338,7 @@ const Dashboard = () => {
         </div>
 
         {/* Quick nav */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
             { icon: LayoutGrid, label: 'Testes', desc: 'Módulos de análise', path: '/tests', locked: false },
             { icon: Layers, label: 'Relatório Central', desc: 'Perfil unificado', path: '/central-report', locked: !isPremium },
@@ -348,8 +348,8 @@ const Dashboard = () => {
             <button
               key={i}
               onClick={() => item.locked ? toast.info('Disponível no plano Premium') : navigate(item.path)}
-              className={`text-left border rounded-lg p-4 transition-colors ${
-                item.locked ? 'border-border/50 opacity-60 cursor-default' : 'border-border hover:bg-secondary/50 cursor-pointer'
+              className={`text-left border rounded-2xl p-5 transition-colors ${
+                item.locked ? 'border-border/30 opacity-60 cursor-default' : 'border-border/40 hover:bg-secondary/50 cursor-pointer'
               }`}
             >
               {item.locked && <Lock className="w-3 h-3 text-muted-foreground/40 float-right" />}
@@ -362,15 +362,15 @@ const Dashboard = () => {
 
         {/* Central Profile */}
         {centralProfile && centralProfile.tests_completed > 0 && (
-          <div className="border border-border rounded-lg p-6">
+          <div className="border border-border/40 rounded-2xl p-7">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Perfil Central</h2>
               <span className="text-xs text-muted-foreground">
                 {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}
               </span>
             </div>
-            <div className="grid sm:grid-cols-2 gap-6">
-              <div className="space-y-5">
+            <div className="grid sm:grid-cols-2 gap-8">
+              <div className="space-y-6">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Perfil Dominante</p>
                   <p className="text-base font-semibold text-foreground">{centralProfile.profile_name || '-'}</p>
@@ -405,7 +405,7 @@ const Dashboard = () => {
 
         {/* Latest result */}
         {latestResult && (
-          <div className="border border-border rounded-lg p-6">
+          <div className="border border-border/40 rounded-2xl p-7">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold">Última Leitura</h2>
               <button onClick={handleDownloadPdf} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
@@ -433,7 +433,7 @@ const Dashboard = () => {
 
         {/* Empty state */}
         {!hasData && !isSuperAdmin && (
-          <div className="border border-border border-dashed rounded-lg p-12 text-center space-y-4">
+          <div className="border border-border/40 border-dashed rounded-2xl p-16 text-center space-y-5">
             <Brain className="w-8 h-8 text-muted-foreground/30 mx-auto" />
             <div>
               <h3 className="text-lg font-semibold">Comece sua análise</h3>
@@ -452,7 +452,7 @@ const Dashboard = () => {
 
         {/* Premium CTA */}
         {!isPremium && (
-          <div className="border border-border rounded-lg p-6">
+          <div className="border border-border/40 rounded-2xl p-7">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-semibold">Desbloqueie o acesso completo</h3>
@@ -480,7 +480,7 @@ const Dashboard = () => {
                 Ver todos →
               </button>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {modules.map((mod) => {
                 const Icon = iconMap[mod.icon] || Brain;
                 const isFreeTest = mod.slug === 'padrao-comportamental';
@@ -490,8 +490,8 @@ const Dashboard = () => {
                   <div
                     key={mod.id}
                     onClick={() => canAccess ? navigate(`/diagnostic/${mod.slug}`) : setShowUpgradeModal(true)}
-                    className={`border rounded-lg p-4 transition-colors cursor-pointer ${
-                      canAccess ? 'border-border hover:bg-secondary/50' : 'border-border/50 opacity-60'
+                    className={`border rounded-2xl p-5 transition-colors cursor-pointer ${
+                      canAccess ? 'border-border/40 hover:bg-secondary/50' : 'border-border/30 opacity-60'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-3">
@@ -539,7 +539,7 @@ const Dashboard = () => {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
-            className="relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md p-6 space-y-5"
+            className="relative bg-background border border-border/40 rounded-2xl shadow-lg w-full max-w-md p-8 space-y-6"
           >
             <button onClick={() => setShowUpgradeModal(false)} aria-label="Fechar modal" className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors p-1">
               <X className="w-4 h-4" />
