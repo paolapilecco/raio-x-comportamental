@@ -82,7 +82,7 @@ const Premium = () => {
       path: '/central-report',
       features: [
         { icon: LineChart, label: 'Evolução Temporal', desc: 'Gráficos de progresso dos seus padrões' },
-        { icon: Brain, label: 'Perfil Central Unificado', desc: 'Consolidação de todos os seus testes' },
+        { icon: Brain, label: 'Perfil Central Unificado', desc: 'Consolidação de todas as suas leituras' },
         { icon: Sparkles, label: 'Tendências Comportamentais', desc: 'Previsão de padrões futuros' },
       ],
     },
