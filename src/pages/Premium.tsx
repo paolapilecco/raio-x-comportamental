@@ -110,7 +110,7 @@ const Premium = () => {
       path: '/history',
       features: [
         { icon: History, label: 'Leituras Anteriores', desc: 'Acesso completo a todos os resultados' },
-        { icon: BarChart3, label: 'Comparação', desc: 'Compare testes lado a lado' },
+        { icon: BarChart3, label: 'Comparação', desc: 'Compare leituras lado a lado' },
         { icon: FileText, label: 'Download de PDFs', desc: 'Relatórios para guardar ou compartilhar' },
       ],
     },
