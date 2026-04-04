@@ -362,7 +362,7 @@ const Dashboard = () => {
 
         {/* Central Profile */}
         {centralProfile && centralProfile.tests_completed > 0 && (
-          <div className="border border-border rounded-lg p-6">
+          <div className="border border-border/40 rounded-2xl p-7">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Perfil Central</h2>
               <span className="text-xs text-muted-foreground">
