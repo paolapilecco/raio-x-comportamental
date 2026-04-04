@@ -480,7 +480,7 @@ const Dashboard = () => {
                 Ver todos →
               </button>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {modules.map((mod) => {
                 const Icon = iconMap[mod.icon] || Brain;
                 const isFreeTest = mod.slug === 'padrao-comportamental';
