@@ -84,14 +84,14 @@
     --border: 174 10% 15%;
     --input: 174 10% 15%;
     --ring: 174 30% 45%;
-    --sidebar-background: 174 20% 5%;
-    --sidebar-foreground: 60 6% 70%;
-    --sidebar-primary: 174 30% 45%;
-    --sidebar-primary-foreground: 174 20% 5%;
-    --sidebar-accent: 174 10% 13%;
-    --sidebar-accent-foreground: 60 6% 88%;
-    --sidebar-border: 174 10% 15%;
-    --sidebar-ring: 174 30% 45%;
+    --sidebar-background: 150 18% 10%;
+    --sidebar-foreground: 60 6% 65%;
+    --sidebar-primary: 60 9% 92%;
+    --sidebar-primary-foreground: 150 18% 10%;
+    --sidebar-accent: 150 15% 16%;
+    --sidebar-accent-foreground: 60 9% 90%;
+    --sidebar-border: 150 12% 16%;
+    --sidebar-ring: 41 40% 55%;
 
     --surface: 174 15% 7%;
     --surface-elevated: 174 12% 10%;
