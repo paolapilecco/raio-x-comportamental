@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Brain, LogOut, History, LayoutGrid, Layers, User, FlaskConical, Crown, Lock, ArrowRight, FileText, TrendingUp, Sparkles, Shield, Zap, Heart, Clock, CheckCircle2, X, Users } from 'lucide-react';
+import { Brain, LogOut, History, LayoutGrid, Layers, User, FlaskConical, Crown, Lock, ArrowRight, FileText, TrendingUp, Shield, Zap, Heart, Clock, CheckCircle2, X, Users } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
@@ -56,9 +56,7 @@ interface TestModule {
 }
 
 const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
-const intensityColor: Record<string, string> = { leve: 'hsl(152, 45%, 45%)', moderado: 'hsl(var(--gold))', alto: 'hsl(0, 65%, 52%)' };
-
-const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
+const intensityColor: Record<string, string> = { leve: 'hsl(152, 45%, 42%)', moderado: 'hsl(var(--gold))', alto: 'hsl(0, 65%, 52%)' };
 
 const radarAxisLabels: Record<string, string> = {
   unstable_execution: 'Execução',
@@ -241,19 +239,13 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
+        <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
       </div>
     );
   }
 
   const displayName = profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário';
   const hasData = !!latestResult || (centralProfile && centralProfile.tests_completed > 0);
-
-  const roleBadge = isSuperAdmin
-    ? { label: 'Super Admin', icon: Shield, className: 'bg-gold/10 border-gold/20 text-gold' }
-    : isPremium
-    ? { label: 'Premium', icon: Crown, className: 'bg-primary/10 border-primary/20 text-primary' }
-    : { label: 'Gratuito', icon: Sparkles, className: 'bg-muted/50 border-border/50 text-muted-foreground' };
 
   const radarData = centralProfile
     ? Object.entries(centralProfile.aggregated_scores).map(([key, value]) => ({ axis: radarAxisLabels[key] || key, value }))
@@ -262,112 +254,91 @@ const Dashboard = () => {
     : [];
 
   return (
-    <div className="min-h-screen relative overflow-hidden" role="main" aria-label="Dashboard">
-      {/* Ambient background */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/[0.03] blur-[100px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gold/[0.02] blur-[80px]" />
-      </div>
-
-      <div className="relative z-10 max-w-5xl mx-auto px-4 py-6 sm:py-8 md:py-12 space-y-6">
-
-        {/* ── Header ── */}
-        <motion.div {...fadeUp} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-1.5 min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-[10px] tracking-[0.3em] uppercase text-primary/40 font-semibold font-display">Raio-X Comportamental</p>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[0.6rem] font-semibold tracking-wide uppercase font-display ${roleBadge.className}`}>
-                <roleBadge.icon className="w-3 h-3" />
-                {roleBadge.label}
-              </span>
-            </div>
-            <h1 className="text-3xl md:text-4xl tracking-[-0.04em]">Olá, {displayName}</h1>
-            {centralProfile?.mental_state && (
-              <p className="text-[0.82rem] text-muted-foreground/50 leading-[1.6] max-w-lg">{centralProfile.mental_state}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 flex-wrap shrink-0">
-            {!isPremium && !isSuperAdmin && (
-              <button
-                onClick={() => navigate('/checkout')}
-                className="group flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-primary to-navy-light text-primary-foreground rounded-xl text-[0.78rem] font-semibold shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.5)] hover:translate-y-[-1px] transition-all duration-300 font-display"
-              >
-                <Crown className="w-3.5 h-3.5" />
-                Acesso Premium
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </button>
+    <div className="min-h-screen" role="main" aria-label="Dashboard">
+      {/* Top nav */}
+      <header className="border-b border-border/50">
+        <div className="max-w-5xl mx-auto flex items-center justify-between px-6 h-14">
+          <div className="flex items-center gap-4">
+            <span className="text-sm font-semibold text-foreground">Raio-X</span>
+            {isSuperAdmin && (
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-secondary text-muted-foreground">Admin</span>
             )}
             {isPremium && !isSuperAdmin && (
-              <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-[0.72rem] font-semibold bg-primary/10 text-primary border border-primary/15 font-display">
-                <Crown className="w-3.5 h-3.5" />
-                Plano Premium ativo
-              </span>
+              <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-secondary text-muted-foreground">Premium</span>
             )}
-            <button onClick={() => navigate('/profile')} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/50 hover:text-foreground/70 transition-colors px-3 py-2 rounded-xl hover:bg-card/60 border border-transparent hover:border-border/30">
-              <User className="w-3.5 h-3.5" /> Perfil
+          </div>
+          <div className="flex items-center gap-1">
+            {!isPremium && !isSuperAdmin && (
+              <button onClick={() => navigate('/checkout')} className="text-xs font-medium text-foreground mr-2 px-3 py-1.5 rounded-md bg-foreground text-background hover:opacity-90 transition-opacity">
+                Upgrade
+              </button>
+            )}
+            <button onClick={() => navigate('/profile')} className="text-sm text-muted-foreground hover:text-foreground transition-colors p-2">
+              <User className="w-4 h-4" />
             </button>
-            <button onClick={handleSignOut} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/50 hover:text-foreground/70 transition-colors px-3 py-2 rounded-xl hover:bg-card/60 border border-transparent hover:border-border/30">
-              <LogOut className="w-3.5 h-3.5" /> Sair
+            <button onClick={handleSignOut} className="text-sm text-muted-foreground hover:text-foreground transition-colors p-2">
+              <LogOut className="w-4 h-4" />
             </button>
           </div>
-        </motion.div>
+        </div>
+      </header>
 
-        {/* ── Super Admin badge ── */}
+      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+
+        {/* Greeting */}
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Olá, {displayName}</h1>
+          {centralProfile?.mental_state && (
+            <p className="text-sm text-muted-foreground mt-1 max-w-lg">{centralProfile.mental_state}</p>
+          )}
+        </div>
+
+        {/* Super Admin tools */}
         {isSuperAdmin && (
-          <motion.div {...fadeUp} transition={{ delay: 0.02 }} className="flex items-center justify-between bg-gold/[0.05] border border-gold/15 rounded-2xl px-5 py-3.5">
-            <span className="text-[0.78rem] text-gold font-medium font-display tracking-wide">Modo super admin ativo</span>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-1.5 px-4 py-1.5 bg-gold/10 hover:bg-gold/20 text-gold rounded-xl text-[0.72rem] font-semibold transition-colors font-display">
-                <LayoutGrid className="w-3 h-3" />
-                Painel Admin
-              </button>
-              {!hasData && (
-                <button onClick={generateTestData} disabled={generating} className="flex items-center gap-1.5 px-4 py-1.5 bg-gold/10 hover:bg-gold/20 text-gold rounded-xl text-[0.72rem] font-semibold transition-colors disabled:opacity-50 font-display">
-                  <FlaskConical className="w-3 h-3" />
-                  {generating ? 'Gerando...' : 'Gerar dados de teste'}
-                </button>
-              )}
-            </div>
-          </motion.div>
-        )}
-
-        {/* ── Complete Profile Nudge ── */}
-        {!isSuperAdmin && !profile && (
-          <motion.div {...fadeUp} transition={{ delay: 0.03 }} className="flex items-center justify-between bg-card/60 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-primary/8">
-                <User className="w-4 h-4 text-primary/60" />
-              </div>
-              <div>
-                <p className="text-[0.82rem] font-medium text-foreground/75">Complete seu perfil</p>
-                <p className="text-[0.72rem] text-muted-foreground/45">Adicione nome e data de nascimento para personalizar suas leituras.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate('/onboarding')}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl text-[0.72rem] font-semibold transition-colors whitespace-nowrap font-display"
-            >
-              Completar <ArrowRight className="w-3 h-3" />
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => navigate('/admin/dashboard')} className="text-xs font-medium px-3 py-1.5 rounded-md border border-border hover:bg-secondary transition-colors">
+              Painel Admin
             </button>
-          </motion.div>
+            {!hasData && (
+              <button onClick={generateTestData} disabled={generating} className="text-xs font-medium px-3 py-1.5 rounded-md border border-border hover:bg-secondary transition-colors disabled:opacity-50">
+                {generating ? 'Gerando...' : 'Gerar dados de teste'}
+              </button>
+            )}
+          </div>
         )}
 
-        {/* ── Quick Stats ── */}
-        <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-3 gap-3">
+        {/* Complete profile nudge */}
+        {!isSuperAdmin && !profile && (
+          <div className="flex items-center justify-between border border-border rounded-lg p-4">
+            <div className="flex items-center gap-3">
+              <User className="w-4 h-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Complete seu perfil</p>
+                <p className="text-xs text-muted-foreground">Adicione nome e data de nascimento.</p>
+              </div>
+            </div>
+            <button onClick={() => navigate('/onboarding')} className="text-xs font-medium text-foreground hover:underline">
+              Completar →
+            </button>
+          </div>
+        )}
+
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-4">
           {[
-            { value: sessionCount, label: sessionCount === 1 ? 'Leitura realizada' : 'Leituras realizadas' },
-            { value: centralProfile?.dominant_patterns?.length || 0, label: 'Padrões identificados' },
-            { value: role === 'super_admin' ? 'Admin' : role === 'premium' ? 'Premium' : 'Free', label: 'Seu plano' },
+            { value: sessionCount, label: sessionCount === 1 ? 'Leitura' : 'Leituras' },
+            { value: centralProfile?.dominant_patterns?.length || 0, label: 'Padrões' },
+            { value: role === 'super_admin' ? 'Admin' : role === 'premium' ? 'Premium' : 'Free', label: 'Plano' },
           ].map((stat, i) => (
-            <div key={i} className="bg-card/50 backdrop-blur-sm rounded-2xl border border-border/30 p-5 text-center group hover:border-primary/15 transition-all duration-300">
-              <p className="text-2xl font-semibold text-foreground capitalize">{stat.value}</p>
-              <p className="text-[0.7rem] text-muted-foreground/45 mt-1 font-display tracking-wide">{stat.label}</p>
+            <div key={i} className="border border-border rounded-lg p-4 text-center">
+              <p className="text-xl font-semibold text-foreground capitalize">{stat.value}</p>
+              <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
             </div>
           ))}
-        </motion.div>
+        </div>
 
-        {/* ── Quick Nav Cards ── */}
-        <motion.div {...fadeUp} transition={{ delay: 0.07 }} className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Quick nav */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[
             { icon: LayoutGrid, label: 'Testes', desc: 'Módulos de análise', path: '/tests', locked: false },
             { icon: Layers, label: 'Relatório Central', desc: 'Perfil unificado', path: '/central-report', locked: !isPremium },
@@ -377,54 +348,43 @@ const Dashboard = () => {
             <button
               key={i}
               onClick={() => item.locked ? toast.info('Disponível no plano Premium') : navigate(item.path)}
-              className={`relative text-left bg-card/50 backdrop-blur-sm rounded-2xl border p-4 transition-all duration-300 group ${
-                item.locked ? 'border-border/20 opacity-70 cursor-default' : 'border-border/30 hover:border-primary/20 hover:shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.08)] cursor-pointer'
+              className={`text-left border rounded-lg p-4 transition-colors ${
+                item.locked ? 'border-border/50 opacity-60 cursor-default' : 'border-border hover:bg-secondary/50 cursor-pointer'
               }`}
             >
-              {item.locked && (
-                <div className="absolute top-3 right-3">
-                  <Lock className="w-3 h-3 text-muted-foreground/30" />
-                </div>
-              )}
-              <div className="p-2 rounded-xl bg-primary/[0.04] border border-primary/8 w-fit mb-3">
-                <item.icon className={`w-4.5 h-4.5 ${item.locked ? 'text-muted-foreground/25' : 'text-primary/50'}`} />
-              </div>
-              <p className="text-[0.82rem] font-medium text-foreground/80">{item.label}</p>
-              <p className="text-[0.7rem] text-muted-foreground/40 mt-0.5">{item.desc}</p>
+              {item.locked && <Lock className="w-3 h-3 text-muted-foreground/40 float-right" />}
+              <item.icon className={`w-4 h-4 mb-2 ${item.locked ? 'text-muted-foreground/30' : 'text-muted-foreground'}`} />
+              <p className="text-sm font-medium text-foreground">{item.label}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
             </button>
           ))}
-        </motion.div>
+        </div>
 
-        {/* ── Central Profile Summary ── */}
+        {/* Central Profile */}
         {centralProfile && centralProfile.tests_completed > 0 && (
-          <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="bg-gradient-to-br from-primary/[0.03] via-primary/[0.06] to-gold/[0.02] rounded-3xl border border-primary/12 p-6 md:p-8">
+          <div className="border border-border rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-primary/8">
-                  <Brain className="w-5 h-5 text-primary/60" />
-                </div>
-                <h3 className="text-xl font-medium">Perfil Central</h3>
-              </div>
-              <span className="text-[10px] tracking-[0.2em] uppercase bg-primary/[0.06] text-primary/60 px-3.5 py-1.5 rounded-full font-semibold font-display">
+              <h2 className="text-lg font-semibold">Perfil Central</h2>
+              <span className="text-xs text-muted-foreground">
                 {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}
               </span>
             </div>
             <div className="grid sm:grid-cols-2 gap-6">
               <div className="space-y-5">
                 <div>
-                  <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/40 mb-1.5 font-semibold font-display">Perfil Dominante</p>
-                  <p className="text-xl font-medium text-foreground">{centralProfile.profile_name || '-'}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Perfil Dominante</p>
+                  <p className="text-base font-semibold text-foreground">{centralProfile.profile_name || '-'}</p>
                 </div>
                 {centralProfile.core_pain && (
                   <div>
-                    <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/40 mb-1.5 font-semibold font-display">Dor Central</p>
-                    <p className="text-[0.82rem] text-foreground/65 leading-[1.65]">{centralProfile.core_pain}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Dor Central</p>
+                    <p className="text-sm text-foreground/70 leading-relaxed">{centralProfile.core_pain}</p>
                   </div>
                 )}
                 {centralProfile.key_unlock_area && (
                   <div>
-                    <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/40 mb-1.5 font-semibold font-display">Área-chave de Destravamento</p>
-                    <p className="text-[0.82rem] text-foreground/65 leading-[1.65]">{centralProfile.key_unlock_area}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Área-chave</p>
+                    <p className="text-sm text-foreground/70 leading-relaxed">{centralProfile.key_unlock_area}</p>
                   </div>
                 )}
               </div>
@@ -432,118 +392,95 @@ const Dashboard = () => {
                 <div>
                   <ResponsiveContainer width="100%" height={220}>
                     <RadarChart data={radarData}>
-                      <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                      <PolarGrid stroke="hsl(var(--border))" />
                       <PolarAngleAxis dataKey="axis" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
-                      <Radar name="Intensidade" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.1} strokeWidth={1.5} />
+                      <Radar name="Intensidade" dataKey="value" stroke="hsl(var(--foreground))" fill="hsl(var(--foreground))" fillOpacity={0.06} strokeWidth={1.5} />
                     </RadarChart>
                   </ResponsiveContainer>
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
 
-        {/* ── Latest Result Card ── */}
+        {/* Latest result */}
         {latestResult && (
-          <motion.div {...fadeUp} transition={{ delay: 0.12 }} className="bg-card/50 backdrop-blur-sm rounded-3xl border border-border/30 p-6 md:p-8">
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/8">
-                  <FileText className="w-4 h-4 text-primary/60" />
-                </div>
-                <h3 className="text-lg font-medium">Última Leitura</h3>
-              </div>
-              <button onClick={handleDownloadPdf} className="flex items-center gap-1.5 text-[0.72rem] text-muted-foreground/40 hover:text-foreground/60 transition-colors px-3 py-1.5 rounded-xl hover:bg-muted/20 border border-transparent hover:border-border/30 font-display">
-                <FileText className="w-3 h-3" /> Baixar PDF
+          <div className="border border-border rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Última Leitura</h2>
+              <button onClick={handleDownloadPdf} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                Baixar PDF
               </button>
             </div>
             <div className="space-y-3">
-              <p className="text-xl font-medium text-foreground">{latestResult.profile_name}</p>
-              <div className="flex items-center gap-4 flex-wrap">
-                <span className="text-[0.78rem] text-muted-foreground/50">{latestResult.combined_title}</span>
-                <span className="text-[0.78rem] font-semibold font-display" style={{ color: intensityColor[latestResult.intensity] }}>
+              <p className="text-base font-semibold text-foreground">{latestResult.profile_name}</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-sm text-muted-foreground">{latestResult.combined_title}</span>
+                <span className="text-xs font-semibold" style={{ color: intensityColor[latestResult.intensity] }}>
                   {intensityLabel[latestResult.intensity] || latestResult.intensity}
                 </span>
               </div>
-              <p className="text-[0.82rem] text-foreground/55 leading-[1.75]">{latestResult.state_summary}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{latestResult.state_summary}</p>
               {latestResult.direction && (
-                <div className="border-l-2 border-primary/20 pl-4 mt-4">
-                  <p className="text-[10px] tracking-[0.25em] uppercase text-muted-foreground/40 mb-1 font-semibold font-display">Foco Atual</p>
-                  <p className="text-[0.82rem] text-foreground/60 italic leading-[1.65]">{latestResult.direction}</p>
+                <div className="border-l-2 border-border pl-4 mt-4">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Foco Atual</p>
+                  <p className="text-sm text-foreground/70 leading-relaxed">{latestResult.direction}</p>
                 </div>
               )}
             </div>
-          </motion.div>
+          </div>
         )}
 
-        {/* ── Empty State ── */}
+        {/* Empty state */}
         {!hasData && !isSuperAdmin && (
-          <motion.div {...fadeUp} transition={{ delay: 0.08 }} className="bg-card/40 backdrop-blur-sm rounded-3xl border border-border/25 p-12 text-center space-y-6">
-            <div className="w-16 h-16 rounded-2xl bg-primary/8 flex items-center justify-center mx-auto">
-              <Brain className="w-8 h-8 text-primary/30" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-2xl font-medium">Comece sua análise</h3>
-              <p className="text-[0.85rem] text-muted-foreground/50 leading-[1.7] max-w-md mx-auto">
-                Você ainda não realizou nenhuma leitura. Faça seu primeiro teste para descobrir seu padrão comportamental dominante.
+          <div className="border border-border border-dashed rounded-lg p-12 text-center space-y-4">
+            <Brain className="w-8 h-8 text-muted-foreground/30 mx-auto" />
+            <div>
+              <h3 className="text-lg font-semibold">Comece sua análise</h3>
+              <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
+                Faça seu primeiro teste para descobrir seu padrão comportamental dominante.
               </p>
             </div>
             <button
               onClick={() => navigate('/tests')}
-              className="inline-flex items-center gap-2.5 px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold tracking-[0.02em] shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300"
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              <LayoutGrid className="w-4 h-4" /> Ver módulos disponíveis
+              Ver módulos
             </button>
-          </motion.div>
+          </div>
         )}
 
-        {/* ── Premium Upgrade CTA ── */}
+        {/* Premium CTA */}
         {!isPremium && (
-          <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="relative overflow-hidden rounded-3xl border border-gold/15 bg-gradient-to-br from-primary/[0.04] via-gold/[0.03] to-transparent p-6 md:p-8">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gold/[0.04] rounded-full blur-[80px] pointer-events-none" />
-            <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-gold/10">
-                    <Crown className="w-5 h-5 text-gold" />
-                  </div>
-                  <h3 className="text-xl font-medium text-foreground">Desbloqueie o acesso completo</h3>
-                </div>
-                <p className="text-[0.82rem] text-muted-foreground/55 leading-[1.65] max-w-md">
-                  Com o plano Premium, acesse todos os testes, relatórios detalhados, histórico de evolução e cronograma comportamental.
+          <div className="border border-border rounded-lg p-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-semibold">Desbloqueie o acesso completo</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Todos os testes, relatórios e acompanhamento de evolução.
                 </p>
-                <div className="flex flex-wrap gap-2 pt-1">
-                  {['Todos os testes', 'Relatório Central', 'Histórico', 'Evolução temporal'].map((f) => (
-                    <span key={f} className="text-[0.68rem] font-medium text-primary/60 bg-primary/[0.05] px-3 py-1.5 rounded-full font-display">{f}</span>
-                  ))}
-                </div>
               </div>
               <button
                 onClick={() => navigate('/checkout')}
-                className="group flex items-center gap-2 px-8 py-3.5 bg-primary text-primary-foreground rounded-2xl text-[0.85rem] font-semibold shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.5)] hover:translate-y-[-1px] transition-all duration-300 whitespace-nowrap"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity whitespace-nowrap"
               >
                 Upgrade Premium
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
 
-        {/* ── Test Modules Grid ── */}
+        {/* Test modules */}
         {modules.length > 0 && (
-          <motion.div {...fadeUp} transition={{ delay: 0.2 }}>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-primary/8">
-                  <LayoutGrid className="w-4 h-4 text-primary/50" />
-                </div>
-                <h3 className="text-xl font-medium">Módulos de Análise</h3>
-              </div>
-              <button onClick={() => navigate('/tests')} className="text-[0.75rem] text-primary/60 hover:text-primary font-semibold transition-colors font-display tracking-wide">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold">Módulos</h2>
+              <button onClick={() => navigate('/tests')} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                 Ver todos →
               </button>
             </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {modules.map((mod) => {
                 const Icon = iconMap[mod.icon] || Brain;
                 const isFreeTest = mod.slug === 'padrao-comportamental';
@@ -553,107 +490,87 @@ const Dashboard = () => {
                   <div
                     key={mod.id}
                     onClick={() => canAccess ? navigate(`/diagnostic/${mod.slug}`) : setShowUpgradeModal(true)}
-                    className={`relative bg-card/50 backdrop-blur-sm rounded-2xl border p-5 transition-all duration-300 cursor-pointer group ${
-                      canAccess ? 'border-border/30 hover:border-primary/15 hover:shadow-[0_8px_30px_-10px_hsl(var(--primary)/0.08)]' : 'border-border/20'
+                    className={`border rounded-lg p-4 transition-colors cursor-pointer ${
+                      canAccess ? 'border-border hover:bg-secondary/50' : 'border-border/50 opacity-60'
                     }`}
                   >
-                    {isCompleted && canAccess && (
-                      <div className="absolute top-3 right-3">
-                        <CheckCircle2 className="w-4 h-4 text-primary/50" />
-                      </div>
-                    )}
-                    {!canAccess && (
-                      <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/8 border border-gold/12">
-                        <Crown className="w-3 h-3 text-gold/60" />
-                        <span className="text-[0.6rem] font-semibold text-gold/70 tracking-wide uppercase font-display">Premium</span>
-                      </div>
-                    )}
-                    <div className="space-y-3">
-                      <div className="p-2.5 rounded-xl bg-primary/[0.04] border border-primary/8 w-fit">
-                        {canAccess ? <Icon className="w-5 h-5 text-primary/45" /> : <Lock className="w-5 h-5 text-muted-foreground/25" />}
-                      </div>
-                      <div>
-                        <h4 className={`text-[0.9rem] font-medium mb-1 tracking-[-0.01em] ${canAccess ? 'text-foreground/80' : 'text-foreground/45'}`}>{mod.name}</h4>
-                        <p className="text-[0.75rem] text-muted-foreground/45 leading-[1.65] line-clamp-2">{mod.description}</p>
-                      </div>
-                      <div className="flex items-center gap-3 text-[0.68rem] text-muted-foreground/35 pt-0.5 font-display">
-                        <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> ~{Math.ceil(mod.question_count * 0.5)} min</span>
-                        <span>{mod.question_count} itens</span>
-                      </div>
+                    <div className="flex items-center justify-between mb-3">
+                      {canAccess ? <Icon className="w-4 h-4 text-muted-foreground" /> : <Lock className="w-4 h-4 text-muted-foreground/30" />}
+                      {isCompleted && canAccess && <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground/50" />}
+                      {!canAccess && <span className="text-[10px] font-medium text-muted-foreground">Premium</span>}
+                    </div>
+                    <h4 className="text-sm font-medium text-foreground mb-1">{mod.name}</h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{mod.description}</p>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground/60 mt-3">
+                      <span>~{Math.ceil(mod.question_count * 0.5)} min</span>
+                      <span>{mod.question_count} itens</span>
                     </div>
                   </div>
                 );
               })}
             </div>
-          </motion.div>
+          </div>
         )}
 
-        {/* ── Bottom Actions ── */}
-        <motion.div {...fadeUp} transition={{ delay: 0.25 }} className="flex flex-col sm:flex-row gap-3 justify-center pb-12 pt-4">
+        {/* Bottom actions */}
+        <div className="flex flex-col sm:flex-row gap-3 justify-center pb-8 pt-4">
           <button
             onClick={() => navigate('/tests')}
-            className="flex items-center justify-center gap-2.5 px-10 py-4 bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold tracking-[0.02em] shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] transition-all duration-300"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            <LayoutGrid className="w-4 h-4" /> {hasData ? 'Nova leitura' : 'Começar teste'}
+            {hasData ? 'Nova leitura' : 'Começar teste'}
           </button>
           {hasData && (
             <button
               onClick={() => navigate('/history')}
-              className="flex items-center justify-center gap-2.5 px-10 py-4 border border-border/40 rounded-2xl text-[0.85rem] font-medium text-muted-foreground/60 hover:text-foreground/70 hover:border-border/60 hover:bg-card/40 transition-all duration-300"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 border border-border rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
             >
-              <History className="w-4 h-4" /> Ver histórico
+              Ver histórico
             </button>
           )}
-        </motion.div>
+        </div>
       </div>
 
-      {/* ── Upgrade Modal ── */}
+      {/* Upgrade Modal */}
       {showUpgradeModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Upgrade para Premium">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-md" onClick={() => setShowUpgradeModal(false)} aria-hidden="true" />
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)} />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="relative bg-card/95 backdrop-blur-xl border border-border/40 rounded-3xl shadow-[0_25px_60px_-15px_hsl(var(--primary)/0.15)] w-full max-w-lg p-8 space-y-6"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className="relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md p-6 space-y-5"
           >
-            <button onClick={() => setShowUpgradeModal(false)} aria-label="Fechar modal" className="absolute top-4 right-4 text-muted-foreground/30 hover:text-foreground/60 transition-colors p-1.5 rounded-xl hover:bg-muted/20">
-              <X className="w-5 h-5" />
+            <button onClick={() => setShowUpgradeModal(false)} aria-label="Fechar modal" className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors p-1">
+              <X className="w-4 h-4" />
             </button>
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-gold/15 to-primary/10 flex items-center justify-center mx-auto shadow-[0_8px_30px_-6px_hsl(var(--gold)/0.2)]">
-                <Crown className="w-8 h-8 text-gold" />
-              </div>
-              <h2 className="text-2xl">Desbloqueie todos os testes</h2>
-              <p className="text-[0.85rem] text-muted-foreground/55 leading-[1.7] max-w-sm mx-auto">
-                Com o plano Premium, você acessa todos os módulos de análise, relatórios avançados e acompanhamento de evolução.
+            <div>
+              <h2 className="text-lg font-semibold">Desbloqueie todos os testes</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Acesse todos os módulos, relatórios avançados e acompanhamento de evolução.
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {[
-                'Acesso a todos os módulos de análise',
+                'Todos os módulos de análise',
                 'Relatório Central unificado',
-                'Histórico completo de leituras',
-                'Cronograma de evolução comportamental',
-                'Download de relatórios em PDF',
+                'Histórico completo',
+                'Evolução comportamental',
+                'Download em PDF',
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <CheckCircle2 className="w-3 h-3 text-primary" />
-                  </div>
-                  <span className="text-[0.82rem] text-foreground/70">{feature}</span>
+                <div key={i} className="flex items-center gap-2.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" />
+                  <span className="text-sm text-foreground/80">{feature}</span>
                 </div>
               ))}
             </div>
             <button
               onClick={() => { setShowUpgradeModal(false); navigate('/checkout'); }}
-              className="w-full group flex items-center justify-center gap-2 py-4 bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.5)] hover:translate-y-[-1px] transition-all duration-300"
+              className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
             >
-              <Crown className="w-4 h-4" />
               Upgrade para Premium
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
-            <p className="text-center text-[0.7rem] text-muted-foreground/35 font-display">Cancele quando quiser · Acesso imediato</p>
+            <p className="text-center text-xs text-muted-foreground">Cancele quando quiser</p>
           </motion.div>
         </div>
       )}
