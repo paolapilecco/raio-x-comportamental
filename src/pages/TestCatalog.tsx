@@ -38,55 +38,60 @@ const TestCatalog = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const { data: mods } = await supabase
-        .from('test_modules')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
+      try {
+        const { data: mods } = await supabase
+          .from('test_modules')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order');
 
-      const allModules = (mods as TestModule[]) || [];
+        const allModules = (mods as TestModule[]) || [];
 
-      // Check question counts from DB for each module
-      const moduleIds = allModules.map(m => m.id);
-      const { data: questionCounts } = await supabase
-        .from('questions')
-        .select('test_id')
-        .in('test_id', moduleIds);
+        // Check question counts from DB for each module
+        const moduleIds = allModules.map(m => m.id);
+        const { data: questionCounts } = await supabase
+          .from('questions')
+          .select('test_id')
+          .in('test_id', moduleIds);
 
-      const countMap: Record<string, number> = {};
-      questionCounts?.forEach(q => {
-        countMap[q.test_id] = (countMap[q.test_id] || 0) + 1;
-      });
+        const countMap: Record<string, number> = {};
+        questionCounts?.forEach(q => {
+          countMap[q.test_id] = (countMap[q.test_id] || 0) + 1;
+        });
 
-      // Filter out incomplete tests for non-admin users
-      const MIN_QUESTIONS = 10;
-      const validModules = allModules.map(m => ({
-        ...m,
-        _actualQuestionCount: countMap[m.id] || 0,
-        _isIncomplete: (countMap[m.id] || 0) < MIN_QUESTIONS,
-      }));
+        // Filter out incomplete tests for non-admin users
+        const MIN_QUESTIONS = 10;
+        const validModules = allModules.map(m => ({
+          ...m,
+          _actualQuestionCount: countMap[m.id] || 0,
+          _isIncomplete: (countMap[m.id] || 0) < MIN_QUESTIONS,
+        }));
 
-      // Non-admins only see complete tests
-      if (isSuperAdmin) {
-        setModules(validModules);
-      } else {
-        setModules(validModules.filter(m => !m._isIncomplete));
-      }
-
-      if (user) {
-        const { data: sessions } = await supabase
-          .from('diagnostic_sessions')
-          .select('test_module_id')
-          .eq('user_id', user.id)
-          .not('completed_at', 'is', null)
-          .not('test_module_id', 'is', null);
-
-        if (sessions) {
-          setCompletedModules(new Set(sessions.map(s => s.test_module_id!)));
+        // Non-admins only see complete tests
+        if (isSuperAdmin) {
+          setModules(validModules);
+        } else {
+          setModules(validModules.filter(m => !m._isIncomplete));
         }
-      }
 
-      setLoading(false);
+        if (user) {
+          const { data: sessions } = await supabase
+            .from('diagnostic_sessions')
+            .select('test_module_id')
+            .eq('user_id', user.id)
+            .not('completed_at', 'is', null)
+            .not('test_module_id', 'is', null);
+
+          if (sessions) {
+            setCompletedModules(new Set(sessions.map(s => s.test_module_id!)));
+          }
+        }
+      } catch (err) {
+        console.error('Error loading test catalog:', err);
+        toast.error('Erro ao carregar módulos. Tente recarregar a página.');
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchData();

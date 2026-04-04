@@ -137,7 +137,7 @@ const CentralReport = () => {
       setAiInsights(data as AIInsights);
     } catch (e: any) {
       console.error('Insights error:', e);
-      toast.error(e?.message || 'Erro ao gerar insights com IA');
+      toast.error('Erro ao gerar insights. Tente novamente.');
     } finally {
       setInsightsLoading(false);
     }

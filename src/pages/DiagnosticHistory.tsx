@@ -45,25 +45,31 @@ const DiagnosticHistory = () => {
     if (!user) return;
 
     const fetchHistory = async () => {
-      const { data: sessions } = await supabase
-        .from('diagnostic_sessions')
-        .select('id, completed_at')
-        .eq('user_id', user.id)
-        .not('completed_at', 'is', null)
-        .order('completed_at', { ascending: false });
+      try {
+        const { data: sessions } = await supabase
+          .from('diagnostic_sessions')
+          .select('id, completed_at')
+          .eq('user_id', user.id)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: false });
 
-      if (!sessions || sessions.length === 0) {
+        if (!sessions || sessions.length === 0) {
+          setLoading(false);
+          return;
+        }
+
+        const { data: results } = await supabase
+          .from('diagnostic_results')
+          .select('*')
+          .in('session_id', sessions.map(s => s.id));
+
+        setHistory(results || []);
+      } catch (err) {
+        console.error('Error loading history:', err);
+        toast.error('Erro ao carregar histórico. Tente novamente.');
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const { data: results } = await supabase
-        .from('diagnostic_results')
-        .select('*')
-        .in('session_id', sessions.map(s => s.id));
-
-      setHistory(results || []);
-      setLoading(false);
     };
 
     fetchHistory();
