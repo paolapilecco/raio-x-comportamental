@@ -211,8 +211,9 @@ export default function Checkout() {
                         Selecionado
                       </div>
                     )}
-                  </button>
-                ))}
+                   </button>
+                    );
+                  })}
               </div>
 
               <button
