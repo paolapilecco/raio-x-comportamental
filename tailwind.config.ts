@@ -66,6 +66,10 @@ export default {
         "surface-elevated": "hsl(var(--surface-elevated))",
         heading: "hsl(var(--heading))",
         subtle: "hsl(var(--subtle))",
+        gold: "hsl(var(--gold))",
+        "gold-subtle": "hsl(var(--gold-subtle))",
+        navy: "hsl(var(--navy))",
+        "navy-light": "hsl(var(--navy-light))",
       },
       borderRadius: {
         lg: "var(--radius)",

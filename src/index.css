@@ -2,99 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 40 25% 97%;
-    --foreground: 220 18% 13%;
+    --background: 225 20% 97%;
+    --foreground: 225 25% 10%;
 
-    --card: 40 20% 99%;
-    --card-foreground: 220 18% 13%;
+    --card: 225 18% 99%;
+    --card-foreground: 225 25% 10%;
 
-    --popover: 40 20% 99%;
-    --popover-foreground: 220 18% 13%;
+    --popover: 225 18% 99%;
+    --popover-foreground: 225 25% 10%;
 
-    --primary: 195 55% 22%;
-    --primary-foreground: 40 25% 97%;
+    --primary: 210 45% 18%;
+    --primary-foreground: 45 30% 96%;
 
-    --secondary: 35 20% 92%;
-    --secondary-foreground: 220 18% 13%;
+    --secondary: 45 18% 93%;
+    --secondary-foreground: 225 25% 10%;
 
-    --muted: 35 15% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 225 12% 93%;
+    --muted-foreground: 225 10% 46%;
 
-    --accent: 38 72% 50%;
-    --accent-foreground: 220 18% 13%;
+    --accent: 35 85% 52%;
+    --accent-foreground: 225 25% 10%;
 
     --destructive: 0 72% 51%;
-    --destructive-foreground: 40 25% 97%;
+    --destructive-foreground: 45 30% 96%;
 
-    --border: 35 18% 88%;
-    --input: 35 18% 88%;
-    --ring: 195 55% 22%;
+    --border: 225 15% 89%;
+    --input: 225 15% 89%;
+    --ring: 210 45% 18%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 40 20% 96%;
-    --sidebar-foreground: 220 10% 30%;
-    --sidebar-primary: 195 55% 22%;
-    --sidebar-primary-foreground: 40 25% 97%;
-    --sidebar-accent: 35 20% 92%;
-    --sidebar-accent-foreground: 220 18% 13%;
-    --sidebar-border: 35 18% 88%;
-    --sidebar-ring: 195 55% 22%;
+    --sidebar-background: 225 18% 96%;
+    --sidebar-foreground: 225 10% 30%;
+    --sidebar-primary: 210 45% 18%;
+    --sidebar-primary-foreground: 45 30% 96%;
+    --sidebar-accent: 45 18% 93%;
+    --sidebar-accent-foreground: 225 25% 10%;
+    --sidebar-border: 225 15% 89%;
+    --sidebar-ring: 210 45% 18%;
 
     /* Custom tokens */
-    --surface: 40 18% 95%;
+    --surface: 225 15% 95%;
     --surface-elevated: 0 0% 100%;
-    --heading: 220 20% 10%;
-    --subtle: 220 10% 56%;
-    --intensity-low: 152 45% 45%;
-    --intensity-moderate: 38 72% 50%;
+    --heading: 225 30% 8%;
+    --subtle: 225 10% 52%;
+    --intensity-low: 160 50% 40%;
+    --intensity-moderate: 35 85% 52%;
     --intensity-high: 0 65% 52%;
-    --progress-bar: 195 55% 22%;
-    --progress-track: 35 18% 88%;
+    --progress-bar: 210 45% 18%;
+    --progress-track: 225 15% 89%;
+
+    /* Premium tokens */
+    --gold: 38 78% 58%;
+    --gold-subtle: 38 40% 90%;
+    --navy: 210 45% 18%;
+    --navy-light: 210 30% 30%;
+    --warm-bg: 40 20% 96%;
   }
 
   .dark {
-    --background: 220 18% 8%;
-    --foreground: 40 15% 90%;
-    --card: 220 16% 11%;
-    --card-foreground: 40 15% 90%;
-    --popover: 220 16% 11%;
-    --popover-foreground: 40 15% 90%;
-    --primary: 195 50% 45%;
-    --primary-foreground: 220 18% 8%;
-    --secondary: 220 14% 16%;
-    --secondary-foreground: 40 15% 90%;
-    --muted: 220 14% 16%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 38 72% 50%;
-    --accent-foreground: 220 18% 8%;
+    --background: 225 22% 7%;
+    --foreground: 45 12% 88%;
+    --card: 225 20% 10%;
+    --card-foreground: 45 12% 88%;
+    --popover: 225 20% 10%;
+    --popover-foreground: 45 12% 88%;
+    --primary: 210 40% 52%;
+    --primary-foreground: 225 22% 7%;
+    --secondary: 225 16% 15%;
+    --secondary-foreground: 45 12% 88%;
+    --muted: 225 16% 15%;
+    --muted-foreground: 225 10% 52%;
+    --accent: 35 80% 52%;
+    --accent-foreground: 225 22% 7%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 40 15% 90%;
-    --border: 220 14% 20%;
-    --input: 220 14% 20%;
-    --ring: 195 50% 45%;
-    --sidebar-background: 220 18% 8%;
-    --sidebar-foreground: 40 15% 85%;
-    --sidebar-primary: 195 50% 45%;
-    --sidebar-primary-foreground: 220 18% 8%;
-    --sidebar-accent: 220 14% 16%;
-    --sidebar-accent-foreground: 40 15% 90%;
-    --sidebar-border: 220 14% 20%;
-    --sidebar-ring: 195 50% 45%;
+    --destructive-foreground: 45 12% 88%;
+    --border: 225 16% 18%;
+    --input: 225 16% 18%;
+    --ring: 210 40% 52%;
+    --sidebar-background: 225 22% 7%;
+    --sidebar-foreground: 45 12% 82%;
+    --sidebar-primary: 210 40% 52%;
+    --sidebar-primary-foreground: 225 22% 7%;
+    --sidebar-accent: 225 16% 15%;
+    --sidebar-accent-foreground: 45 12% 88%;
+    --sidebar-border: 225 16% 18%;
+    --sidebar-ring: 210 40% 52%;
 
-    --surface: 220 16% 12%;
-    --surface-elevated: 220 14% 15%;
-    --heading: 40 15% 92%;
-    --subtle: 220 10% 55%;
-    --intensity-low: 152 45% 45%;
-    --intensity-moderate: 38 72% 50%;
+    --surface: 225 20% 11%;
+    --surface-elevated: 225 18% 14%;
+    --heading: 45 12% 92%;
+    --subtle: 225 10% 52%;
+    --intensity-low: 160 50% 40%;
+    --intensity-moderate: 35 80% 52%;
     --intensity-high: 0 65% 52%;
-    --progress-bar: 195 50% 45%;
-    --progress-track: 220 14% 20%;
+    --progress-bar: 210 40% 52%;
+    --progress-track: 225 16% 18%;
+
+    --gold: 38 78% 58%;
+    --gold-subtle: 38 20% 18%;
+    --navy: 210 40% 52%;
+    --navy-light: 210 30% 62%;
+    --warm-bg: 225 20% 9%;
   }
 }
 
@@ -103,7 +116,6 @@
     @apply border-border;
   }
 
-  /* Skip to content - accessibility */
   .skip-to-content {
     @apply sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[10000] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-primary focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg;
   }
@@ -115,39 +127,21 @@
     line-height: 1.7;
     letter-spacing: -0.01em;
     font-feature-settings: 'liga' 1, 'kern' 1;
-    background:
-      radial-gradient(ellipse 80% 60% at 50% 0%, hsl(200 20% 94%) 0%, hsl(var(--background)) 70%),
-      hsl(var(--background));
+    background: hsl(var(--background));
     min-height: 100vh;
   }
 
-  /* Grain overlay */
+  /* Subtle grain */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
     z-index: 9999;
     pointer-events: none;
-    opacity: 0.035;
+    opacity: 0.025;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 200px 200px;
-  }
-
-  /* Subtle analytical grid */
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.025;
-    background-image:
-      linear-gradient(hsl(200 30% 50% / 0.15) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(200 30% 50% / 0.15) 1px, transparent 1px);
-    background-size: 80px 80px;
-    mask-image: radial-gradient(ellipse 70% 50% at 50% 30%, black 0%, transparent 80%);
-    -webkit-mask-image: radial-gradient(ellipse 70% 50% at 50% 30%, black 0%, transparent 80%);
   }
 
   #root {
@@ -163,8 +157,8 @@
   }
 
   h1 {
-    letter-spacing: -0.035em;
-    line-height: 1.05;
+    letter-spacing: -0.04em;
+    line-height: 1.0;
   }
 
   h2 {
@@ -176,23 +170,19 @@
     line-height: 1.75;
   }
 
-  /* Enhanced focus-visible for all interactive elements */
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-ring rounded-sm;
   }
 
-  /* Better selection color */
   ::selection {
-    background-color: hsl(var(--primary) / 0.15);
+    background-color: hsl(var(--primary) / 0.12);
     color: hsl(var(--foreground));
   }
 
-  /* Smooth scroll */
   html {
     scroll-behavior: smooth;
   }
 
-  /* Reduced motion preference */
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -240,12 +230,26 @@
     background-color: hsl(var(--intensity-high));
   }
 
-  /* Loading skeleton animation */
   .skeleton-pulse {
     @apply animate-pulse bg-muted/50 rounded-lg;
   }
 
-  /* Better touch targets for mobile */
+  .font-display {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+
+  .text-gold {
+    color: hsl(var(--gold));
+  }
+
+  .bg-gold {
+    background-color: hsl(var(--gold));
+  }
+
+  .bg-gold-subtle {
+    background-color: hsl(var(--gold-subtle));
+  }
+
   @media (pointer: coarse) {
     button, a, [role="button"] {
       min-height: 44px;
