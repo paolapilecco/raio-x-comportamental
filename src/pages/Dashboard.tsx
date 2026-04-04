@@ -342,7 +342,7 @@ const Dashboard = () => {
               <div>
                 <h3 className="text-xl font-semibold text-foreground">Comece sua análise</h3>
                 <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed">
-                  Faça seu primeiro teste para descobrir seu padrão comportamental dominante.
+                  Faça sua primeira leitura para descobrir seu padrão comportamental dominante.
                 </p>
               </div>
               <button
