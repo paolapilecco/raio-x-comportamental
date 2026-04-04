@@ -60,18 +60,21 @@ export default function AdminSubscriptions() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [subsRes, historyRes] = await Promise.all([
-        supabase.from('subscriptions').select('*, profiles!subscriptions_user_id_fkey(name)').order('created_at', { ascending: false }),
+      const [subsRes, historyRes, profilesRes] = await Promise.all([
+        supabase.from('subscriptions').select('*').order('created_at', { ascending: false }),
         supabase.from('plan_change_history').select('*').order('changed_at', { ascending: false }).limit(50),
+        supabase.from('profiles').select('user_id, name'),
       ]);
 
-      // If the join fails, try without it
-      if (subsRes.error) {
-        const { data } = await supabase.from('subscriptions').select('*').order('created_at', { ascending: false });
-        setSubs((data || []) as Subscription[]);
-      } else {
-        setSubs((subsRes.data || []) as Subscription[]);
-      }
+      const profileMap: Record<string, string> = {};
+      (profilesRes.data || []).forEach((p: any) => { profileMap[p.user_id] = p.name; });
+
+      const subsWithProfiles = (subsRes.data || []).map((s: any) => ({
+        ...s,
+        profiles: profileMap[s.user_id] ? { name: profileMap[s.user_id] } : null,
+      }));
+
+      setSubs(subsWithProfiles as Subscription[]);
       setHistory((historyRes.data || []) as PlanChange[]);
     } catch {
       toast.error('Erro ao carregar assinaturas');
