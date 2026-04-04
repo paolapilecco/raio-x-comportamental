@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, Layers, TrendingUp } from 'lucide-react';
+import { toast } from 'sonner';
 import { patternDefinitions } from '@/data/patterns';
 import type { PatternKey } from '@/types/diagnostic';
 
@@ -32,42 +33,48 @@ const Profile = () => {
     if (!user) return;
 
     const fetchData = async () => {
-      const { data: cp } = await supabase
-        .from('user_central_profile')
-        .select('*')
-        .eq('user_id', user.id)
-        .maybeSingle();
+      try {
+        const { data: cp } = await supabase
+          .from('user_central_profile')
+          .select('*')
+          .eq('user_id', user.id)
+          .maybeSingle();
 
-      if (cp) {
-        setCentralProfile({
-          dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
-          aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
-          tests_completed: cp.tests_completed,
-          mental_state: cp.mental_state,
-          core_pain: cp.core_pain,
-          key_unlock_area: cp.key_unlock_area,
-          profile_name: cp.profile_name,
-          last_test_at: cp.last_test_at,
-        });
+        if (cp) {
+          setCentralProfile({
+            dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
+            aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
+            tests_completed: cp.tests_completed,
+            mental_state: cp.mental_state,
+            core_pain: cp.core_pain,
+            key_unlock_area: cp.key_unlock_area,
+            profile_name: cp.profile_name,
+            last_test_at: cp.last_test_at,
+          });
+        }
+
+        const { data: sessions } = await supabase
+          .from('diagnostic_sessions')
+          .select('test_module_id')
+          .eq('user_id', user.id)
+          .not('completed_at', 'is', null)
+          .not('test_module_id', 'is', null);
+
+        const uniqueModules = new Set(sessions?.map(s => s.test_module_id) || []);
+        setCompletedCount(uniqueModules.size);
+
+        const { count } = await supabase
+          .from('test_modules')
+          .select('*', { count: 'exact', head: true })
+          .eq('is_active', true);
+
+        setTotalModules(count || 0);
+      } catch (err) {
+        console.error('Error loading profile data:', err);
+        toast.error('Erro ao carregar perfil. Tente novamente.');
+      } finally {
+        setLoading(false);
       }
-
-      const { data: sessions } = await supabase
-        .from('diagnostic_sessions')
-        .select('test_module_id')
-        .eq('user_id', user.id)
-        .not('completed_at', 'is', null)
-        .not('test_module_id', 'is', null);
-
-      const uniqueModules = new Set(sessions?.map(s => s.test_module_id) || []);
-      setCompletedCount(uniqueModules.size);
-
-      const { count } = await supabase
-        .from('test_modules')
-        .select('*', { count: 'exact', head: true })
-        .eq('is_active', true);
-
-      setTotalModules(count || 0);
-      setLoading(false);
     };
 
     fetchData();

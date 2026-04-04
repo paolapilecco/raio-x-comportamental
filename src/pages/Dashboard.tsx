@@ -162,37 +162,42 @@ const Dashboard = () => {
   useEffect(() => {
     if (!user) return;
     const fetchData = async () => {
-      const [cpRes, sessionsRes, modulesRes] = await Promise.all([
-        supabase.from('user_central_profile').select('*').eq('user_id', user.id).maybeSingle(),
-        supabase.from('diagnostic_sessions').select('id, test_module_id').eq('user_id', user.id).not('completed_at', 'is', null).order('completed_at', { ascending: false }),
-        supabase.from('test_modules').select('id, slug, name, description, icon, question_count').eq('is_active', true).order('sort_order'),
-      ]);
+      try {
+        const [cpRes, sessionsRes, modulesRes] = await Promise.all([
+          supabase.from('user_central_profile').select('*').eq('user_id', user.id).maybeSingle(),
+          supabase.from('diagnostic_sessions').select('id, test_module_id').eq('user_id', user.id).not('completed_at', 'is', null).order('completed_at', { ascending: false }),
+          supabase.from('test_modules').select('id, slug, name, description, icon, question_count').eq('is_active', true).order('sort_order'),
+        ]);
 
-      if (cpRes.data) {
-        const cp = cpRes.data;
-        setCentralProfile({
-          dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
-          aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
-          tests_completed: cp.tests_completed,
-          mental_state: cp.mental_state,
-          core_pain: cp.core_pain,
-          key_unlock_area: cp.key_unlock_area,
-          profile_name: cp.profile_name,
-          last_test_at: cp.last_test_at,
-        });
+        if (cpRes.data) {
+          const cp = cpRes.data;
+          setCentralProfile({
+            dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
+            aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
+            tests_completed: cp.tests_completed,
+            mental_state: cp.mental_state,
+            core_pain: cp.core_pain,
+            key_unlock_area: cp.key_unlock_area,
+            profile_name: cp.profile_name,
+            last_test_at: cp.last_test_at,
+          });
+        }
+
+        const sessions = sessionsRes.data || [];
+        setSessionCount(sessions.length);
+        setCompletedModules(new Set(sessions.map(s => s.test_module_id).filter(Boolean) as string[]));
+        setModules((modulesRes.data as TestModule[]) || []);
+
+        if (sessions.length > 0) {
+          const { data: result } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).single();
+          setLatestResult(result);
+        }
+      } catch (err) {
+        console.error('Error loading dashboard data:', err);
+        toast.error('Erro ao carregar dados. Tente recarregar a página.');
+      } finally {
+        setLoading(false);
       }
-
-      const sessions = sessionsRes.data || [];
-      setSessionCount(sessions.length);
-      setCompletedModules(new Set(sessions.map(s => s.test_module_id).filter(Boolean) as string[]));
-      setModules((modulesRes.data as TestModule[]) || []);
-
-      if (sessions.length > 0) {
-        const { data: result } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).single();
-        setLatestResult(result);
-      }
-
-      setLoading(false);
     };
     fetchData();
   }, [user]);
