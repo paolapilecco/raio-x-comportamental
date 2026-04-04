@@ -4,10 +4,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Brain, LogOut, History, LayoutGrid, Layers, User, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X } from 'lucide-react';
+import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
+import { AppLayout } from '@/components/AppLayout';
 import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 
 interface StoredResult {
@@ -206,11 +207,6 @@ const Dashboard = () => {
     fetchData();
   }, [user]);
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
   const handleDownloadPdf = () => {
     if (!latestResult) return;
     const dominantDef = patternDefinitions[latestResult.dominant_pattern as PatternKey];
@@ -244,13 +240,16 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
-      </div>
+      <AppLayout>
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
+        </div>
+      </AppLayout>
     );
   }
 
   const displayName = profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário';
+  const fullName = profile?.name || user?.email?.split('@')[0] || 'Usuário';
   const hasData = !!latestResult || (centralProfile && centralProfile.tests_completed > 0);
 
   const radarData = centralProfile
@@ -260,52 +259,17 @@ const Dashboard = () => {
     : [];
 
   return (
-    <div className="min-h-screen bg-background" role="main" aria-label="Dashboard">
-      {/* Header */}
-      <header className="border-b border-border/30 bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex items-center justify-between px-6 md:px-8 h-16">
-          <div className="flex items-center gap-3">
-            <span className="text-base font-semibold text-foreground tracking-tight">Raio-X</span>
-            {isSuperAdmin && (
-              <span className="text-[10px] font-medium px-2.5 py-1 rounded-lg bg-primary/10 text-primary">Admin</span>
-            )}
-            {isPremium && !isSuperAdmin && (
-              <span className="text-[10px] font-medium px-2.5 py-1 rounded-lg bg-accent/15 text-accent">Premium</span>
-            )}
-          </div>
-          <div className="flex items-center gap-1">
-            {!isPremium && !isSuperAdmin && (
-              <button
-                onClick={() => navigate('/checkout')}
-                className="text-xs font-medium mr-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:brightness-90 transition-all duration-200 active:scale-[0.97]"
-              >
-                Upgrade
-              </button>
-            )}
-            <button onClick={() => navigate('/profile')} className="text-muted-foreground hover:text-foreground transition-all duration-200 p-2.5 rounded-xl hover:bg-secondary/50">
-              <User className="w-4 h-4" />
-            </button>
-            <button onClick={handleSignOut} className="text-muted-foreground hover:text-foreground transition-all duration-200 p-2.5 rounded-xl hover:bg-secondary/50">
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-5xl mx-auto px-6 md:px-8 py-10 space-y-12">
+    <AppLayout>
+      <div className="max-w-6xl mx-auto px-6 md:px-10 py-10 space-y-10">
 
         {/* Hero greeting */}
         <motion.section {...fadeIn} className="space-y-2">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-foreground">
-            Olá, {displayName}
+          <h1 className="text-3xl md:text-[2.5rem] font-semibold tracking-tight text-foreground leading-tight">
+            Bem-vindo, {displayName}.
           </h1>
-          {centralProfile?.mental_state ? (
-            <p className="text-base text-muted-foreground leading-relaxed max-w-xl">{centralProfile.mental_state}</p>
-          ) : (
-            <p className="text-base text-muted-foreground leading-relaxed max-w-xl">
-              Acompanhe seus padrões comportamentais e evolução pessoal.
-            </p>
-          )}
+          <p className="text-base text-muted-foreground leading-relaxed max-w-xl">
+            Avalie perfis comportamentais detalhados com base em suas respostas, {displayName}.
+          </p>
         </motion.section>
 
         {/* Super Admin tools */}
@@ -322,167 +286,54 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Complete profile nudge */}
-        {!isSuperAdmin && !profile && (
-          <motion.div {...fadeIn} className="flex items-center justify-between bg-card rounded-2xl p-6 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] border border-border/30">
-            <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-secondary/80 flex items-center justify-center">
-                <User className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Complete seu perfil</p>
-                <p className="text-xs text-muted-foreground mt-0.5">Adicione nome e data de nascimento para personalizar sua experiência.</p>
-              </div>
-            </div>
-            <button onClick={() => navigate('/onboarding')} className="text-xs font-medium text-primary hover:text-primary/80 transition-colors whitespace-nowrap">
-              Completar →
-            </button>
-          </motion.div>
-        )}
-
-        {/* Stats overview */}
-        <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.05 }}>
-          <div className="grid grid-cols-3 gap-5">
-            {[
-              { value: sessionCount, label: sessionCount === 1 ? 'Leitura realizada' : 'Leituras realizadas', accent: false },
-              { value: centralProfile?.dominant_patterns?.length || 0, label: 'Padrões identificados', accent: false },
-              { value: role === 'super_admin' ? 'Admin' : role === 'premium' ? 'Premium' : 'Free', label: 'Seu plano', accent: role === 'premium' },
-            ].map((stat, i) => (
-              <div key={i} className="bg-card rounded-2xl p-6 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] border border-border/30 text-center">
-                <p className={`text-2xl font-semibold capitalize ${stat.accent ? 'text-accent' : 'text-foreground'}`}>
-                  {stat.value}
-                </p>
-                <p className="text-xs text-muted-foreground mt-2 font-light">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </motion.section>
-
-        {/* Quick navigation */}
-        <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.1 }}>
-          <h2 className="text-lg font-semibold text-foreground mb-5">Navegação rápida</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { icon: LayoutGrid, label: 'Testes', desc: 'Módulos de análise', path: '/tests', locked: false },
-              { icon: Layers, label: 'Relatório Central', desc: 'Perfil unificado', path: '/central-report', locked: !isPremium },
-              { icon: History, label: 'Histórico', desc: 'Leituras anteriores', path: '/history', locked: !isPremium },
-              { icon: TrendingUp, label: 'Evolução', desc: 'Progresso temporal', path: '/central-report', locked: !isPremium },
-            ].map((item, i) => (
-              <button
-                key={i}
-                onClick={() => item.locked ? toast.info('Disponível no plano Premium') : navigate(item.path)}
-                className={`group text-left bg-card rounded-2xl p-6 transition-all duration-200 border ${
-                  item.locked
-                    ? 'border-border/20 opacity-50 cursor-default'
-                    : 'border-border/30 hover:border-primary/20 hover:shadow-[0_2px_8px_0_rgb(0_0_0/0.06)] cursor-pointer active:scale-[0.98]'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                    item.locked ? 'bg-secondary/40' : 'bg-secondary/80 group-hover:bg-primary/10'
-                  } transition-colors duration-200`}>
-                    {item.locked
-                      ? <Lock className="w-4 h-4 text-muted-foreground/30" />
-                      : <item.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
-                    }
-                  </div>
-                  {item.locked && <span className="text-[10px] font-medium text-muted-foreground/60">Premium</span>}
-                </div>
-                <p className="text-sm font-medium text-foreground">{item.label}</p>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.desc}</p>
-              </button>
-            ))}
-          </div>
-        </motion.section>
-
-        {/* Central Profile */}
-        {centralProfile && centralProfile.tests_completed > 0 && (
-          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.15 }}>
-            <div className="bg-card rounded-2xl p-8 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] border border-border/30">
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">Perfil Central</h2>
-                  <p className="text-xs text-muted-foreground mt-1 font-light">Visão consolidada dos seus padrões</p>
-                </div>
-                <span className="text-xs text-muted-foreground font-light px-3 py-1.5 rounded-lg bg-secondary/60">
-                  {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}
-                </span>
-              </div>
-              <div className="grid sm:grid-cols-2 gap-10">
-                <div className="space-y-7">
-                  <div>
-                    <p className="text-[11px] text-muted-foreground/70 uppercase tracking-widest mb-2 font-light">Perfil Dominante</p>
-                    <p className="text-lg font-semibold text-foreground">{centralProfile.profile_name || '-'}</p>
-                  </div>
-                  {centralProfile.core_pain && (
-                    <div>
-                      <p className="text-[11px] text-muted-foreground/70 uppercase tracking-widest mb-2 font-light">Dor Central</p>
-                      <p className="text-sm text-foreground/70 leading-relaxed">{centralProfile.core_pain}</p>
+        {/* Test modules - main grid matching reference */}
+        {modules.length > 0 && (
+          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.1 }}>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {modules.map((mod) => {
+                const Icon = iconMap[mod.icon] || Brain;
+                const isFreeTest = mod.slug === 'padrao-comportamental';
+                const canAccess = isSuperAdmin || isPremium || isFreeTest;
+                const isCompleted = completedModules.has(mod.id);
+                return (
+                  <div
+                    key={mod.id}
+                    className="bg-card rounded-2xl p-7 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] hover:shadow-[0_4px_12px_0_rgb(0_0_0/0.06)] hover:border-border/50 transition-all duration-200"
+                  >
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-xl bg-secondary/80 flex items-center justify-center">
+                        {canAccess
+                          ? <Icon className="w-[18px] h-[18px] text-primary" />
+                          : <Lock className="w-[18px] h-[18px] text-muted-foreground/40" />
+                        }
+                      </div>
+                      {isCompleted && canAccess && (
+                        <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center ml-auto">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {centralProfile.key_unlock_area && (
-                    <div>
-                      <p className="text-[11px] text-muted-foreground/70 uppercase tracking-widest mb-2 font-light">Área-chave de Desbloqueio</p>
-                      <p className="text-sm text-foreground/70 leading-relaxed">{centralProfile.key_unlock_area}</p>
-                    </div>
-                  )}
-                </div>
-                {radarData.length > 0 && (
-                  <div className="flex items-center justify-center">
-                    <ResponsiveContainer width="100%" height={240}>
-                      <RadarChart data={radarData}>
-                        <PolarGrid stroke="hsl(var(--border))" strokeOpacity={0.6} />
-                        <PolarAngleAxis dataKey="axis" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
-                        <Radar name="Intensidade" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.08} strokeWidth={1.5} />
-                      </RadarChart>
-                    </ResponsiveContainer>
+                    <h3 className="text-base font-semibold text-foreground mb-2">{mod.name}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-2">{mod.description}</p>
+                    <button
+                      onClick={() => canAccess ? navigate(`/diagnostic/${mod.slug}`) : setShowUpgradeModal(true)}
+                      className={`w-full py-3 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
+                        canAccess
+                          ? 'bg-primary text-primary-foreground hover:brightness-90'
+                          : 'bg-muted text-muted-foreground cursor-default'
+                      }`}
+                    >
+                      {canAccess ? 'Iniciar Teste' : 'Premium'}
+                    </button>
                   </div>
-                )}
-              </div>
-            </div>
-          </motion.section>
-        )}
-
-        {/* Latest result */}
-        {latestResult && (
-          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.2 }}>
-            <div className="bg-card rounded-2xl p-8 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] border border-border/30">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-semibold text-foreground">Última Leitura</h2>
-                  <p className="text-xs text-muted-foreground mt-1 font-light">Resultado mais recente</p>
-                </div>
-                <button
-                  onClick={handleDownloadPdf}
-                  className="text-xs text-muted-foreground hover:text-foreground transition-all duration-200 px-3 py-1.5 rounded-lg hover:bg-secondary/50"
-                >
-                  Baixar PDF
-                </button>
-              </div>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-lg font-semibold text-foreground">{latestResult.profile_name}</p>
-                  <div className="flex items-center gap-3 flex-wrap mt-2">
-                    <span className="text-sm text-muted-foreground">{latestResult.combined_title}</span>
-                    <span className="text-xs font-semibold px-2.5 py-1 rounded-lg" style={{ color: intensityColor[latestResult.intensity], backgroundColor: `${intensityColor[latestResult.intensity]}10` }}>
-                      {intensityLabel[latestResult.intensity] || latestResult.intensity}
-                    </span>
-                  </div>
-                </div>
-                <p className="text-sm text-muted-foreground leading-relaxed">{latestResult.state_summary}</p>
-                {latestResult.direction && (
-                  <div className="border-l-2 border-primary/30 pl-5 py-1">
-                    <p className="text-[11px] text-muted-foreground/70 uppercase tracking-widest mb-1.5 font-light">Foco Atual</p>
-                    <p className="text-sm text-foreground/70 leading-relaxed">{latestResult.direction}</p>
-                  </div>
-                )}
-              </div>
+                );
+              })}
             </div>
           </motion.section>
         )}
 
         {/* Empty state */}
-        {!hasData && !isSuperAdmin && (
+        {!hasData && modules.length === 0 && !isSuperAdmin && (
           <motion.section {...fadeIn}>
             <div className="bg-card border border-dashed border-border/40 rounded-2xl p-16 text-center space-y-6">
               <div className="w-14 h-14 rounded-2xl bg-secondary/60 flex items-center justify-center mx-auto">
@@ -501,6 +352,60 @@ const Dashboard = () => {
                 Ver módulos
                 <ArrowRight className="w-4 h-4" />
               </button>
+            </div>
+          </motion.section>
+        )}
+
+        {/* Seus Perfis section */}
+        {hasData && (
+          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.15 }}>
+            <h2 className="text-2xl font-semibold text-foreground mb-6">Seus Perfis</h2>
+            <div className="grid sm:grid-cols-2 gap-6">
+              {/* Latest result card */}
+              {latestResult && (
+                <div className="bg-card rounded-2xl p-7 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] hover:shadow-[0_4px_12px_0_rgb(0_0_0/0.06)] transition-all duration-200">
+                  <h4 className="text-base font-semibold text-foreground mb-2">{latestResult.combined_title || 'Perfil Comportamental'}</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-muted-foreground">{latestResult.profile_name}</span>
+                    <span
+                      className="text-xs font-semibold px-2.5 py-1 rounded-lg"
+                      style={{ color: intensityColor[latestResult.intensity], backgroundColor: `${intensityColor[latestResult.intensity]}10` }}
+                    >
+                      {intensityLabel[latestResult.intensity] || latestResult.intensity}
+                    </span>
+                  </div>
+                  <div className="w-full h-2 rounded-full bg-secondary/60 mb-3">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-500"
+                      style={{ width: `${latestResult.all_scores?.[0]?.percentage || 60}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{new Date(latestResult.created_at).toLocaleDateString('pt-BR', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
+                    <button onClick={handleDownloadPdf} className="text-primary hover:underline transition-colors">Ver resultados</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Central profile card */}
+              {centralProfile && centralProfile.tests_completed > 0 && (
+                <div className="bg-card rounded-2xl p-7 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] hover:shadow-[0_4px_12px_0_rgb(0_0_0/0.06)] transition-all duration-200">
+                  <h4 className="text-base font-semibold text-foreground mb-2">Perfil Central</h4>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-muted-foreground">{centralProfile.profile_name || 'Consolidado'}</span>
+                    <span className="text-xs font-medium px-2.5 py-1 rounded-lg bg-accent/15 text-accent">
+                      {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}
+                    </span>
+                  </div>
+                  {centralProfile.core_pain && (
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3 line-clamp-2">{centralProfile.core_pain}</p>
+                  )}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{centralProfile.last_test_at ? new Date(centralProfile.last_test_at).toLocaleDateString('pt-BR', { month: 'long', day: 'numeric', year: 'numeric' }) : ''}</span>
+                    <button onClick={() => navigate('/central-report')} className="text-primary hover:underline transition-colors">Ver resultados</button>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.section>
         )}
@@ -527,84 +432,6 @@ const Dashboard = () => {
             </div>
           </motion.section>
         )}
-
-        {/* Test modules */}
-        {modules.length > 0 && (
-          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.3 }}>
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-semibold text-foreground">Módulos de Análise</h2>
-                <p className="text-xs text-muted-foreground mt-1 font-light">Escolha um teste para iniciar sua leitura</p>
-              </div>
-              <button onClick={() => navigate('/tests')} className="text-xs text-muted-foreground hover:text-foreground transition-all duration-200 px-3 py-1.5 rounded-lg hover:bg-secondary/50">
-                Ver todos →
-              </button>
-            </div>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {modules.map((mod) => {
-                const Icon = iconMap[mod.icon] || Brain;
-                const isFreeTest = mod.slug === 'padrao-comportamental';
-                const canAccess = isSuperAdmin || isPremium || isFreeTest;
-                const isCompleted = completedModules.has(mod.id);
-                return (
-                  <div
-                    key={mod.id}
-                    onClick={() => canAccess ? navigate(`/diagnostic/${mod.slug}`) : setShowUpgradeModal(true)}
-                    className={`group bg-card rounded-2xl p-6 transition-all duration-200 cursor-pointer border ${
-                      canAccess
-                        ? 'border-border/30 hover:border-primary/20 hover:shadow-[0_2px_8px_0_rgb(0_0_0/0.06)] active:scale-[0.98]'
-                        : 'border-border/20 opacity-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                        canAccess ? 'bg-secondary/80 group-hover:bg-primary/10' : 'bg-secondary/40'
-                      } transition-colors duration-200`}>
-                        {canAccess
-                          ? <Icon className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors duration-200" />
-                          : <Lock className="w-4 h-4 text-muted-foreground/30" />
-                        }
-                      </div>
-                      {isCompleted && canAccess && (
-                        <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60 font-light">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Concluído
-                        </span>
-                      )}
-                      {!canAccess && <span className="text-[10px] font-medium text-muted-foreground/50">Premium</span>}
-                    </div>
-                    <h4 className="text-sm font-medium text-foreground mb-1.5">{mod.name}</h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">{mod.description}</p>
-                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground/50 mt-4 font-light">
-                      <span>~{Math.ceil(mod.question_count * 0.5)} min</span>
-                      <span className="w-1 h-1 rounded-full bg-border" />
-                      <span>{mod.question_count} itens</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.section>
-        )}
-
-        {/* Bottom actions */}
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pb-10 pt-6">
-          <button
-            onClick={() => navigate('/tests')}
-            className="inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:brightness-90 transition-all duration-200 active:scale-[0.97]"
-          >
-            {hasData ? 'Nova leitura' : 'Começar teste'}
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          {hasData && (
-            <button
-              onClick={() => navigate('/history')}
-              className="inline-flex items-center justify-center gap-2 px-7 py-3.5 border border-border/40 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-all duration-200 active:scale-[0.97]"
-            >
-              Ver histórico
-            </button>
-          )}
-        </div>
       </div>
 
       {/* Upgrade Modal */}
@@ -652,7 +479,7 @@ const Dashboard = () => {
           </motion.div>
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 };
 
