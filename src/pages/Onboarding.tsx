@@ -8,10 +8,12 @@ import { z } from 'zod';
 import { ScanLine } from 'lucide-react';
 
 const nameSchema = z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100);
+const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido');
 
 const Onboarding = () => {
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [cpf, setCpf] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -24,6 +26,13 @@ const Onboarding = () => {
       toast.error(nameResult.error.errors[0].message);
       return;
     }
+
+    const cpfResult = cpfSchema.safeParse(cpf);
+    if (!cpfResult.success) {
+      toast.error(cpfResult.error.errors[0].message);
+      return;
+    }
+    const cleanCpf = cpf.replace(/\D/g, '');
 
     if (!birthDate) {
       toast.error('Informe sua data de nascimento');
@@ -43,6 +52,7 @@ const Onboarding = () => {
         user_id: user!.id,
         name: nameResult.data,
         birth_date: birthDate,
+        cpf: cleanCpf,
       });
 
       if (error) {
@@ -109,6 +119,26 @@ const Onboarding = () => {
               onChange={(e) => setBirthDate(e.target.value)}
               required
               max={new Date().toISOString().split('T')[0]}
+              className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
+            />
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="onboarding-cpf" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">CPF</label>
+            <input
+              id="onboarding-cpf"
+              type="text"
+              value={cpf}
+              onChange={(e) => {
+                let v = e.target.value.replace(/\D/g, '').slice(0, 11);
+                if (v.length > 9) v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{1,2})/, '$1.$2.$3-$4');
+                else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{1,3})/, '$1.$2.$3');
+                else if (v.length > 3) v = v.replace(/(\d{3})(\d{1,3})/, '$1.$2');
+                setCpf(v);
+              }}
+              required
+              maxLength={14}
+              placeholder="000.000.000-00"
+              inputMode="numeric"
               className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
             />
           </div>

@@ -10,7 +10,7 @@ import {
 import { toast } from 'sonner';
 
 const PLANS = {
-  monthly: { label: 'Mensal', price: 4.99, priceLabel: 'R$ 4,99', period: '/mês' },
+  monthly: { label: 'Mensal', price: 5.00, priceLabel: 'R$ 5,00', period: '/mês' },
   yearly: { label: 'Anual', price: 49.90, priceLabel: 'R$ 49,90', period: '/ano', savings: 'Economize R$ 9,98' },
 };
 

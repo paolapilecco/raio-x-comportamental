@@ -10,7 +10,7 @@ const corsHeaders = {
 const ASAAS_API_URL = "https://api.asaas.com/v3";
 
 const PLANS = {
-  monthly: { value: 4.99, cycle: "MONTHLY", description: "Plano Premium Mensal" },
+  monthly: { value: 5.00, cycle: "MONTHLY", description: "Plano Premium Mensal" },
   yearly: { value: 49.90, cycle: "YEARLY", description: "Plano Premium Anual" },
 };
 
@@ -89,12 +89,19 @@ serve(async (req) => {
       );
     }
 
-    // Get user profile for name
+    // Get user profile for name and CPF
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("name")
+      .select("name, cpf")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (!profile?.cpf) {
+      return new Response(
+        JSON.stringify({ error: "CPF não encontrado. Atualize seu perfil." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Step 1: Create or find customer in Asaas
     let asaasCustomerId: string;
@@ -122,6 +129,7 @@ serve(async (req) => {
         body: JSON.stringify({
           name: profile?.name || user.email?.split("@")[0] || "Cliente",
           email: user.email,
+          cpfCnpj: profile.cpf,
           externalReference: user.id,
         }),
       });
