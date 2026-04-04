@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { Brain, Zap, Shield, Heart, LogOut, LayoutDashboard, User, CheckCircle2, Clock, Lock, Crown, AlertTriangle } from 'lucide-react';
+import { Brain, Zap, Shield, Heart, LogOut, LayoutDashboard, User, CheckCircle2, Clock, Lock, Crown, AlertTriangle, ArrowRight, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface TestModule {
@@ -48,7 +48,6 @@ const TestCatalog = () => {
 
         const allModules = (mods as TestModule[]) || [];
 
-        // Check question counts from DB for each module
         const moduleIds = allModules.map(m => m.id);
         const { data: questionCounts } = await supabase
           .from('questions')
@@ -60,7 +59,6 @@ const TestCatalog = () => {
           countMap[q.test_id] = (countMap[q.test_id] || 0) + 1;
         });
 
-        // Filter out incomplete tests for non-admin users
         const MIN_QUESTIONS = 10;
         const validModules = allModules.map(m => ({
           ...m,
@@ -68,7 +66,6 @@ const TestCatalog = () => {
           _isIncomplete: (countMap[m.id] || 0) < MIN_QUESTIONS,
         }));
 
-        // Non-admins only see complete tests
         if (isSuperAdmin) {
           setModules(validModules);
         } else {
@@ -109,42 +106,61 @@ const TestCatalog = () => {
   const categories = ['all', ...Array.from(new Set(modules.map(m => m.category)))];
   const filtered = selectedCategory === 'all' ? modules : modules.filter(m => m.category === selectedCategory);
   const completedCount = modules.filter(m => completedModules.has(m.id)).length;
+  const progressPercent = modules.length > 0 ? (completedCount / modules.length) * 100 : 0;
 
   return (
-    <div className="min-h-screen px-4 py-8 md:py-12">
-      <div className="max-w-5xl mx-auto space-y-8">
+    <div className="min-h-screen px-4 py-8 md:py-12 relative overflow-hidden">
+      {/* Ambient background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[5%] left-[50%] w-[600px] h-[600px] rounded-full bg-primary/[0.03] blur-[140px]" />
+        <div className="absolute bottom-[5%] right-[-5%] w-[400px] h-[400px] rounded-full bg-gold/[0.02] blur-[100px]" />
+      </div>
+
+      <div className="max-w-5xl mx-auto space-y-8 relative z-10">
         {/* Header */}
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center justify-between">
           <div>
-            <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Módulos de Leitura</p>
-            <h1 className="text-2xl md:text-3xl mt-1">Olá, {profile?.name?.split(' ')[0]}</h1>
-            <p className="text-[0.82rem] text-muted-foreground/60 mt-1 leading-[1.6]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1, duration: 0.4 }}
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-primary/10 bg-primary/[0.03] mb-3"
+            >
+              <Layers className="w-3 h-3 text-primary/50" />
+              <span className="text-[9px] tracking-[0.35em] uppercase text-primary/60 font-semibold font-display">
+                Módulos de Leitura
+              </span>
+            </motion.div>
+            <h1 className="text-2xl md:text-3xl tracking-[-0.03em]">Olá, {profile?.name?.split(' ')[0]}</h1>
+            <p className="text-[0.82rem] text-muted-foreground/55 mt-1.5 leading-[1.6]">
               Cada leitura alimenta seu Perfil Central unificado
             </p>
           </div>
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/60 hover:text-foreground/80 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-card/60">
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => navigate('/dashboard')} className="flex items-center gap-1.5 text-[0.72rem] text-muted-foreground/50 hover:text-foreground/80 transition-all duration-300 px-3 py-2 rounded-xl hover:bg-card/60 border border-transparent hover:border-border/30">
               <LayoutDashboard className="w-3.5 h-3.5" /> Painel
             </button>
-            <button onClick={() => navigate('/profile')} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/60 hover:text-foreground/80 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-card/60">
+            <button onClick={() => navigate('/profile')} className="flex items-center gap-1.5 text-[0.72rem] text-muted-foreground/50 hover:text-foreground/80 transition-all duration-300 px-3 py-2 rounded-xl hover:bg-card/60 border border-transparent hover:border-border/30">
               <User className="w-3.5 h-3.5" /> Perfil
             </button>
-            <button onClick={async () => { await signOut(); navigate('/'); }} className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground/60 hover:text-foreground/80 transition-colors px-2.5 py-1.5 rounded-lg hover:bg-card/60">
+            <button onClick={async () => { await signOut(); navigate('/'); }} className="flex items-center gap-1.5 text-[0.72rem] text-muted-foreground/50 hover:text-foreground/80 transition-all duration-300 px-3 py-2 rounded-xl hover:bg-card/60 border border-transparent hover:border-border/30">
               <LogOut className="w-3.5 h-3.5" /> Sair
             </button>
           </div>
         </motion.div>
 
         {/* Progress Bar */}
-        <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-5">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[0.8rem] font-medium text-foreground/80">Progresso geral</span>
-            <span className="text-[10px] tracking-[0.2em] uppercase text-muted-foreground/50 font-medium">{completedCount}/{modules.length} módulos</span>
+        <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/40 p-6 shadow-[0_10px_40px_-15px_hsl(var(--primary)/0.06)]">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[0.82rem] font-medium text-foreground/75">Progresso geral</span>
+            <span className="text-[0.72rem] text-muted-foreground/40 font-display font-medium">{completedCount}/{modules.length} módulos · {Math.round(progressPercent)}%</span>
           </div>
-          <div className="w-full bg-muted/30 rounded-full h-[3px]">
-            <div
-              className="bg-primary/70 rounded-full h-[3px] transition-all duration-700"
-              style={{ width: `${modules.length > 0 ? (completedCount / modules.length) * 100 : 0}%` }}
+          <div className="w-full bg-muted/20 rounded-full h-1.5">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${progressPercent}%` }}
+              transition={{ delay: 0.4, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              className="bg-gradient-to-r from-primary/60 to-primary rounded-full h-1.5"
             />
           </div>
         </motion.div>
@@ -155,10 +171,10 @@ const TestCatalog = () => {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-[0.75rem] font-medium transition-all duration-200 ${
+              className={`px-5 py-2.5 rounded-xl text-[0.75rem] font-medium transition-all duration-300 ${
                 selectedCategory === cat
-                  ? 'bg-primary text-primary-foreground shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.3)]'
-                  : 'bg-card/60 text-muted-foreground/60 hover:bg-card hover:text-foreground/80 border border-border/40'
+                  ? 'bg-primary text-primary-foreground shadow-[0_6px_20px_-6px_hsl(var(--primary)/0.4)]'
+                  : 'bg-card/40 backdrop-blur-sm text-muted-foreground/55 hover:bg-card/70 hover:text-foreground/75 border border-border/30 hover:border-border/50'
               }`}
             >
               {cat === 'all' ? 'Todos' : cat}
@@ -174,63 +190,88 @@ const TestCatalog = () => {
             const isFreeTest = mod.slug === 'padrao-comportamental';
             const isIncomplete = mod._isIncomplete;
             const canAccess = !isIncomplete && (isSuperAdmin || isPremium || isFreeTest);
+
             return (
               <motion.div
                 key={mod.id}
                 {...fadeUp}
                 transition={{ delay: 0.05 * (i + 1), duration: 0.4 }}
-                className={`bg-card/70 backdrop-blur-sm rounded-2xl border p-5 transition-all duration-300 relative ${
+                className={`group bg-card/50 backdrop-blur-xl rounded-3xl border p-6 transition-all duration-500 relative overflow-hidden ${
                   isIncomplete
-                    ? 'border-destructive/30 opacity-60 cursor-default'
+                    ? 'border-destructive/25 opacity-60 cursor-default'
                     : canAccess
-                      ? 'border-border/50 hover:border-primary/20 cursor-pointer group'
-                      : 'border-border/30 opacity-70 cursor-default'
+                      ? 'border-border/35 hover:border-primary/25 cursor-pointer hover:shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.1)] hover:translate-y-[-2px]'
+                      : 'border-border/25 opacity-70 cursor-default'
                 }`}
                 onClick={() => canAccess && navigate(`/diagnostic/${mod.slug}`)}
               >
+                {/* Hover glow */}
+                {canAccess && !isIncomplete && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                )}
+
+                {/* Status badges */}
                 {isIncomplete && isSuperAdmin && (
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20">
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-destructive/10 border border-destructive/20">
                     <AlertTriangle className="w-3 h-3 text-destructive/70" />
-                    <span className="text-[0.65rem] font-semibold text-destructive/80 tracking-wide uppercase">Incompleto</span>
+                    <span className="text-[0.6rem] font-bold text-destructive/80 tracking-[0.08em] uppercase font-display">Incompleto</span>
                   </div>
                 )}
                 {isCompleted && canAccess && !isIncomplete && (
-                  <div className="absolute top-3 right-3">
-                    <CheckCircle2 className="w-4.5 h-4.5 text-primary/60" />
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/8 border border-primary/15">
+                    <CheckCircle2 className="w-3 h-3 text-primary/60" />
+                    <span className="text-[0.6rem] font-bold text-primary/60 tracking-[0.08em] uppercase font-display">Concluído</span>
                   </div>
                 )}
                 {!canAccess && !isIncomplete && (
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20">
-                    <Crown className="w-3 h-3 text-amber-500/70" />
-                    <span className="text-[0.65rem] font-semibold text-amber-500/80 tracking-wide uppercase">Premium</span>
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gold/10 border border-gold/20">
+                    <Crown className="w-3 h-3 text-gold/70" />
+                    <span className="text-[0.6rem] font-bold text-gold/80 tracking-[0.08em] uppercase font-display">Premium</span>
                   </div>
                 )}
-                <div className="space-y-4">
-                  <div className="p-2.5 rounded-xl bg-primary/[0.04] border border-primary/10 w-fit">
+
+                <div className="space-y-4 relative z-10">
+                  <div className={`p-3 rounded-2xl w-fit transition-all duration-300 ${
+                    isIncomplete
+                      ? 'bg-destructive/[0.06] border border-destructive/10'
+                      : canAccess
+                        ? 'bg-primary/[0.05] border border-primary/10 group-hover:bg-primary/[0.08] group-hover:border-primary/15'
+                        : 'bg-muted/20 border border-border/20'
+                  }`}>
                     {isIncomplete
                       ? <AlertTriangle className="w-5 h-5 text-destructive/50" />
                       : canAccess
-                        ? <Icon className="w-5 h-5 text-primary/50" />
-                        : <Lock className="w-5 h-5 text-muted-foreground/40" />}
+                        ? <Icon className="w-5 h-5 text-primary/50 group-hover:text-primary/70 transition-colors duration-300" />
+                        : <Lock className="w-5 h-5 text-muted-foreground/35" />}
                   </div>
+
                   <div>
-                    <h3 className="text-[0.95rem] font-medium text-foreground/85 mb-1.5 tracking-[-0.01em]">{mod.name}</h3>
+                    <h3 className="text-[0.95rem] font-medium text-foreground/85 mb-2 tracking-[-0.01em]">{mod.name}</h3>
                     {isIncomplete && isSuperAdmin ? (
                       <p className="text-[0.78rem] text-destructive/60 leading-[1.65]">
-                        Este teste ainda não possui estrutura completa de perguntas ({mod._actualQuestionCount || 0} encontradas, mínimo: 10)
+                        Estrutura incompleta ({mod._actualQuestionCount || 0} perguntas, mínimo: 10)
                       </p>
                     ) : (
-                      <p className="text-[0.78rem] text-muted-foreground/60 leading-[1.65] line-clamp-3">{mod.description}</p>
+                      <p className="text-[0.78rem] text-muted-foreground/55 leading-[1.65] line-clamp-3">{mod.description}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-[0.7rem] text-muted-foreground/45 pt-1">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      ~{Math.ceil(mod.question_count * 0.5)} min
-                    </span>
-                    <span>{mod.question_count} itens</span>
-                    {!canAccess && !isIncomplete && <span className="text-amber-500/60 font-medium">Requer Premium</span>}
+
+                  <div className="flex items-center justify-between pt-2 border-t border-border/20">
+                    <div className="flex items-center gap-3 text-[0.68rem] text-muted-foreground/40 font-display">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        ~{Math.ceil(mod.question_count * 0.5)} min
+                      </span>
+                      <span>{mod.question_count} itens</span>
+                    </div>
+                    {canAccess && !isIncomplete && (
+                      <ArrowRight className="w-3.5 h-3.5 text-primary/30 group-hover:text-primary/60 group-hover:translate-x-1 transition-all duration-300" />
+                    )}
                   </div>
+
+                  {!canAccess && !isIncomplete && (
+                    <p className="text-[0.7rem] text-gold/60 font-medium font-display">Requer assinatura Premium</p>
+                  )}
                 </div>
               </motion.div>
             );

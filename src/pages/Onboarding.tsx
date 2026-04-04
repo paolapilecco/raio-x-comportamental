@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { ScanLine } from 'lucide-react';
+import { ScanLine, ArrowRight, Fingerprint, Shield, Brain } from 'lucide-react';
 
 const nameSchema = z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100);
 const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido');
@@ -74,30 +74,90 @@ const Onboarding = () => {
     }
   };
 
+  const steps = [
+    { icon: Fingerprint, label: 'Identificação', desc: 'Seus dados básicos' },
+    { icon: Brain, label: 'Leitura', desc: 'Responder perguntas' },
+    { icon: Shield, label: 'Resultado', desc: 'Seu perfil revelado' },
+  ];
+
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:py-16" role="main" aria-label="Configuração de perfil">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:py-16 relative overflow-hidden" role="main" aria-label="Configuração de perfil">
+      {/* Ambient background */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-[-15%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/[0.04] blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-gold/[0.03] blur-[100px]" />
+      </div>
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md space-y-10"
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md space-y-10 relative z-10"
       >
-        <div className="text-center space-y-4">
-          <div className="inline-flex items-center gap-2.5 px-5 py-2 rounded-full border border-primary/12 bg-primary/[0.03]">
-            <ScanLine className="w-3.5 h-3.5 text-primary/70" />
-            <span className="text-[10px] tracking-[0.35em] uppercase text-primary/80 font-semibold">
-              Passo 1 de 2
+        {/* Header */}
+        <div className="text-center space-y-5">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="inline-flex items-center gap-2.5 px-5 py-2.5 rounded-full border border-primary/10 bg-primary/[0.03]"
+          >
+            <ScanLine className="w-3.5 h-3.5 text-primary/60" />
+            <span className="text-[10px] tracking-[0.35em] uppercase text-primary/70 font-semibold font-display">
+              Etapa 1 — Identificação
             </span>
-          </div>
-          <h1 className="text-3xl md:text-4xl">Sobre você</h1>
-          <p className="text-[0.85rem] text-muted-foreground/70 leading-[1.7] max-w-sm mx-auto">
+          </motion.div>
+          <h1 className="text-3xl md:text-4xl tracking-[-0.04em]">Sobre você</h1>
+          <p className="text-[0.85rem] text-muted-foreground/60 leading-[1.7] max-w-sm mx-auto">
             Essas informações personalizam a leitura do seu padrão comportamental.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6 sm:p-8 space-y-5 shadow-sm" noValidate>
+        {/* Journey Steps */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="flex items-center justify-between px-2"
+        >
+          {steps.map((step, i) => {
+            const StepIcon = step.icon;
+            const isActive = i === 0;
+            return (
+              <div key={step.label} className="flex items-center gap-2 flex-1">
+                <div className="flex flex-col items-center text-center flex-1">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-2 transition-all ${
+                    isActive
+                      ? 'bg-primary/10 border border-primary/20'
+                      : 'bg-muted/30 border border-border/30'
+                  }`}>
+                    <StepIcon className={`w-4 h-4 ${isActive ? 'text-primary' : 'text-muted-foreground/40'}`} />
+                  </div>
+                  <p className={`text-[0.65rem] font-semibold tracking-[0.08em] uppercase ${
+                    isActive ? 'text-primary/80' : 'text-muted-foreground/40'
+                  }`}>{step.label}</p>
+                </div>
+                {i < steps.length - 1 && (
+                  <div className={`h-px flex-shrink-0 w-6 mb-6 ${isActive ? 'bg-primary/20' : 'bg-border/30'}`} />
+                )}
+              </div>
+            );
+          })}
+        </motion.div>
+
+        {/* Form */}
+        <motion.form
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          onSubmit={handleSubmit}
+          className="bg-card/60 backdrop-blur-xl rounded-3xl border border-border/40 p-7 sm:p-9 space-y-5 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.08)]"
+          noValidate
+        >
           <div className="space-y-2">
-            <label htmlFor="onboarding-name" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Nome</label>
+            <label htmlFor="onboarding-name" className="text-[0.78rem] font-semibold text-foreground/70 tracking-[0.04em] uppercase font-display">
+              Nome completo
+            </label>
             <input
               id="onboarding-name"
               type="text"
@@ -106,12 +166,14 @@ const Onboarding = () => {
               required
               maxLength={100}
               autoComplete="name"
-              className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
-              placeholder="Seu nome"
+              className="flex h-13 w-full rounded-2xl border border-border/40 bg-background/60 px-5 py-3 text-[0.9rem] ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/20 transition-all duration-300"
+              placeholder="Seu nome completo"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="onboarding-birth" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Data de nascimento</label>
+            <label htmlFor="onboarding-birth" className="text-[0.78rem] font-semibold text-foreground/70 tracking-[0.04em] uppercase font-display">
+              Data de nascimento
+            </label>
             <input
               id="onboarding-birth"
               type="date"
@@ -119,11 +181,13 @@ const Onboarding = () => {
               onChange={(e) => setBirthDate(e.target.value)}
               required
               max={new Date().toISOString().split('T')[0]}
-              className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
+              className="flex h-13 w-full rounded-2xl border border-border/40 bg-background/60 px-5 py-3 text-[0.9rem] ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/20 transition-all duration-300"
             />
           </div>
           <div className="space-y-2">
-            <label htmlFor="onboarding-cpf" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">CPF</label>
+            <label htmlFor="onboarding-cpf" className="text-[0.78rem] font-semibold text-foreground/70 tracking-[0.04em] uppercase font-display">
+              CPF
+            </label>
             <input
               id="onboarding-cpf"
               type="text"
@@ -139,17 +203,33 @@ const Onboarding = () => {
               maxLength={14}
               placeholder="000.000.000-00"
               inputMode="numeric"
-              className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
+              className="flex h-13 w-full rounded-2xl border border-border/40 bg-background/60 px-5 py-3 text-[0.9rem] ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/20 transition-all duration-300"
             />
+            <p className="text-[0.7rem] text-muted-foreground/40 flex items-center gap-1.5 mt-1">
+              <Shield className="w-3 h-3" />
+              Necessário para processamento de pagamento
+            </p>
           </div>
+
           <button
             type="submit"
             disabled={submitting}
-            className="w-full h-12 bg-primary text-primary-foreground rounded-xl text-[0.9rem] font-semibold tracking-[0.02em] hover:opacity-90 transition-all duration-300 shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.3)] disabled:opacity-50"
+            className="group w-full h-13 bg-primary text-primary-foreground rounded-2xl text-[0.9rem] font-semibold tracking-[-0.01em] hover:opacity-90 transition-all duration-500 shadow-[0_8px_30px_-6px_hsl(var(--primary)/0.35)] hover:shadow-[0_12px_40px_-4px_hsl(var(--primary)/0.45)] hover:translate-y-[-1px] active:translate-y-[0px] disabled:opacity-50 flex items-center justify-center gap-2.5 relative overflow-hidden"
           >
-            {submitting ? 'Salvando...' : 'Continuar para a leitura'}
+            <span className="relative z-10">{submitting ? 'Salvando...' : 'Continuar para a leitura'}</span>
+            {!submitting && <ArrowRight className="w-4 h-4 relative z-10 group-hover:translate-x-1 transition-transform duration-300" />}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/[0.08] to-white/[0.05] pointer-events-none" />
           </button>
-        </form>
+        </motion.form>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5, duration: 0.4 }}
+          className="text-center text-[0.7rem] text-muted-foreground/35 font-display tracking-wide"
+        >
+          Seus dados são protegidos e nunca compartilhados
+        </motion.p>
       </motion.div>
     </div>
   );
