@@ -23,7 +23,7 @@ const LandingHero = ({ onStart }: LandingHeroProps) => {
 
         <button
           onClick={onStart}
-          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity"
+          className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 transition-opacity"
         >
           Iniciar leitura
           <ArrowRight className="w-4 h-4" />

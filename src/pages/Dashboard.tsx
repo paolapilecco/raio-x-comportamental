@@ -539,7 +539,7 @@ const Dashboard = () => {
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.2 }}
-            className="relative bg-background border border-border rounded-lg shadow-lg w-full max-w-md p-6 space-y-5"
+            className="relative bg-background border border-border/40 rounded-2xl shadow-lg w-full max-w-md p-8 space-y-6"
           >
             <button onClick={() => setShowUpgradeModal(false)} aria-label="Fechar modal" className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors p-1">
               <X className="w-4 h-4" />
