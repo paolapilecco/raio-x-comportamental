@@ -256,8 +256,8 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="text-center pb-8 text-xs text-muted-foreground/40">
-        Raio-X Comportamental · Análise profunda · Evolução contínua
+      <footer className="text-center pb-8 text-xs text-muted-foreground/40" role="contentinfo">
+        <p>Raio-X Comportamental · Análise profunda · Evolução contínua</p>
       </footer>
     </div>
   );
