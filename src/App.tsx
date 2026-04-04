@@ -14,6 +14,7 @@ import TestCatalog from "./pages/TestCatalog";
 import CentralReport from "./pages/CentralReport";
 import Profile from "./pages/Profile";
 import Premium from "./pages/Premium";
+import Checkout from "./pages/Checkout";
 import ResetPassword from "./pages/ResetPassword";
 import AdminPrompts from "./pages/AdminPrompts";
 import AdminTestModules from "./pages/AdminTestModules";
