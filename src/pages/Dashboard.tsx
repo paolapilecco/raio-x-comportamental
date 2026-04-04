@@ -364,7 +364,7 @@ const Dashboard = () => {
               {/* Latest result card */}
               {latestResult && (
                 <div className="bg-card rounded-2xl p-7 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] hover:shadow-[0_4px_12px_0_rgb(0_0_0/0.06)] transition-all duration-200">
-                  <h4 className="text-base font-semibold text-foreground mb-2">{latestResult.combined_title || 'Perfil Comportamental'}</h4>
+                  <h4 className="text-base font-semibold text-foreground mb-2">Padrão Comportamental</h4>
                   <div className="flex items-center justify-between mb-3">
                     <span className="text-sm text-muted-foreground">{latestResult.profile_name}</span>
                     <span
