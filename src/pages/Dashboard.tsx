@@ -418,7 +418,7 @@ const Dashboard = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">Desbloqueie o acesso completo</h3>
                   <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                    Todos os testes, relatórios avançados e acompanhamento de evolução.
+                    Todas as análises, relatórios avançados e acompanhamento de evolução.
                   </p>
                 </div>
                 <button
