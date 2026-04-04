@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend } from 'recharts';
 import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { toast } from 'sonner';
 import { patternDefinitions } from '@/data/patterns';
 import type { PatternKey } from '@/types/diagnostic';
 

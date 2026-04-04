@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Zap, Shield, Heart, LogOut, LayoutDashboard, User, CheckCircle2, Clock, Lock, Crown, AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface TestModule {
   id: string;

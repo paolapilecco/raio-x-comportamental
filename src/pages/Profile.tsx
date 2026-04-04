@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, Layers, TrendingUp } from 'lucide-react';
+import { toast } from 'sonner';
 import { patternDefinitions } from '@/data/patterns';
 import type { PatternKey } from '@/types/diagnostic';
 
