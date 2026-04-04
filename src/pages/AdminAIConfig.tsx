@@ -5,9 +5,21 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Loader2, Save, RefreshCw, Brain, Sliders,
-  Thermometer, FileText, MessageSquare, Layers,
+  Thermometer, FileText, MessageSquare, Layers, Cpu,
 } from 'lucide-react';
 import { toast } from 'sonner';
+
+const AI_MODELS = [
+  { value: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash (rápido)', description: 'Equilíbrio entre velocidade e qualidade' },
+  { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Bom custo-benefício, multimodal' },
+  { value: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', description: 'Mais rápido e econômico' },
+  { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro', description: 'Máxima qualidade, mais lento' },
+  { value: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro', description: 'Última geração, raciocínio avançado' },
+  { value: 'openai/gpt-5', label: 'GPT-5', description: 'Alta precisão, mais caro' },
+  { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini', description: 'Bom desempenho, custo moderado' },
+  { value: 'openai/gpt-5-nano', label: 'GPT-5 Nano', description: 'Rápido e econômico' },
+  { value: 'openai/gpt-5.2', label: 'GPT-5.2', description: 'Último modelo OpenAI' },
+];
 
 interface AIConfig {
   id: string;
@@ -17,6 +29,7 @@ interface AIConfig {
   tone: string;
   depth_level: number;
   report_style: string;
+  ai_model: string;
 }
 
 export default function AdminAIConfig() {
@@ -44,15 +57,14 @@ export default function AdminAIConfig() {
       if (error) throw error;
 
       if (data) {
-        setConfig(data as AIConfig);
+        setConfig(data as unknown as AIConfig);
       } else {
-        // Create default config
         const { data: newConfig } = await supabase
           .from('global_ai_config')
           .insert({})
           .select()
           .single();
-        if (newConfig) setConfig(newConfig as AIConfig);
+        if (newConfig) setConfig(newConfig as unknown as AIConfig);
       }
     } catch {
       toast.error('Erro ao carregar configuração');
@@ -73,7 +85,8 @@ export default function AdminAIConfig() {
           tone: config.tone,
           depth_level: config.depth_level,
           report_style: config.report_style,
-        })
+          ai_model: config.ai_model,
+        } as any)
         .eq('id', config.id);
 
       if (error) throw error;
@@ -93,6 +106,8 @@ export default function AdminAIConfig() {
   }
 
   if (!config) return null;
+
+  const selectedModel = AI_MODELS.find(m => m.value === config.ai_model);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -141,10 +156,43 @@ export default function AdminAIConfig() {
               onClick={() => setConfig({ ...config, ai_enabled: !config.ai_enabled })}
               className={`relative w-12 h-6 rounded-full transition-colors ${config.ai_enabled ? 'bg-primary' : 'bg-muted'}`}
             >
-              <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${config.ai_enabled ? 'left-6.5 translate-x-0' : 'left-0.5'}`}
+              <span className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform"
                 style={{ left: config.ai_enabled ? '26px' : '2px' }}
               />
             </button>
+          </div>
+        </motion.div>
+
+        {/* Model Selection */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.03 }}
+          className="bg-card rounded-xl border border-border p-6 space-y-4"
+        >
+          <h3 className="font-semibold text-foreground flex items-center gap-2">
+            <Cpu className="w-4 h-4 text-primary/60" />
+            Modelo de IA
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Modelo ativo: <span className="font-mono text-primary">{selectedModel?.label || config.ai_model}</span>
+            {selectedModel && <span className="ml-2">— {selectedModel.description}</span>}
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {AI_MODELS.map(model => (
+              <button
+                key={model.value}
+                onClick={() => setConfig({ ...config, ai_model: model.value })}
+                className={`text-left px-4 py-3 rounded-lg text-sm transition-all border ${
+                  config.ai_model === model.value
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border text-muted-foreground hover:border-primary/30'
+                }`}
+              >
+                <div className="font-medium">{model.label}</div>
+                <div className="text-xs opacity-70 mt-0.5">{model.description}</div>
+              </button>
+            ))}
           </div>
         </motion.div>
 
@@ -170,10 +218,7 @@ export default function AdminAIConfig() {
               <span className="text-sm font-mono text-primary">{config.temperature}</span>
             </div>
             <input
-              type="range"
-              min="0"
-              max="2"
-              step="0.1"
+              type="range" min="0" max="2" step="0.1"
               value={config.temperature}
               onChange={e => setConfig({ ...config, temperature: parseFloat(e.target.value) })}
               className="w-full accent-primary"
@@ -191,10 +236,7 @@ export default function AdminAIConfig() {
               <span className="text-sm font-mono text-primary">{config.max_tokens}</span>
             </div>
             <input
-              type="range"
-              min="500"
-              max="8000"
-              step="100"
+              type="range" min="500" max="8000" step="100"
               value={config.max_tokens}
               onChange={e => setConfig({ ...config, max_tokens: parseInt(e.target.value) })}
               className="w-full accent-primary"
@@ -212,10 +254,7 @@ export default function AdminAIConfig() {
               <span className="text-sm font-mono text-primary">{config.depth_level}</span>
             </div>
             <input
-              type="range"
-              min="1"
-              max="5"
-              step="1"
+              type="range" min="1" max="5" step="1"
               value={config.depth_level}
               onChange={e => setConfig({ ...config, depth_level: parseInt(e.target.value) })}
               className="w-full accent-primary"

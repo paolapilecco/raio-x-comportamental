@@ -124,6 +124,19 @@ Responda em JSON com exatamente esta estrutura:
       });
     }
 
+    // Fetch AI model from global config
+    let aiModel = "google/gemini-3-flash-preview";
+    try {
+      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const adminClient = createClient(supabaseUrl, serviceRoleKey);
+      const { data: globalConfig } = await adminClient
+        .from("global_ai_config")
+        .select("ai_model")
+        .limit(1)
+        .maybeSingle();
+      if (globalConfig?.ai_model) aiModel = globalConfig.ai_model;
+    } catch { /* use default */ }
+
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -131,7 +144,7 @@ Responda em JSON com exatamente esta estrutura:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
