@@ -490,8 +490,8 @@ const Dashboard = () => {
                   <div
                     key={mod.id}
                     onClick={() => canAccess ? navigate(`/diagnostic/${mod.slug}`) : setShowUpgradeModal(true)}
-                    className={`border rounded-lg p-4 transition-colors cursor-pointer ${
-                      canAccess ? 'border-border hover:bg-secondary/50' : 'border-border/50 opacity-60'
+                    className={`border rounded-2xl p-5 transition-colors cursor-pointer ${
+                      canAccess ? 'border-border/40 hover:bg-secondary/50' : 'border-border/30 opacity-60'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-3">
