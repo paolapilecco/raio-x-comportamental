@@ -262,7 +262,7 @@ const Dashboard = () => {
     : [];
 
   return (
-    <div className="min-h-screen px-4 py-8 md:py-12">
+    <div className="min-h-screen px-4 py-6 sm:py-8 md:py-12" role="main" aria-label="Dashboard">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* ── Header ── */}
