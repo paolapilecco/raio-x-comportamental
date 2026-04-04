@@ -129,6 +129,7 @@ serve(async (req) => {
         body: JSON.stringify({
           name: profile?.name || user.email?.split("@")[0] || "Cliente",
           email: user.email,
+          cpfCnpj: profile.cpf,
           externalReference: user.id,
         }),
       });
