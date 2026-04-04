@@ -176,7 +176,7 @@ const Premium = () => {
               <div className="space-y-2">
                 <p className="text-lg font-semibold text-foreground">Desbloqueie todo o potencial</p>
                 <p className="text-[0.82rem] text-muted-foreground/65 leading-[1.65] max-w-md">
-                  6 áreas completas de autoconhecimento — testes avançados, relatórios, acompanhamento, cronograma, histórico e recomendações.
+                  6 áreas completas de autoconhecimento — análises avançadas, relatórios, acompanhamento, cronograma, histórico e recomendações.
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
                   {['6 áreas', '10+ testes', 'PDF ilimitado', 'Evolução temporal'].map((tag) => (
