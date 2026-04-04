@@ -32,8 +32,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <a href="#main-content" className="skip-to-content">Pular para o conteúdo</a>
       {/* Hero */}
-      <section className="flex-1 flex items-center justify-center px-4 pt-16 pb-24 md:pt-24 md:pb-32 relative overflow-hidden">
+      <section id="main-content" aria-label="Página inicial" className="flex-1 flex items-center justify-center px-4 pt-16 pb-24 md:pt-24 md:pb-32 relative overflow-hidden">
         {/* Background effects */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-[15%] left-[10%] w-[600px] h-[600px] rounded-full bg-primary/[0.03] blur-[100px]" />
@@ -255,8 +256,8 @@ const Index = () => {
       </section>
 
       {/* Footer */}
-      <footer className="text-center pb-8 text-xs text-muted-foreground/40">
-        Raio-X Comportamental · Análise profunda · Evolução contínua
+      <footer className="text-center pb-8 text-xs text-muted-foreground/40" role="contentinfo">
+        <p>Raio-X Comportamental · Análise profunda · Evolução contínua</p>
       </footer>
     </div>
   );

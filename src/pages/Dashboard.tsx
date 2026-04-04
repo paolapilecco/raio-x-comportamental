@@ -262,12 +262,12 @@ const Dashboard = () => {
     : [];
 
   return (
-    <div className="min-h-screen px-4 py-8 md:py-12">
+    <div className="min-h-screen px-4 py-6 sm:py-8 md:py-12" role="main" aria-label="Dashboard">
       <div className="max-w-5xl mx-auto space-y-6">
 
         {/* ── Header ── */}
-        <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-1">
+        <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-3 flex-wrap">
               <p className="text-[10px] tracking-[0.3em] uppercase text-primary/50 font-semibold">Raio-X Comportamental</p>
               <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[0.6rem] font-semibold tracking-wide uppercase ${roleBadge.className}`}>
@@ -280,7 +280,7 @@ const Dashboard = () => {
               <p className="text-[0.82rem] text-muted-foreground/60 leading-[1.6] max-w-lg">{centralProfile.mental_state}</p>
             )}
           </div>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap shrink-0">
             {!isPremium && !isSuperAdmin && (
               <button
                 onClick={() => navigate('/premium')}
@@ -597,15 +597,15 @@ const Dashboard = () => {
 
       {/* ── Upgrade Modal ── */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Upgrade para Premium">
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)} aria-hidden="true" />
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             className="relative bg-card border border-border rounded-3xl shadow-2xl w-full max-w-lg p-8 space-y-6"
           >
-            <button onClick={() => setShowUpgradeModal(false)} className="absolute top-4 right-4 text-muted-foreground/40 hover:text-foreground/70 transition-colors">
+            <button onClick={() => setShowUpgradeModal(false)} aria-label="Fechar modal" className="absolute top-4 right-4 text-muted-foreground/40 hover:text-foreground/70 transition-colors p-1 rounded-lg hover:bg-muted/30">
               <X className="w-5 h-5" />
             </button>
             <div className="text-center space-y-3">

@@ -76,7 +76,7 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-16">
+    <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:py-16" role="main" aria-label="Autenticação">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -98,29 +98,33 @@ const Auth = () => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-8 space-y-5 shadow-sm">
+        <form onSubmit={handleSubmit} className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/60 p-6 sm:p-8 space-y-5 shadow-sm" noValidate>
           <div className="space-y-2">
-            <label className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Email</label>
+            <label htmlFor="auth-email" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Email</label>
             <input
+              id="auth-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               maxLength={255}
+              autoComplete="email"
               className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
               placeholder="seu@email.com"
             />
           </div>
           {!forgotMode && (
             <div className="space-y-2">
-              <label className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Senha</label>
+            <label htmlFor="auth-password" className="text-[0.8rem] font-medium text-foreground/80 tracking-wide">Senha</label>
               <input
+                id="auth-password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={6}
                 maxLength={128}
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
                 className="flex h-12 w-full rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 transition-all"
                 placeholder="Mínimo 6 caracteres"
               />
