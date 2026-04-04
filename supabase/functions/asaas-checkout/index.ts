@@ -89,12 +89,19 @@ serve(async (req) => {
       );
     }
 
-    // Get user profile for name
+    // Get user profile for name and CPF
     const { data: profile } = await adminClient
       .from("profiles")
-      .select("name")
+      .select("name, cpf")
       .eq("user_id", user.id)
       .maybeSingle();
+
+    if (!profile?.cpf) {
+      return new Response(
+        JSON.stringify({ error: "CPF não encontrado. Atualize seu perfil." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     // Step 1: Create or find customer in Asaas
     let asaasCustomerId: string;
