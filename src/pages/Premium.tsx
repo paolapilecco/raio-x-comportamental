@@ -224,7 +224,7 @@ const Premium = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2.5">
                 <LayoutGrid className="w-4.5 h-4.5 text-primary/60" />
-                <h2 className="text-xl font-semibold tracking-[-0.01em]">Testes Premium</h2>
+                <h2 className="text-xl font-semibold tracking-[-0.01em]">Análises Premium</h2>
               </div>
               <p className="text-[0.78rem] text-muted-foreground/55 mt-0.5 leading-[1.6]">
                 Vá além do padrão comportamental com análises profundas em áreas específicas da sua vida.
