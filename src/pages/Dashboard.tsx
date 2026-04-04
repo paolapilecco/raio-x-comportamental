@@ -452,7 +452,7 @@ const Dashboard = () => {
 
         {/* Premium CTA */}
         {!isPremium && (
-          <div className="border border-border rounded-lg p-6">
+          <div className="border border-border/40 rounded-2xl p-7">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-semibold">Desbloqueie o acesso completo</h3>
