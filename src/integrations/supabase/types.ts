@@ -263,6 +263,7 @@ export type Database = {
         Row: {
           age: number | null
           birth_date: string
+          cpf: string | null
           created_at: string
           id: string
           name: string
@@ -272,6 +273,7 @@ export type Database = {
         Insert: {
           age?: number | null
           birth_date: string
+          cpf?: string | null
           created_at?: string
           id?: string
           name: string
@@ -281,6 +283,7 @@ export type Database = {
         Update: {
           age?: number | null
           birth_date?: string
+          cpf?: string | null
           created_at?: string
           id?: string
           name?: string
