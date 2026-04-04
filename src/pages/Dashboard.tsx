@@ -342,7 +342,7 @@ const Dashboard = () => {
               <div>
                 <h3 className="text-xl font-semibold text-foreground">Comece sua análise</h3>
                 <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto leading-relaxed">
-                  Faça seu primeiro teste para descobrir seu padrão comportamental dominante.
+                  Faça sua primeira leitura para descobrir seu padrão comportamental dominante.
                 </p>
               </div>
               <button
@@ -418,7 +418,7 @@ const Dashboard = () => {
                 <div>
                   <h3 className="text-lg font-semibold text-foreground">Desbloqueie o acesso completo</h3>
                   <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                    Todos os testes, relatórios avançados e acompanhamento de evolução.
+                    Todas as análises, relatórios avançados e acompanhamento de evolução.
                   </p>
                 </div>
                 <button
@@ -448,7 +448,7 @@ const Dashboard = () => {
               <X className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Desbloqueie todos os testes</h2>
+              <h2 className="text-xl font-semibold text-foreground">Desbloqueie todas as análises</h2>
               <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
                 Acesse todos os módulos, relatórios avançados e acompanhamento de evolução.
               </p>

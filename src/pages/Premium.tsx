@@ -82,7 +82,7 @@ const Premium = () => {
       path: '/central-report',
       features: [
         { icon: LineChart, label: 'Evolução Temporal', desc: 'Gráficos de progresso dos seus padrões' },
-        { icon: Brain, label: 'Perfil Central Unificado', desc: 'Consolidação de todos os seus testes' },
+        { icon: Brain, label: 'Perfil Central Unificado', desc: 'Consolidação de todas as suas leituras' },
         { icon: Sparkles, label: 'Tendências Comportamentais', desc: 'Previsão de padrões futuros' },
       ],
     },
@@ -110,7 +110,7 @@ const Premium = () => {
       path: '/history',
       features: [
         { icon: History, label: 'Leituras Anteriores', desc: 'Acesso completo a todos os resultados' },
-        { icon: BarChart3, label: 'Comparação', desc: 'Compare testes lado a lado' },
+        { icon: BarChart3, label: 'Comparação', desc: 'Compare leituras lado a lado' },
         { icon: FileText, label: 'Download de PDFs', desc: 'Relatórios para guardar ou compartilhar' },
       ],
     },
@@ -176,10 +176,10 @@ const Premium = () => {
               <div className="space-y-2">
                 <p className="text-lg font-semibold text-foreground">Desbloqueie todo o potencial</p>
                 <p className="text-[0.82rem] text-muted-foreground/65 leading-[1.65] max-w-md">
-                  6 áreas completas de autoconhecimento — testes avançados, relatórios, acompanhamento, cronograma, histórico e recomendações.
+                  6 áreas completas de autoconhecimento — análises avançadas, relatórios, acompanhamento, cronograma, histórico e recomendações.
                 </p>
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {['6 áreas', '10+ testes', 'PDF ilimitado', 'Evolução temporal'].map((tag) => (
+                  {['6 áreas', '10+ análises', 'PDF ilimitado', 'Evolução temporal'].map((tag) => (
                     <span key={tag} className="text-[0.65rem] font-medium text-primary/70 bg-primary/[0.06] px-2.5 py-1 rounded-full border border-primary/10">{tag}</span>
                   ))}
                 </div>
@@ -196,7 +196,7 @@ const Premium = () => {
         {/* ── Section Index (quick nav) ── */}
         <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-3 sm:grid-cols-6 gap-2">
           {[
-            { num: '01', label: 'Testes', icon: LayoutGrid },
+            { num: '01', label: 'Análises', icon: LayoutGrid },
             { num: '02', label: 'Relatórios', icon: FileText },
             { num: '03', label: 'Acompanhamento', icon: TrendingUp },
             { num: '04', label: 'Cronograma', icon: CalendarDays },
@@ -224,7 +224,7 @@ const Premium = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2.5">
                 <LayoutGrid className="w-4.5 h-4.5 text-primary/60" />
-                <h2 className="text-xl font-semibold tracking-[-0.01em]">Testes Premium</h2>
+                <h2 className="text-xl font-semibold tracking-[-0.01em]">Análises Premium</h2>
               </div>
               <p className="text-[0.78rem] text-muted-foreground/55 mt-0.5 leading-[1.6]">
                 Vá além do padrão comportamental com análises profundas em áreas específicas da sua vida.
