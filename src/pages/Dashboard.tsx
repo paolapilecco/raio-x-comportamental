@@ -283,7 +283,7 @@ const Dashboard = () => {
         </div>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+      <div className="max-w-5xl mx-auto px-6 py-12 space-y-10">
 
         {/* Greeting */}
         <div>
