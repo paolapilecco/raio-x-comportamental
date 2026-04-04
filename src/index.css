@@ -239,4 +239,17 @@
   .bg-intensity-high {
     background-color: hsl(var(--intensity-high));
   }
+
+  /* Loading skeleton animation */
+  .skeleton-pulse {
+    @apply animate-pulse bg-muted/50 rounded-lg;
+  }
+
+  /* Better touch targets for mobile */
+  @media (pointer: coarse) {
+    button, a, [role="button"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+  }
 }
