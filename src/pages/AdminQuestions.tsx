@@ -108,7 +108,47 @@ export default function AdminQuestions() {
     setForm({ ...emptyQuestion, sort_order: questions.length + 1 });
   };
 
-  const cancelEdit = () => { setEditingId(null); setCreating(false); };
+  const cancelEdit = () => { setEditingId(null); setCreating(false); setSuggestion(null); };
+
+  const handleSuggestWithAI = async () => {
+    if (!form.text.trim() || form.text.trim().length < 5) {
+      toast.error('Digite pelo menos 5 caracteres para sugerir');
+      return;
+    }
+    setSuggesting(true);
+    setSuggestion(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-question-config', {
+        body: { questionText: form.text.trim(), testName: selectedModule?.name || '' },
+      });
+      if (error) throw error;
+      if (data?.suggestion) {
+        setSuggestion(data.suggestion);
+        toast.success('Sugestão gerada! Revise e aceite abaixo.');
+      } else {
+        toast.error('Não foi possível gerar sugestão');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erro ao gerar sugestão com IA');
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const applySuggestion = () => {
+    if (!suggestion) return;
+    const s = suggestion as any;
+    setForm(f => ({
+      ...f,
+      type: s.type || f.type,
+      axes: s.axes?.length ? s.axes : f.axes,
+      weight: s.weight || f.weight,
+      options: s.type === 'behavior_choice' ? (s.options || f.options) : null,
+    }));
+    setSuggestion(null);
+    toast.success('Sugestão aplicada! Ajuste se necessário.');
+  };
 
   const handleSave = async () => {
     if (!form.text.trim()) { toast.error('Texto da pergunta é obrigatório'); return; }
