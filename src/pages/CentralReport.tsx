@@ -283,7 +283,7 @@ const CentralReport = () => {
             <div className="space-y-4">
               {detectedConflicts.map(([a, b], i) => {
                 const pairKey = `${a}+${b}`;
-                const desc = conflictPairDescriptions[pairKey] || 'Conflito entre padrões opostos detectado.';
+                const desc = CONFLICT_PAIR_DESCRIPTIONS[pairKey] || 'Conflito entre padrões opostos detectado.';
                 return (
                   <div key={i} className="bg-destructive/5 border border-destructive/10 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
