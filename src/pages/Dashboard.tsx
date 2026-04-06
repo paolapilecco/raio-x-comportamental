@@ -210,8 +210,8 @@ const Dashboard = () => {
 
   const handleDownloadPdf = () => {
     if (!latestResult) return;
-    const dominantDef = patternDefinitions[latestResult.dominant_pattern as PatternKey];
-    const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions[k as PatternKey]).filter(Boolean);
+    const dominantDef = patternDefinitions?.[latestResult.dominant_pattern as PatternKey];
+    const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
     const diagResult: DiagnosticResult = {
       dominantPattern: dominantDef,
       secondaryPatterns: secondaryDefs,
