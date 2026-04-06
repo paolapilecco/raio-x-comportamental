@@ -3,13 +3,15 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Sparkles, Loader2 } from 'lucide-react';
+import { ArrowLeft, Brain, Sparkles, Loader2, FileText, HelpCircle, Settings, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import PromptEditor from '@/components/admin/PromptEditor';
 import AIConfigPanel from '@/components/admin/AIConfigPanel';
 import SimulationPanel from '@/components/admin/SimulationPanel';
 import HistoryPanel from '@/components/admin/HistoryPanel';
+import QuestionsPanel from '@/components/admin/QuestionsPanel';
 import {
   iconMap, PROMPT_SECTIONS,
   type TestPrompt, type TestModule, type GlobalAiConfig, type TestAiConfig,
@@ -29,6 +31,8 @@ const AdminPrompts = () => {
   const [editedTexts, setEditedTexts] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedModule, setSelectedModule] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<string>('prompts');
+  const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
     if (authLoading) return;
@@ -37,11 +41,12 @@ const AdminPrompts = () => {
   }, [authLoading, isSuperAdmin]);
 
   const fetchData = async () => {
-    const [tpRes, mRes, gaiRes, taiRes] = await Promise.all([
+    const [tpRes, mRes, gaiRes, taiRes, qCountRes] = await Promise.all([
       supabase.from('test_prompts').select('*').order('created_at', { ascending: true }),
       supabase.from('test_modules').select('id, slug, name, icon').eq('is_active', true).order('sort_order'),
       supabase.from('global_ai_config').select('*').limit(1).maybeSingle(),
       supabase.from('test_ai_config').select('*'),
+      supabase.from('questions').select('test_id'),
     ]);
 
     const tp = (tpRes.data || []) as TestPrompt[];
@@ -54,6 +59,11 @@ const AdminPrompts = () => {
     const tai: Record<string, Partial<TestAiConfig>> = {};
     (taiRes.data || []).forEach((c: TestAiConfig) => { tai[c.test_id] = { ...c }; });
     setEditedTestAi(tai);
+
+    // Count questions per test
+    const counts: Record<string, number> = {};
+    (qCountRes.data || []).forEach((q: any) => { counts[q.test_id] = (counts[q.test_id] || 0) + 1; });
+    setQuestionCounts(counts);
 
     const texts: Record<string, string> = {};
     tp.forEach(p => { texts[`tp_${p.id}`] = p.content; });
@@ -85,12 +95,8 @@ const AdminPrompts = () => {
   const handleCreatePrompt = async (testId: string, section: typeof PROMPT_SECTIONS[0]) => {
     setSaving(`create_${section.type}`);
     const { error } = await supabase.from('test_prompts').insert({
-      test_id: testId,
-      prompt_type: section.type as any,
-      title: section.defaultTitle,
-      content: '',
-      is_active: true,
-      updated_by: user?.id,
+      test_id: testId, prompt_type: section.type as any, title: section.defaultTitle,
+      content: '', is_active: true, updated_by: user?.id,
     });
     if (error) toast.error('Erro ao criar prompt');
     else { toast.success(`${section.label} criado`); await fetchData(); }
@@ -102,8 +108,8 @@ const AdminPrompts = () => {
     setSaving('global_ai');
     const { id, ...fields } = editedGlobalAi as GlobalAiConfig;
     const { error } = await supabase.from('global_ai_config').update({
-      ai_enabled: fields.ai_enabled, ai_model: fields.ai_model, temperature: fields.temperature, max_tokens: fields.max_tokens,
-      tone: fields.tone, depth_level: fields.depth_level, report_style: fields.report_style,
+      ai_enabled: fields.ai_enabled, ai_model: fields.ai_model, temperature: fields.temperature,
+      max_tokens: fields.max_tokens, tone: fields.tone, depth_level: fields.depth_level, report_style: fields.report_style,
     } as any).eq('id', globalAiConfig.id);
     if (error) toast.error('Erro ao salvar config global');
     else { toast.success('Config global salva'); await fetchData(); }
@@ -149,7 +155,7 @@ const AdminPrompts = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="w-8 h-8 animate-spin text-primary/60" />
-          <p className="text-[0.85rem] text-muted-foreground/60">Carregando Central de Prompts...</p>
+          <p className="text-[0.85rem] text-muted-foreground/60">Carregando Central de Inteligência...</p>
         </div>
       </div>
     );
@@ -158,6 +164,14 @@ const AdminPrompts = () => {
   const currentModule = modules.find(m => m.id === selectedModule);
   const testAi = testAiConfigs.find(c => c.test_id === selectedModule);
   const editedTai = editedTestAi[selectedModule] || (testAi ? { ...testAi } : { test_id: selectedModule, use_global_defaults: true, ai_enabled: true, temperature: 0.7, max_tokens: 2000, tone: 'empático e direto', depth_level: 3, report_style: 'narrativo' });
+
+  const getModuleStats = (modId: string) => {
+    const modPrompts = testPrompts.filter(p => p.test_id === modId);
+    const promptCount = PROMPT_SECTIONS.filter(s => modPrompts.find(p => p.prompt_type === s.type)).length;
+    const qCount = questionCounts[modId] || 0;
+    const hasAiConfig = !!testAiConfigs.find(c => c.test_id === modId);
+    return { promptCount, qCount, hasAiConfig };
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground px-4 py-8 max-w-5xl mx-auto space-y-6">
@@ -171,8 +185,8 @@ const AdminPrompts = () => {
             <Sparkles className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Central de Prompts e Inteligência</h1>
-            <p className="text-[0.78rem] text-muted-foreground/60">Sistema modular · 7 seções por teste · Controle fino da IA</p>
+            <h1 className="text-xl font-semibold tracking-tight">Central de Inteligência de Testes</h1>
+            <p className="text-[0.78rem] text-muted-foreground/60">Controle completo · Prompts, Perguntas e Configuração por teste</p>
           </div>
         </div>
       </motion.div>
@@ -182,14 +196,14 @@ const AdminPrompts = () => {
         <div className="flex items-center gap-3 flex-wrap">
           {modules.map((mod) => {
             const ModIcon = iconMap[mod.icon] || Brain;
-            const modPrompts = testPrompts.filter(p => p.test_id === mod.id);
-            const count = PROMPT_SECTIONS.filter(s => modPrompts.find(p => p.prompt_type === s.type)).length;
+            const stats = getModuleStats(mod.id);
             const isSelected = selectedModule === mod.id;
+            const completeness = Math.round(((stats.promptCount / 7) * 40 + (stats.qCount > 0 ? 40 : 0) + (stats.hasAiConfig ? 20 : 0)));
             return (
               <button
                 key={mod.id}
-                onClick={() => setSelectedModule(mod.id)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-[0.8rem] font-medium transition-all ${
+                onClick={() => { setSelectedModule(mod.id); setActiveTab('prompts'); }}
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-[0.8rem] font-medium transition-all ${
                   isSelected
                     ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
                     : 'bg-card/60 border-border/30 text-foreground/60 hover:bg-card/90'
@@ -198,47 +212,74 @@ const AdminPrompts = () => {
                 <ModIcon className="w-4 h-4" />
                 <span>{mod.name}</span>
                 <span className={`text-[0.6rem] px-1.5 py-0.5 rounded-full font-mono ${
-                  count === 7 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
-                }`}>{count}/7</span>
+                  completeness >= 80 ? 'bg-emerald-500/10 text-emerald-600' : completeness >= 40 ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-600'
+                }`}>{completeness}%</span>
               </button>
             );
           })}
         </div>
       </motion.div>
 
-      {/* Prompt Editor */}
+      {/* Per-Test Tabs: Prompts / Perguntas / Configuração */}
       {currentModule && (
         <motion.div {...fadeUp} transition={{ delay: 0.04 }}>
-          <PromptEditor
-            currentModule={currentModule}
-            testPrompts={testPrompts}
-            editedTexts={editedTexts}
-            setEditedTexts={setEditedTexts}
-            saving={saving}
-            onSavePrompt={handleSaveTestPrompt}
-            onTogglePrompt={handleToggleTestPrompt}
-            onCreatePrompt={handleCreatePrompt}
-          />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full grid grid-cols-3 h-12 bg-muted/30 p-1 rounded-xl gap-1">
+              <TabsTrigger value="prompts" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
+                <FileText className="w-4 h-4" />
+                <span>Prompts</span>
+                <span className="text-[0.6rem] font-mono opacity-60">{getModuleStats(currentModule.id).promptCount}/7</span>
+              </TabsTrigger>
+              <TabsTrigger value="questions" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
+                <HelpCircle className="w-4 h-4" />
+                <span>Perguntas</span>
+                <span className="text-[0.6rem] font-mono opacity-60">{questionCounts[currentModule.id] || 0}</span>
+              </TabsTrigger>
+              <TabsTrigger value="config" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
+                <Settings className="w-4 h-4" />
+                <span>Configuração</span>
+              </TabsTrigger>
+            </TabsList>
+
+            {/* TAB: Prompts */}
+            <TabsContent value="prompts" className="mt-5 space-y-4">
+              <PromptEditor
+                currentModule={currentModule}
+                testPrompts={testPrompts}
+                editedTexts={editedTexts}
+                setEditedTexts={setEditedTexts}
+                saving={saving}
+                onSavePrompt={handleSaveTestPrompt}
+                onTogglePrompt={handleToggleTestPrompt}
+                onCreatePrompt={handleCreatePrompt}
+              />
+            </TabsContent>
+
+            {/* TAB: Perguntas */}
+            <TabsContent value="questions" className="mt-5">
+              <QuestionsPanel currentModule={currentModule} />
+            </TabsContent>
+
+            {/* TAB: Configuração */}
+            <TabsContent value="config" className="mt-5">
+              <AIConfigPanel
+                globalAiConfig={globalAiConfig}
+                editedGlobalAi={editedGlobalAi}
+                setEditedGlobalAi={setEditedGlobalAi}
+                onSaveGlobalAi={handleSaveGlobalAi}
+                currentModule={currentModule}
+                editedTai={editedTai}
+                onUpdateTestAiField={(field, value) => updateTestAiField(selectedModule, field, value)}
+                onSaveTestAi={() => handleSaveTestAi(selectedModule)}
+                saving={saving}
+                selectedModule={selectedModule}
+                expandedGlobal={expandedSections['ai_config'] ?? false}
+                onToggleGlobal={() => toggleSection('ai_config')}
+              />
+            </TabsContent>
+          </Tabs>
         </motion.div>
       )}
-
-      {/* AI Config */}
-      <motion.div {...fadeUp} transition={{ delay: 0.06 }}>
-        <AIConfigPanel
-          globalAiConfig={globalAiConfig}
-          editedGlobalAi={editedGlobalAi}
-          setEditedGlobalAi={setEditedGlobalAi}
-          onSaveGlobalAi={handleSaveGlobalAi}
-          currentModule={currentModule}
-          editedTai={editedTai}
-          onUpdateTestAiField={(field, value) => updateTestAiField(selectedModule, field, value)}
-          onSaveTestAi={() => handleSaveTestAi(selectedModule)}
-          saving={saving}
-          selectedModule={selectedModule}
-          expandedGlobal={expandedSections['ai_config'] ?? false}
-          onToggleGlobal={() => toggleSection('ai_config')}
-        />
-      </motion.div>
 
       {/* Simulation */}
       <motion.div {...fadeUp} transition={{ delay: 0.08 }}>
