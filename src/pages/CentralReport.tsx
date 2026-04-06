@@ -11,7 +11,7 @@ import {
   ArrowLeft, Layers, Brain, AlertTriangle, TrendingUp, Shield,
   Crosshair, Compass, Activity, Zap, Sparkles, Eye, Target, Lightbulb,
 } from 'lucide-react';
-import { patternDefinitions } from '@/data/patterns';
+import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import type { PatternKey } from '@/types/diagnostic';
 import { toast } from 'sonner';
 
