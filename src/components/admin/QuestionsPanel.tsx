@@ -542,15 +542,19 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                   </div>
                 </div>
 
-                {/* Expanded options preview */}
+                {/* Expanded options preview with scores */}
                 {isExpanded && q.options && q.options.length > 0 && (
                   <div className="px-4 pb-3 pt-0 ml-9 border-t border-border/10">
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {q.options.map((opt, i) => (
-                        <span key={i} className="text-[0.65rem] px-2.5 py-1 rounded-lg bg-muted/30 text-foreground/60 border border-border/15">
-                          {i + 1}. {opt || <span className="italic text-muted-foreground/30">(vazio)</span>}
-                        </span>
-                      ))}
+                      {q.options.map((opt, i) => {
+                        const score = (q.option_scores || defaultScoresForType[q.type] || [])[i];
+                        return (
+                          <span key={i} className="text-[0.65rem] px-2.5 py-1 rounded-lg bg-muted/30 text-foreground/60 border border-border/15 flex items-center gap-1.5">
+                            <span>{i + 1}. {opt || <span className="italic text-muted-foreground/30">(vazio)</span>}</span>
+                            <span className="font-mono text-primary/70 bg-primary/5 px-1 rounded">{score ?? '?'}pts</span>
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
