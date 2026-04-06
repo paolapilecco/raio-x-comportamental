@@ -37,6 +37,13 @@ const defaultOptionsForType: Record<string, string[]> = {
   behavior_choice: ['', '', '', ''],
 };
 
+const defaultScoresForType: Record<string, number[]> = {
+  likert: [0, 25, 50, 75, 100],
+  frequency: [0, 25, 50, 75, 100],
+  intensity: [0, 25, 50, 75, 100],
+  behavior_choice: [0, 33, 66, 100],
+};
+
 const GENERIC_TERMS = [
   'melhorar', 'equilibrio', 'equilíbrio', 'buscar', 'tentar', 'procurar',
   'se sentir bem', 'ser feliz', 'ter sucesso', 'zona de conforto',
@@ -81,7 +88,8 @@ function validateQuestion(text: string, type: QuestionType): { warnings: string[
 }
 
 const emptyQuestion = {
-  text: '', type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0, options: null as string[] | null,
+  text: '', type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0,
+  options: null as string[] | null, option_scores: null as number[] | null,
 };
 
 interface QuestionsPanelProps {
