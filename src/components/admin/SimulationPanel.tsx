@@ -298,6 +298,46 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
             </div>
           )}
 
+          {/* Empty prompt warning */}
+          {previewTestId && emptyActivePrompts.length > 0 && (
+            <div className="flex items-start gap-2 p-3 rounded-xl border border-red-500/25 bg-red-500/[0.05]">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[0.78rem] font-semibold text-red-600 dark:text-red-400">Prompts vazios detectados</p>
+                <p className="text-[0.68rem] text-red-500/60">
+                  As seguintes seções estão ativas mas sem conteúdo: <strong>{emptyActivePrompts.join(', ')}</strong>. 
+                  A IA não receberá instruções para essas seções.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Prompt Preview */}
+          {previewTestId && assembledPrompt && (
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowPromptPreview(prev => !prev)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.03] hover:bg-indigo-500/[0.08] text-[0.8rem] font-semibold text-indigo-600 dark:text-indigo-400 transition-all w-full"
+              >
+                <FileCode className="w-4 h-4" />
+                <span className="flex-1 text-left">{showPromptPreview ? 'Ocultar Preview do Prompt Final' : 'Ver Preview do Prompt Final'}</span>
+                <span className="text-[0.65rem] font-mono text-indigo-500/50">{assembledPrompt.length} chars</span>
+              </button>
+              {showPromptPreview && (
+                <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/[0.02] overflow-hidden">
+                  <div className="px-4 py-3 bg-indigo-500/[0.05] border-b border-indigo-500/15 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileCode className="w-4 h-4 text-indigo-500" />
+                      <h4 className="text-[0.8rem] font-bold text-indigo-700 dark:text-indigo-400">System Prompt Final</h4>
+                    </div>
+                    <span className="text-[0.65rem] text-muted-foreground/40">Exatamente o que será enviado à IA</span>
+                  </div>
+                  <pre className="p-4 text-[0.72rem] font-mono text-foreground/70 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">{assembledPrompt}</pre>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Run button */}
           {previewTestId && (
             <button onClick={runPreview} disabled={previewRunning} className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-emerald-600 text-white rounded-xl text-[0.85rem] font-semibold disabled:opacity-40 hover:bg-emerald-700 transition-colors">
