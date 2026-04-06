@@ -34,7 +34,8 @@ const FREQUENCY_LABELS = [
 
 function getResponseLabels(question: QuestionItem): string[] {
   const type = question.type || 'likert';
-  if (type === 'behavior_choice' && question.options && question.options.length >= 2) {
+  // If the question has custom options configured, always use them
+  if (question.options && question.options.length >= 2) {
     return question.options;
   }
   if (type === 'frequency') return FREQUENCY_LABELS;
