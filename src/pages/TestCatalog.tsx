@@ -30,7 +30,8 @@ const iconMap: Record<string, any> = {
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 const TestCatalog = () => {
-  const { user, profile, signOut, isPremium, isSuperAdmin } = useAuth();
+  const { user, profile, signOut, isPremium, isSuperAdmin, previewMode, togglePreviewMode } = useAuth();
+  const realSuperAdmin = useAuth().role === 'super_admin';
   const navigate = useNavigate();
   const [modules, setModules] = useState<TestModule[]>([]);
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
