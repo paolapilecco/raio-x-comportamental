@@ -12,6 +12,7 @@ import {
   Crosshair, Compass, Activity, Zap, Sparkles, Eye, Target, Lightbulb,
 } from 'lucide-react';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import type { PatternKey } from '@/types/diagnostic';
 import { toast } from 'sonner';
 
@@ -56,6 +57,7 @@ const CentralReport = () => {
   const { user, profile: userProfile } = useAuth();
   const navigate = useNavigate();
   const { data: patternDefinitions } = usePatternDefinitions();
+  const radarAxisLabels = useAxisLabels();
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);

@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown } from 'lucide-react';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
@@ -69,6 +70,7 @@ const fadeIn = {
 const Dashboard = () => {
   const { user, profile, role, isPremium, isSuperAdmin, signOut, previewMode, togglePreviewMode } = useAuth();
   const { data: patternDefinitions } = usePatternDefinitions();
+  const radarAxisLabels = useAxisLabels();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
