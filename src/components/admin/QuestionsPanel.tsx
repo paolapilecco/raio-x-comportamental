@@ -273,7 +273,6 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           testDescription: desc,
           questionCount: aiCount,
         },
-        },
       });
       if (error) throw error;
       if (data?.error) { toast.error(data.error); return; }
