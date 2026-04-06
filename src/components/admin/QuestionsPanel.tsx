@@ -225,18 +225,46 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     const isCustomOptions = form.options && currentDefaults &&
       JSON.stringify(form.options) !== JSON.stringify(currentDefaults);
 
+    const validation = validateQuestion(form.text, form.type);
+    const hasIssues = validation.errors.length > 0 || validation.warnings.length > 0;
+
     return (
       <div className="space-y-4 p-5 rounded-2xl border border-primary/20 bg-primary/[0.02]">
         {/* Question text */}
         <div>
-          <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Texto da Pergunta / Afirmação</label>
+          <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Texto da Afirmação</label>
           <textarea
-            className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20 outline-none resize-none leading-relaxed"
+            className={`w-full px-3 py-2.5 rounded-xl bg-background/50 border text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20 outline-none resize-none leading-relaxed ${
+              validation.errors.length > 0 ? 'border-destructive/40' : 'border-border/30'
+            }`}
             rows={2}
             value={form.text}
             onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
-            placeholder={form.type === 'likert' ? 'Ex: Eu sinto desconforto ao lidar com dinheiro' : form.type === 'frequency' ? 'Ex: Com que frequência você adia decisões importantes?' : 'Ex: Quando alguém critica seu trabalho, você...'}
+            placeholder={form.type === 'likert' ? 'Ex: Eu começo tarefas mas não termino' : form.type === 'frequency' ? 'Ex: Com que frequência você adia decisões importantes?' : 'Ex: Quando alguém critica seu trabalho, você...'}
           />
+          {/* Inline validation feedback */}
+          {hasIssues && form.text.trim() && (
+            <div className="mt-2 space-y-1.5">
+              {validation.errors.map((err, i) => (
+                <div key={`e${i}`} className="flex items-start gap-2 text-[0.7rem] text-destructive/80">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{err}</span>
+                </div>
+              ))}
+              {validation.warnings.map((warn, i) => (
+                <div key={`w${i}`} className="flex items-start gap-2 text-[0.7rem] text-amber-600/80">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{warn}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {form.text.trim() && !hasIssues && (
+            <div className="flex items-center gap-1.5 mt-2 text-[0.68rem] text-emerald-600/70">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Formato válido</span>
+            </div>
+          )}
         </div>
 
         {/* Type + Weight + Order */}
