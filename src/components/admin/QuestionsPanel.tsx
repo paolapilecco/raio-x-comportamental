@@ -487,14 +487,123 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <p className="text-[0.8rem] text-muted-foreground/60">
           <span className="font-semibold text-foreground">{questions.length}</span> perguntas configuradas
         </p>
-        <button onClick={startCreate} disabled={creating} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[0.8rem] font-semibold hover:opacity-90 disabled:opacity-50 transition-all">
-          <Plus className="w-4 h-4" /> Nova Pergunta
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => { setShowAIPanel(!showAIPanel); setAiPreview(null); setAiSelected(new Set()); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[0.8rem] font-semibold hover:opacity-90 transition-all shadow-sm"
+          >
+            <Sparkles className="w-4 h-4" /> Gerar com IA
+          </button>
+          <button onClick={startCreate} disabled={creating} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-primary-foreground text-[0.8rem] font-semibold hover:opacity-90 disabled:opacity-50 transition-all">
+            <Plus className="w-4 h-4" /> Nova Pergunta
+          </button>
+        </div>
       </div>
+
+      {/* AI Generation Panel */}
+      {showAIPanel && (
+        <div className="p-5 rounded-2xl border border-violet-500/20 bg-violet-500/[0.03] space-y-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-violet-500" />
+            <h3 className="text-[0.85rem] font-bold text-foreground">Gerar Perguntas com IA</h3>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Nome do Teste</label>
+              <input className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem]" value={currentModule.name} readOnly />
+            </div>
+            <div>
+              <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Quantidade</label>
+              <input type="number" min={3} max={30} className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem]" value={aiCount} onChange={e => setAiCount(Math.max(3, Math.min(30, parseInt(e.target.value) || 10)))} />
+            </div>
+          </div>
+          <div>
+            <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Objetivo do Teste</label>
+            <p className="px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground/70 text-[0.8rem] min-h-[60px]">{currentModule.description}</p>
+          </div>
+
+          {!aiPreview && (
+            <button
+              onClick={handleAIGenerate}
+              disabled={aiGenerating}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[0.8rem] font-semibold hover:opacity-90 disabled:opacity-50 transition-all"
+            >
+              {aiGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+              {aiGenerating ? 'Gerando...' : `Gerar ${aiCount} Perguntas`}
+            </button>
+          )}
+
+          {/* AI Preview */}
+          {aiPreview && aiPreview.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <p className="text-[0.8rem] font-semibold text-foreground">
+                  {aiPreview.length} perguntas geradas — selecione as que deseja adicionar
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setAiSelected(aiSelected.size === aiPreview.length ? new Set() : new Set(aiPreview.map((_, i) => i)))}
+                    className="text-[0.7rem] text-violet-600 hover:underline"
+                  >
+                    {aiSelected.size === aiPreview.length ? 'Desmarcar todas' : 'Selecionar todas'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
+                {aiPreview.map((q, i) => (
+                  <div
+                    key={i}
+                    onClick={() => {
+                      const next = new Set(aiSelected);
+                      next.has(i) ? next.delete(i) : next.add(i);
+                      setAiSelected(next);
+                    }}
+                    className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
+                      aiSelected.has(i) ? 'border-violet-500/40 bg-violet-500/[0.06]' : 'border-border/20 bg-card/20 hover:border-border/40'
+                    }`}
+                  >
+                    <div className={`mt-0.5 w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      aiSelected.has(i) ? 'bg-violet-600 border-violet-600' : 'border-border/40'
+                    }`}>
+                      {aiSelected.has(i) && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[0.8rem] text-foreground/80">{q.text}</p>
+                      <div className="flex gap-1.5 mt-1.5 flex-wrap">
+                        <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{typeLabels[q.type] || q.type}</span>
+                        {q.axes?.map((a: string) => (
+                          <span key={a} className="text-[0.6rem] px-2 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60">{a}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button onClick={() => { setAiPreview(null); setAiSelected(new Set()); }} className="px-4 py-2 rounded-lg text-[0.8rem] text-muted-foreground hover:text-foreground transition-colors">Descartar</button>
+                <button onClick={handleAIGenerate} disabled={aiGenerating} className="px-4 py-2 rounded-lg text-[0.8rem] text-violet-600 hover:bg-violet-500/10 transition-colors flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5" /> Regenerar
+                </button>
+                <button
+                  onClick={handleAISave}
+                  disabled={aiSelected.size === 0 || saving}
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[0.8rem] font-semibold flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                  Adicionar {aiSelected.size} pergunta{aiSelected.size !== 1 ? 's' : ''}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {creating && renderForm()}
 
@@ -568,11 +677,11 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
               </div>
             );
           })}
-          {questions.length === 0 && !creating && (
+          {questions.length === 0 && !creating && !showAIPanel && (
             <div className="text-center py-12 text-muted-foreground/40">
               <Brain className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="text-[0.8rem]">Nenhuma pergunta cadastrada</p>
-              <p className="text-[0.7rem] mt-1">Clique em "Nova Pergunta" para começar</p>
+              <p className="text-[0.7rem] mt-1">Clique em "Nova Pergunta" ou "Gerar com IA" para começar</p>
             </div>
           )}
         </div>
