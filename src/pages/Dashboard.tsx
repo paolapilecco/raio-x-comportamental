@@ -172,6 +172,19 @@ const Dashboard = () => {
           supabase.from('test_modules').select('id, slug, name, description, icon, question_count').eq('is_active', true).order('sort_order'),
         ]);
 
+        if (cpRes.error) {
+          console.error('Error fetching central profile:', cpRes.error);
+          toast.error('Erro ao carregar perfil central.');
+        }
+        if (sessionsRes.error) {
+          console.error('Error fetching sessions:', sessionsRes.error);
+          toast.error('Erro ao carregar sessões.');
+        }
+        if (modulesRes.error) {
+          console.error('Error fetching modules:', modulesRes.error);
+          toast.error('Erro ao carregar módulos.');
+        }
+
         if (cpRes.data) {
           const cp = cpRes.data;
           setCentralProfile({
@@ -192,7 +205,11 @@ const Dashboard = () => {
         setModules((modulesRes.data as TestModule[]) || []);
 
         if (sessions.length > 0) {
-          const { data: result } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).single();
+          const { data: result, error: resultErr } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).maybeSingle();
+          if (resultErr) {
+            console.error('Error fetching latest result:', resultErr);
+            toast.error('Erro ao carregar resultado mais recente.');
+          }
           setLatestResult(result);
         }
       } catch (err) {

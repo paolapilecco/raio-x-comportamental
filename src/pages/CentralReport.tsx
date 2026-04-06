@@ -62,11 +62,16 @@ const CentralReport = () => {
 
     const fetchData = async () => {
       try {
-        const { data: cp } = await supabase
+        const { data: cp, error: cpErr } = await supabase
           .from('user_central_profile')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
+
+        if (cpErr) {
+          console.error('Error fetching central profile:', cpErr);
+          toast.error('Erro ao carregar perfil central.');
+        }
 
         if (cp) {
           setCentralProfile({
@@ -82,18 +87,28 @@ const CentralReport = () => {
         }
 
         // Fetch all results for timeline
-        const { data: sessions } = await supabase
+        const { data: sessions, error: sessErr } = await supabase
           .from('diagnostic_sessions')
           .select('id, completed_at')
           .eq('user_id', user.id)
           .not('completed_at', 'is', null)
           .order('completed_at', { ascending: true });
 
+        if (sessErr) {
+          console.error('Error fetching sessions:', sessErr);
+          toast.error('Erro ao carregar sessões.');
+        }
+
         if (sessions && sessions.length > 0) {
-          const { data: results } = await supabase
+          const { data: results, error: resErr } = await supabase
             .from('diagnostic_results')
             .select('all_scores, created_at, dominant_pattern, intensity')
             .in('session_id', sessions.map(s => s.id));
+
+          if (resErr) {
+            console.error('Error fetching results:', resErr);
+            toast.error('Erro ao carregar resultados.');
+          }
 
           if (results) {
             setHistory(results.map(r => ({

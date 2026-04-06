@@ -35,11 +35,16 @@ const Profile = () => {
 
     const fetchData = async () => {
       try {
-        const { data: cp } = await supabase
+        const { data: cp, error: cpErr } = await supabase
           .from('user_central_profile')
           .select('*')
           .eq('user_id', user.id)
           .maybeSingle();
+
+        if (cpErr) {
+          console.error('Error fetching central profile:', cpErr);
+          toast.error('Erro ao carregar dados do perfil.');
+        }
 
         if (cp) {
           setCentralProfile({
@@ -54,20 +59,29 @@ const Profile = () => {
           });
         }
 
-        const { data: sessions } = await supabase
+        const { data: sessions, error: sessErr } = await supabase
           .from('diagnostic_sessions')
           .select('test_module_id')
           .eq('user_id', user.id)
           .not('completed_at', 'is', null)
           .not('test_module_id', 'is', null);
 
+        if (sessErr) {
+          console.error('Error fetching sessions:', sessErr);
+          toast.error('Erro ao carregar sessões concluídas.');
+        }
+
         const uniqueModules = new Set(sessions?.map(s => s.test_module_id) || []);
         setCompletedCount(uniqueModules.size);
 
-        const { count } = await supabase
+        const { count, error: countErr } = await supabase
           .from('test_modules')
           .select('*', { count: 'exact', head: true })
           .eq('is_active', true);
+
+        if (countErr) {
+          console.error('Error fetching module count:', countErr);
+        }
 
         setTotalModules(count || 0);
       } catch (err) {
