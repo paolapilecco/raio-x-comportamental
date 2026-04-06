@@ -1,5 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { patternDefinitions } from '@/data/patterns';
+import { detectConflicts as detectConflictsShared } from '@/lib/conflictDetection';
 import type { PatternKey } from '@/types/diagnostic';
 
 interface ScoreEntry {
@@ -36,27 +37,11 @@ function normalizeByVolume(rawAvg: number, sampleCount: number, maxSamples: numb
  * Detects internal conflicts: high scores on opposing behavioral axes.
  */
 function detectConflicts(scores: Record<string, number>): { patternA: string; patternB: string; description: string }[] {
-  const conflictPairs: [PatternKey, PatternKey, string][] = [
-    ['paralyzing_perfectionism', 'unstable_execution', 'Exige perfeição mas não consegue manter execução consistente — ciclo de paralisia e frustração.'],
-    ['validation_dependency', 'excessive_self_criticism', 'Busca aprovação externa mas se autocritica constantemente — nunca se sente suficiente.'],
-    ['functional_overload', 'discomfort_escape', 'Acumula responsabilidades mas foge do desconforto — colapso inevitável.'],
-    ['emotional_self_sabotage', 'low_routine_sustenance', 'Sabota emocionalmente e não sustenta rotinas — recomeça do zero repetidamente.'],
-    ['paralyzing_perfectionism', 'discomfort_escape', 'Perfeccionismo gera desconforto que leva à fuga — nada é iniciado ou concluído.'],
-    ['validation_dependency', 'emotional_self_sabotage', 'Depende de validação mas sabota relações — ciclo de rejeição autoimposta.'],
-  ];
-
-  const threshold = 55; // both patterns must be above this to count as conflict
-  const conflicts: { patternA: string; patternB: string; description: string }[] = [];
-
-  for (const [a, b, desc] of conflictPairs) {
-    if ((scores[a] || 0) >= threshold && (scores[b] || 0) >= threshold) {
-      const labelA = patternDefinitions[a]?.label || a;
-      const labelB = patternDefinitions[b]?.label || b;
-      conflicts.push({ patternA: labelA, patternB: labelB, description: desc });
-    }
+  const labelMap: Record<string, string> = {};
+  for (const [key, def] of Object.entries(patternDefinitions)) {
+    labelMap[key] = def?.label || key;
   }
-
-  return conflicts;
+  return detectConflictsShared(scores, labelMap);
 }
 
 /**

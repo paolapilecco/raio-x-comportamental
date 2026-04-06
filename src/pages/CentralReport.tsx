@@ -14,6 +14,7 @@ import {
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import type { PatternKey } from '@/types/diagnostic';
+import { detectConflictPairs, CONFLICT_PAIR_DESCRIPTIONS } from '@/lib/conflictDetection';
 import { toast } from 'sonner';
 
 interface AIInsights {
@@ -42,14 +43,6 @@ interface HistoryEntry {
 }
 
 
-const conflictPairDescriptions: Record<string, string> = {
-  'paralyzing_perfectionism+unstable_execution': 'Exige perfeição mas não sustenta execução — ciclo de paralisia.',
-  'validation_dependency+excessive_self_criticism': 'Busca aprovação mas se autocritica constantemente.',
-  'functional_overload+discomfort_escape': 'Acumula responsabilidades mas foge do desconforto.',
-  'emotional_self_sabotage+low_routine_sustenance': 'Sabota emocionalmente e não sustenta rotinas.',
-  'paralyzing_perfectionism+discomfort_escape': 'Perfeccionismo gera desconforto que leva à fuga.',
-  'validation_dependency+emotional_self_sabotage': 'Depende de validação mas sabota relações.',
-};
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
@@ -166,18 +159,7 @@ const CentralReport = () => {
   const secondaryPatterns = sorted.slice(1, 4).filter(([, v]) => v >= 40);
 
   // Detect conflicts
-  const conflictThreshold = 55;
-  const conflictPairs: [PatternKey, PatternKey][] = [
-    ['paralyzing_perfectionism', 'unstable_execution'],
-    ['validation_dependency', 'excessive_self_criticism'],
-    ['functional_overload', 'discomfort_escape'],
-    ['emotional_self_sabotage', 'low_routine_sustenance'],
-    ['paralyzing_perfectionism', 'discomfort_escape'],
-    ['validation_dependency', 'emotional_self_sabotage'],
-  ];
-  const detectedConflicts = conflictPairs.filter(
-    ([a, b]) => (scores[a] || 0) >= conflictThreshold && (scores[b] || 0) >= conflictThreshold
-  );
+  const detectedConflicts = detectConflictPairs(scores);
 
   // Sabotage risk
   const sabotageKeys: PatternKey[] = ['emotional_self_sabotage', 'discomfort_escape', 'unstable_execution', 'low_routine_sustenance'];
@@ -301,7 +283,7 @@ const CentralReport = () => {
             <div className="space-y-4">
               {detectedConflicts.map(([a, b], i) => {
                 const pairKey = `${a}+${b}`;
-                const desc = conflictPairDescriptions[pairKey] || 'Conflito entre padrões opostos detectado.';
+                const desc = CONFLICT_PAIR_DESCRIPTIONS[pairKey] || 'Conflito entre padrões opostos detectado.';
                 return (
                   <div key={i} className="bg-destructive/5 border border-destructive/10 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">

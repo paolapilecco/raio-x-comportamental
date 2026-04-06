@@ -139,7 +139,7 @@ function generateTasks(): RoadmapTask[] {
       description: 'Os conflictPairs estão duplicados em CentralReport.tsx e centralProfile.ts com lógica similar. Deveria ser centralizado.',
       priority: 'medium',
       category: 'inconsistency',
-      status: 'pending',
+      status: 'done',
       copyText: 'Centralizar a lógica de detecção de conflitos comportamentais que está duplicada em src/pages/CentralReport.tsx e src/lib/centralProfile.ts. Criar um módulo compartilhado com os pares de conflito e a função de detecção.',
     },
     {
