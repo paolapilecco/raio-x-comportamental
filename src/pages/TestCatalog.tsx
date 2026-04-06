@@ -307,14 +307,17 @@ const TestCatalog = () => {
                   {!canAccess && !isIncomplete && (
                     <button
                       onClick={(e) => { e.stopPropagation(); navigate('/premium'); }}
-                      className="w-full mt-1 py-2.5 rounded-xl text-[0.78rem] font-semibold tracking-wide
-                        bg-gradient-to-r from-[hsl(var(--gold))] via-[hsl(40,45%,65%)] to-[hsl(var(--gold))]
-                        text-[hsl(35,30%,15%)] shadow-[0_4px_16px_-4px_hsl(var(--gold)/0.4)]
-                        hover:shadow-[0_6px_24px_-4px_hsl(var(--gold)/0.55)] hover:brightness-105
-                        transition-all duration-300 flex items-center justify-center gap-2"
+                      className="w-full mt-1 py-3 rounded-[14px] text-[0.85rem] font-bold tracking-wide
+                        bg-gradient-to-r from-[#B8860B] via-[#F2D27A] to-[#C9A24A]
+                        text-white shadow-[0_4px_18px_-4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]
+                        hover:shadow-[0_6px_24px_-4px_rgba(0,0,0,0.22),inset_0_1px_2px_rgba(255,255,255,0.45)]
+                        hover:brightness-110 hover:scale-[1.02] active:scale-[0.98]
+                        transition-all duration-300 ease-out flex items-center justify-center gap-2
+                        relative overflow-hidden"
                     >
-                      <Crown className="w-3.5 h-3.5" />
-                      Premium
+                      <span className="absolute inset-0 bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
+                      <Crown className="w-4 h-4 relative z-10 drop-shadow-sm" />
+                      <span className="relative z-10 drop-shadow-sm">Premium</span>
                     </button>
                   )}
                 </div>
