@@ -253,8 +253,18 @@ Gere o diagnóstico completo em JSON com esta estrutura EXATA:
   "whatNotToDo": ["3-5 coisas específicas que o usuário NÃO deve fazer — baseadas no padrão detectado"],
   "lifeImpact": [{"pillar": "área da vida", "impact": "impacto concreto e específico"}],
   "exitStrategy": [{"step": 1, "title": "título do passo", "action": "ação detalhada e específica com prazo ou critério de sucesso"}],
+  "actionPlan": [{"area": "nome da área com nota abaixo de 7", "score": 5, "actions": ["ação 1 prática e executável em até 60 dias", "ação 2 prática e executável em até 60 dias", "ação 3 prática e executável em até 60 dias"]}],
   "firstAction": "A PRIMEIRA ação concreta que o usuário deve tomar nos próximos 3 dias — específica o suficiente para ser executável"
-}`;
+}
+
+INSTRUÇÃO EXTRA PARA actionPlan:
+- Gere actionPlan SOMENTE para áreas/eixos com nota ABAIXO de 70% (ou abaixo de 7 em escala 0-10).
+- Cada ação deve ser um COMPORTAMENTO concreto, não teoria ou motivação.
+- Deve ser executável em até 60 dias por qualquer pessoa.
+- Formato: verbo no imperativo + o que fazer + quando/como medir.
+- Exemplos BONS: "Caminhe 20 minutos 3x por semana antes do trabalho", "Ligue para um familiar por 10 minutos toda segunda-feira", "Separe 10% do salário no dia do pagamento antes de qualquer gasto".
+- Exemplos PROIBIDOS: "Busque equilíbrio financeiro", "Invista em autoconhecimento", "Priorize sua saúde".
+- Se não houver áreas abaixo de 70%, retorne actionPlan como array vazio [].`;
 }
 
 function detectContradictions(scores: ScoreEntry[]): string {
@@ -538,6 +548,7 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
     if (!result.blockingPoint) result.blockingPoint = "";
     if (!result.impact) result.impact = "";
     if (!result.combinedTitle) result.combinedTitle = `${dominant.label}`;
+    if (!Array.isArray(result.actionPlan)) result.actionPlan = [];
 
     return new Response(JSON.stringify({ analysis: result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
