@@ -305,7 +305,17 @@ const TestCatalog = () => {
                   </div>
 
                   {!canAccess && !isIncomplete && (
-                    <p className="text-[0.7rem] text-gold/60 font-medium font-display">Requer assinatura Premium</p>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate('/premium'); }}
+                      className="w-full mt-1 py-2.5 rounded-xl text-[0.78rem] font-semibold tracking-wide
+                        bg-gradient-to-r from-[hsl(var(--gold))] via-[hsl(40,45%,65%)] to-[hsl(var(--gold))]
+                        text-[hsl(35,30%,15%)] shadow-[0_4px_16px_-4px_hsl(var(--gold)/0.4)]
+                        hover:shadow-[0_6px_24px_-4px_hsl(var(--gold)/0.55)] hover:brightness-105
+                        transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                      <Crown className="w-3.5 h-3.5" />
+                      Premium
+                    </button>
                   )}
                 </div>
               </motion.div>
