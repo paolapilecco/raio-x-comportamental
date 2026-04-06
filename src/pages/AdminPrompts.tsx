@@ -968,55 +968,47 @@ const AdminPrompts = () => {
         )}
       </motion.div>
 
-      {/* ── Global AI Config ── */}
+      {/* ── Global AI Config (unified) ── */}
       <motion.div {...fadeUp} transition={{ delay: 0.08 }} className="space-y-3">
         <button onClick={() => toggleSection('ai_config')} className="w-full flex items-center justify-between bg-card/70 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4 hover:bg-card/90 transition-colors">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center"><Sliders className="w-4 h-4 text-violet-500" /></div>
             <div className="text-left">
               <h2 className="text-[0.9rem] font-semibold">Configuração Global de IA</h2>
-              <p className="text-[0.7rem] text-muted-foreground/50">Padrão herdado por todos os testes</p>
+              <p className="text-[0.7rem] text-muted-foreground/50">Modelo, parâmetros e padrões herdados por todos os testes</p>
             </div>
           </div>
           {expandedSections['ai_config'] ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
         </button>
         {expandedSections['ai_config'] && globalAiConfig && (
-          <div className="pl-2">{renderAiConfigPanel(editedGlobalAi, (f, v) => setEditedGlobalAi(prev => ({ ...prev, [f]: v })), handleSaveGlobalAi, 'global_ai')}</div>
-        )}
-      </motion.div>
-
+          <div className="pl-2 space-y-4">
+            {/* Model Selector */}
+            <div className="p-4 rounded-xl border border-violet-500/20 bg-violet-500/[0.02] space-y-3">
+              <h4 className="text-[0.8rem] font-semibold flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-violet-500/60" />
+                Modelo de IA
+              </h4>
+              <p className="text-[0.68rem] text-muted-foreground/50">
+                Modelo ativo: <span className="font-mono text-primary">{AI_MODELS.find(m => m.value === (editedGlobalAi as GlobalAiConfig).ai_model)?.label || (editedGlobalAi as GlobalAiConfig).ai_model}</span>
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {AI_MODELS.map(model => (
+                  <button
+                    key={model.value}
+                    onClick={() => setEditedGlobalAi(prev => ({ ...prev, ai_model: model.value }))}
+                    className={`text-left px-3 py-2.5 rounded-lg text-[0.75rem] transition-all border ${
+                      (editedGlobalAi as GlobalAiConfig).ai_model === model.value
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border/30 text-muted-foreground/60 hover:border-primary/30'
+                    }`}
+                  >
+                    <div className="font-medium">{model.label}</div>
+                    <div className="text-[0.65rem] opacity-70 mt-0.5">{model.description}</div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          {expandedSections['global'] ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
-        </button>
-        {expandedSections['global'] && (
-          <div className="space-y-3 pl-2">
-            {globalPrompts.map(p => {
-              const meta = GLOBAL_META[p.context] || { icon: Brain, description: 'Prompt personalizado.' };
-              const Icon = meta.icon;
-              const key = `gp_${p.id}`;
-              const hasChanges = editedTexts[key] !== p.prompt_text;
-              return (
-                <div key={p.id} className={`border rounded-xl p-4 space-y-2.5 transition-colors ${p.is_active ? 'border-border/30 bg-card/40' : 'border-border/15 bg-card/20 opacity-50'}`}>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Icon className={`w-3.5 h-3.5 shrink-0 ${p.is_active ? 'text-primary/70' : 'text-muted-foreground/30'}`} />
-                      <div><h4 className="text-[0.8rem] font-semibold leading-tight">{p.label}</h4><p className="text-[0.65rem] text-muted-foreground/40">{meta.description}</p></div>
-                    </div>
-                    <button onClick={() => handleToggleGlobal(p)} className="p-1 hover:bg-muted/30 rounded-lg transition-colors">
-                      {p.is_active ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4 text-muted-foreground/30" />}
-                    </button>
-                  </div>
-                  <textarea value={editedTexts[key] ?? p.prompt_text} onChange={(e) => setEditedTexts(prev => ({ ...prev, [key]: e.target.value }))} rows={4} className="w-full bg-background/50 border border-border/20 rounded-lg p-3 text-[0.78rem] leading-[1.7] text-foreground/80 resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-mono" />
-                  <div className="flex items-center justify-between">
-                    <span className="text-[0.6rem] text-muted-foreground/25">{new Date(p.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
-                    <button onClick={() => handleSaveGlobal(p)} disabled={!hasChanges || saving === p.id} className="flex items-center gap-1.5 px-3.5 py-1.5 bg-primary text-primary-foreground rounded-lg text-[0.7rem] font-semibold disabled:opacity-20 hover:opacity-90 transition-all">
-                      <Save className="w-3 h-3" /> {saving === p.id ? '...' : 'Salvar'}
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            {renderAiConfigPanel(editedGlobalAi, (f, v) => setEditedGlobalAi(prev => ({ ...prev, [f]: v })), handleSaveGlobalAi, 'global_ai')}
           </div>
         )}
       </motion.div>
