@@ -415,14 +415,20 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           </label>
           <textarea
             className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20 outline-none resize-none leading-relaxed"
-            rows={2}
+            rows={3}
+            maxLength={400}
             value={form.context || ''}
             onChange={e => setForm(f => ({ ...f, context: e.target.value }))}
             placeholder="Ex: Considere situações dos últimos 6 meses ao responder esta pergunta."
           />
-          <p className="text-[0.65rem] text-muted-foreground/50 mt-1">
-            Texto exibido ao usuário antes de responder, para dar contexto ou orientação.
-          </p>
+          <div className="flex justify-between mt-1">
+            <p className="text-[0.65rem] text-muted-foreground/50">
+              Texto exibido ao usuário antes de responder, para dar contexto ou orientação.
+            </p>
+            <span className={`text-[0.65rem] ${(form.context?.length || 0) > 350 ? 'text-orange-400' : 'text-muted-foreground/50'}`}>
+              {form.context?.length || 0}/400
+            </span>
+          </div>
         </div>
 
         {/* Type + Weight + Order */}
