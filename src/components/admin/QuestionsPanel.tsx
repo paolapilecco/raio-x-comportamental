@@ -356,7 +356,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                     Respostas padrão para tipo "{typeLabels[form.type]}". Edite para personalizar.
                   </p>
                   <button
-                    onClick={() => setForm(f => ({ ...f, options: [...(defaultOptionsForType[f.type] || [])] }))}
+                    onClick={() => setForm(f => ({ ...f, options: [...(defaultOptionsForType[f.type] || [])], option_scores: [...(defaultScoresForType[f.type] || [])] }))}
                     className="text-[0.65rem] text-primary/60 hover:text-primary transition-colors"
                   >
                     Restaurar padrão
@@ -364,26 +364,49 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                 </div>
               )}
 
-              <div className="space-y-2">
-                {(form.options || defaultOptionsForType[form.type] || []).map((opt, i) => (
-                  <div key={i} className="flex gap-2 items-center group">
-                    <span className="text-[0.7rem] text-muted-foreground/40 w-5 text-right font-mono">{i + 1}.</span>
-                    <input
-                      className="flex-1 px-3 py-2 rounded-lg bg-background/50 border border-border/20 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20"
-                      value={opt}
-                      onChange={e => updateOption(i, e.target.value)}
-                      placeholder={`Opção ${i + 1}`}
-                    />
-                    {(form.options || []).length > 2 && (
-                      <button onClick={() => removeOption(i)} className="p-1.5 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+              {/* Header */}
+              <div className="flex gap-2 items-center px-1">
+                <span className="w-5" />
+                <span className="flex-1 text-[0.65rem] font-semibold text-muted-foreground/50 uppercase tracking-wider">Texto da Resposta</span>
+                <span className="w-20 text-center text-[0.65rem] font-semibold text-muted-foreground/50 uppercase tracking-wider">Pontos</span>
+                <span className="w-8" />
               </div>
 
-              <button onClick={addOption} className="text-[0.7rem] text-primary hover:underline">+ Adicionar opção</button>
+              <div className="space-y-2">
+                {(form.options || defaultOptionsForType[form.type] || []).map((opt, i) => {
+                  const score = (form.option_scores || defaultScoresForType[form.type] || [])[i] ?? 0;
+                  return (
+                    <div key={i} className="flex gap-2 items-center group">
+                      <span className="text-[0.7rem] text-muted-foreground/40 w-5 text-right font-mono">{i + 1}.</span>
+                      <input
+                        className="flex-1 px-3 py-2 rounded-lg bg-background/50 border border-border/20 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20"
+                        value={opt}
+                        onChange={e => updateOption(i, e.target.value)}
+                        placeholder={`Opção ${i + 1}`}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        className="w-20 px-2 py-2 rounded-lg bg-background/50 border border-border/20 text-foreground text-[0.8rem] text-center font-mono focus:ring-2 focus:ring-primary/20"
+                        value={score}
+                        onChange={e => updateScore(i, parseInt(e.target.value) || 0)}
+                      />
+                      {(form.options || []).length > 2 && (
+                        <button onClick={() => removeOption(i)} className="p-1.5 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all w-8 flex items-center justify-center">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {(form.options || []).length <= 2 && <span className="w-8" />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <button onClick={addOption} className="text-[0.7rem] text-primary hover:underline">+ Adicionar opção</button>
+                <p className="text-[0.6rem] text-muted-foreground/40">Pontos: 0 (mínimo) a 100 (máximo)</p>
+              </div>
             </div>
           )}
         </div>
