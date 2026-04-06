@@ -113,6 +113,9 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const [aiPreview, setAiPreview] = useState<any[] | null>(null);
   const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
   const [aiModuleDescription, setAiModuleDescription] = useState('');
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const [previewAnswers, setPreviewAnswers] = useState<Record<string, number>>({});
 
   useEffect(() => {
     fetchQuestions();
