@@ -441,6 +441,7 @@ const Dashboard = () => {
               </div>
             </div>
           </motion.section>
+        )}
 
         {/* Premium CTA */}
         {!isPremium && (
