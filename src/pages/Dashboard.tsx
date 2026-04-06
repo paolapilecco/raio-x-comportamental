@@ -212,7 +212,7 @@ const Dashboard = () => {
       summary: latestResult.state_summary,
       mechanism: latestResult.mechanism,
       contradiction: latestResult.contradiction,
-      impact: dominantDef?.impact || '',
+      impact: latestResult.impact || dominantDef?.impact || '',
       direction: latestResult.direction,
       combinedTitle: latestResult.combined_title,
       profileName: latestResult.profile_name,
@@ -223,10 +223,10 @@ const Dashboard = () => {
       blockingPoint: latestResult.blocking_point,
       lifeImpact: (latestResult.life_impact as any[]) || [],
       exitStrategy: (latestResult.exit_strategy as any[]) || [],
-      corePain: dominantDef?.corePain || '',
-      keyUnlockArea: dominantDef?.keyUnlockArea || '',
-      criticalDiagnosis: dominantDef?.criticalDiagnosis || '',
-      whatNotToDo: dominantDef?.whatNotToDo || [],
+      corePain: latestResult.core_pain || dominantDef?.corePain || '',
+      keyUnlockArea: latestResult.key_unlock_area || dominantDef?.keyUnlockArea || '',
+      criticalDiagnosis: latestResult.critical_diagnosis || dominantDef?.criticalDiagnosis || '',
+      whatNotToDo: latestResult.what_not_to_do || dominantDef?.whatNotToDo || [],
     };
     generateDiagnosticPdf(diagResult, profile?.name);
   };

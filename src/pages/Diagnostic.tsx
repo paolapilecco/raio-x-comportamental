@@ -207,6 +207,11 @@ const Diagnostic = () => {
         all_scores: JSON.parse(JSON.stringify(analysisResult.allScores)),
         direction: analysisResult.direction,
         combined_title: analysisResult.combinedTitle,
+        core_pain: analysisResult.corePain || '',
+        key_unlock_area: analysisResult.keyUnlockArea || '',
+        critical_diagnosis: analysisResult.criticalDiagnosis || '',
+        impact: analysisResult.impact || '',
+        what_not_to_do: analysisResult.whatNotToDo || [],
       }]);
 
       await supabase
