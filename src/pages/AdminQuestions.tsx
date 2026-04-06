@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Plus, Save, Trash2, Loader2, Edit3, X, ChevronDown, ChevronRight,
-  GripVertical, Brain, Heart, Zap, DollarSign, Eye, Compass, Shield,
+  GripVertical, Brain, Heart, Zap, DollarSign, Eye, Compass, Shield, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
