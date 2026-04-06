@@ -59,6 +59,8 @@ export default function AdminQuestions() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(emptyQuestion);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<{ reasoning?: { type_reason?: string; axes_reason?: string; weight_reason?: string } } | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
