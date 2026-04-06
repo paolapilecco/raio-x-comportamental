@@ -375,8 +375,63 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     );
   };
 
+  // Audit existing questions against standards
+  const auditResults = useMemo(() => {
+    if (loading || questions.length === 0) return null;
+    let errorCount = 0;
+    let warnCount = 0;
+    const issues: { id: string; text: string; type: string; problems: string[] }[] = [];
+    questions.forEach(q => {
+      const v = validateQuestion(q.text, q.type);
+      const allProblems = [...v.errors, ...v.warnings];
+      if (v.errors.length) errorCount += v.errors.length;
+      if (v.warnings.length) warnCount += v.warnings.length;
+      if (allProblems.length > 0) issues.push({ id: q.id, text: q.text, type: q.type, problems: allProblems });
+    });
+    return { errorCount, warnCount, issues, total: questions.length, clean: questions.length - issues.length };
+  }, [questions, loading]);
+
   return (
     <div className="space-y-4">
+      {/* Standards banner */}
+      <div className="p-3 rounded-xl border border-border/20 bg-muted/10">
+        <p className="text-[0.7rem] text-muted-foreground/60 leading-relaxed">
+          <span className="font-semibold text-foreground/70">📋 Padrão:</span> Likert com afirmações (sem "?"). Evite perguntas abertas e linguagem genérica. Garanta coerência entre texto e tipo de resposta.
+        </p>
+      </div>
+
+      {/* Audit summary */}
+      {auditResults && auditResults.issues.length > 0 && (
+        <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <span className="text-[0.75rem] font-semibold text-amber-700 dark:text-amber-400">
+              {auditResults.issues.length} de {auditResults.total} perguntas com observações
+            </span>
+          </div>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {auditResults.issues.slice(0, 5).map(issue => (
+              <div key={issue.id} className="text-[0.65rem] text-amber-600/70 flex items-start gap-1.5">
+                <span className="shrink-0">•</span>
+                <span><strong>"{issue.text.slice(0, 50)}..."</strong> — {issue.problems[0]}</span>
+              </div>
+            ))}
+            {auditResults.issues.length > 5 && (
+              <p className="text-[0.65rem] text-amber-500/50 italic">...e mais {auditResults.issues.length - 5} perguntas</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {auditResults && auditResults.issues.length === 0 && questions.length > 0 && (
+        <div className="flex items-center gap-2 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03]">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <span className="text-[0.75rem] font-semibold text-emerald-700 dark:text-emerald-400">
+            Todas as {questions.length} perguntas seguem o padrão ✓
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <p className="text-[0.8rem] text-muted-foreground/60">
           <span className="font-semibold text-foreground">{questions.length}</span> perguntas configuradas
