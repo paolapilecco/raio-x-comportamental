@@ -85,7 +85,7 @@ const Diagnostic = () => {
         .maybeSingle();
 
       if (!mod) {
-        toast.error('Teste não encontrado');
+        toast.error('Diagnóstico não encontrado');
         navigate('/tests');
         return;
       }
@@ -100,9 +100,9 @@ const Diagnostic = () => {
 
       if (error || !questions || questions.length === 0) {
         if (isSuperAdmin) {
-          toast.error('Este teste ainda não possui estrutura completa de perguntas');
+          toast.error('Este diagnóstico ainda não possui estrutura completa de perguntas');
         } else {
-          toast.error('Teste indisponível no momento');
+          toast.error('Diagnóstico indisponível no momento');
         }
         navigate('/tests');
         return;
@@ -111,9 +111,9 @@ const Diagnostic = () => {
       const MIN_QUESTIONS = 10;
       if (questions.length < MIN_QUESTIONS) {
         if (isSuperAdmin) {
-          toast.error(`Este teste possui apenas ${questions.length} perguntas (mínimo: ${MIN_QUESTIONS}).`);
+          toast.error(`Este diagnóstico possui apenas ${questions.length} perguntas (mínimo: ${MIN_QUESTIONS}).`);
         } else {
-          toast.error('Teste indisponível no momento');
+          toast.error('Diagnóstico indisponível no momento');
         }
         navigate('/tests');
         return;
@@ -124,7 +124,7 @@ const Diagnostic = () => {
         if (isSuperAdmin) {
           toast.error(`Mais de 50% das perguntas sem eixos configurados.`);
         } else {
-          toast.error('Teste indisponível no momento');
+          toast.error('Diagnóstico indisponível no momento');
         }
         navigate('/tests');
         return;

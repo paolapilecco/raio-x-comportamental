@@ -156,7 +156,7 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
     if (axisKeys.length === 0) {
       axisKeys = await loadAxes(previewTestId);
     }
-    if (axisKeys.length === 0) { toast.error('Teste sem eixos configurados'); return; }
+    if (axisKeys.length === 0) { toast.error('Diagnóstico sem eixos configurados'); return; }
 
     const scores = axisKeys.map(key => {
       const pct = previewScores[key] ?? 50;
