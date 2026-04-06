@@ -230,13 +230,19 @@ const TestCatalog = () => {
                     ? 'border-destructive/25 opacity-60 cursor-default'
                     : canAccess
                       ? 'border-border/35 hover:border-primary/25 cursor-pointer hover:shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.1)] hover:translate-y-[-2px]'
-                      : 'border-border/25 opacity-70 cursor-default'
+                      : 'border-gold/30 cursor-pointer hover:border-gold/50 hover:shadow-[0_20px_60px_-15px_hsl(var(--gold)/0.15)] hover:translate-y-[-2px]'
                 }`}
-                onClick={() => canAccess && navigate(`/diagnostic/${mod.slug}`)}
+                onClick={() => {
+                  if (canAccess) navigate(`/diagnostic/${mod.slug}`);
+                  else if (!isIncomplete) navigate('/premium');
+                }}
               >
                 {/* Hover glow */}
                 {canAccess && !isIncomplete && (
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                )}
+                {!canAccess && !isIncomplete && (
+                  <div className="absolute inset-0 bg-gradient-to-br from-gold/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                 )}
 
                 {/* Status badges */}
@@ -265,13 +271,13 @@ const TestCatalog = () => {
                       ? 'bg-destructive/[0.06] border border-destructive/10'
                       : canAccess
                         ? 'bg-primary/[0.05] border border-primary/10 group-hover:bg-primary/[0.08] group-hover:border-primary/15'
-                        : 'bg-muted/20 border border-border/20'
+                        : 'bg-gold/[0.06] border border-gold/15'
                   }`}>
                     {isIncomplete
                       ? <AlertTriangle className="w-5 h-5 text-destructive/50" />
                       : canAccess
                         ? <Icon className="w-5 h-5 text-primary/50 group-hover:text-primary/70 transition-colors duration-300" />
-                        : <Lock className="w-5 h-5 text-muted-foreground/35" />}
+                        : <Lock className="w-5 h-5 text-gold/50" />}
                   </div>
 
                   <div>
