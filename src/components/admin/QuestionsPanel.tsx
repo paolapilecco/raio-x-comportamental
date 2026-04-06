@@ -264,11 +264,15 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
         .eq('id', currentModule.id)
         .single();
 
+      const desc = moduleData?.description || currentModule.name;
+      setAiModuleDescription(desc);
+
       const { data, error } = await supabase.functions.invoke('generate-questions', {
         body: {
           testName: currentModule.name,
-          testDescription: moduleData?.description || currentModule.name,
+          testDescription: desc,
           questionCount: aiCount,
+        },
         },
       });
       if (error) throw error;
