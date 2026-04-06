@@ -34,7 +34,8 @@ const FREQUENCY_LABELS = [
 
 function getResponseLabels(question: QuestionItem): string[] {
   const type = question.type || 'likert';
-  if (type === 'behavior_choice' && question.options && question.options.length >= 2) {
+  // If the question has custom options configured, always use them
+  if (question.options && question.options.length >= 2) {
     return question.options;
   }
   if (type === 'frequency') return FREQUENCY_LABELS;
@@ -45,6 +46,7 @@ function getScaleLabel(type: string | undefined): string {
   switch (type) {
     case 'frequency': return 'Com que frequência?';
     case 'behavior_choice': return 'O que você faria?';
+    case 'intensity': return 'Avalie de 0 a 10';
     default: return 'Quanto você concorda?';
   }
 }
