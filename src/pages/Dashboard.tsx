@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X } from 'lucide-react';
+import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown } from 'lucide-react';
 import { patternDefinitions } from '@/data/patterns';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
@@ -352,16 +352,29 @@ const Dashboard = () => {
                     </div>
                     <h3 className="text-base font-semibold text-foreground mb-2">{mod.name}</h3>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-6 line-clamp-2">{mod.description}</p>
-                    <button
-                      onClick={() => canAccess ? navigate(`/diagnostic/${mod.slug}`) : setShowUpgradeModal(true)}
-                      className={`w-full py-3 rounded-xl text-sm font-medium transition-all duration-200 active:scale-[0.97] ${
-                        canAccess
-                          ? 'bg-primary text-primary-foreground hover:brightness-90'
-                          : 'bg-muted text-muted-foreground cursor-default'
-                      }`}
-                    >
-                      {!canAccess ? 'Premium' : isCompleted ? 'Refazer Leitura' : 'Iniciar Leitura'}
-                    </button>
+                    {canAccess ? (
+                      <button
+                        onClick={() => navigate(`/diagnostic/${mod.slug}`)}
+                        className="w-full py-3 rounded-xl text-sm font-medium bg-primary text-primary-foreground hover:brightness-90 transition-all duration-200 active:scale-[0.97]"
+                      >
+                        {isCompleted ? 'Refazer Leitura' : 'Iniciar Leitura'}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowUpgradeModal(true)}
+                        className="w-full py-3 rounded-[14px] text-[0.85rem] font-bold tracking-wide
+                          bg-gradient-to-r from-[#B8860B] via-[#F2D27A] to-[#C9A24A]
+                          text-white shadow-[0_4px_18px_-4px_rgba(0,0,0,0.15),inset_0_1px_1px_rgba(255,255,255,0.35)]
+                          hover:shadow-[0_6px_24px_-4px_rgba(0,0,0,0.22),inset_0_1px_2px_rgba(255,255,255,0.45)]
+                          hover:brightness-110 hover:scale-[1.02] active:scale-[0.98]
+                          transition-all duration-300 ease-out flex items-center justify-center gap-2
+                          relative overflow-hidden"
+                      >
+                        <span className="absolute inset-0 bg-gradient-to-b from-white/15 to-transparent pointer-events-none" />
+                        <Crown className="w-4 h-4 relative z-10 drop-shadow-sm" />
+                        <span className="relative z-10 drop-shadow-sm">Premium</span>
+                      </button>
+                    )}
                   </div>
                 );
               })}
