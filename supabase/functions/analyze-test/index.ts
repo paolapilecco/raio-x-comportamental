@@ -98,6 +98,40 @@ ${promptMap.restrictions}`);
 
 5. FORMATO: Responda EXCLUSIVAMENTE em JSON válido com a estrutura exata especificada`);
 
+  // Deep analysis layer — mandatory cross-pattern reasoning
+  sections.push(`# CAMADA DE PROFUNDIDADE (obrigatória)
+
+Antes de gerar o diagnóstico, execute mentalmente estas etapas — o resultado deve estar REFLETIDO em cada campo da resposta:
+
+## 1. CRUZAMENTO DE PADRÕES
+- Não analise cada eixo isoladamente. Cruze o padrão dominante com CADA padrão secundário.
+- Para cada cruzamento, identifique: como um ALIMENTA ou MASCARA o outro?
+- Exemplo: se há alta autocrítica E alta fuga do desconforto, a autocrítica pode ser o MOTOR da fuga — não são problemas separados.
+- O campo "mechanism" DEVE descrever essa engrenagem cruzada, não apenas o padrão dominante.
+
+## 2. DETECÇÃO DE CONTRADIÇÕES REAIS
+- Use as evidências das respostas (seção "EVIDÊNCIAS DAS RESPOSTAS DO USUÁRIO") para identificar onde o usuário DIZ uma coisa e FAZ outra.
+- Contradição válida = resposta extrema em uma direção + resposta oposta no mesmo eixo ou eixo relacionado.
+- O campo "contradiction" deve citar o COMPORTAMENTO contraditório específico, não conceitos abstratos.
+- O campo "blindSpot" deve surpreender — se for óbvio, está errado.
+
+## 3. CAUSA RAIZ (não sintoma)
+- O campo "corePain" NÃO é o padrão dominante reformulado. É o MECANISMO INVISÍVEL por trás dele.
+- Pergunte-se: "por que esse padrão existe?" — a resposta é a dor central.
+- Se a dor central pudesse ser resolvida em uma frase genérica, você errou. Deve ser específica ao perfil dos dados.
+
+## 4. FILTRO ANTI-GENERICIDADE
+- Releia cada campo antes de finalizar. Se uma frase poderia se aplicar a QUALQUER pessoa, reescreva.
+- Teste mental: substitua os dados por outros completamente diferentes. Se a frase ainda funcionaria, ela é genérica — descarte.
+- Campos mais críticos: criticalDiagnosis, corePain, blindSpot, firstAction.
+- triggers e whatNotToDo devem ser tão específicos que SOMENTE alguém com esse perfil se identificaria.
+
+## 5. COERÊNCIA INTERNA
+- O diagnóstico é uma NARRATIVA — cada campo deve se conectar ao anterior.
+- corePain → mechanism → contradiction → blindSpot → blockingPoint → direction → firstAction
+- Se a firstAction não ataca diretamente o blockingPoint, está incoerente.
+- Se o blindSpot não surpreende dado o corePain, está superficial.`);
+
   return sections.join("\n\n---\n\n");
 }
 
