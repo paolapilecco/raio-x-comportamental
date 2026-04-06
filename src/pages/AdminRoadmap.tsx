@@ -109,10 +109,10 @@ function generateTasks(): RoadmapTask[] {
     {
       id: 'inc-css-import-order',
       title: 'Ordem de @import no index.css pode causar problemas',
-      description: 'Warnings de build indicam que @import rules devem vir antes de outros conteúdos no CSS. Isso pode causar falhas de renderização de fontes.',
+      description: 'CORRIGIDO — Verificado que os @import de fontes já estão no topo absoluto do arquivo, antes de qualquer @tailwind directive.',
       priority: 'medium',
       category: 'bug',
-      status: 'pending',
+      status: 'done',
       copyText: 'Corrigir a ordem dos @import no arquivo src/index.css. Os @import de fontes do Google devem ficar ANTES de qualquer @tailwind directive ou outro conteúdo CSS. Mover todos os @import para o topo absoluto do arquivo.',
     },
     {
