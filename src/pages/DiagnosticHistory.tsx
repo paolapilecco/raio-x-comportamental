@@ -57,15 +57,29 @@ const DiagnosticHistory = () => {
           supabase.from('test_modules').select('id, slug, name').eq('is_active', true),
         ]);
 
+        if (sessionsRes.error) {
+          console.error('Error fetching sessions:', sessionsRes.error);
+          toast.error('Erro ao carregar sessões.');
+        }
+        if (modulesRes.error) {
+          console.error('Error fetching modules:', modulesRes.error);
+          toast.error('Erro ao carregar módulos.');
+        }
+
         setModules((modulesRes.data as TestModule[]) || []);
 
         const sessions = sessionsRes.data || [];
         if (sessions.length === 0) { setLoading(false); return; }
 
-        const { data: results } = await supabase
+        const { data: results, error: resErr } = await supabase
           .from('diagnostic_results')
           .select('*')
           .in('session_id', sessions.map(s => s.id));
+
+        if (resErr) {
+          console.error('Error fetching results:', resErr);
+          toast.error('Erro ao carregar resultados.');
+        }
 
         // Merge test_module_id into results
         const enriched = (results || []).map(r => {
