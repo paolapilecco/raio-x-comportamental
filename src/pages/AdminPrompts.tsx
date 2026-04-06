@@ -107,7 +107,7 @@ const AdminPrompts = () => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [testPrompts, setTestPrompts] = useState<TestPrompt[]>([]);
-  const [globalPrompts, setGlobalPrompts] = useState<AdminPrompt[]>([]);
+  // globalPrompts removed — not used by the AI engine
   const [modules, setModules] = useState<TestModule[]>([]);
   const [globalAiConfig, setGlobalAiConfig] = useState<GlobalAiConfig | null>(null);
   const [testAiConfigs, setTestAiConfigs] = useState<TestAiConfig[]>([]);
@@ -140,18 +140,15 @@ const AdminPrompts = () => {
   }, [authLoading, isSuperAdmin]);
 
   const fetchData = async () => {
-    const [tpRes, gpRes, mRes, gaiRes, taiRes] = await Promise.all([
+    const [tpRes, mRes, gaiRes, taiRes] = await Promise.all([
       supabase.from('test_prompts').select('*').order('created_at', { ascending: true }),
-      supabase.from('admin_prompts').select('*').is('test_module_id', null).order('created_at', { ascending: true }),
       supabase.from('test_modules').select('id, slug, name, icon').eq('is_active', true).order('sort_order'),
       supabase.from('global_ai_config').select('*').limit(1).maybeSingle(),
       supabase.from('test_ai_config').select('*'),
     ]);
 
     const tp = (tpRes.data || []) as TestPrompt[];
-    const gp = (gpRes.data || []) as AdminPrompt[];
     setTestPrompts(tp);
-    setGlobalPrompts(gp);
     const mods = (mRes.data || []) as TestModule[];
     setModules(mods);
     setGlobalAiConfig(gaiRes.data as GlobalAiConfig | null);
@@ -163,7 +160,6 @@ const AdminPrompts = () => {
 
     const texts: Record<string, string> = {};
     tp.forEach(p => { texts[`tp_${p.id}`] = p.content; });
-    gp.forEach(p => { texts[`gp_${p.id}`] = p.prompt_text; });
     setEditedTexts(texts);
 
     if (!selectedModule && mods.length > 0) setSelectedModule(mods[0].id);
@@ -178,18 +174,6 @@ const AdminPrompts = () => {
     if (!text.trim()) { toast.error('Prompt vazio'); return; }
     setSaving(prompt.id);
     const { error } = await supabase.from('test_prompts').update({ content: text.trim(), updated_by: user?.id }).eq('id', prompt.id);
-    if (error) toast.error('Erro ao salvar');
-    else { toast.success('Salvo'); await fetchData(); }
-    setSaving(null);
-  };
-
-  const handleSaveGlobal = async (prompt: AdminPrompt) => {
-    const key = `gp_${prompt.id}`;
-    const text = editedTexts[key];
-    if (text === undefined || text === prompt.prompt_text) { toast.info('Sem alterações'); return; }
-    if (!text.trim()) { toast.error('Prompt vazio'); return; }
-    setSaving(prompt.id);
-    const { error } = await supabase.from('admin_prompts').update({ prompt_text: text.trim() }).eq('id', prompt.id);
     if (error) toast.error('Erro ao salvar');
     else { toast.success('Salvo'); await fetchData(); }
     setSaving(null);
