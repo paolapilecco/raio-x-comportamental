@@ -585,9 +585,21 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       )}
 
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <p className="text-[0.8rem] text-muted-foreground/60">
-          <span className="font-semibold text-foreground">{questions.length}</span> perguntas configuradas
-        </p>
+        <div className="flex items-center gap-3">
+          <p className="text-[0.8rem] text-muted-foreground/60">
+            <span className="font-semibold text-foreground">{questions.length}</span> perguntas configuradas
+          </p>
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDeleting}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-destructive text-destructive-foreground text-[0.75rem] font-semibold hover:bg-destructive/90 disabled:opacity-50 transition-all"
+            >
+              {bulkDeleting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              Excluir {selectedIds.size} selecionada(s)
+            </button>
+          )}
+        </div>
         <div className="flex gap-2">
           <button
             onClick={() => { setShowPreview(true); setPreviewIndex(0); setPreviewAnswers({}); }}
@@ -876,18 +888,41 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary/40" /></div>
       ) : (
         <div className="space-y-2">
+          {/* Select all header */}
+          {questions.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <button onClick={toggleSelectAll} className="p-0.5 rounded hover:bg-accent/50 transition-colors">
+                {selectedIds.size === questions.length ? (
+                  <CheckSquare className="w-4 h-4 text-primary" />
+                ) : (
+                  <Square className="w-4 h-4 text-muted-foreground/40" />
+                )}
+              </button>
+              <span className="text-[0.7rem] text-muted-foreground/50">
+                {selectedIds.size > 0 ? `${selectedIds.size} selecionada(s)` : 'Selecionar todas'}
+              </span>
+            </div>
+          )}
           {questions.map((q) => {
             const isEditing = editingId === q.id;
             const isExpanded = expandedQuestionId === q.id;
             const qValidation = validateQuestion(q.text, q.type);
             const hasQIssues = qValidation.errors.length > 0 || qValidation.warnings.length > 0;
+            const isSelected = selectedIds.has(q.id);
             return isEditing ? (
               <div key={q.id}>{renderForm()}</div>
             ) : (
               <div key={q.id} className={`rounded-xl border bg-card/30 hover:border-primary/20 transition-colors overflow-hidden ${
-                qValidation.errors.length > 0 ? 'border-destructive/30' : hasQIssues ? 'border-amber-500/25' : 'border-border/25'
+                isSelected ? 'border-primary/40 bg-primary/[0.03]' : qValidation.errors.length > 0 ? 'border-destructive/30' : hasQIssues ? 'border-amber-500/25' : 'border-border/25'
               }`}>
                 <div className="flex items-start gap-3 p-3">
+                  <button onClick={() => toggleSelect(q.id)} className="p-0.5 rounded hover:bg-accent/50 transition-colors mt-0.5 shrink-0">
+                    {isSelected ? (
+                      <CheckSquare className="w-4 h-4 text-primary" />
+                    ) : (
+                      <Square className="w-4 h-4 text-muted-foreground/30" />
+                    )}
+                  </button>
                   <span className="text-[0.65rem] font-mono text-muted-foreground/40 mt-1 w-6 text-right">{q.sort_order}</span>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-2">
