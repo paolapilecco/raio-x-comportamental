@@ -450,14 +450,21 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           {questions.map((q) => {
             const isEditing = editingId === q.id;
             const isExpanded = expandedQuestionId === q.id;
+            const qValidation = validateQuestion(q.text, q.type);
+            const hasQIssues = qValidation.errors.length > 0 || qValidation.warnings.length > 0;
             return isEditing ? (
               <div key={q.id}>{renderForm()}</div>
             ) : (
-              <div key={q.id} className="rounded-xl border border-border/25 bg-card/30 hover:border-primary/20 transition-colors overflow-hidden">
+              <div key={q.id} className={`rounded-xl border bg-card/30 hover:border-primary/20 transition-colors overflow-hidden ${
+                qValidation.errors.length > 0 ? 'border-destructive/30' : hasQIssues ? 'border-amber-500/25' : 'border-border/25'
+              }`}>
                 <div className="flex items-start gap-3 p-3">
                   <span className="text-[0.65rem] font-mono text-muted-foreground/40 mt-1 w-6 text-right">{q.sort_order}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[0.8rem] text-foreground/80">{q.text}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="text-[0.8rem] text-foreground/80 flex-1">{q.text}</p>
+                      {hasQIssues && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${qValidation.errors.length > 0 ? 'text-destructive/60' : 'text-amber-500/60'}`} />}
+                    </div>
                     <div className="flex gap-1.5 mt-1.5 flex-wrap">
                       <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{typeLabels[q.type] || q.type}</span>
                       {q.axes.map(a => (
