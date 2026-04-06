@@ -77,7 +77,7 @@ const fadeIn = {
 };
 
 const Dashboard = () => {
-  const { user, profile, role, isPremium, isSuperAdmin, signOut } = useAuth();
+  const { user, profile, role, isPremium, isSuperAdmin, signOut, previewMode, togglePreviewMode } = useAuth();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
@@ -89,7 +89,7 @@ const Dashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const generateTestData = async () => {
-    if (!user || !isSuperAdmin) return;
+    if (!user || role !== 'super_admin') return;
     setGenerating(true);
     try {
       const { data: session, error: sessionErr } = await supabase
@@ -273,17 +273,54 @@ const Dashboard = () => {
         </motion.section>
 
         {/* Super Admin tools */}
-        {isSuperAdmin && (
+        {role === 'super_admin' && (
           <div className="flex items-center gap-3 flex-wrap">
-            <button onClick={() => navigate('/admin/dashboard')} className="text-xs font-medium px-4 py-2 rounded-xl border border-border/40 hover:bg-secondary/50 transition-all duration-200 active:scale-[0.97]">
-              Painel Admin
-            </button>
-            {!hasData && (
+            {!previewMode && (
+              <button onClick={() => navigate('/admin/dashboard')} className="text-xs font-medium px-4 py-2 rounded-xl border border-border/40 hover:bg-secondary/50 transition-all duration-200 active:scale-[0.97]">
+                Painel Admin
+              </button>
+            )}
+            {!hasData && !previewMode && (
               <button onClick={generateTestData} disabled={generating} className="text-xs font-medium px-4 py-2 rounded-xl border border-border/40 hover:bg-secondary/50 transition-all duration-200 disabled:opacity-50 active:scale-[0.97]">
                 {generating ? 'Gerando...' : 'Gerar dados de teste'}
               </button>
             )}
+            <button
+              onClick={togglePreviewMode}
+              className={`text-xs font-medium px-4 py-2 rounded-xl border transition-all duration-200 active:scale-[0.97] ${
+                previewMode
+                  ? 'border-primary/40 bg-primary/10 text-primary hover:bg-primary/20'
+                  : 'border-border/40 hover:bg-secondary/50'
+              }`}
+            >
+              {previewMode ? '👁 Modo Preview Ativo — Clique para sair' : '👁 Ver como usuário padrão'}
+            </button>
           </div>
+        )}
+
+        {/* Preview mode banner */}
+        {previewMode && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <span className="text-sm">👁</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">Modo Pré-visualização</p>
+                <p className="text-xs text-muted-foreground">Você está vendo a plataforma como um usuário padrão (sem Premium)</p>
+              </div>
+            </div>
+            <button
+              onClick={togglePreviewMode}
+              className="text-xs font-medium px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:brightness-90 transition-all active:scale-[0.97]"
+            >
+              Sair do Preview
+            </button>
+          </motion.div>
         )}
 
         {/* Test modules - main grid matching reference */}
@@ -333,7 +370,7 @@ const Dashboard = () => {
         )}
 
         {/* Empty state */}
-        {!hasData && modules.length === 0 && !isSuperAdmin && (
+        {!hasData && modules.length === 0 && role !== 'super_admin' && (
           <motion.section {...fadeIn}>
             <div className="bg-card border border-dashed border-border/40 rounded-2xl p-16 text-center space-y-6">
               <div className="w-14 h-14 rounded-2xl bg-secondary/60 flex items-center justify-center mx-auto">

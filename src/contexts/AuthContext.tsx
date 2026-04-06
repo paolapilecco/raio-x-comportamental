@@ -21,6 +21,8 @@ interface AuthContextType {
   isPremium: boolean;
   isSuperAdmin: boolean;
   loading: boolean;
+  previewMode: boolean;
+  togglePreviewMode: () => void;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -42,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole>('user');
   const [loading, setLoading] = useState(true);
+  const [previewMode, setPreviewMode] = useState(false);
   const initializedRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
@@ -119,18 +122,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setProfile(null);
     setRole('user');
+    setPreviewMode(false);
   };
 
   const refreshProfile = async () => {
     if (user) await fetchProfile(user.id);
   };
 
-  const isSuperAdmin = role === 'super_admin';
-  const isPremium = role === 'premium' || isSuperAdmin;
+  const togglePreviewMode = useCallback(() => {
+    if (role === 'super_admin') {
+      setPreviewMode(prev => !prev);
+    }
+  }, [role]);
+
+  const realSuperAdmin = role === 'super_admin';
+  const isSuperAdmin = realSuperAdmin && !previewMode;
+  const isPremium = (role === 'premium' || realSuperAdmin) && !previewMode;
   const isAdmin = isSuperAdmin; // backward compat
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, isAdmin, isPremium, isSuperAdmin, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, role, isAdmin, isPremium, isSuperAdmin, loading, previewMode, togglePreviewMode, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

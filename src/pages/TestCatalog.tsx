@@ -30,7 +30,8 @@ const iconMap: Record<string, any> = {
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 const TestCatalog = () => {
-  const { user, profile, signOut, isPremium, isSuperAdmin } = useAuth();
+  const { user, profile, signOut, isPremium, isSuperAdmin, previewMode, togglePreviewMode } = useAuth();
+  const realSuperAdmin = useAuth().role === 'super_admin';
   const navigate = useNavigate();
   const [modules, setModules] = useState<TestModule[]>([]);
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
@@ -148,6 +149,34 @@ const TestCatalog = () => {
             </button>
           </div>
         </motion.div>
+
+        {/* Preview mode banner */}
+        {previewMode && (
+          <motion.div {...fadeUp} className="bg-primary/5 border border-primary/20 rounded-2xl p-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-sm">👁</span>
+              <div>
+                <p className="text-[0.82rem] font-semibold text-foreground">Modo Pré-visualização</p>
+                <p className="text-[0.72rem] text-muted-foreground">Visão de usuário padrão (sem Premium)</p>
+              </div>
+            </div>
+            <button onClick={togglePreviewMode} className="text-[0.72rem] font-medium px-3 py-1.5 rounded-xl bg-primary text-primary-foreground hover:brightness-90 transition-all">
+              Sair do Preview
+            </button>
+          </motion.div>
+        )}
+
+        {/* Preview toggle for admins */}
+        {realSuperAdmin && !previewMode && (
+          <motion.div {...fadeUp}>
+            <button
+              onClick={togglePreviewMode}
+              className="text-[0.72rem] font-medium px-4 py-2 rounded-xl border border-border/30 text-muted-foreground/60 hover:text-foreground/80 hover:bg-card/60 transition-all"
+            >
+              👁 Ver como usuário padrão
+            </button>
+          </motion.div>
+        )}
 
         {/* Progress Bar */}
         <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card/60 backdrop-blur-xl rounded-2xl border border-border/40 p-6 shadow-[0_10px_40px_-15px_hsl(var(--primary)/0.06)]">
