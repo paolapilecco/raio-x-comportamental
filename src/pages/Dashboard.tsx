@@ -290,7 +290,7 @@ const Dashboard = () => {
         {modules.length > 0 && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.1 }}>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {modules.map((mod) => {
+                {modules.map((mod) => {
                 const Icon = iconMap[mod.icon] || Brain;
                 const isFreeTest = mod.slug === 'padrao-comportamental';
                 const canAccess = isSuperAdmin || isPremium || isFreeTest;
@@ -323,7 +323,7 @@ const Dashboard = () => {
                           : 'bg-muted text-muted-foreground cursor-default'
                       }`}
                     >
-                      {canAccess ? 'Iniciar Leitura' : 'Premium'}
+                      {!canAccess ? 'Premium' : isCompleted ? 'Refazer Leitura' : 'Iniciar Leitura'}
                     </button>
                   </div>
                 );
