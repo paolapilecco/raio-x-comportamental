@@ -16,6 +16,7 @@ import { useAxisLabels } from '@/hooks/useAxisLabels';
 import type { PatternKey } from '@/types/diagnostic';
 import { detectConflictPairs, CONFLICT_PAIR_DESCRIPTIONS } from '@/lib/conflictDetection';
 import { toast } from 'sonner';
+import { CentralReportSkeleton } from '@/components/skeletons/CentralReportSkeleton';
 
 interface AIInsights {
   interpretacao_personalizada: string;
@@ -145,11 +146,7 @@ const CentralReport = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+    return <CentralReportSkeleton />;
   }
 
   if (!centralProfile || centralProfile.tests_completed === 0) {

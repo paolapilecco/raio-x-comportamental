@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { ProfileSkeleton } from '@/components/skeletons/ProfileSkeleton';
 import type { PatternKey } from '@/types/diagnostic';
 
 interface CentralProfile {
@@ -96,11 +97,7 @@ const Profile = () => {
   }, [user]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
+    return <ProfileSkeleton />;
   }
 
   const dominantKey = centralProfile?.dominant_patterns?.[0]?.key as PatternKey | undefined;

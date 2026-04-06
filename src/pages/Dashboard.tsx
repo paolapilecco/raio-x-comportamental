@@ -10,6 +10,7 @@ import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
+import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 
 interface StoredResult {
@@ -254,13 +255,7 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return (
-      <AppLayout>
-        <div className="min-h-[60vh] flex items-center justify-center">
-          <div className="w-5 h-5 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
-        </div>
-      </AppLayout>
-    );
+    return <DashboardSkeleton />;
   }
 
   const displayName = profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário';
