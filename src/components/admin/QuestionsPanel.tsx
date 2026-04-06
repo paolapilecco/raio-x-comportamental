@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Plus, Save, Trash2, Edit3, X, Loader2, Brain, Copy, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Sparkles, Check, Eye, ChevronLeft } from 'lucide-react';
+import { Plus, Save, Trash2, Edit3, X, Loader2, Brain, Copy, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Sparkles, Check, Eye, ChevronLeft, Square, CheckSquare } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -116,6 +116,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const [showPreview, setShowPreview] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewAnswers, setPreviewAnswers] = useState<Record<string, number>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   useEffect(() => {
     fetchQuestions();
@@ -215,7 +217,30 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     if (!confirm('Excluir esta pergunta?')) return;
     const { error } = await supabase.from('questions').delete().eq('id', id);
     if (error) toast.error('Erro ao excluir');
-    else { toast.success('Pergunta excluída!'); await fetchQuestions(); }
+    else { toast.success('Pergunta excluída!'); setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; }); await fetchQuestions(); }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Excluir ${selectedIds.size} pergunta(s) selecionada(s)?`)) return;
+    setBulkDeleting(true);
+    const { error } = await supabase.from('questions').delete().in('id', Array.from(selectedIds));
+    if (error) toast.error('Erro ao excluir perguntas');
+    else { toast.success(`${selectedIds.size} pergunta(s) excluída(s)!`); setSelectedIds(new Set()); await fetchQuestions(); }
+    setBulkDeleting(false);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === questions.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(questions.map(q => q.id)));
   };
 
   const updateAxes = (index: number, value: string) => {
