@@ -166,7 +166,7 @@ function generateTasks(): RoadmapTask[] {
       description: 'O campo question_count nos test_modules é estático e pode não refletir o número real de perguntas na tabela questions. TestCatalog já faz a contagem real mas o Dashboard usa o valor estático.',
       priority: 'medium',
       category: 'inconsistency',
-      status: 'pending',
+      status: 'done',
       copyText: 'Criar um trigger ou função que atualiza automaticamente o campo question_count na tabela test_modules sempre que uma pergunta é adicionada ou removida da tabela questions. Alternativamente, sempre buscar a contagem real como o TestCatalog já faz.',
     },
 
