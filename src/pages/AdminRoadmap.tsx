@@ -204,7 +204,7 @@ function generateTasks(): RoadmapTask[] {
       description: 'O generatePdf.ts usa as patternDefinitions hardcoded. Quando a análise é feita pela IA, o PDF deveria usar o conteúdo gerado pela IA ao invés dos dados estáticos.',
       priority: 'low',
       category: 'inconsistency',
-      status: 'pending',
+      status: 'done',
       copyText: 'Atualizar o gerador de PDF (src/lib/generatePdf.ts) para usar o conteúdo gerado pela IA quando disponível, ao invés de sempre usar as patternDefinitions hardcoded. O DiagnosticResult já contém os dados da IA, garantir que o PDF reflita esses dados.',
     },
     {

@@ -93,12 +93,16 @@ export type Database = {
           blocking_point: string
           combined_title: string
           contradiction: string
+          core_pain: string
           created_at: string
+          critical_diagnosis: string
           direction: string
           dominant_pattern: string
           exit_strategy: Json | null
           id: string
+          impact: string
           intensity: string
+          key_unlock_area: string
           life_impact: Json | null
           mechanism: string
           mental_state: string
@@ -109,18 +113,23 @@ export type Database = {
           state_summary: string
           traps: string[] | null
           triggers: string[] | null
+          what_not_to_do: string[]
         }
         Insert: {
           all_scores?: Json | null
           blocking_point: string
           combined_title: string
           contradiction: string
+          core_pain?: string
           created_at?: string
+          critical_diagnosis?: string
           direction: string
           dominant_pattern: string
           exit_strategy?: Json | null
           id?: string
+          impact?: string
           intensity: string
+          key_unlock_area?: string
           life_impact?: Json | null
           mechanism: string
           mental_state: string
@@ -131,18 +140,23 @@ export type Database = {
           state_summary: string
           traps?: string[] | null
           triggers?: string[] | null
+          what_not_to_do?: string[]
         }
         Update: {
           all_scores?: Json | null
           blocking_point?: string
           combined_title?: string
           contradiction?: string
+          core_pain?: string
           created_at?: string
+          critical_diagnosis?: string
           direction?: string
           dominant_pattern?: string
           exit_strategy?: Json | null
           id?: string
+          impact?: string
           intensity?: string
+          key_unlock_area?: string
           life_impact?: Json | null
           mechanism?: string
           mental_state?: string
@@ -153,6 +167,7 @@ export type Database = {
           state_summary?: string
           traps?: string[] | null
           triggers?: string[] | null
+          what_not_to_do?: string[]
         }
         Relationships: [
           {
