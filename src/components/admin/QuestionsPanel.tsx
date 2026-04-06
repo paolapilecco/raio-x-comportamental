@@ -8,6 +8,7 @@ interface Question {
   id: string;
   test_id: string;
   text: string;
+  context: string | null;
   type: 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
   axes: string[];
   weight: number;
@@ -88,7 +89,7 @@ function validateQuestion(text: string, type: QuestionType): { warnings: string[
 }
 
 const emptyQuestion = {
-  text: '', type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0,
+  text: '', context: '' as string, type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0,
   options: null as string[] | null, option_scores: null as number[] | null,
 };
 
@@ -143,7 +144,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     const opts = q.options || defaultOptionsForType[q.type] || null;
     const scores = q.option_scores || defaultScoresForType[q.type] || null;
     setForm({
-      text: q.text, type: q.type,
+      text: q.text, context: q.context || '', type: q.type,
       axes: q.axes.length ? q.axes : [''],
       weight: q.weight, sort_order: q.sort_order,
       options: opts,
@@ -199,6 +200,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       text: form.text.trim(), type: form.type, axes, weight: form.weight,
       sort_order: form.sort_order, options: finalOptions,
       option_scores: finalScores,
+      context: form.context?.trim() || null,
       test_id: currentModule.id,
     };
     if (creating) {
@@ -404,6 +406,23 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
               <span>Formato válido</span>
             </div>
           )}
+        </div>
+
+        {/* Context (optional) */}
+        <div>
+          <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">
+            Contexto / Observação <span className="font-normal text-muted-foreground/50">(opcional)</span>
+          </label>
+          <textarea
+            className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20 outline-none resize-none leading-relaxed"
+            rows={2}
+            value={form.context || ''}
+            onChange={e => setForm(f => ({ ...f, context: e.target.value }))}
+            placeholder="Ex: Considere situações dos últimos 6 meses ao responder esta pergunta."
+          />
+          <p className="text-[0.65rem] text-muted-foreground/50 mt-1">
+            Texto exibido ao usuário antes de responder, para dar contexto ou orientação.
+          </p>
         </div>
 
         {/* Type + Weight + Order */}

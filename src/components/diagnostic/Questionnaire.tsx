@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface QuestionItem {
   id: number;
   text: string;
+  context?: string | null;
   type?: string;
   options?: string[] | null;
 }
@@ -132,6 +133,11 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
               >
                 {question.text}
               </p>
+              {question.context && (
+                <p className="text-sm text-muted-foreground/70 italic leading-relaxed max-w-md mx-auto">
+                  {question.context}
+                </p>
+              )}
               <p className="text-xs font-light text-muted-foreground/50 uppercase tracking-widest">
                 {getScaleLabel(question.type)}
               </p>
