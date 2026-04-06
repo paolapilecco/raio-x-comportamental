@@ -64,7 +64,7 @@ const PromptEditor = ({
                 <span className="hidden sm:inline">{s.label}</span>
                 <span className="sm:hidden">{s.shortLabel}</span>
                 {!exists && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
-                {isEmpty && <AlertCircle className="w-3 h-3 text-red-500 animate-pulse" title="Prompt ativo mas vazio!" />}
+                {isEmpty && <span className="relative flex h-3 w-3" title="Prompt ativo mas vazio!"><AlertCircle className="w-3 h-3 text-red-500 animate-pulse" /></span>}
               </TabsTrigger>
             );
           })}
