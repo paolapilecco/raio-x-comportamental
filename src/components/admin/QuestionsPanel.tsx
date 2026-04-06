@@ -565,6 +565,13 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
         </p>
         <div className="flex gap-2">
           <button
+            onClick={() => { setShowPreview(true); setPreviewIndex(0); setPreviewAnswers({}); }}
+            disabled={questions.length === 0}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/40 bg-background text-foreground text-[0.8rem] font-semibold hover:bg-secondary/60 disabled:opacity-50 transition-all"
+          >
+            <Eye className="w-4 h-4" /> Visualizar Teste
+          </button>
+          <button
             onClick={() => { setShowAIPanel(!showAIPanel); setAiPreview(null); setAiSelected(new Set()); }}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[0.8rem] font-semibold hover:opacity-90 transition-all shadow-sm"
           >
