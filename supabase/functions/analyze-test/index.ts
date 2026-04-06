@@ -101,6 +101,70 @@ ${promptMap.restrictions}`);
   return sections.join("\n\n---\n\n");
 }
 
+interface StructuredAnswer {
+  questionId: number;
+  questionText: string;
+  questionType: string;
+  axes: string[];
+  value: number;
+  chosenOption: string | null;
+}
+
+function buildAnswersSummary(answers: StructuredAnswer[]): string {
+  if (!answers || answers.length === 0) return "Respostas brutas não disponíveis.";
+
+  // Group answers by axis for pattern detection
+  const byAxis: Record<string, { question: string; value: number; option: string | null }[]> = {};
+  answers.forEach(a => {
+    a.axes.forEach(axis => {
+      if (!byAxis[axis]) byAxis[axis] = [];
+      byAxis[axis].push({ question: a.questionText, value: a.value, option: a.chosenOption });
+    });
+  });
+
+  const lines: string[] = [];
+
+  // High-signal answers (extremes: 1 or 5 on likert, reveal strong positions)
+  const extremes = answers.filter(a => a.value === 1 || a.value >= 5);
+  if (extremes.length > 0) {
+    lines.push("### RESPOSTAS EXTREMAS (sinais fortes):");
+    extremes.forEach(a => {
+      const label = a.value >= 5 ? "CONCORDÂNCIA TOTAL" : "DISCORDÂNCIA TOTAL";
+      const optionText = a.chosenOption ? ` → "${a.chosenOption}"` : "";
+      lines.push(`- [${label}] "${a.questionText}" (eixos: ${a.axes.join(", ")})${optionText}`);
+    });
+  }
+
+  // Behavior choice answers (direct behavioral evidence)
+  const behaviorChoices = answers.filter(a => a.questionType === 'behavior_choice' && a.chosenOption);
+  if (behaviorChoices.length > 0) {
+    lines.push("\n### ESCOLHAS COMPORTAMENTAIS (comportamento real):");
+    behaviorChoices.forEach(a => {
+      lines.push(`- "${a.questionText}" → escolheu: "${a.chosenOption}" (eixos: ${a.axes.join(", ")})`);
+    });
+  }
+
+  // Inconsistency detection: same axis, opposing answers
+  lines.push("\n### INCONSISTÊNCIAS DETECTADAS:");
+  let hasInconsistency = false;
+  Object.entries(byAxis).forEach(([axis, items]) => {
+    const values = items.map(i => i.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    if (max - min >= 3 && items.length >= 2) {
+      hasInconsistency = true;
+      const high = items.find(i => i.value === max);
+      const low = items.find(i => i.value === min);
+      lines.push(`- Eixo "${axis}": resposta alta (${max}) em "${high?.question}" vs baixa (${min}) em "${low?.question}" — possível autoengano ou ambivalência`);
+    }
+  });
+  if (!hasInconsistency) {
+    lines.push("- Nenhuma inconsistência extrema detectada nos mesmos eixos.");
+  }
+
+  return lines.join("\n");
+}
+
 function buildUserPrompt(
   userContext: string,
   slug: string,
@@ -108,7 +172,8 @@ function buildUserPrompt(
   scoresSummary: string,
   dominant: ScoreEntry,
   secondary: ScoreEntry[],
-  contradictions: string
+  contradictions: string,
+  answersSummary: string
 ): string {
   return `${userContext}
 Teste: ${slug}
@@ -124,6 +189,9 @@ ${secondary.length > 0
 
 ## CRUZAMENTOS E CONTRADIÇÕES DETECTADOS:
 ${contradictions}
+
+## EVIDÊNCIAS DAS RESPOSTAS DO USUÁRIO:
+${answersSummary}
 
 ---
 
