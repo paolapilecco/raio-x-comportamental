@@ -12,6 +12,7 @@ import {
   Crosshair, Compass, Activity, Zap, Sparkles, Eye, Target, Lightbulb,
 } from 'lucide-react';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import type { PatternKey } from '@/types/diagnostic';
 import { toast } from 'sonner';
 
@@ -40,16 +41,6 @@ interface HistoryEntry {
   intensity: string;
 }
 
-const radarAxisLabels: Record<string, string> = {
-  unstable_execution: 'Execução',
-  emotional_self_sabotage: 'Autossabotagem',
-  functional_overload: 'Sobrecarga',
-  discomfort_escape: 'Fuga',
-  paralyzing_perfectionism: 'Perfeccionismo',
-  validation_dependency: 'Validação',
-  excessive_self_criticism: 'Autocrítica',
-  low_routine_sustenance: 'Rotina',
-};
 
 const conflictPairDescriptions: Record<string, string> = {
   'paralyzing_perfectionism+unstable_execution': 'Exige perfeição mas não sustenta execução — ciclo de paralisia.',
@@ -66,6 +57,7 @@ const CentralReport = () => {
   const { user, profile: userProfile } = useAuth();
   const navigate = useNavigate();
   const { data: patternDefinitions } = usePatternDefinitions();
+  const radarAxisLabels = useAxisLabels();
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);

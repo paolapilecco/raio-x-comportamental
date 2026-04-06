@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown } from 'lucide-react';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
@@ -59,16 +60,6 @@ interface TestModule {
 const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
 const intensityColor: Record<string, string> = { leve: 'hsl(152, 45%, 42%)', moderado: 'hsl(var(--gold))', alto: 'hsl(0, 65%, 52%)' };
 
-const radarAxisLabels: Record<string, string> = {
-  unstable_execution: 'Execução',
-  emotional_self_sabotage: 'Autossabotagem',
-  functional_overload: 'Sobrecarga',
-  discomfort_escape: 'Fuga',
-  paralyzing_perfectionism: 'Perfeccionismo',
-  validation_dependency: 'Validação',
-  excessive_self_criticism: 'Autocrítica',
-  low_routine_sustenance: 'Rotina',
-};
 
 const fadeIn = {
   initial: { opacity: 0, y: 12 },
@@ -79,6 +70,7 @@ const fadeIn = {
 const Dashboard = () => {
   const { user, profile, role, isPremium, isSuperAdmin, signOut, previewMode, togglePreviewMode } = useAuth();
   const { data: patternDefinitions } = usePatternDefinitions();
+  const radarAxisLabels = useAxisLabels();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);

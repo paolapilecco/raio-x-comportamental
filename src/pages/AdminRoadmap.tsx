@@ -130,7 +130,7 @@ function generateTasks(): RoadmapTask[] {
       description: 'radarAxisLabels está duplicado em Dashboard.tsx, DiagnosticHistory.tsx e CentralReport.tsx. Deveria ser centralizado e dinâmico baseado nos eixos do teste.',
       priority: 'medium',
       category: 'inconsistency',
-      status: 'pending',
+      status: 'done',
       copyText: 'Centralizar o objeto radarAxisLabels que está duplicado em Dashboard.tsx, DiagnosticHistory.tsx e CentralReport.tsx. Criar um arquivo compartilhado (ex: src/data/axisLabels.ts) ou carregar os labels dinamicamente do banco baseado nos eixos configurados.',
     },
     {
