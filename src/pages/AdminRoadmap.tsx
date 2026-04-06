@@ -213,7 +213,7 @@ function generateTasks(): RoadmapTask[] {
       description: 'Só existe um arquivo de teste exemplo (src/test/example.test.ts). Nenhuma lógica de negócio tem teste automatizado.',
       priority: 'low',
       category: 'improvement',
-      status: 'pending',
+      status: 'done',
       copyText: 'Adicionar testes automatizados para a lógica de negócio principal: (1) centralProfile.ts - geração de perfil unificado, (2) analysis.ts - análise de respostas, (3) AuthContext - resolução de roles, (4) Edge functions - analyze-test e generate-insights. Usar vitest que já está configurado.',
     },
   ];
