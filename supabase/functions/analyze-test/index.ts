@@ -295,11 +295,12 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { test_module_id, scores, slug, refine_level } = await req.json() as {
+    const { test_module_id, scores, slug, refine_level, answers: structuredAnswers } = await req.json() as {
       test_module_id: string;
       scores: ScoreEntry[];
       slug: string;
-      refine_level?: number; // 0 = normal, 1+ = progressively stricter
+      refine_level?: number;
+      answers?: StructuredAnswer[];
     };
 
     if (!test_module_id || !scores || !Array.isArray(scores)) {
@@ -357,8 +358,10 @@ serve(async (req) => {
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
       : "Usuário anônimo";
 
+    const answersSummary = buildAnswersSummary(structuredAnswers || []);
+
     const userPrompt = buildUserPrompt(
-      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions
+      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary
     );
 
     // Build refine instruction if needed
