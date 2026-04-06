@@ -58,7 +58,7 @@ const Onboarding = () => {
       if (error) {
         if (error.code === '23505') {
           await refreshProfile();
-          navigate('/diagnostic');
+          navigate('/dashboard');
           return;
         }
         console.error('Profile save error:', error.message);
@@ -68,7 +68,7 @@ const Onboarding = () => {
 
       await refreshProfile();
       toast.success('Perfil criado!');
-      navigate('/diagnostic');
+      navigate('/dashboard');
     } finally {
       setSubmitting(false);
     }
