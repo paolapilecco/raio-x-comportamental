@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Save, Trash2, Edit3, X, Loader2, Brain, Copy, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Save, Trash2, Edit3, X, Loader2, Brain, Copy, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -36,7 +36,48 @@ const defaultOptionsForType: Record<string, string[]> = {
   behavior_choice: ['', '', '', ''],
 };
 
+const GENERIC_TERMS = [
+  'melhorar', 'equilibrio', 'equilíbrio', 'buscar', 'tentar', 'procurar',
+  'se sentir bem', 'ser feliz', 'ter sucesso', 'zona de conforto',
+];
+
 type QuestionType = 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
+
+/** Validate question text against quality standards */
+function validateQuestion(text: string, type: QuestionType): { warnings: string[]; errors: string[] } {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+  const trimmed = text.trim();
+  if (!trimmed) return { warnings, errors };
+
+  // Likert must be an affirmation — no question marks
+  if (type === 'likert' && trimmed.includes('?')) {
+    errors.push('Likert deve ser uma AFIRMAÇÃO (sem interrogação). Ex: "Eu começo tarefas mas não termino"');
+  }
+
+  // Frequency should be a question
+  if (type === 'frequency' && !trimmed.includes('?')) {
+    warnings.push('Frequência geralmente usa pergunta. Ex: "Com que frequência você adia decisões?"');
+  }
+
+  // Detect open-ended patterns
+  if (/^(por que|como você|o que você|qual|explique|descreva)/i.test(trimmed)) {
+    errors.push('Evite perguntas abertas (por que, como, o que). Use afirmações ou cenários.');
+  }
+
+  // Detect generic / self-help language
+  const foundGeneric = GENERIC_TERMS.filter(t => trimmed.toLowerCase().includes(t));
+  if (foundGeneric.length > 0) {
+    warnings.push(`Linguagem genérica detectada: "${foundGeneric.join('", "')}". Seja mais específico.`);
+  }
+
+  // Too short
+  if (trimmed.length < 15) {
+    warnings.push('Texto muito curto. Afirmações precisam de contexto suficiente para análise.');
+  }
+
+  return { warnings, errors };
+}
 
 const emptyQuestion = {
   text: '', type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0, options: null as string[] | null,
