@@ -96,7 +96,7 @@ export default function AdminDashboard() {
     { label: 'Módulos', icon: Brain, path: '/admin/test-modules', desc: 'Testes e perguntas' },
     { label: 'Perguntas', icon: FileText, path: '/admin/questions', desc: 'Editar questionários' },
     { label: 'Prompts IA', icon: Settings, path: '/admin/prompts', desc: 'Configurar prompts de IA' },
-    { label: 'Config IA', icon: BarChart3, path: '/admin/ai-config', desc: 'Configurações globais de IA' },
+    { label: 'Prompts & IA', icon: Settings, path: '/admin/prompts', desc: 'Prompts e configuração de IA' },
     { label: 'Roadmap', icon: LayoutGrid, path: '/admin/roadmap', desc: 'Tarefas do projeto' },
   ];
 

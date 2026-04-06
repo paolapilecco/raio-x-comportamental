@@ -207,9 +207,9 @@ const AdminPrompts = () => {
     setSaving('global_ai');
     const { id, ...fields } = editedGlobalAi as GlobalAiConfig;
     const { error } = await supabase.from('global_ai_config').update({
-      ai_enabled: fields.ai_enabled, temperature: fields.temperature, max_tokens: fields.max_tokens,
+      ai_enabled: fields.ai_enabled, ai_model: fields.ai_model, temperature: fields.temperature, max_tokens: fields.max_tokens,
       tone: fields.tone, depth_level: fields.depth_level, report_style: fields.report_style,
-    }).eq('id', globalAiConfig.id);
+    } as any).eq('id', globalAiConfig.id);
     if (error) toast.error('Erro ao salvar config global');
     else { toast.success('Config global salva'); await fetchData(); }
     setSaving(null);
