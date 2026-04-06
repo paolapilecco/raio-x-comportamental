@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { PlayCircle, ChevronDown, ChevronRight, Sliders, CheckCircle2, AlertTriangle, Loader2, Eye, Sparkles, GitCompare } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { PlayCircle, ChevronDown, ChevronRight, Sliders, CheckCircle2, AlertTriangle, Loader2, Eye, Sparkles, GitCompare, FileCode, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PROMPT_SECTIONS, type TestPrompt, type TestModule } from './promptConstants';
@@ -63,6 +63,48 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
   const [showComparison, setShowComparison] = useState(false);
   const [dynamicPresets, setDynamicPresets] = useState<{ label: string; icon: string; description: string; scores: Record<string, number> }[]>([]);
   const [loadedAxes, setLoadedAxes] = useState<string[]>([]);
+  const [showPromptPreview, setShowPromptPreview] = useState(false);
+
+  // Build the final system prompt preview (mirrors edge function logic)
+  const assembledPrompt = useMemo(() => {
+    if (!previewTestId) return '';
+    const activePrompts = testPrompts.filter(p => p.test_id === previewTestId && p.is_active);
+    if (activePrompts.length === 0) return '';
+
+    const promptMap: Record<string, string> = {};
+    activePrompts.forEach(p => { promptMap[p.prompt_type] = p.content; });
+
+    const sections: string[] = [];
+    sections.push(`# PAPEL\nVocê é um analista comportamental de alto nível. Sua função é INTERPRETAR — não descrever, não resumir, não motivar.\nVocê recebe dados reais de um teste comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.`);
+
+    const sectionMap: Record<string, string> = {
+      interpretation: '# INSTRUÇÕES DE INTERPRETAÇÃO',
+      diagnosis: '# DIAGNÓSTICO FINAL',
+      profile: '# IDENTIFICAÇÃO DE PERFIL',
+      core_pain: '# DOR CENTRAL',
+      triggers: '# GATILHOS E ARMADILHAS',
+      direction: '# DIREÇÃO PRÁTICA',
+      restrictions: '# RESTRIÇÕES OBRIGATÓRIAS',
+    };
+
+    Object.entries(sectionMap).forEach(([type, header]) => {
+      if (promptMap[type]) {
+        sections.push(`${header}\n${promptMap[type]}`);
+      }
+    });
+
+    sections.push(`# REGRAS INVIOLÁVEIS\n[Regras de especificidade, formato JSON e proibições — sempre incluídas automaticamente]`);
+
+    return sections.join('\n\n---\n\n');
+  }, [previewTestId, testPrompts]);
+
+  // Detect empty active prompts
+  const emptyActivePrompts = useMemo(() => {
+    if (!previewTestId) return [];
+    return testPrompts
+      .filter(p => p.test_id === previewTestId && p.is_active && !p.content.trim())
+      .map(p => PROMPT_SECTIONS.find(s => s.type === p.prompt_type)?.label || p.prompt_type);
+  }, [previewTestId, testPrompts]);
 
   const loadAxes = useCallback(async (testId: string) => {
     const { data: questions } = await supabase.from('questions').select('axes').eq('test_id', testId);
