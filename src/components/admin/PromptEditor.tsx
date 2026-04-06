@@ -142,7 +142,8 @@ const PromptEditor = ({
                         </button>
                       </div>
                     </div>
-                  ) : (
+                    );
+                  })() : (
                     <div className="flex flex-col items-center justify-center py-10 space-y-3">
                       <div className={`w-12 h-12 rounded-2xl ${section.bgColor} flex items-center justify-center`}>
                         <SIcon className={`w-6 h-6 ${section.color} opacity-40`} />
