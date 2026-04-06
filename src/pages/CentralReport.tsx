@@ -65,6 +65,7 @@ const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } }
 const CentralReport = () => {
   const { user, profile: userProfile } = useAuth();
   const navigate = useNavigate();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);
