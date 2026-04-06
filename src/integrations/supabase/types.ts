@@ -346,6 +346,7 @@ export type Database = {
       questions: {
         Row: {
           axes: string[]
+          context: string | null
           created_at: string
           id: string
           option_scores: number[] | null
@@ -358,6 +359,7 @@ export type Database = {
         }
         Insert: {
           axes?: string[]
+          context?: string | null
           created_at?: string
           id?: string
           option_scores?: number[] | null
@@ -370,6 +372,7 @@ export type Database = {
         }
         Update: {
           axes?: string[]
+          context?: string | null
           created_at?: string
           id?: string
           option_scores?: number[] | null
