@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { testName, testDescription, questionCount = 10 } = await req.json();
+    const { testName, testDescription, questionCount = 10, promptsContext, existingQuestionsFromOtherTests } = await req.json();
 
     if (!testName || typeof testName !== "string" || testName.length > 200) {
       return new Response(JSON.stringify({ error: "Nome do diagnóstico inválido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -21,6 +21,19 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // Build prompt context from test prompts
+    let promptContextBlock = "";
+    if (promptsContext && typeof promptsContext === "string" && promptsContext.length > 0) {
+      promptContextBlock = `\n\nCONTEXTO DOS PROMPTS DO DIAGNÓSTICO (use como referência obrigatória para gerar perguntas coerentes):\n${promptsContext.slice(0, 3000)}`;
+    }
+
+    // Build deduplication block
+    let deduplicationBlock = "";
+    if (Array.isArray(existingQuestionsFromOtherTests) && existingQuestionsFromOtherTests.length > 0) {
+      const existing = existingQuestionsFromOtherTests.slice(0, 100).map((q: string) => `- ${q}`).join("\n");
+      deduplicationBlock = `\n\nPERGUNTAS JÁ EXISTENTES EM OUTROS DIAGNÓSTICOS (NÃO REPITA nenhuma dessas, nem reformule de forma similar):\n${existing}`;
+    }
 
     const systemPrompt = `Você é um especialista em psicometria e análise comportamental. Gere perguntas estruturadas para diagnósticos comportamentais.
 
@@ -35,6 +48,14 @@ REGRAS OBRIGATÓRIAS:
 8. Use FREQUÊNCIA para comportamentos repetitivos (20-30%)
 9. Use ESCOLHA COMPORTAMENTAL com moderação (10-20%)
 10. Os eixos devem ser específicos ao tema do diagnóstico, nunca genéricos
+11. CADA PERGUNTA DEVE SER ÚNICA — não repita conceitos, reformulações ou variações de perguntas já existentes
+12. As perguntas devem ser COERENTES com os prompts e metodologia do diagnóstico${promptContextBlock}${deduplicationBlock}
+
+CAMADA DE PROFUNDIDADE:
+- Cruze padrões entre os eixos comportamentais
+- Identifique contradições que podem surgir nas respostas
+- Aponte a causa real por trás do comportamento
+- Evite respostas genéricas — cada pergunta deve revelar algo específico
 
 FORMATO DE SAÍDA (JSON array):
 Cada item deve ter:
