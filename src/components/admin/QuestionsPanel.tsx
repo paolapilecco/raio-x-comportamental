@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, Save, Trash2, Edit3, X, Loader2, Brain, Copy, ChevronDown, ChevronRight } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Plus, Save, Trash2, Edit3, X, Loader2, Brain, Copy, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -36,7 +36,48 @@ const defaultOptionsForType: Record<string, string[]> = {
   behavior_choice: ['', '', '', ''],
 };
 
+const GENERIC_TERMS = [
+  'melhorar', 'equilibrio', 'equilíbrio', 'buscar', 'tentar', 'procurar',
+  'se sentir bem', 'ser feliz', 'ter sucesso', 'zona de conforto',
+];
+
 type QuestionType = 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
+
+/** Validate question text against quality standards */
+function validateQuestion(text: string, type: QuestionType): { warnings: string[]; errors: string[] } {
+  const warnings: string[] = [];
+  const errors: string[] = [];
+  const trimmed = text.trim();
+  if (!trimmed) return { warnings, errors };
+
+  // Likert must be an affirmation — no question marks
+  if (type === 'likert' && trimmed.includes('?')) {
+    errors.push('Likert deve ser uma AFIRMAÇÃO (sem interrogação). Ex: "Eu começo tarefas mas não termino"');
+  }
+
+  // Frequency should be a question
+  if (type === 'frequency' && !trimmed.includes('?')) {
+    warnings.push('Frequência geralmente usa pergunta. Ex: "Com que frequência você adia decisões?"');
+  }
+
+  // Detect open-ended patterns
+  if (/^(por que|como você|o que você|qual|explique|descreva)/i.test(trimmed)) {
+    errors.push('Evite perguntas abertas (por que, como, o que). Use afirmações ou cenários.');
+  }
+
+  // Detect generic / self-help language
+  const foundGeneric = GENERIC_TERMS.filter(t => trimmed.toLowerCase().includes(t));
+  if (foundGeneric.length > 0) {
+    warnings.push(`Linguagem genérica detectada: "${foundGeneric.join('", "')}". Seja mais específico.`);
+  }
+
+  // Too short
+  if (trimmed.length < 15) {
+    warnings.push('Texto muito curto. Afirmações precisam de contexto suficiente para análise.');
+  }
+
+  return { warnings, errors };
+}
 
 const emptyQuestion = {
   text: '', type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0, options: null as string[] | null,
@@ -184,18 +225,46 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     const isCustomOptions = form.options && currentDefaults &&
       JSON.stringify(form.options) !== JSON.stringify(currentDefaults);
 
+    const validation = validateQuestion(form.text, form.type);
+    const hasIssues = validation.errors.length > 0 || validation.warnings.length > 0;
+
     return (
       <div className="space-y-4 p-5 rounded-2xl border border-primary/20 bg-primary/[0.02]">
         {/* Question text */}
         <div>
-          <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Texto da Pergunta / Afirmação</label>
+          <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Texto da Afirmação</label>
           <textarea
-            className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20 outline-none resize-none leading-relaxed"
+            className={`w-full px-3 py-2.5 rounded-xl bg-background/50 border text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20 outline-none resize-none leading-relaxed ${
+              validation.errors.length > 0 ? 'border-destructive/40' : 'border-border/30'
+            }`}
             rows={2}
             value={form.text}
             onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
-            placeholder={form.type === 'likert' ? 'Ex: Eu sinto desconforto ao lidar com dinheiro' : form.type === 'frequency' ? 'Ex: Com que frequência você adia decisões importantes?' : 'Ex: Quando alguém critica seu trabalho, você...'}
+            placeholder={form.type === 'likert' ? 'Ex: Eu começo tarefas mas não termino' : form.type === 'frequency' ? 'Ex: Com que frequência você adia decisões importantes?' : 'Ex: Quando alguém critica seu trabalho, você...'}
           />
+          {/* Inline validation feedback */}
+          {hasIssues && form.text.trim() && (
+            <div className="mt-2 space-y-1.5">
+              {validation.errors.map((err, i) => (
+                <div key={`e${i}`} className="flex items-start gap-2 text-[0.7rem] text-destructive/80">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{err}</span>
+                </div>
+              ))}
+              {validation.warnings.map((warn, i) => (
+                <div key={`w${i}`} className="flex items-start gap-2 text-[0.7rem] text-amber-600/80">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>{warn}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          {form.text.trim() && !hasIssues && (
+            <div className="flex items-center gap-1.5 mt-2 text-[0.68rem] text-emerald-600/70">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Formato válido</span>
+            </div>
+          )}
         </div>
 
         {/* Type + Weight + Order */}
@@ -306,8 +375,63 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     );
   };
 
+  // Audit existing questions against standards
+  const auditResults = useMemo(() => {
+    if (loading || questions.length === 0) return null;
+    let errorCount = 0;
+    let warnCount = 0;
+    const issues: { id: string; text: string; type: string; problems: string[] }[] = [];
+    questions.forEach(q => {
+      const v = validateQuestion(q.text, q.type);
+      const allProblems = [...v.errors, ...v.warnings];
+      if (v.errors.length) errorCount += v.errors.length;
+      if (v.warnings.length) warnCount += v.warnings.length;
+      if (allProblems.length > 0) issues.push({ id: q.id, text: q.text, type: q.type, problems: allProblems });
+    });
+    return { errorCount, warnCount, issues, total: questions.length, clean: questions.length - issues.length };
+  }, [questions, loading]);
+
   return (
     <div className="space-y-4">
+      {/* Standards banner */}
+      <div className="p-3 rounded-xl border border-border/20 bg-muted/10">
+        <p className="text-[0.7rem] text-muted-foreground/60 leading-relaxed">
+          <span className="font-semibold text-foreground/70">📋 Padrão:</span> Likert com afirmações (sem "?"). Evite perguntas abertas e linguagem genérica. Garanta coerência entre texto e tipo de resposta.
+        </p>
+      </div>
+
+      {/* Audit summary */}
+      {auditResults && auditResults.issues.length > 0 && (
+        <div className="p-3 rounded-xl border border-amber-500/20 bg-amber-500/[0.03] space-y-2">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-500" />
+            <span className="text-[0.75rem] font-semibold text-amber-700 dark:text-amber-400">
+              {auditResults.issues.length} de {auditResults.total} perguntas com observações
+            </span>
+          </div>
+          <div className="space-y-1 max-h-32 overflow-y-auto">
+            {auditResults.issues.slice(0, 5).map(issue => (
+              <div key={issue.id} className="text-[0.65rem] text-amber-600/70 flex items-start gap-1.5">
+                <span className="shrink-0">•</span>
+                <span><strong>"{issue.text.slice(0, 50)}..."</strong> — {issue.problems[0]}</span>
+              </div>
+            ))}
+            {auditResults.issues.length > 5 && (
+              <p className="text-[0.65rem] text-amber-500/50 italic">...e mais {auditResults.issues.length - 5} perguntas</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {auditResults && auditResults.issues.length === 0 && questions.length > 0 && (
+        <div className="flex items-center gap-2 p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.03]">
+          <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+          <span className="text-[0.75rem] font-semibold text-emerald-700 dark:text-emerald-400">
+            Todas as {questions.length} perguntas seguem o padrão ✓
+          </span>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <p className="text-[0.8rem] text-muted-foreground/60">
           <span className="font-semibold text-foreground">{questions.length}</span> perguntas configuradas
@@ -326,14 +450,21 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           {questions.map((q) => {
             const isEditing = editingId === q.id;
             const isExpanded = expandedQuestionId === q.id;
+            const qValidation = validateQuestion(q.text, q.type);
+            const hasQIssues = qValidation.errors.length > 0 || qValidation.warnings.length > 0;
             return isEditing ? (
               <div key={q.id}>{renderForm()}</div>
             ) : (
-              <div key={q.id} className="rounded-xl border border-border/25 bg-card/30 hover:border-primary/20 transition-colors overflow-hidden">
+              <div key={q.id} className={`rounded-xl border bg-card/30 hover:border-primary/20 transition-colors overflow-hidden ${
+                qValidation.errors.length > 0 ? 'border-destructive/30' : hasQIssues ? 'border-amber-500/25' : 'border-border/25'
+              }`}>
                 <div className="flex items-start gap-3 p-3">
                   <span className="text-[0.65rem] font-mono text-muted-foreground/40 mt-1 w-6 text-right">{q.sort_order}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[0.8rem] text-foreground/80">{q.text}</p>
+                    <div className="flex items-start gap-2">
+                      <p className="text-[0.8rem] text-foreground/80 flex-1">{q.text}</p>
+                      {hasQIssues && <AlertTriangle className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${qValidation.errors.length > 0 ? 'text-destructive/60' : 'text-amber-500/60'}`} />}
+                    </div>
                     <div className="flex gap-1.5 mt-1.5 flex-wrap">
                       <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{typeLabels[q.type] || q.type}</span>
                       {q.axes.map(a => (
