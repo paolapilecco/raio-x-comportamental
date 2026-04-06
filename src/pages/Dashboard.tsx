@@ -426,7 +426,7 @@ const Dashboard = () => {
                     <p className="text-sm text-muted-foreground mt-0.5">
                       {sessionCount >= 2
                         ? `${sessionCount} leituras registradas — compare antes vs depois`
-                        : 'Refaça um teste após um período para comparar resultados'
+                        : 'Refaça uma leitura após um período para comparar resultados'
                       }
                     </p>
                   </div>
