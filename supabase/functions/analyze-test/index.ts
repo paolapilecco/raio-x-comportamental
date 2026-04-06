@@ -324,16 +324,47 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
       });
     }
 
-    // Fetch AI model from global config
+    // Fetch AI config: test-specific first, then global fallback
     let aiModel = "google/gemini-3-flash-preview";
+    let aiTemperature: number | undefined;
+    let aiMaxTokens: number | undefined;
+
     try {
+      // Check for test-specific config
+      const { data: testConfig } = await adminClient
+        .from("test_ai_config")
+        .select("use_global_defaults, ai_enabled, temperature, max_tokens, tone, depth_level, report_style")
+        .eq("test_id", test_module_id)
+        .maybeSingle();
+
+      // Fetch global config
       const { data: globalConfig } = await adminClient
         .from("global_ai_config")
-        .select("ai_model")
+        .select("ai_model, temperature, max_tokens, tone, depth_level, report_style")
         .limit(1)
         .maybeSingle();
+
       if (globalConfig?.ai_model) aiModel = globalConfig.ai_model;
-    } catch { /* use default */ }
+
+      // Use test-specific params when use_global_defaults is false
+      if (testConfig && !testConfig.use_global_defaults) {
+        aiTemperature = testConfig.temperature;
+        aiMaxTokens = testConfig.max_tokens;
+      } else if (globalConfig) {
+        aiTemperature = globalConfig.temperature;
+        aiMaxTokens = globalConfig.max_tokens;
+      }
+    } catch { /* use defaults */ }
+
+    const aiBody: Record<string, unknown> = {
+      model: aiModel,
+      messages: [
+        { role: "system", content: systemPrompt + (refineLevel > 0 ? refineInstruction : "") },
+        { role: "user", content: userPrompt },
+      ],
+    };
+    if (aiTemperature !== undefined) aiBody.temperature = aiTemperature;
+    if (aiMaxTokens !== undefined) aiBody.max_tokens = aiMaxTokens;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -341,13 +372,7 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: aiModel,
-        messages: [
-          { role: "system", content: systemPrompt + (refineLevel > 0 ? refineInstruction : "") },
-          { role: "user", content: userPrompt },
-        ],
-      }),
+      body: JSON.stringify(aiBody),
     });
 
     if (!aiResponse.ok) {

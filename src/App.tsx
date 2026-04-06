@@ -23,7 +23,6 @@ import AdminUsers from "./pages/AdminUsers";
 import AdminRoadmap from "./pages/AdminRoadmap";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminSubscriptions from "./pages/AdminSubscriptions";
-import AdminAIConfig from "./pages/AdminAIConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -64,7 +63,7 @@ const App = () => (
             <Route path="/admin/questions" element={<ProtectedRoute><AdminQuestions /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
-            <Route path="/admin/ai-config" element={<ProtectedRoute><AdminAIConfig /></ProtectedRoute>} />
+            <Route path="/admin/ai-config" element={<Navigate to="/admin/prompts" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
