@@ -591,7 +591,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           </div>
           <div>
             <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Objetivo do Teste</label>
-            <p className="px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground/70 text-[0.8rem] min-h-[60px]">{currentModule.description}</p>
+            <p className="px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground/70 text-[0.8rem] min-h-[60px]">{aiModuleDescription || 'Clique em "Gerar" para carregar a descrição'}</p>
           </div>
 
           {!aiPreview && (
