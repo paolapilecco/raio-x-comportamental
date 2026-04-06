@@ -185,11 +185,6 @@ const AdminPrompts = () => {
     else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
   };
 
-  const handleToggleGlobal = async (prompt: AdminPrompt) => {
-    const { error } = await supabase.from('admin_prompts').update({ is_active: !prompt.is_active }).eq('id', prompt.id);
-    if (error) toast.error('Erro');
-    else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
-  };
 
   const handleCreatePrompt = async (testId: string, section: typeof PROMPT_SECTIONS[0]) => {
     setSaving(`create_${section.type}`);
