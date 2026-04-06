@@ -252,6 +252,69 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     setShowOptionsEditor(newType === 'behavior_choice');
   };
 
+  const handleAIGenerate = async () => {
+    setAiGenerating(true);
+    setAiPreview(null);
+    try {
+      // Fetch test description from DB
+      const { data: moduleData } = await supabase
+        .from('test_modules')
+        .select('description')
+        .eq('id', currentModule.id)
+        .single();
+
+      const { data, error } = await supabase.functions.invoke('generate-questions', {
+        body: {
+          testName: currentModule.name,
+          testDescription: moduleData?.description || currentModule.name,
+          questionCount: aiCount,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      if (data?.questions?.length > 0) {
+        setAiPreview(data.questions);
+        setAiSelected(new Set(data.questions.map((_: any, i: number) => i)));
+        toast.success(`${data.questions.length} perguntas geradas!`);
+      } else {
+        toast.error('Nenhuma pergunta gerada');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Erro ao gerar perguntas com IA');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleAISave = async () => {
+    if (!aiPreview || aiSelected.size === 0) return;
+    setSaving(true);
+    const startOrder = questions.length + 1;
+    const selected = aiPreview.filter((_, i) => aiSelected.has(i));
+    const rows = selected.map((q, i) => ({
+      text: q.text,
+      type: q.type,
+      axes: q.axes,
+      weight: q.weight,
+      sort_order: startOrder + i,
+      options: q.options,
+      option_scores: q.option_scores,
+      test_id: currentModule.id,
+    }));
+    const { error } = await supabase.from('questions').insert(rows);
+    if (error) {
+      toast.error('Erro ao salvar perguntas');
+    } else {
+      toast.success(`${rows.length} perguntas adicionadas!`);
+      setAiPreview(null);
+      setAiSelected(new Set());
+      setShowAIPanel(false);
+      await fetchQuestions();
+    }
+    setSaving(false);
+  };
+
   const renderForm = () => {
     const currentDefaults = defaultOptionsForType[form.type];
     const isCustomOptions = form.options && currentDefaults &&
