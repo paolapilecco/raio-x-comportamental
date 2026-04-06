@@ -106,6 +106,13 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const [showOptionsEditor, setShowOptionsEditor] = useState(false);
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
 
+  // AI generation state
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiCount, setAiCount] = useState(10);
+  const [aiPreview, setAiPreview] = useState<any[] | null>(null);
+  const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     fetchQuestions();
   }, [currentModule.id]);
