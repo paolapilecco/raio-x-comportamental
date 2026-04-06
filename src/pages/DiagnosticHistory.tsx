@@ -280,7 +280,7 @@ const DiagnosticHistory = () => {
                 <RefreshCw className="w-8 h-8 text-muted-foreground/30 mx-auto mb-4" />
                 <h3 className="text-base font-semibold text-foreground mb-2">Primeira leitura registrada</h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto leading-relaxed mb-4">
-                  Refaça este teste após um período para ver sua evolução — antes vs depois, área por área.
+                  Refaça esta leitura após um período para ver sua evolução — antes vs depois, área por área.
                 </p>
                 <div className="bg-secondary/30 rounded-xl p-4 max-w-sm mx-auto">
                   <p className="text-xs text-muted-foreground font-medium mb-1">Perfil atual</p>
