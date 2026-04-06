@@ -287,21 +287,31 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     setAiGenerating(true);
     setAiPreview(null);
     try {
-      // Fetch test description from DB
-      const { data: moduleData } = await supabase
-        .from('test_modules')
-        .select('description')
-        .eq('id', currentModule.id)
-        .single();
+      // Fetch test description, prompts, and existing questions from other tests in parallel
+      const [moduleRes, promptsRes, otherQuestionsRes] = await Promise.all([
+        supabase.from('test_modules').select('description').eq('id', currentModule.id).single(),
+        supabase.from('test_prompts').select('prompt_type, content').eq('test_id', currentModule.id).eq('is_active', true),
+        supabase.from('questions').select('text, test_id').neq('test_id', currentModule.id),
+      ]);
 
-      const desc = moduleData?.description || currentModule.name;
+      const desc = moduleRes.data?.description || currentModule.name;
       setAiModuleDescription(desc);
+
+      // Build prompts context string
+      const promptsContext = (promptsRes.data || [])
+        .map(p => `[${p.prompt_type?.toUpperCase()}]: ${p.content}`)
+        .join('\n\n');
+
+      // Collect existing question texts from other tests for deduplication
+      const existingQuestionsFromOtherTests = (otherQuestionsRes.data || []).map(q => q.text);
 
       const { data, error } = await supabase.functions.invoke('generate-questions', {
         body: {
           testName: currentModule.name,
           testDescription: desc,
           questionCount: aiCount,
+          promptsContext,
+          existingQuestionsFromOtherTests,
         },
       });
       if (error) throw error;
