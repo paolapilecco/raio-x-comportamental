@@ -111,6 +111,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiCount, setAiCount] = useState(10);
   const [aiPreview, setAiPreview] = useState<any[] | null>(null);
+  const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
   const [aiModuleDescription, setAiModuleDescription] = useState('');
 
   useEffect(() => {
