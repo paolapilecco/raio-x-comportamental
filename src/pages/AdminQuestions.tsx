@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Plus, Save, Trash2, Loader2, Edit3, X, ChevronDown, ChevronRight,
-  GripVertical, Brain, Heart, Zap, DollarSign, Eye, Compass, Shield,
+  GripVertical, Brain, Heart, Zap, DollarSign, Eye, Compass, Shield, Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -59,6 +59,8 @@ export default function AdminQuestions() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState(emptyQuestion);
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestion, setSuggestion] = useState<{ reasoning?: { type_reason?: string; axes_reason?: string; weight_reason?: string } } | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -106,7 +108,47 @@ export default function AdminQuestions() {
     setForm({ ...emptyQuestion, sort_order: questions.length + 1 });
   };
 
-  const cancelEdit = () => { setEditingId(null); setCreating(false); };
+  const cancelEdit = () => { setEditingId(null); setCreating(false); setSuggestion(null); };
+
+  const handleSuggestWithAI = async () => {
+    if (!form.text.trim() || form.text.trim().length < 5) {
+      toast.error('Digite pelo menos 5 caracteres para sugerir');
+      return;
+    }
+    setSuggesting(true);
+    setSuggestion(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-question-config', {
+        body: { questionText: form.text.trim(), testName: selectedModule?.name || '' },
+      });
+      if (error) throw error;
+      if (data?.suggestion) {
+        setSuggestion(data.suggestion);
+        toast.success('Sugestão gerada! Revise e aceite abaixo.');
+      } else {
+        toast.error('Não foi possível gerar sugestão');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error('Erro ao gerar sugestão com IA');
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const applySuggestion = () => {
+    if (!suggestion) return;
+    const s = suggestion as any;
+    setForm(f => ({
+      ...f,
+      type: s.type || f.type,
+      axes: s.axes?.length ? s.axes : f.axes,
+      weight: s.weight || f.weight,
+      options: s.type === 'behavior_choice' ? (s.options || f.options) : null,
+    }));
+    setSuggestion(null);
+    toast.success('Sugestão aplicada! Ajuste se necessário.');
+  };
 
   const handleSave = async () => {
     if (!form.text.trim()) { toast.error('Texto da pergunta é obrigatório'); return; }
@@ -179,7 +221,78 @@ export default function AdminQuestions() {
           onChange={e => setForm(f => ({ ...f, text: e.target.value }))}
           placeholder="Ex: Eu sinto desconforto ao lidar com dinheiro"
         />
+        <button
+          onClick={handleSuggestWithAI}
+          disabled={suggesting || form.text.trim().length < 5}
+          className="mt-2 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 bg-accent text-accent-foreground hover:bg-accent/80 disabled:opacity-50 transition-colors"
+        >
+          {suggesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+          Sugerir Configuração com IA
+        </button>
       </div>
+
+      {suggestion && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-3 rounded-xl border-2 border-primary/30 bg-primary/5 space-y-3"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-primary flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4" /> Sugestão da IA
+            </span>
+            <button onClick={() => setSuggestion(null)} className="p-1 hover:bg-primary/10 rounded">
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+            <div>
+              <span className="font-medium text-foreground">Tipo:</span>{' '}
+              <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">{typeLabels[(suggestion as any).type] || (suggestion as any).type}</span>
+              {suggestion.reasoning?.type_reason && (
+                <p className="text-muted-foreground mt-1 italic">{suggestion.reasoning.type_reason}</p>
+              )}
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Eixos:</span>{' '}
+              {((suggestion as any).axes || []).map((a: string) => (
+                <span key={a} className="inline-block px-2 py-0.5 rounded-full bg-muted text-muted-foreground mr-1">{a}</span>
+              ))}
+              {suggestion.reasoning?.axes_reason && (
+                <p className="text-muted-foreground mt-1 italic">{suggestion.reasoning.axes_reason}</p>
+              )}
+            </div>
+            <div>
+              <span className="font-medium text-foreground">Peso:</span>{' '}
+              <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{(suggestion as any).weight}</span>
+              {suggestion.reasoning?.weight_reason && (
+                <p className="text-muted-foreground mt-1 italic">{suggestion.reasoning.weight_reason}</p>
+              )}
+            </div>
+          </div>
+
+          {(suggestion as any).type === 'behavior_choice' && (suggestion as any).options && (
+            <div className="text-xs">
+              <span className="font-medium text-foreground">Opções sugeridas:</span>
+              <ol className="list-decimal list-inside mt-1 text-muted-foreground space-y-0.5">
+                {(suggestion as any).options.map((opt: string, i: number) => (
+                  <li key={i}>{opt}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+
+          <div className="flex gap-2 justify-end">
+            <button onClick={() => setSuggestion(null)} className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground">
+              Ignorar
+            </button>
+            <button onClick={applySuggestion} className="px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90">
+              Aplicar Sugestão
+            </button>
+          </div>
+        </motion.div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
