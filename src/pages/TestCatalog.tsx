@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Brain, Zap, Shield, Heart, LogOut, LayoutDashboard, User, CheckCircle2, Clock, Lock, Crown, AlertTriangle, ArrowRight, Layers } from 'lucide-react';
 import { toast } from 'sonner';
+import { TestCatalogSkeleton } from '@/components/skeletons/TestCatalogSkeleton';
 
 interface TestModule {
   id: string;
@@ -97,11 +98,7 @@ const TestCatalog = () => {
   }, [user, isSuperAdmin]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border border-primary/30 border-t-primary rounded-full animate-spin" />
-      </div>
-    );
+    return <TestCatalogSkeleton />;
   }
 
   const categories = ['all', ...Array.from(new Set(modules.map(m => m.category)))];
