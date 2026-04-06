@@ -13,6 +13,7 @@ interface Question {
   weight: number;
   sort_order: number;
   options: string[] | null;
+  option_scores: number[] | null;
 }
 
 const typeLabels: Record<string, string> = {
