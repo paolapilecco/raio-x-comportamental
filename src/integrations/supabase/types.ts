@@ -348,6 +348,7 @@ export type Database = {
           axes: string[]
           created_at: string
           id: string
+          option_scores: number[] | null
           options: string[] | null
           sort_order: number
           test_id: string
@@ -359,6 +360,7 @@ export type Database = {
           axes?: string[]
           created_at?: string
           id?: string
+          option_scores?: number[] | null
           options?: string[] | null
           sort_order?: number
           test_id: string
@@ -370,6 +372,7 @@ export type Database = {
           axes?: string[]
           created_at?: string
           id?: string
+          option_scores?: number[] | null
           options?: string[] | null
           sort_order?: number
           test_id?: string

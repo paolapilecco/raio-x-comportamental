@@ -13,6 +13,7 @@ interface Question {
   weight: number;
   sort_order: number;
   options: string[] | null;
+  option_scores: number[] | null;
 }
 
 const typeLabels: Record<string, string> = {
@@ -34,6 +35,13 @@ const defaultOptionsForType: Record<string, string[]> = {
   frequency: ['Nunca', 'Raramente', 'Às vezes', 'Frequentemente', 'Sempre'],
   intensity: ['Nenhuma', 'Leve', 'Moderada', 'Alta', 'Extrema'],
   behavior_choice: ['', '', '', ''],
+};
+
+const defaultScoresForType: Record<string, number[]> = {
+  likert: [0, 25, 50, 75, 100],
+  frequency: [0, 25, 50, 75, 100],
+  intensity: [0, 25, 50, 75, 100],
+  behavior_choice: [0, 33, 66, 100],
 };
 
 const GENERIC_TERMS = [
@@ -80,7 +88,8 @@ function validateQuestion(text: string, type: QuestionType): { warnings: string[
 }
 
 const emptyQuestion = {
-  text: '', type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0, options: null as string[] | null,
+  text: '', type: 'likert' as QuestionType, axes: [''], weight: 1, sort_order: 0,
+  options: null as string[] | null, option_scores: null as number[] | null,
 };
 
 interface QuestionsPanelProps {
@@ -116,11 +125,14 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const startEdit = (q: Question) => {
     setEditingId(q.id);
     setCreating(false);
+    const opts = q.options || defaultOptionsForType[q.type] || null;
+    const scores = q.option_scores || defaultScoresForType[q.type] || null;
     setForm({
       text: q.text, type: q.type,
       axes: q.axes.length ? q.axes : [''],
       weight: q.weight, sort_order: q.sort_order,
-      options: q.options || defaultOptionsForType[q.type] || null,
+      options: opts,
+      option_scores: scores ? [...scores] : null,
     });
     setShowOptionsEditor(!!q.options || q.type === 'behavior_choice');
   };
@@ -129,7 +141,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     setCreating(true);
     setEditingId(null);
     const defaultOpts = defaultOptionsForType['likert'];
-    setForm({ ...emptyQuestion, sort_order: questions.length + 1, options: defaultOpts });
+    const defaultScores = defaultScoresForType['likert'];
+    setForm({ ...emptyQuestion, sort_order: questions.length + 1, options: defaultOpts, option_scores: [...defaultScores] });
     setShowOptionsEditor(false);
   };
 
@@ -144,6 +157,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       weight: q.weight,
       sort_order: q.sort_order + 1,
       options: q.options,
+      option_scores: q.option_scores,
       test_id: currentModule.id,
     };
     const { error } = await supabase.from('questions').insert(payload);
@@ -165,9 +179,11 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
 
     setSaving(true);
     const finalOptions = form.options && form.options.some(o => o.trim()) ? form.options : null;
+    const finalScores = form.option_scores && form.option_scores.length > 0 ? form.option_scores : null;
     const payload = {
       text: form.text.trim(), type: form.type, axes, weight: form.weight,
       sort_order: form.sort_order, options: finalOptions,
+      option_scores: finalScores,
       test_id: currentModule.id,
     };
     if (creating) {
@@ -206,17 +222,26 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
 
   const addOption = () => {
     const opts = [...(form.options || []), ''];
-    setForm(f => ({ ...f, options: opts }));
+    const scores = [...(form.option_scores || []), 0];
+    setForm(f => ({ ...f, options: opts, option_scores: scores }));
   };
 
   const removeOption = (i: number) => {
     const opts = (form.options || []).filter((_, idx) => idx !== i);
-    setForm(f => ({ ...f, options: opts.length > 0 ? opts : null }));
+    const scores = (form.option_scores || []).filter((_, idx) => idx !== i);
+    setForm(f => ({ ...f, options: opts.length > 0 ? opts : null, option_scores: scores.length > 0 ? scores : null }));
+  };
+
+  const updateScore = (index: number, value: number) => {
+    const scores = [...(form.option_scores || defaultScoresForType[form.type] || [])];
+    scores[index] = Math.max(0, Math.min(100, value));
+    setForm(f => ({ ...f, option_scores: scores }));
   };
 
   const handleTypeChange = (newType: QuestionType) => {
     const defaults = defaultOptionsForType[newType];
-    setForm(f => ({ ...f, type: newType, options: defaults }));
+    const scores = defaultScoresForType[newType];
+    setForm(f => ({ ...f, type: newType, options: defaults, option_scores: [...scores] }));
     setShowOptionsEditor(newType === 'behavior_choice');
   };
 
@@ -331,7 +356,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                     Respostas padrão para tipo "{typeLabels[form.type]}". Edite para personalizar.
                   </p>
                   <button
-                    onClick={() => setForm(f => ({ ...f, options: [...(defaultOptionsForType[f.type] || [])] }))}
+                    onClick={() => setForm(f => ({ ...f, options: [...(defaultOptionsForType[f.type] || [])], option_scores: [...(defaultScoresForType[f.type] || [])] }))}
                     className="text-[0.65rem] text-primary/60 hover:text-primary transition-colors"
                   >
                     Restaurar padrão
@@ -339,26 +364,49 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                 </div>
               )}
 
-              <div className="space-y-2">
-                {(form.options || defaultOptionsForType[form.type] || []).map((opt, i) => (
-                  <div key={i} className="flex gap-2 items-center group">
-                    <span className="text-[0.7rem] text-muted-foreground/40 w-5 text-right font-mono">{i + 1}.</span>
-                    <input
-                      className="flex-1 px-3 py-2 rounded-lg bg-background/50 border border-border/20 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20"
-                      value={opt}
-                      onChange={e => updateOption(i, e.target.value)}
-                      placeholder={`Opção ${i + 1}`}
-                    />
-                    {(form.options || []).length > 2 && (
-                      <button onClick={() => removeOption(i)} className="p-1.5 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+              {/* Header */}
+              <div className="flex gap-2 items-center px-1">
+                <span className="w-5" />
+                <span className="flex-1 text-[0.65rem] font-semibold text-muted-foreground/50 uppercase tracking-wider">Texto da Resposta</span>
+                <span className="w-20 text-center text-[0.65rem] font-semibold text-muted-foreground/50 uppercase tracking-wider">Pontos</span>
+                <span className="w-8" />
               </div>
 
-              <button onClick={addOption} className="text-[0.7rem] text-primary hover:underline">+ Adicionar opção</button>
+              <div className="space-y-2">
+                {(form.options || defaultOptionsForType[form.type] || []).map((opt, i) => {
+                  const score = (form.option_scores || defaultScoresForType[form.type] || [])[i] ?? 0;
+                  return (
+                    <div key={i} className="flex gap-2 items-center group">
+                      <span className="text-[0.7rem] text-muted-foreground/40 w-5 text-right font-mono">{i + 1}.</span>
+                      <input
+                        className="flex-1 px-3 py-2 rounded-lg bg-background/50 border border-border/20 text-foreground text-[0.8rem] focus:ring-2 focus:ring-primary/20"
+                        value={opt}
+                        onChange={e => updateOption(i, e.target.value)}
+                        placeholder={`Opção ${i + 1}`}
+                      />
+                      <input
+                        type="number"
+                        min={0}
+                        max={100}
+                        className="w-20 px-2 py-2 rounded-lg bg-background/50 border border-border/20 text-foreground text-[0.8rem] text-center font-mono focus:ring-2 focus:ring-primary/20"
+                        value={score}
+                        onChange={e => updateScore(i, parseInt(e.target.value) || 0)}
+                      />
+                      {(form.options || []).length > 2 && (
+                        <button onClick={() => removeOption(i)} className="p-1.5 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all w-8 flex items-center justify-center">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {(form.options || []).length <= 2 && <span className="w-8" />}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center justify-between">
+                <button onClick={addOption} className="text-[0.7rem] text-primary hover:underline">+ Adicionar opção</button>
+                <p className="text-[0.6rem] text-muted-foreground/40">Pontos: 0 (mínimo) a 100 (máximo)</p>
+              </div>
             </div>
           )}
         </div>
@@ -494,15 +542,19 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                   </div>
                 </div>
 
-                {/* Expanded options preview */}
+                {/* Expanded options preview with scores */}
                 {isExpanded && q.options && q.options.length > 0 && (
                   <div className="px-4 pb-3 pt-0 ml-9 border-t border-border/10">
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {q.options.map((opt, i) => (
-                        <span key={i} className="text-[0.65rem] px-2.5 py-1 rounded-lg bg-muted/30 text-foreground/60 border border-border/15">
-                          {i + 1}. {opt || <span className="italic text-muted-foreground/30">(vazio)</span>}
-                        </span>
-                      ))}
+                      {q.options.map((opt, i) => {
+                        const score = (q.option_scores || defaultScoresForType[q.type] || [])[i];
+                        return (
+                          <span key={i} className="text-[0.65rem] px-2.5 py-1 rounded-lg bg-muted/30 text-foreground/60 border border-border/15 flex items-center gap-1.5">
+                            <span>{i + 1}. {opt || <span className="italic text-muted-foreground/30">(vazio)</span>}</span>
+                            <span className="font-mono text-primary/70 bg-primary/5 px-1 rounded">{score ?? '?'}pts</span>
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

@@ -1,0 +1,1 @@
+ALTER TABLE public.questions ADD COLUMN option_scores integer[] DEFAULT NULL;
