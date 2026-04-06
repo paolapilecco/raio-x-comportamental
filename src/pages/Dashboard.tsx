@@ -290,7 +290,7 @@ const Dashboard = () => {
         {modules.length > 0 && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.1 }}>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {modules.map((mod) => {
+                {modules.map((mod) => {
                 const Icon = iconMap[mod.icon] || Brain;
                 const isFreeTest = mod.slug === 'padrao-comportamental';
                 const canAccess = isSuperAdmin || isPremium || isFreeTest;
@@ -323,7 +323,7 @@ const Dashboard = () => {
                           : 'bg-muted text-muted-foreground cursor-default'
                       }`}
                     >
-                      {canAccess ? 'Iniciar Leitura' : 'Premium'}
+                      {!canAccess ? 'Premium' : isCompleted ? 'Refazer Leitura' : 'Iniciar Leitura'}
                     </button>
                   </div>
                 );
@@ -406,6 +406,39 @@ const Dashboard = () => {
                   </div>
                 </div>
               )}
+            </div>
+          </motion.section>
+        )}
+
+        {/* Evolution CTA */}
+        {sessionCount >= 1 && (
+          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.2 }}>
+            <div className="bg-card rounded-2xl p-7 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)]">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-secondary/80 flex items-center justify-center">
+                    <TrendingUp className="w-[18px] h-[18px] text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-semibold text-foreground">
+                      {sessionCount >= 2 ? 'Veja sua evolução' : 'Acompanhe sua evolução'}
+                    </h4>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      {sessionCount >= 2
+                        ? `${sessionCount} leituras registradas — compare antes vs depois`
+                        : 'Refaça um teste após um período para comparar resultados'
+                      }
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/history')}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 border border-border/40 rounded-xl text-sm font-medium hover:bg-secondary/50 transition-all active:scale-[0.97]"
+                >
+                  <History className="w-4 h-4" />
+                  Ver histórico
+                </button>
+              </div>
             </div>
           </motion.section>
         )}
