@@ -14,6 +14,7 @@ import {
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import type { PatternKey } from '@/types/diagnostic';
+import { detectConflictPairs, CONFLICT_PAIR_DESCRIPTIONS } from '@/lib/conflictDetection';
 import { toast } from 'sonner';
 
 interface AIInsights {
