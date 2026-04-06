@@ -92,8 +92,20 @@ const PromptEditor = ({
 
                 {/* Content */}
                 <div className="p-5">
-                  {prompt ? (
+                  {prompt ? (() => {
+                    const currentContent = (editedTexts[`tp_${prompt.id}`] ?? prompt.content).trim();
+                    const isEmptyAndActive = prompt.is_active && !currentContent;
+                    return (
                     <div className={`space-y-4 ${!prompt.is_active ? 'opacity-40' : ''}`}>
+                      {isEmptyAndActive && (
+                        <div className="flex items-center gap-2 p-3 rounded-xl border border-red-500/25 bg-red-500/[0.05]">
+                          <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                          <div>
+                            <p className="text-[0.78rem] font-semibold text-red-600 dark:text-red-400">Prompt vazio</p>
+                            <p className="text-[0.68rem] text-red-500/60">Este prompt está ativo mas sem conteúdo. A IA não terá instruções para esta seção. Use o template sugerido ou escreva suas instruções.</p>
+                          </div>
+                        </div>
+                      )}
                       <textarea
                         value={editedTexts[`tp_${prompt.id}`] ?? prompt.content}
                         onChange={(e) => setEditedTexts(prev => ({ ...prev, [`tp_${prompt.id}`]: e.target.value }))}
