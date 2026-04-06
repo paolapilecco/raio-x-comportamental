@@ -89,7 +89,7 @@ const Dashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const generateTestData = async () => {
-    if (!user || !isSuperAdmin) return;
+    if (!user || role !== 'super_admin') return;
     setGenerating(true);
     try {
       const { data: session, error: sessionErr } = await supabase
@@ -370,7 +370,7 @@ const Dashboard = () => {
         )}
 
         {/* Empty state */}
-        {!hasData && modules.length === 0 && !isSuperAdmin && (
+        {!hasData && modules.length === 0 && role !== 'super_admin' && (
           <motion.section {...fadeIn}>
             <div className="bg-card border border-dashed border-border/40 rounded-2xl p-16 text-center space-y-6">
               <div className="w-14 h-14 rounded-2xl bg-secondary/60 flex items-center justify-center mx-auto">
