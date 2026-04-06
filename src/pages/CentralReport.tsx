@@ -40,16 +40,6 @@ interface HistoryEntry {
   intensity: string;
 }
 
-const radarAxisLabels: Record<string, string> = {
-  unstable_execution: 'Execução',
-  emotional_self_sabotage: 'Autossabotagem',
-  functional_overload: 'Sobrecarga',
-  discomfort_escape: 'Fuga',
-  paralyzing_perfectionism: 'Perfeccionismo',
-  validation_dependency: 'Validação',
-  excessive_self_criticism: 'Autocrítica',
-  low_routine_sustenance: 'Rotina',
-};
 
 const conflictPairDescriptions: Record<string, string> = {
   'paralyzing_perfectionism+unstable_execution': 'Exige perfeição mas não sustenta execução — ciclo de paralisia.',
