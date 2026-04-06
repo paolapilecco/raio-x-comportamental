@@ -157,6 +157,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       weight: q.weight,
       sort_order: q.sort_order + 1,
       options: q.options,
+      option_scores: q.option_scores,
       test_id: currentModule.id,
     };
     const { error } = await supabase.from('questions').insert(payload);
@@ -178,9 +179,11 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
 
     setSaving(true);
     const finalOptions = form.options && form.options.some(o => o.trim()) ? form.options : null;
+    const finalScores = form.option_scores && form.option_scores.length > 0 ? form.option_scores : null;
     const payload = {
       text: form.text.trim(), type: form.type, axes, weight: form.weight,
       sort_order: form.sort_order, options: finalOptions,
+      option_scores: finalScores,
       test_id: currentModule.id,
     };
     if (creating) {
@@ -229,7 +232,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
 
   const handleTypeChange = (newType: QuestionType) => {
     const defaults = defaultOptionsForType[newType];
-    setForm(f => ({ ...f, type: newType, options: defaults }));
+    const scores = defaultScoresForType[newType];
+    setForm(f => ({ ...f, type: newType, options: defaults, option_scores: [...scores] }));
     setShowOptionsEditor(newType === 'behavior_choice');
   };
 
