@@ -795,8 +795,29 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
               <input className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem]" value={currentModule.name} readOnly />
             </div>
             <div>
-              <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Quantidade</label>
-              <input type="number" min={3} max={30} className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem]" value={aiCount} onChange={e => setAiCount(Math.max(3, Math.min(30, parseInt(e.target.value) || 10)))} />
+              <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Bloco de Perguntas</label>
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { value: 10, label: '10', desc: 'Rápido' },
+                  { value: 15, label: '15', desc: 'Padrão' },
+                  { value: 20, label: '20', desc: 'Completo' },
+                  { value: 25, label: '25', desc: 'Profundo' },
+                ].map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setAiCount(opt.value)}
+                    className={`flex flex-col items-center gap-0.5 px-3 py-2.5 rounded-xl border text-center transition-all ${
+                      aiCount === opt.value
+                        ? 'bg-primary text-primary-foreground border-primary shadow-md scale-105'
+                        : 'bg-background/50 border-border/30 text-foreground/70 hover:border-primary/50'
+                    }`}
+                  >
+                    <span className="text-lg font-bold">{opt.label}</span>
+                    <span className="text-[0.6rem] opacity-70">{opt.desc}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <div>
