@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban, Settings, Sliders, PlayCircle, Loader2, CheckCircle2, History, Clock, Plus, GitCompare } from 'lucide-react';
+import { ArrowLeft, Brain, Save, ToggleLeft, ToggleRight, Sparkles, FileText, Target, Lightbulb, Route, ChevronDown, ChevronRight, Zap, Heart, Shield, DollarSign, Eye, Compass, Crosshair, AlertTriangle, ArrowUpRight, Ban, Settings, Sliders, PlayCircle, Loader2, CheckCircle2, History, Clock, Plus, GitCompare, Cpu } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
@@ -18,16 +18,6 @@ interface TestPrompt {
   updated_by: string | null;
 }
 
-interface AdminPrompt {
-  id: string;
-  context: string;
-  label: string;
-  prompt_text: string;
-  is_active: boolean;
-  updated_at: string;
-  test_module_id: string | null;
-}
-
 interface TestModule {
   id: string;
   slug: string;
@@ -38,6 +28,7 @@ interface TestModule {
 interface GlobalAiConfig {
   id: string;
   ai_enabled: boolean;
+  ai_model: string;
   temperature: number;
   max_tokens: number;
   tone: string;
@@ -73,13 +64,17 @@ const PROMPT_SECTIONS = [
   { type: 'restrictions', label: 'Restrições', shortLabel: 'Restrições', icon: Ban, color: 'text-red-500', bgColor: 'bg-red-500/10', borderColor: 'border-red-500/20', description: 'O que a IA NÃO deve fazer ao gerar resultados. Regras negativas obrigatórias.', defaultTitle: 'Regras Negativas / Restrições', rows: 5 },
 ];
 
-const GLOBAL_META: Record<string, { icon: any; description: string }> = {
-  test_analysis: { icon: Brain, description: 'Prompt base de análise aplicado a todos os testes.' },
-  report_generation: { icon: FileText, description: 'Prompt base de geração de relatórios.' },
-  central_profile: { icon: Target, description: 'Prompt para consolidação do perfil central.' },
-  insight_generation: { icon: Lightbulb, description: 'Prompt para geração de insights comportamentais.' },
-  exit_strategy: { icon: Route, description: 'Prompt para estratégias de saída.' },
-};
+const AI_MODELS = [
+  { value: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash', description: 'Equilíbrio entre velocidade e qualidade' },
+  { value: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', description: 'Bom custo-benefício, multimodal' },
+  { value: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite', description: 'Mais rápido e econômico' },
+  { value: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro', description: 'Máxima qualidade, mais lento' },
+  { value: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro', description: 'Última geração, raciocínio avançado' },
+  { value: 'openai/gpt-5', label: 'GPT-5', description: 'Alta precisão, mais caro' },
+  { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini', description: 'Bom desempenho, custo moderado' },
+  { value: 'openai/gpt-5-nano', label: 'GPT-5 Nano', description: 'Rápido e econômico' },
+  { value: 'openai/gpt-5.2', label: 'GPT-5.2', description: 'Último modelo OpenAI' },
+];
 
 const TONE_OPTIONS = ['empático e direto', 'clínico e técnico', 'casual e acolhedor', 'provocativo e desafiador', 'analítico e neutro'];
 const STYLE_OPTIONS = ['narrativo', 'bullet-points', 'estruturado', 'misto', 'conversacional'];
