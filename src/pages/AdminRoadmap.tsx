@@ -157,7 +157,7 @@ function generateTasks(): RoadmapTask[] {
       description: 'Após completar o onboarding, o usuário é redirecionado para /diagnostic sem moduleSlug, o que usa o slug padrão "padrao-comportamental". Deveria redirecionar para /tests ou /dashboard.',
       priority: 'medium',
       category: 'inconsistency',
-      status: 'pending',
+      status: 'done',
       copyText: 'Alterar o redirecionamento pós-onboarding de /diagnostic para /dashboard ou /tests. Atualmente redireciona para /diagnostic sem slug, forçando o teste padrão. O usuário deveria poder escolher qual teste iniciar.',
     },
     {
