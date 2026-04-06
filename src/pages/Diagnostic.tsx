@@ -280,8 +280,23 @@ const Diagnostic = () => {
         label: engine?.definitions[s.key]?.label || s.key,
       }));
 
+      // Build structured answer data with question context
+      const structuredAnswers = answers.map(a => {
+        const q = dbQuestions.find(dq => dq.id === a.questionId);
+        if (!q) return null;
+        const chosenOption = q.options && q.options[a.value - 1] ? q.options[a.value - 1] : null;
+        return {
+          questionId: a.questionId,
+          questionText: q.text,
+          questionType: q.type || 'likert',
+          axes: q.axes,
+          value: a.value,
+          chosenOption,
+        };
+      }).filter(Boolean);
+
       const { data, error } = await supabase.functions.invoke('analyze-test', {
-        body: { test_module_id: moduleId, scores, slug },
+        body: { test_module_id: moduleId, scores, slug, answers: structuredAnswers },
       });
 
       if (error) {
