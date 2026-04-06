@@ -77,7 +77,7 @@ const fadeIn = {
 };
 
 const Dashboard = () => {
-  const { user, profile, role, isPremium, isSuperAdmin, signOut } = useAuth();
+  const { user, profile, role, isPremium, isSuperAdmin, signOut, previewMode, togglePreviewMode } = useAuth();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
