@@ -116,6 +116,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
 
   useEffect(() => {
     fetchQuestions();
+    supabase.from('test_modules').select('description').eq('id', currentModule.id).single()
+      .then(({ data }) => { if (data?.description) setAiModuleDescription(data.description); });
   }, [currentModule.id]);
 
   const fetchQuestions = async () => {
