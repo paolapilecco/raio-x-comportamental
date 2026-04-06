@@ -93,8 +93,8 @@ export default function AdminDashboard() {
   const adminLinks = [
     { label: 'Usuários', icon: Users, path: '/admin/users', desc: 'Gerenciar planos e permissões' },
     { label: 'Assinaturas', icon: CreditCard, path: '/admin/subscriptions', desc: 'Pagamentos e assinaturas' },
-    { label: 'Módulos', icon: Brain, path: '/admin/test-modules', desc: 'Testes e perguntas' },
-    { label: 'Perguntas', icon: FileText, path: '/admin/questions', desc: 'Editar questionários' },
+    { label: 'Módulos', icon: Brain, path: '/admin/test-modules', desc: 'Diagnósticos e perguntas' },
+    { label: 'Perguntas', icon: FileText, path: '/admin/questions', desc: 'Editar leituras' },
     { label: 'Prompts IA', icon: Settings, path: '/admin/prompts', desc: 'Configurar prompts de IA' },
     { label: 'Prompts & IA', icon: Settings, path: '/admin/prompts', desc: 'Prompts e configuração de IA' },
     { label: 'Roadmap', icon: LayoutGrid, path: '/admin/roadmap', desc: 'Tarefas do projeto' },

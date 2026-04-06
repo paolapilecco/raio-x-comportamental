@@ -569,7 +569,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
             disabled={questions.length === 0}
             className="flex items-center gap-2 px-4 py-2 rounded-xl border border-border/40 bg-background text-foreground text-[0.8rem] font-semibold hover:bg-secondary/60 disabled:opacity-50 transition-all"
           >
-            <Eye className="w-4 h-4" /> Visualizar Teste
+            <Eye className="w-4 h-4" /> Visualizar Leitura
           </button>
           <button
             onClick={() => { setShowAIPanel(!showAIPanel); setAiPreview(null); setAiSelected(new Set()); }}
@@ -754,7 +754,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Nome do Teste</label>
+              <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Nome do Diagnóstico</label>
               <input className="w-full px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground text-[0.8rem]" value={currentModule.name} readOnly />
             </div>
             <div>
@@ -763,7 +763,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
             </div>
           </div>
           <div>
-            <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Objetivo do Teste</label>
+            <label className="text-[0.75rem] font-semibold text-foreground/80 mb-1.5 block">Objetivo do Diagnóstico</label>
             <p className="px-3 py-2.5 rounded-xl bg-background/50 border border-border/30 text-foreground/70 text-[0.8rem] min-h-[60px]">{aiModuleDescription || 'Clique em "Gerar" para carregar a descrição'}</p>
           </div>
 

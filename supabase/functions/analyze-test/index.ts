@@ -32,7 +32,7 @@ function buildStructuredSystemPrompt(prompts: PromptRecord[]): string {
   // Role definition — non-negotiable
   sections.push(`# PAPEL
 Você é um analista comportamental de alto nível. Sua função é INTERPRETAR — não descrever, não resumir, não motivar.
-Você recebe dados reais de um teste comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.`);
+Você recebe dados reais de uma leitura comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.`);
 
   // Admin-configured prompt sections
   if (promptMap.interpretation) {
@@ -363,7 +363,7 @@ serve(async (req) => {
 
     if (promptsError) {
       console.error("Error fetching prompts:", promptsError);
-      return new Response(JSON.stringify({ error: "Erro ao carregar configuração do teste" }), {
+      return new Response(JSON.stringify({ error: "Erro ao carregar configuração do diagnóstico" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

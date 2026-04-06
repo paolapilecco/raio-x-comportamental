@@ -12,17 +12,17 @@ serve(async (req) => {
     const { testName, testDescription, questionCount = 10 } = await req.json();
 
     if (!testName || typeof testName !== "string" || testName.length > 200) {
-      return new Response(JSON.stringify({ error: "Nome do teste inválido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Nome do diagnóstico inválido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     if (!testDescription || typeof testDescription !== "string" || testDescription.length > 1000) {
-      return new Response(JSON.stringify({ error: "Descrição do teste inválida" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "Descrição do diagnóstico inválida" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
     const count = Math.min(Math.max(Number(questionCount) || 10, 3), 30);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const systemPrompt = `Você é um especialista em psicometria e análise comportamental. Gere perguntas estruturadas para testes psicométricos.
+    const systemPrompt = `Você é um especialista em psicometria e análise comportamental. Gere perguntas estruturadas para diagnósticos comportamentais.
 
 REGRAS OBRIGATÓRIAS:
 1. LIKERT: sempre usar AFIRMAÇÕES (nunca interrogação). Ex: "Eu começo tarefas mas não termino"
@@ -34,18 +34,18 @@ REGRAS OBRIGATÓRIAS:
 7. Priorize o formato LIKERT (60-70% das perguntas)
 8. Use FREQUÊNCIA para comportamentos repetitivos (20-30%)
 9. Use ESCOLHA COMPORTAMENTAL com moderação (10-20%)
-10. Os eixos devem ser específicos ao tema do teste, nunca genéricos
+10. Os eixos devem ser específicos ao tema do diagnóstico, nunca genéricos
 
 FORMATO DE SAÍDA (JSON array):
 Cada item deve ter:
 - text: texto da pergunta/afirmação
 - type: "likert" | "frequency" | "behavior_choice"
-- axes: array de 1-2 eixos comportamentais específicos do teste
+- axes: array de 1-2 eixos comportamentais específicos do diagnóstico
 - weight: número 0.5-2.0 (1 = padrão)
 - options: array de opções de resposta (usar padrão para likert/frequency, personalizar para behavior_choice)
 - option_scores: array de pontuações numéricas (0-100)`;
 
-    const userPrompt = `Gere ${count} perguntas para o seguinte teste:
+    const userPrompt = `Gere ${count} perguntas para o seguinte diagnóstico:
 
 NOME: ${testName}
 OBJETIVO: ${testDescription}

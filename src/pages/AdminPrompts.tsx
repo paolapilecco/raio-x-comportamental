@@ -185,8 +185,8 @@ const AdminPrompts = () => {
             <Sparkles className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold tracking-tight">Central de Inteligência de Testes</h1>
-            <p className="text-[0.78rem] text-muted-foreground/60">Controle completo · Prompts, Perguntas e Configuração por teste</p>
+             <h1 className="text-xl font-semibold tracking-tight">Central de Inteligência de Diagnósticos</h1>
+             <p className="text-[0.78rem] text-muted-foreground/60">Controle completo · Prompts, Perguntas e Configuração por diagnóstico</p>
           </div>
         </div>
       </motion.div>

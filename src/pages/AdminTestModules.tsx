@@ -190,7 +190,7 @@ export default function AdminTestModules() {
           rows={2}
           value={form.description}
           onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-          placeholder="Descrição do módulo de teste..."
+          placeholder="Descrição do módulo de diagnóstico..."
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -260,8 +260,8 @@ export default function AdminTestModules() {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Módulos de Teste</h1>
-            <p className="text-sm text-muted-foreground">Gerenciar módulos de teste comportamental</p>
+            <h1 className="text-2xl font-bold text-foreground">Módulos de Diagnóstico</h1>
+            <p className="text-sm text-muted-foreground">Gerenciar módulos de leitura comportamental</p>
           </div>
         </div>
 
@@ -338,7 +338,7 @@ export default function AdminTestModules() {
           {modules.length === 0 && (
             <div className="text-center py-12 text-muted-foreground">
               <Brain className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>Nenhum módulo de teste cadastrado</p>
+              <p>Nenhum módulo de diagnóstico cadastrado</p>
             </div>
           )}
         </div>

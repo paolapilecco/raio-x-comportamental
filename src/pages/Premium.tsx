@@ -216,7 +216,7 @@ const Premium = () => {
         </motion.div>
 
         {/* ══════════════════════════════════════════════
-            SECTION 01 — TESTES PREMIUM
+            SECTION 01 — ANÁLISES PREMIUM
         ══════════════════════════════════════════════ */}
         <motion.div id="section-01" {...fadeUp} transition={{ delay: 0.08 }} className="space-y-5">
           <div className="flex items-center gap-4">

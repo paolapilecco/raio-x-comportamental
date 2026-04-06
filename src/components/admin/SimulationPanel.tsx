@@ -75,7 +75,7 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
     activePrompts.forEach(p => { promptMap[p.prompt_type] = p.content; });
 
     const sections: string[] = [];
-    sections.push(`# PAPEL\nVocê é um analista comportamental de alto nível. Sua função é INTERPRETAR — não descrever, não resumir, não motivar.\nVocê recebe dados reais de um teste comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.`);
+    sections.push(`# PAPEL\nVocê é um analista comportamental de alto nível. Sua função é INTERPRETAR — não descrever, não resumir, não motivar.\nVocê recebe dados reais de uma leitura comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.`);
 
     const sectionMap: Record<string, string> = {
       interpretation: '# INSTRUÇÕES DE INTERPRETAÇÃO',
@@ -146,7 +146,7 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
   };
 
   const runPreview = async () => {
-    if (!previewTestId) { toast.error('Selecione um teste'); return; }
+    if (!previewTestId) { toast.error('Selecione um diagnóstico'); return; }
     const mod = modules.find(m => m.id === previewTestId);
     if (!mod) return;
     const activePrompts = testPrompts.filter(p => p.test_id === previewTestId && p.is_active);
@@ -156,7 +156,7 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
     if (axisKeys.length === 0) {
       axisKeys = await loadAxes(previewTestId);
     }
-    if (axisKeys.length === 0) { toast.error('Teste sem eixos configurados'); return; }
+    if (axisKeys.length === 0) { toast.error('Diagnóstico sem eixos configurados'); return; }
 
     const scores = axisKeys.map(key => {
       const pct = previewScores[key] ?? 50;
@@ -225,9 +225,9 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
         <div className="space-y-4 pl-2">
           {/* Test selector */}
           <div className="p-4 rounded-xl border border-border/30 bg-card/40 space-y-3">
-            <label className="text-[0.8rem] font-semibold">Selecionar Teste</label>
+            <label className="text-[0.8rem] font-semibold">Selecionar Diagnóstico</label>
             <select value={previewTestId} onChange={(e) => handleSelectTest(e.target.value)} className="w-full bg-background/50 border border-border/20 rounded-lg px-3 py-2 text-[0.8rem] focus:outline-none focus:ring-2 focus:ring-primary/20">
-              <option value="">Escolha um teste...</option>
+              <option value="">Escolha um diagnóstico...</option>
               {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
           </div>
@@ -256,7 +256,7 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
               <h4 className="text-[0.8rem] font-semibold flex items-center gap-2"><Sliders className="w-3.5 h-3.5 text-primary/70" />Simular Scores</h4>
               
               {loadedAxes.length === 0 && (
-                <p className="text-[0.72rem] text-muted-foreground/50 italic">Carregando eixos do teste...</p>
+                <p className="text-[0.72rem] text-muted-foreground/50 italic">Carregando eixos do diagnóstico...</p>
               )}
 
               {/* Dynamic Presets */}

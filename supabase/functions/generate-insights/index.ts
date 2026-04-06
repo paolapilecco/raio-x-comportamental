@@ -47,7 +47,7 @@ serve(async (req) => {
 
     if (!centralProfile || centralProfile.tests_completed === 0) {
       return new Response(
-        JSON.stringify({ error: "Perfil insuficiente. Complete pelo menos um teste." }),
+        JSON.stringify({ error: "Perfil insuficiente. Complete pelo menos uma leitura." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -73,16 +73,16 @@ serve(async (req) => {
 
     const profileSummary = `
 ## Perfil Comportamental Central do Usuário
-- Testes completados: ${centralProfile.tests_completed}
+- Leituras completadas: ${centralProfile.tests_completed}
 - Padrões dominantes: ${dominantPatterns.map((p) => `${p.key} (${p.score}%)`).join(", ")}
 - Estado mental atual: ${centralProfile.mental_state || "não definido"}
 - Dor central: ${centralProfile.core_pain || "não definida"}
 - Área-chave de destravamento: ${centralProfile.key_unlock_area || "não definida"}
 - Scores agregados: ${Object.entries(scores).map(([k, v]) => `${k}: ${v}%`).join(", ")}
 
-## Histórico de Resultados (últimos ${results?.length || 0} testes)
+## Histórico de Resultados (últimas ${results?.length || 0} leituras)
 ${(results || []).map((r, i) => `
-### Teste ${i + 1}
+### Leitura ${i + 1}
 - Padrão dominante: ${r.dominant_pattern} (${r.intensity})
 - Estado mental: ${r.mental_state}
 - Resumo: ${r.state_summary}
@@ -94,7 +94,7 @@ ${(results || []).map((r, i) => `
 `).join("")}
 `;
 
-    const systemPrompt = `Você é um analista comportamental de alto nível. Sua tarefa é gerar uma interpretação profunda e personalizada do perfil comportamental de um usuário com base em dados reais de múltiplos testes.
+    const systemPrompt = `Você é um analista comportamental de alto nível. Sua tarefa é gerar uma interpretação profunda e personalizada do perfil comportamental de um usuário com base em dados reais de múltiplas leituras.
 
 REGRAS:
 - Seja direto, profundo e específico — sem generalidades
