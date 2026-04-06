@@ -33,6 +33,11 @@ interface StoredResult {
   direction: string;
   combined_title: string;
   created_at: string;
+  core_pain?: string;
+  key_unlock_area?: string;
+  critical_diagnosis?: string;
+  impact?: string;
+  what_not_to_do?: string[] | null;
 }
 
 interface CentralProfile {
