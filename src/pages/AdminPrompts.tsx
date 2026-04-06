@@ -985,14 +985,6 @@ const AdminPrompts = () => {
         )}
       </motion.div>
 
-      {/* ── Global Prompts ── */}
-      <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="space-y-3">
-        <button onClick={() => toggleSection('global')} className="w-full flex items-center justify-between bg-card/70 backdrop-blur-sm border border-border/40 rounded-2xl px-5 py-4 hover:bg-card/90 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center"><Sparkles className="w-4 h-4 text-primary" /></div>
-            <div className="text-left">
-              <h2 className="text-[0.9rem] font-semibold">Prompts Globais</h2>
-              <p className="text-[0.7rem] text-muted-foreground/50">{globalPrompts.length} prompts · Plataforma inteira</p>
             </div>
           </div>
           {expandedSections['global'] ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
