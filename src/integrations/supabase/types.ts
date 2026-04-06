@@ -235,6 +235,95 @@ export type Database = {
         }
         Relationships: []
       }
+      pattern_definitions: {
+        Row: {
+          blocking_point: string
+          contradiction: string
+          core_pain: string
+          created_at: string
+          critical_diagnosis: string
+          description: string
+          direction: string
+          exit_strategy: Json
+          id: string
+          impact: string
+          key_unlock_area: string
+          label: string
+          life_impact: Json
+          mechanism: string
+          mental_state: string
+          mental_traps: string[]
+          pattern_key: string
+          profile_name: string
+          self_sabotage_cycle: string[]
+          sort_order: number
+          test_module_id: string | null
+          triggers: string[]
+          updated_at: string
+          what_not_to_do: string[]
+        }
+        Insert: {
+          blocking_point?: string
+          contradiction?: string
+          core_pain?: string
+          created_at?: string
+          critical_diagnosis?: string
+          description?: string
+          direction?: string
+          exit_strategy?: Json
+          id?: string
+          impact?: string
+          key_unlock_area?: string
+          label: string
+          life_impact?: Json
+          mechanism?: string
+          mental_state?: string
+          mental_traps?: string[]
+          pattern_key: string
+          profile_name?: string
+          self_sabotage_cycle?: string[]
+          sort_order?: number
+          test_module_id?: string | null
+          triggers?: string[]
+          updated_at?: string
+          what_not_to_do?: string[]
+        }
+        Update: {
+          blocking_point?: string
+          contradiction?: string
+          core_pain?: string
+          created_at?: string
+          critical_diagnosis?: string
+          description?: string
+          direction?: string
+          exit_strategy?: Json
+          id?: string
+          impact?: string
+          key_unlock_area?: string
+          label?: string
+          life_impact?: Json
+          mechanism?: string
+          mental_state?: string
+          mental_traps?: string[]
+          pattern_key?: string
+          profile_name?: string
+          self_sabotage_cycle?: string[]
+          sort_order?: number
+          test_module_id?: string | null
+          triggers?: string[]
+          updated_at?: string
+          what_not_to_do?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pattern_definitions_test_module_id_fkey"
+            columns: ["test_module_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plan_change_history: {
         Row: {
           changed_at: string

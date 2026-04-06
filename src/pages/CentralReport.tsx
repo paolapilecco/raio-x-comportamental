@@ -11,7 +11,7 @@ import {
   ArrowLeft, Layers, Brain, AlertTriangle, TrendingUp, Shield,
   Crosshair, Compass, Activity, Zap, Sparkles, Eye, Target, Lightbulb,
 } from 'lucide-react';
-import { patternDefinitions } from '@/data/patterns';
+import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import type { PatternKey } from '@/types/diagnostic';
 import { toast } from 'sonner';
 
@@ -65,6 +65,7 @@ const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } }
 const CentralReport = () => {
   const { user, profile: userProfile } = useAuth();
   const navigate = useNavigate();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);
@@ -169,7 +170,7 @@ const CentralReport = () => {
   const scores = centralProfile.aggregated_scores;
   const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
   const dominantKey = sorted[0]?.[0] as PatternKey;
-  const dominantDef = patternDefinitions[dominantKey];
+  const dominantDef = patternDefinitions?.[dominantKey];
   const secondaryPatterns = sorted.slice(1, 4).filter(([, v]) => v >= 40);
 
   // Detect conflicts
@@ -280,7 +281,7 @@ const CentralReport = () => {
           </div>
           <div className="space-y-3">
             {sorted.slice(0, 5).map(([key, score]) => {
-              const def = patternDefinitions[key as PatternKey];
+              const def = patternDefinitions?.[key as PatternKey];
               return (
                 <div key={key} className="flex items-center gap-4">
                   <div className="flex-1">
@@ -313,7 +314,7 @@ const CentralReport = () => {
                   <div key={i} className="bg-destructive/5 border border-destructive/10 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-sm font-medium text-foreground">
-                        {patternDefinitions[a]?.label} × {patternDefinitions[b]?.label}
+                        {patternDefinitions?.[a]?.label} × {patternDefinitions?.[b]?.label}
                       </span>
                     </div>
                     <p className="text-sm text-foreground/70">{desc}</p>

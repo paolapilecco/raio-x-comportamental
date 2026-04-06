@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown } from 'lucide-react';
-import { patternDefinitions } from '@/data/patterns';
+import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
@@ -78,6 +78,7 @@ const fadeIn = {
 
 const Dashboard = () => {
   const { user, profile, role, isPremium, isSuperAdmin, signOut, previewMode, togglePreviewMode } = useAuth();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
@@ -209,8 +210,8 @@ const Dashboard = () => {
 
   const handleDownloadPdf = () => {
     if (!latestResult) return;
-    const dominantDef = patternDefinitions[latestResult.dominant_pattern as PatternKey];
-    const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions[k as PatternKey]).filter(Boolean);
+    const dominantDef = patternDefinitions?.[latestResult.dominant_pattern as PatternKey];
+    const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
     const diagResult: DiagnosticResult = {
       dominantPattern: dominantDef,
       secondaryPatterns: secondaryDefs,

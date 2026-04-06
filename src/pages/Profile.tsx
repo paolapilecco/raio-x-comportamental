@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity } from 'lucide-react';
 import { toast } from 'sonner';
-import { patternDefinitions } from '@/data/patterns';
+import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import type { PatternKey } from '@/types/diagnostic';
 
 interface CentralProfile {
@@ -24,6 +24,7 @@ const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } }
 const Profile = () => {
   const { user, profile, isPremium } = useAuth();
   const navigate = useNavigate();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [completedCount, setCompletedCount] = useState(0);
   const [totalModules, setTotalModules] = useState(0);
@@ -89,7 +90,7 @@ const Profile = () => {
   }
 
   const dominantKey = centralProfile?.dominant_patterns?.[0]?.key as PatternKey | undefined;
-  const dominantDef = dominantKey ? patternDefinitions[dominantKey] : null;
+  const dominantDef = dominantKey ? patternDefinitions?.[dominantKey] : null;
   const progressPercent = totalModules > 0 ? (completedCount / totalModules) * 100 : 0;
 
   return (

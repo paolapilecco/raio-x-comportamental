@@ -118,11 +118,11 @@ function generateTasks(): RoadmapTask[] {
     {
       id: 'inc-hardcoded-patterns',
       title: 'patternDefinitions ainda hardcoded no frontend',
-      description: 'O arquivo src/data/patterns.ts contém definições estáticas de padrões. O relatório central e histórico dependem desses dados hardcoded ao invés dos prompts configurados no admin.',
+      description: 'CORRIGIDO — Tabela pattern_definitions criada no banco. Dashboard, CentralReport e Profile agora buscam dados do banco via usePatternDefinitions hook com cache React Query.',
       priority: 'medium',
       category: 'inconsistency',
-      status: 'pending',
-      copyText: 'Migrar as patternDefinitions hardcoded em src/data/patterns.ts para o banco de dados. O CentralReport, DiagnosticHistory, Dashboard e Profile ainda usam esses dados estáticos ao invés dos prompts configurados pelo admin. Criar uma tabela pattern_definitions ou usar os test_prompts existentes.',
+      status: 'done',
+      copyText: 'Migrar as patternDefinitions hardcoded em src/data/patterns.ts para o banco de dados.',
     },
     {
       id: 'inc-radar-labels-hardcoded',
