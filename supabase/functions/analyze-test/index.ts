@@ -548,6 +548,7 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
     if (!result.blockingPoint) result.blockingPoint = "";
     if (!result.impact) result.impact = "";
     if (!result.combinedTitle) result.combinedTitle = `${dominant.label}`;
+    if (!Array.isArray(result.actionPlan)) result.actionPlan = [];
 
     return new Response(JSON.stringify({ analysis: result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
