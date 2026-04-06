@@ -41,7 +41,7 @@ const HistoryPanel = ({ modules, expanded, onToggle }: HistoryPanelProps) => {
         <div className="space-y-3 pl-2">
           <div className="flex items-center gap-2">
             <select value={historyTestId} onChange={(e) => { setHistoryTestId(e.target.value); if (e.target.value) fetchHistory(e.target.value); else setHistoryEntries([]); }} className="flex-1 bg-background/50 border border-border/20 rounded-lg px-3 py-2 text-[0.8rem] focus:outline-none focus:ring-2 focus:ring-primary/20">
-              <option value="">Selecione um teste...</option>
+              <option value="">Selecione um diagnóstico...</option>
               {modules.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
             </select>
             {historyTestId && <button onClick={() => fetchHistory(historyTestId)} className="px-3 py-2 text-[0.7rem] font-semibold bg-muted/40 hover:bg-muted/60 rounded-lg transition-colors">Atualizar</button>}

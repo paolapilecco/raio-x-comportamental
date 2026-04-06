@@ -146,7 +146,7 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
   };
 
   const runPreview = async () => {
-    if (!previewTestId) { toast.error('Selecione um teste'); return; }
+    if (!previewTestId) { toast.error('Selecione um diagnóstico'); return; }
     const mod = modules.find(m => m.id === previewTestId);
     if (!mod) return;
     const activePrompts = testPrompts.filter(p => p.test_id === previewTestId && p.is_active);

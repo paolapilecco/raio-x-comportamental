@@ -281,8 +281,8 @@ export default function AdminQuestions() {
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Perguntas dos Testes</h1>
-            <p className="text-sm text-muted-foreground">Gerenciar perguntas por módulo de teste</p>
+            <h1 className="text-2xl font-bold text-foreground">Perguntas dos Diagnósticos</h1>
+            <p className="text-sm text-muted-foreground">Gerenciar perguntas por módulo de leitura</p>
           </div>
         </div>
 
