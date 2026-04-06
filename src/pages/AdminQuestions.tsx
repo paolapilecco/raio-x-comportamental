@@ -4,8 +4,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  ArrowLeft, Plus, Save, Trash2, Loader2, Edit3, X, ChevronDown, ChevronRight,
-  GripVertical, Brain, Heart, Zap, DollarSign, Eye, Compass, Shield, Sparkles,
+  ArrowLeft, Plus, Save, Trash2, Loader2, Edit3, X, CheckSquare, Square,
+  Brain, Heart, Zap, DollarSign, Eye, Compass, Shield, Sparkles, AlertTriangle,
+  BookOpen, CheckCircle2, XCircle,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -25,6 +26,15 @@ interface TestModule {
   slug: string;
   name: string;
   icon: string;
+  description: string;
+}
+
+interface TestPrompt {
+  id: string;
+  prompt_type: string;
+  title: string;
+  content: string;
+  is_active: boolean;
 }
 
 const iconMap: Record<string, any> = {
@@ -39,11 +49,81 @@ const typeLabels: Record<string, string> = {
   intensity: 'Intensidade',
 };
 
+const promptTypeLabels: Record<string, string> = {
+  interpretation: 'Interpretação',
+  diagnosis: 'Diagnóstico',
+  profile: 'Perfil',
+  core_pain: 'Dor Central',
+  triggers: 'Gatilhos',
+  direction: 'Direção',
+  restrictions: 'Restrições',
+};
+
 type QuestionType = 'likert' | 'behavior_choice' | 'frequency' | 'intensity';
 
 const emptyQuestion: { text: string; type: QuestionType; axes: string[]; weight: number; sort_order: number; options: string[] | null } = {
   text: '', type: 'likert', axes: [''], weight: 1, sort_order: 0, options: null,
 };
+
+// Extract key axes/themes from prompt content
+function extractCriteriaFromPrompts(prompts: TestPrompt[]): { axes: string[]; themes: string[]; restrictions: string[] } {
+  const axes: Set<string> = new Set();
+  const themes: Set<string> = new Set();
+  const restrictions: string[] = [];
+
+  for (const p of prompts) {
+    if (!p.content || !p.is_active) continue;
+
+    // Extract axes mentioned in prompts (snake_case patterns)
+    const axisMatches = p.content.match(/\b[a-z]+_[a-z_]+\b/g);
+    if (axisMatches) axisMatches.forEach(a => axes.add(a));
+
+    // Extract themes from key phrases
+    const themePatterns = p.content.match(/(?:analis[ae]r?|identificar|avaliar|medir|detectar|mapear)\s+([^.,:;]+)/gi);
+    if (themePatterns) themePatterns.forEach(t => {
+      const clean = t.replace(/^(analisar?|identificar|avaliar|medir|detectar|mapear)\s+/i, '').trim();
+      if (clean.length > 3 && clean.length < 80) themes.add(clean);
+    });
+
+    if (p.prompt_type === 'restrictions') {
+      const lines = p.content.split('\n').filter(l => l.trim().startsWith('-') || l.trim().startsWith('•'));
+      lines.forEach(l => restrictions.push(l.replace(/^[-•]\s*/, '').trim()));
+    }
+  }
+
+  return { axes: Array.from(axes).slice(0, 15), themes: Array.from(themes).slice(0, 10), restrictions: restrictions.slice(0, 10) };
+}
+
+// Validate question against criteria
+function validateQuestion(q: { text: string; type: string; axes: string[]; weight: number }, criteria: ReturnType<typeof extractCriteriaFromPrompts>): { valid: boolean; warnings: string[] } {
+  const warnings: string[] = [];
+
+  if (q.text.length < 10) warnings.push('Texto muito curto (mínimo 10 caracteres)');
+  if (q.text.length > 300) warnings.push('Texto muito longo (máximo 300 caracteres)');
+
+  // Likert should be statements, not questions
+  if (q.type === 'likert' && q.text.includes('?')) warnings.push('Likert deve usar afirmações, não perguntas');
+
+  // Frequency should be questions
+  if (q.type === 'frequency' && !q.text.includes('?') && !q.text.toLowerCase().includes('frequência')) warnings.push('Frequência geralmente usa perguntas com "?"');
+
+  // Check if axes match prompt criteria
+  if (criteria.axes.length > 0) {
+    const hasRelevantAxis = q.axes.some(a => criteria.axes.some(ca => a.includes(ca) || ca.includes(a)));
+    if (!hasRelevantAxis && q.axes[0] !== '' && q.axes[0] !== 'geral') {
+      warnings.push('Eixo(s) não encontrado(s) nos prompts do diagnóstico');
+    }
+  }
+
+  // Generic question detection
+  const genericTerms = ['melhorar', 'equilíbrio', 'zona de conforto', 'ser feliz', 'sucesso'];
+  if (genericTerms.some(t => q.text.toLowerCase().includes(t))) warnings.push('Evite linguagem genérica e motivacional');
+
+  // Open question detection
+  if (/^(por que|como|o que|explique)/i.test(q.text.trim())) warnings.push('Perguntas abertas não são permitidas');
+
+  return { valid: warnings.length === 0, warnings };
+}
 
 export default function AdminQuestions() {
   const { isSuperAdmin, loading: authLoading } = useAuth();
@@ -54,6 +134,7 @@ export default function AdminQuestions() {
   const [modules, setModules] = useState<TestModule[]>([]);
   const [selectedTestId, setSelectedTestId] = useState<string>('');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [prompts, setPrompts] = useState<TestPrompt[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -61,6 +142,9 @@ export default function AdminQuestions() {
   const [form, setForm] = useState(emptyQuestion);
   const [suggesting, setSuggesting] = useState(false);
   const [suggestion, setSuggestion] = useState<{ reasoning?: { type_reason?: string; axes_reason?: string; weight_reason?: string } } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
+  const [showCriteria, setShowCriteria] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -69,11 +153,15 @@ export default function AdminQuestions() {
   }, [authLoading, isSuperAdmin]);
 
   useEffect(() => {
-    if (selectedTestId) fetchQuestions();
+    if (selectedTestId) {
+      fetchQuestions();
+      fetchPrompts();
+      setSelectedIds(new Set());
+    }
   }, [selectedTestId]);
 
   const fetchModules = async () => {
-    const { data } = await supabase.from('test_modules').select('id, slug, name, icon').order('sort_order');
+    const { data } = await supabase.from('test_modules').select('id, slug, name, icon, description').order('sort_order');
     if (data && data.length > 0) {
       setModules(data);
       setSelectedTestId(preselectedTestId || data[0].id);
@@ -92,6 +180,16 @@ export default function AdminQuestions() {
     else setQuestions(data || []);
     setLoading(false);
   };
+
+  const fetchPrompts = async () => {
+    const { data } = await supabase
+      .from('test_prompts')
+      .select('id, prompt_type, title, content, is_active')
+      .eq('test_id', selectedTestId);
+    setPrompts(data || []);
+  };
+
+  const criteria = extractCriteriaFromPrompts(prompts);
 
   const startEdit = (q: Question) => {
     setEditingId(q.id);
@@ -150,10 +248,17 @@ export default function AdminQuestions() {
     toast.success('Sugestão aplicada! Ajuste se necessário.');
   };
 
+  const formValidation = validateQuestion(form, criteria);
+
   const handleSave = async () => {
     if (!form.text.trim()) { toast.error('Texto da pergunta é obrigatório'); return; }
     const axes = form.axes.filter(a => a.trim());
     if (axes.length === 0) { toast.error('Pelo menos um eixo é obrigatório'); return; }
+
+    if (formValidation.warnings.length > 0) {
+      const proceed = confirm(`⚠️ Avisos de critério:\n\n${formValidation.warnings.map(w => `• ${w}`).join('\n')}\n\nDeseja salvar mesmo assim?`);
+      if (!proceed) return;
+    }
 
     setSaving(true);
     const payload = {
@@ -182,7 +287,30 @@ export default function AdminQuestions() {
     if (!confirm('Excluir esta pergunta?')) return;
     const { error } = await supabase.from('questions').delete().eq('id', id);
     if (error) toast.error('Erro ao excluir');
-    else { toast.success('Pergunta excluída!'); await fetchQuestions(); }
+    else { toast.success('Pergunta excluída!'); setSelectedIds(prev => { const n = new Set(prev); n.delete(id); return n; }); await fetchQuestions(); }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`Excluir ${selectedIds.size} pergunta(s) selecionada(s)?`)) return;
+    setDeleting(true);
+    const { error } = await supabase.from('questions').delete().in('id', Array.from(selectedIds));
+    if (error) { toast.error('Erro ao excluir perguntas'); }
+    else { toast.success(`${selectedIds.size} pergunta(s) excluída(s)!`); setSelectedIds(new Set()); await fetchQuestions(); }
+    setDeleting(false);
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === questions.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(questions.map(q => q.id)));
   };
 
   const updateAxes = (index: number, value: string) => {
@@ -209,9 +337,100 @@ export default function AdminQuestions() {
   }
 
   const selectedModule = modules.find(m => m.id === selectedTestId);
+  const hasPrompts = prompts.some(p => p.is_active && p.content.trim());
+
+  const renderCriteriaPanel = () => {
+    if (!showCriteria) return null;
+    return (
+      <motion.div
+        initial={{ opacity: 0, height: 0 }}
+        animate={{ opacity: 1, height: 'auto' }}
+        exit={{ opacity: 0, height: 0 }}
+        className="mb-4 p-4 rounded-xl border-2 border-amber-500/30 bg-amber-500/5"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-amber-500" />
+            Critérios Baseados nos Prompts
+          </h3>
+          <button onClick={() => setShowCriteria(false)} className="p-1 hover:bg-accent rounded">
+            <X className="w-4 h-4 text-muted-foreground" />
+          </button>
+        </div>
+
+        {!hasPrompts ? (
+          <div className="text-sm text-amber-600 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            Nenhum prompt ativo encontrado para este diagnóstico. Configure os prompts primeiro para ter critérios rigorosos.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {criteria.axes.length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-foreground">Eixos detectados nos prompts:</span>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {criteria.axes.map(a => (
+                    <span key={a} className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono">{a}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {criteria.themes.length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-foreground">Temas a serem cobertos:</span>
+                <ul className="mt-1 space-y-0.5">
+                  {criteria.themes.map((t, i) => (
+                    <li key={i} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                      <CheckCircle2 className="w-3 h-3 mt-0.5 text-green-500 shrink-0" />
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {criteria.restrictions.length > 0 && (
+              <div>
+                <span className="text-xs font-medium text-destructive">Restrições:</span>
+                <ul className="mt-1 space-y-0.5">
+                  {criteria.restrictions.map((r, i) => (
+                    <li key={i} className="text-xs text-destructive/80 flex items-start gap-1.5">
+                      <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-border">
+              <span className="text-xs font-medium text-foreground">Prompts ativos:</span>
+              <div className="flex flex-wrap gap-1.5 mt-1">
+                {prompts.filter(p => p.is_active && p.content.trim()).map(p => (
+                  <span key={p.id} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                    {promptTypeLabels[p.prompt_type] || p.prompt_type}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </motion.div>
+    );
+  };
 
   const renderForm = () => (
     <div className="space-y-4 p-4 rounded-xl border border-border bg-card">
+      {/* Validation warnings */}
+      {form.text.trim().length >= 5 && formValidation.warnings.length > 0 && (
+        <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 space-y-1">
+          {formValidation.warnings.map((w, i) => (
+            <p key={i} className="text-xs text-amber-600 flex items-center gap-1.5">
+              <AlertTriangle className="w-3 h-3 shrink-0" /> {w}
+            </p>
+          ))}
+        </div>
+      )}
+
       <div>
         <label className="text-sm font-medium text-foreground mb-1 block">Texto da Afirmação</label>
         <textarea
@@ -335,6 +554,27 @@ export default function AdminQuestions() {
 
       <div>
         <label className="text-sm font-medium text-foreground mb-1 block">Eixos</label>
+        {criteria.axes.length > 0 && (
+          <div className="mb-2">
+            <span className="text-xs text-muted-foreground">Eixos sugeridos (clique para usar):</span>
+            <div className="flex flex-wrap gap-1 mt-1">
+              {criteria.axes.slice(0, 8).map(a => (
+                <button
+                  key={a}
+                  type="button"
+                  onClick={() => {
+                    const emptyIdx = form.axes.findIndex(ax => !ax.trim());
+                    if (emptyIdx >= 0) updateAxes(emptyIdx, a);
+                    else setForm(f => ({ ...f, axes: [...f.axes, a] }));
+                  }}
+                  className="text-xs px-2 py-0.5 rounded-full bg-primary/5 text-primary hover:bg-primary/15 transition-colors font-mono"
+                >
+                  {a}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="space-y-2">
           {form.axes.map((axis, i) => (
             <div key={i} className="flex gap-2">
@@ -421,18 +661,46 @@ export default function AdminQuestions() {
         </div>
 
         {selectedModule && (
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground">
-              {questions.length} perguntas em <span className="font-medium text-foreground">{selectedModule.name}</span>
-            </p>
-            <button
-              onClick={startCreate}
-              disabled={creating}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-primary/90 disabled:opacity-50"
-            >
-              <Plus className="w-4 h-4" /> Nova Pergunta
-            </button>
-          </div>
+          <>
+            {/* Criteria toggle + actions bar */}
+            <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+              <div className="flex items-center gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {questions.length} perguntas em <span className="font-medium text-foreground">{selectedModule.name}</span>
+                </p>
+                <button
+                  onClick={() => setShowCriteria(!showCriteria)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-colors border ${
+                    showCriteria ? 'border-amber-500/50 bg-amber-500/10 text-amber-600' : 'border-border text-muted-foreground hover:border-amber-500/30'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  Critérios
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                {selectedIds.size > 0 && (
+                  <button
+                    onClick={handleBulkDelete}
+                    disabled={deleting}
+                    className="px-3 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium flex items-center gap-2 hover:bg-destructive/90 disabled:opacity-50"
+                  >
+                    {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                    Excluir {selectedIds.size} selecionada(s)
+                  </button>
+                )}
+                <button
+                  onClick={startCreate}
+                  disabled={creating}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium flex items-center gap-2 hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <Plus className="w-4 h-4" /> Nova Pergunta
+                </button>
+              </div>
+            </div>
+
+            {renderCriteriaPanel()}
+          </>
         )}
 
         {creating && renderForm()}
@@ -441,22 +709,54 @@ export default function AdminQuestions() {
           <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>
         ) : (
           <div className="space-y-2 mt-4">
+            {/* Select all header */}
+            {questions.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1.5">
+                <button onClick={toggleSelectAll} className="p-0.5 rounded hover:bg-accent transition-colors">
+                  {selectedIds.size === questions.length ? (
+                    <CheckSquare className="w-4 h-4 text-primary" />
+                  ) : (
+                    <Square className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </button>
+                <span className="text-xs text-muted-foreground">
+                  {selectedIds.size > 0 ? `${selectedIds.size} selecionada(s)` : 'Selecionar todas'}
+                </span>
+              </div>
+            )}
+
             {questions.map((q, index) => {
               const isEditing = editingId === q.id;
+              const isSelected = selectedIds.has(q.id);
+              const qValidation = validateQuestion(q, criteria);
               return (
                 <motion.div key={q.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.02 }}>
                   {isEditing ? renderForm() : (
-                    <div className="p-3 rounded-xl border border-border bg-card hover:border-primary/30 transition-colors">
+                    <div className={`p-3 rounded-xl border transition-colors ${
+                      isSelected ? 'border-primary/50 bg-primary/5' : 'border-border bg-card hover:border-primary/30'
+                    }`}>
                       <div className="flex items-start gap-3">
+                        <button onClick={() => toggleSelect(q.id)} className="p-0.5 rounded hover:bg-accent transition-colors mt-0.5">
+                          {isSelected ? (
+                            <CheckSquare className="w-4 h-4 text-primary" />
+                          ) : (
+                            <Square className="w-4 h-4 text-muted-foreground" />
+                          )}
+                        </button>
                         <span className="text-xs font-mono text-muted-foreground mt-1 w-6 text-right">{q.sort_order}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-foreground">{q.text}</p>
-                          <div className="flex gap-2 mt-1 flex-wrap">
+                          <div className="flex gap-2 mt-1 flex-wrap items-center">
                             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">{typeLabels[q.type] || q.type}</span>
                             {q.axes.map(a => (
                               <span key={a} className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{a}</span>
                             ))}
                             {q.weight !== 1 && <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">peso: {q.weight}</span>}
+                            {!qValidation.valid && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 flex items-center gap-1">
+                                <AlertTriangle className="w-3 h-3" /> {qValidation.warnings.length} aviso(s)
+                              </span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-1">
