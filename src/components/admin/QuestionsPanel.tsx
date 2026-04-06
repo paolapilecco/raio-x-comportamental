@@ -222,12 +222,20 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
 
   const addOption = () => {
     const opts = [...(form.options || []), ''];
-    setForm(f => ({ ...f, options: opts }));
+    const scores = [...(form.option_scores || []), 0];
+    setForm(f => ({ ...f, options: opts, option_scores: scores }));
   };
 
   const removeOption = (i: number) => {
     const opts = (form.options || []).filter((_, idx) => idx !== i);
-    setForm(f => ({ ...f, options: opts.length > 0 ? opts : null }));
+    const scores = (form.option_scores || []).filter((_, idx) => idx !== i);
+    setForm(f => ({ ...f, options: opts.length > 0 ? opts : null, option_scores: scores.length > 0 ? scores : null }));
+  };
+
+  const updateScore = (index: number, value: number) => {
+    const scores = [...(form.option_scores || defaultScoresForType[form.type] || [])];
+    scores[index] = Math.max(0, Math.min(100, value));
+    setForm(f => ({ ...f, option_scores: scores }));
   };
 
   const handleTypeChange = (newType: QuestionType) => {
