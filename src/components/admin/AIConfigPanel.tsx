@@ -115,7 +115,7 @@ const AIConfigPanel = ({
             <div className="w-9 h-9 rounded-xl bg-violet-500/10 flex items-center justify-center"><Sliders className="w-4 h-4 text-violet-500" /></div>
             <div className="text-left">
               <h2 className="text-[0.9rem] font-semibold">Configuração Global de IA</h2>
-              <p className="text-[0.7rem] text-muted-foreground/50">Modelo, parâmetros e padrões herdados por todos os testes</p>
+              <p className="text-[0.7rem] text-muted-foreground/50">Modelo, parâmetros e padrões herdados por todos os diagnósticos</p>
             </div>
           </div>
           {expandedGlobal ? <ChevronDown className="w-4 h-4 text-muted-foreground/40" /> : <ChevronRight className="w-4 h-4 text-muted-foreground/40" />}
