@@ -125,11 +125,14 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const startEdit = (q: Question) => {
     setEditingId(q.id);
     setCreating(false);
+    const opts = q.options || defaultOptionsForType[q.type] || null;
+    const scores = q.option_scores || defaultScoresForType[q.type] || null;
     setForm({
       text: q.text, type: q.type,
       axes: q.axes.length ? q.axes : [''],
       weight: q.weight, sort_order: q.sort_order,
-      options: q.options || defaultOptionsForType[q.type] || null,
+      options: opts,
+      option_scores: scores ? [...scores] : null,
     });
     setShowOptionsEditor(!!q.options || q.type === 'behavior_choice');
   };
@@ -138,7 +141,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     setCreating(true);
     setEditingId(null);
     const defaultOpts = defaultOptionsForType['likert'];
-    setForm({ ...emptyQuestion, sort_order: questions.length + 1, options: defaultOpts });
+    const defaultScores = defaultScoresForType['likert'];
+    setForm({ ...emptyQuestion, sort_order: questions.length + 1, options: defaultOpts, option_scores: [...defaultScores] });
     setShowOptionsEditor(false);
   };
 
