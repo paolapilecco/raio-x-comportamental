@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { PlayCircle, ChevronDown, ChevronRight, Sliders, CheckCircle2, AlertTriangle, Loader2, Eye, Sparkles, GitCompare } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { PlayCircle, ChevronDown, ChevronRight, Sliders, CheckCircle2, AlertTriangle, Loader2, Eye, Sparkles, GitCompare, FileCode, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PROMPT_SECTIONS, type TestPrompt, type TestModule } from './promptConstants';
@@ -63,6 +63,48 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
   const [showComparison, setShowComparison] = useState(false);
   const [dynamicPresets, setDynamicPresets] = useState<{ label: string; icon: string; description: string; scores: Record<string, number> }[]>([]);
   const [loadedAxes, setLoadedAxes] = useState<string[]>([]);
+  const [showPromptPreview, setShowPromptPreview] = useState(false);
+
+  // Build the final system prompt preview (mirrors edge function logic)
+  const assembledPrompt = useMemo(() => {
+    if (!previewTestId) return '';
+    const activePrompts = testPrompts.filter(p => p.test_id === previewTestId && p.is_active);
+    if (activePrompts.length === 0) return '';
+
+    const promptMap: Record<string, string> = {};
+    activePrompts.forEach(p => { promptMap[p.prompt_type] = p.content; });
+
+    const sections: string[] = [];
+    sections.push(`# PAPEL\nVocê é um analista comportamental de alto nível. Sua função é INTERPRETAR — não descrever, não resumir, não motivar.\nVocê recebe dados reais de um teste comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.`);
+
+    const sectionMap: Record<string, string> = {
+      interpretation: '# INSTRUÇÕES DE INTERPRETAÇÃO',
+      diagnosis: '# DIAGNÓSTICO FINAL',
+      profile: '# IDENTIFICAÇÃO DE PERFIL',
+      core_pain: '# DOR CENTRAL',
+      triggers: '# GATILHOS E ARMADILHAS',
+      direction: '# DIREÇÃO PRÁTICA',
+      restrictions: '# RESTRIÇÕES OBRIGATÓRIAS',
+    };
+
+    Object.entries(sectionMap).forEach(([type, header]) => {
+      if (promptMap[type]) {
+        sections.push(`${header}\n${promptMap[type]}`);
+      }
+    });
+
+    sections.push(`# REGRAS INVIOLÁVEIS\n[Regras de especificidade, formato JSON e proibições — sempre incluídas automaticamente]`);
+
+    return sections.join('\n\n---\n\n');
+  }, [previewTestId, testPrompts]);
+
+  // Detect empty active prompts
+  const emptyActivePrompts = useMemo(() => {
+    if (!previewTestId) return [];
+    return testPrompts
+      .filter(p => p.test_id === previewTestId && p.is_active && !p.content.trim())
+      .map(p => PROMPT_SECTIONS.find(s => s.type === p.prompt_type)?.label || p.prompt_type);
+  }, [previewTestId, testPrompts]);
 
   const loadAxes = useCallback(async (testId: string) => {
     const { data: questions } = await supabase.from('questions').select('axes').eq('test_id', testId);
@@ -251,6 +293,46 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
                       <input type="range" min="0" max="100" step="5" value={val} onChange={(e) => setPreviewScores(prev => ({ ...prev, [axis]: parseInt(e.target.value) }))} className="w-full accent-primary h-1.5" />
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Empty prompt warning */}
+          {previewTestId && emptyActivePrompts.length > 0 && (
+            <div className="flex items-start gap-2 p-3 rounded-xl border border-red-500/25 bg-red-500/[0.05]">
+              <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-[0.78rem] font-semibold text-red-600 dark:text-red-400">Prompts vazios detectados</p>
+                <p className="text-[0.68rem] text-red-500/60">
+                  As seguintes seções estão ativas mas sem conteúdo: <strong>{emptyActivePrompts.join(', ')}</strong>. 
+                  A IA não receberá instruções para essas seções.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Prompt Preview */}
+          {previewTestId && assembledPrompt && (
+            <div className="space-y-2">
+              <button
+                onClick={() => setShowPromptPreview(prev => !prev)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.03] hover:bg-indigo-500/[0.08] text-[0.8rem] font-semibold text-indigo-600 dark:text-indigo-400 transition-all w-full"
+              >
+                <FileCode className="w-4 h-4" />
+                <span className="flex-1 text-left">{showPromptPreview ? 'Ocultar Preview do Prompt Final' : 'Ver Preview do Prompt Final'}</span>
+                <span className="text-[0.65rem] font-mono text-indigo-500/50">{assembledPrompt.length} chars</span>
+              </button>
+              {showPromptPreview && (
+                <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/[0.02] overflow-hidden">
+                  <div className="px-4 py-3 bg-indigo-500/[0.05] border-b border-indigo-500/15 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileCode className="w-4 h-4 text-indigo-500" />
+                      <h4 className="text-[0.8rem] font-bold text-indigo-700 dark:text-indigo-400">System Prompt Final</h4>
+                    </div>
+                    <span className="text-[0.65rem] text-muted-foreground/40">Exatamente o que será enviado à IA</span>
+                  </div>
+                  <pre className="p-4 text-[0.72rem] font-mono text-foreground/70 leading-relaxed whitespace-pre-wrap max-h-96 overflow-y-auto">{assembledPrompt}</pre>
                 </div>
               )}
             </div>

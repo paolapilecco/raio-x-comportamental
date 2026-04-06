@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb } from 'lucide-react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
@@ -56,6 +55,8 @@ const PromptEditor = ({
         <TabsList className="w-full flex flex-wrap h-auto gap-1 bg-muted/30 p-1.5 rounded-xl">
           {PROMPT_SECTIONS.map(s => {
             const exists = !!byType[s.type];
+            const prompt = byType[s.type];
+            const isEmpty = exists && prompt.is_active && !(editedTexts[`tp_${prompt.id}`] ?? prompt.content).trim();
             const SIcon = s.icon;
             return (
               <TabsTrigger key={s.type} value={s.type} className="flex items-center gap-1.5 text-[0.72rem] px-3 py-2 data-[state=active]:shadow-sm">
@@ -63,6 +64,7 @@ const PromptEditor = ({
                 <span className="hidden sm:inline">{s.label}</span>
                 <span className="sm:hidden">{s.shortLabel}</span>
                 {!exists && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                {isEmpty && <span className="relative flex h-3 w-3" title="Prompt ativo mas vazio!"><AlertCircle className="w-3 h-3 text-red-500 animate-pulse" /></span>}
               </TabsTrigger>
             );
           })}
@@ -90,8 +92,20 @@ const PromptEditor = ({
 
                 {/* Content */}
                 <div className="p-5">
-                  {prompt ? (
+                  {prompt ? (() => {
+                    const currentContent = (editedTexts[`tp_${prompt.id}`] ?? prompt.content).trim();
+                    const isEmptyAndActive = prompt.is_active && !currentContent;
+                    return (
                     <div className={`space-y-4 ${!prompt.is_active ? 'opacity-40' : ''}`}>
+                      {isEmptyAndActive && (
+                        <div className="flex items-center gap-2 p-3 rounded-xl border border-red-500/25 bg-red-500/[0.05]">
+                          <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                          <div>
+                            <p className="text-[0.78rem] font-semibold text-red-600 dark:text-red-400">Prompt vazio</p>
+                            <p className="text-[0.68rem] text-red-500/60">Este prompt está ativo mas sem conteúdo. A IA não terá instruções para esta seção. Use o template sugerido ou escreva suas instruções.</p>
+                          </div>
+                        </div>
+                      )}
                       <textarea
                         value={editedTexts[`tp_${prompt.id}`] ?? prompt.content}
                         onChange={(e) => setEditedTexts(prev => ({ ...prev, [`tp_${prompt.id}`]: e.target.value }))}
@@ -128,7 +142,8 @@ const PromptEditor = ({
                         </button>
                       </div>
                     </div>
-                  ) : (
+                    );
+                  })() : (
                     <div className="flex flex-col items-center justify-center py-10 space-y-3">
                       <div className={`w-12 h-12 rounded-2xl ${section.bgColor} flex items-center justify-center`}>
                         <SIcon className={`w-6 h-6 ${section.color} opacity-40`} />
