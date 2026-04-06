@@ -46,6 +46,7 @@ function getScaleLabel(type: string | undefined): string {
   switch (type) {
     case 'frequency': return 'Com que frequência?';
     case 'behavior_choice': return 'O que você faria?';
+    case 'intensity': return 'Avalie de 0 a 10';
     default: return 'Quanto você concorda?';
   }
 }
