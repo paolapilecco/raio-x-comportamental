@@ -112,7 +112,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-xl mx-auto px-6 md:px-10 py-14 md:py-24">
+      <div className="max-w-3xl mx-auto px-6 md:px-12 py-14 md:py-24">
 
         {/* ── Header ── */}
         <motion.header {...fade} transition={{ duration: 0.5 }} className="mb-12">
