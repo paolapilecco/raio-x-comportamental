@@ -39,7 +39,7 @@ function calculateScores(answers: Answer[]): PatternScore[] {
     label: patternDefinitions[key].label,
     score: rawScores[key],
     maxScore: maxScores[key],
-    percentage: maxScores[key] > 0 ? Math.round((rawScores[key] / maxScores[key]) * 100) : 0,
+    percentage: maxScores[key] > 0 ? Math.min(100, Math.round((rawScores[key] / maxScores[key]) * 100)) : 0,
   })).sort((a, b) => b.percentage - a.percentage);
 }
 
