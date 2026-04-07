@@ -13,6 +13,7 @@ import SimulationPanel from '@/components/admin/SimulationPanel';
 import HistoryPanel from '@/components/admin/HistoryPanel';
 import QuestionsPanel from '@/components/admin/QuestionsPanel';
 import ReportTemplatePanel from '@/components/admin/ReportTemplatePanel';
+import OutputRulesPanel from '@/components/admin/OutputRulesPanel';
 import {
   iconMap, PROMPT_SECTIONS,
   type TestPrompt, type TestModule, type GlobalAiConfig, type TestAiConfig,
@@ -266,8 +267,11 @@ const AdminPrompts = () => {
             </TabsContent>
 
             {/* TAB: Template do Relatório */}
-            <TabsContent value="template" className="mt-5">
+            <TabsContent value="template" className="mt-5 space-y-8">
               <ReportTemplatePanel currentModule={currentModule} />
+              <div className="border-t border-border/20 pt-6">
+                <OutputRulesPanel currentModule={currentModule} />
+              </div>
             </TabsContent>
 
             {/* TAB: Configuração */}
