@@ -202,16 +202,17 @@ function getCategoryContext(slug: string): CategoryContext {
 
 // ── Structured prompt builder ──
 
-function buildStructuredSystemPrompt(prompts: PromptRecord[]): string {
+function buildStructuredSystemPrompt(prompts: PromptRecord[], categoryCtx: CategoryContext): string {
   const promptMap: Record<string, string> = {};
   prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
 
   const sections: string[] = [];
 
-  // Role definition — non-negotiable
+  // Role definition — category-specific
   sections.push(`# PAPEL
-Você é um analista comportamental de alto nível. Sua função é INTERPRETAR — não descrever, não resumir, não motivar.
-Você recebe dados reais de uma leitura comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.`);
+${categoryCtx.role}
+Você recebe dados reais de uma leitura comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.
+ÊNFASE DESTE TESTE: ${categoryCtx.emphasis}`);
 
   // Admin-configured prompt sections
   if (promptMap.interpretation) {
