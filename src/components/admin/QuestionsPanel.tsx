@@ -289,12 +289,35 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
     setShowOptionsEditor(newType === 'behavior_choice');
   };
 
+  const fetchContextSummary = useCallback(async () => {
+    const [promptsRes, patternRes, sameTestRes, otherTestRes] = await Promise.all([
+      supabase.from('test_prompts').select('prompt_type').eq('test_id', currentModule.id).eq('is_active', true),
+      supabase.from('pattern_definitions').select('pattern_key').eq('test_module_id', currentModule.id),
+      supabase.from('questions').select('text, axes').eq('test_id', currentModule.id),
+      supabase.from('questions').select('id').neq('test_id', currentModule.id),
+    ]);
+    const axesFromQuestions = new Set((sameTestRes.data || []).flatMap(q => q.axes || []));
+    const axesFromPatterns = new Set((patternRes.data || []).map(p => p.pattern_key));
+    const axes = Array.from(new Set([...axesFromQuestions, ...axesFromPatterns]));
+    setAiContextSummary({
+      prompts: promptsRes.data?.length || 0,
+      patterns: patternRes.data?.length || 0,
+      existingQuestions: sameTestRes.data?.length || 0,
+      otherQuestions: otherTestRes.data?.length || 0,
+      axes,
+    });
+  }, [currentModule.id]);
+
+  useEffect(() => {
+    if (showAIPanel) fetchContextSummary();
+  }, [showAIPanel, fetchContextSummary]);
+
   const handleAIGenerate = async () => {
     setAiGenerating(true);
     setAiPreview(null);
     setAiQualityMetrics(null);
+    setAiEditingIndex(null);
     try {
-      // Fetch test description, prompts, existing questions from other AND same test, plus pattern definitions
       const [moduleRes, promptsRes, otherQuestionsRes, sameTestQuestionsRes, patternRes] = await Promise.all([
         supabase.from('test_modules').select('description').eq('id', currentModule.id).single(),
         supabase.from('test_prompts').select('prompt_type, content').eq('test_id', currentModule.id).eq('is_active', true),
@@ -306,18 +329,13 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       const desc = moduleRes.data?.description || currentModule.name;
       setAiModuleDescription(desc);
 
-      // Build prompts context string
       const promptsContext = (promptsRes.data || [])
         .map(p => `[${p.prompt_type?.toUpperCase()}]: ${p.content}`)
         .join('\n\n');
 
-      // Collect existing question texts from other tests for deduplication
       const existingQuestionsFromOtherTests = (otherQuestionsRes.data || []).map(q => q.text);
-
-      // Collect existing question texts from THIS test for internal deduplication
       const existingQuestionsFromThisTest = (sameTestQuestionsRes.data || []).map(q => q.text);
 
-      // Collect all axes used in this test + pattern keys as required axes
       const axesFromQuestions = new Set((sameTestQuestionsRes.data || []).flatMap(q => q.axes || []));
       const axesFromPatterns = new Set((patternRes.data || []).map(p => p.pattern_key));
       const existingAxes = Array.from(new Set([...axesFromQuestions, ...axesFromPatterns]));
@@ -332,6 +350,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           existingQuestionsFromThisTest,
           existingAxes,
           testModuleId: currentModule.id,
+          extraInstructions: aiExtraInstructions.trim() || undefined,
         },
       });
       if (error) throw error;
