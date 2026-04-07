@@ -164,6 +164,39 @@ const DiagnosticHistory = () => {
         return;
       }
 
+      // Fetch user name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      // Check if this is a "Mapa de Vida" module → custom wheel PDF
+      const entryModule = modules.find(m => m.id === entry.test_module_id);
+      if (entryModule?.slug === 'mapa-de-vida') {
+        // Find previous result for comparison
+        const prevEntry = history.find(
+          h => h.test_module_id === entry.test_module_id && h.created_at < entry.created_at
+        );
+        let prevScores: any[] | undefined;
+        let prevDate: string | undefined;
+        if (prevEntry) {
+          prevScores = prevEntry.all_scores as any[];
+          prevDate = new Date(prevEntry.created_at).toLocaleDateString('pt-BR');
+        }
+
+        generateLifeMapPdf(
+          (fullResult.all_scores as any[]) || [],
+          profile?.name,
+          prevScores,
+          new Date(entry.created_at).toLocaleDateString('pt-BR'),
+          prevDate,
+        );
+        toast.success('PDF da Roda da Vida gerado!');
+        return;
+      }
+
+      // Standard diagnostic PDF
       const dominantDef = patternDefinitions?.[fullResult.dominant_pattern as PatternKey];
       const secondaryDefs = (fullResult.secondary_patterns || []).map((k: string) => patternDefinitions?.[k as PatternKey]).filter(Boolean);
 
@@ -191,13 +224,6 @@ const DiagnosticHistory = () => {
         criticalDiagnosis: fullResult.critical_diagnosis || dominantDef?.criticalDiagnosis || '',
         whatNotToDo: fullResult.what_not_to_do || dominantDef?.whatNotToDo || [],
       };
-
-      // Fetch user name for the PDF
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name')
-        .eq('user_id', user!.id)
-        .maybeSingle();
 
       generateDiagnosticPdf(diagResult, profile?.name);
       toast.success('PDF gerado com sucesso!');
