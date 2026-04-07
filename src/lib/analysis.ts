@@ -3,6 +3,7 @@ import { questions } from '@/data/questions';
 import { patternDefinitions } from '@/data/patterns';
 import { generateInterpretation } from './interpretationEngine';
 import { validateAndRefineReport } from './reportQualityValidator';
+import { normalizeScoresForDiagnosis } from './scoreNormalization';
 
 const ALL_PATTERNS: PatternKey[] = [
   'unstable_execution',

@@ -1,6 +1,7 @@
 import { Answer, DiagnosticResult, IntensityLevel, PatternScore } from '@/types/diagnostic';
 import { generateInterpretation } from './interpretationEngine';
 import { validateAndRefineReport } from './reportQualityValidator';
+import { normalizeScoresForDiagnosis } from './scoreNormalization';
 
 export interface GenericPatternDefinition {
   key: string;
