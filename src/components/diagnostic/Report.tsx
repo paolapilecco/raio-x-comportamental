@@ -282,6 +282,17 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
           {/* 8. Próxima ação prática */}
           <Section num={8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
+            {/* Mental Command */}
+            {(ai.mentalCommand) && (
+              <div className="mb-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
+                <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold mb-2">
+                  Repita antes de agir
+                </p>
+                <p className="text-base font-semibold text-foreground italic leading-relaxed">
+                  "{ai.mentalCommand}"
+                </p>
+              </div>
+            )}
             <CardBlock variant="success">
               <div className="flex items-start gap-3">
                 <CheckCircle2 className="w-4 h-4 text-green-600/60 mt-0.5 shrink-0" />

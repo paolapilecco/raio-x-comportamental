@@ -611,7 +611,8 @@ ${sectionLines.join(',\n')},
   "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
-  "firstAction": "Copie acaoInicial ou proximoPasso"
+  "firstAction": "Copie acaoInicial ou proximoPasso",
+  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa, sem aspas internas. Ex: Eu não preciso estar pronto pra começar."
 }
 
 REGRAS FINAIS:
@@ -664,7 +665,8 @@ ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TE
   "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
-  "firstAction": "Copie acaoInicial"
+  "firstAction": "Copie acaoInicial",
+  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa. Ex: Eu não preciso estar pronto pra começar."
 }
 
 REGRAS FINAIS:
