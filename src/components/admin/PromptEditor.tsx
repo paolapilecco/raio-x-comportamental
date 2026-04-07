@@ -1,7 +1,9 @@
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PromptEditorProps {
   currentModule: TestModule;
@@ -18,6 +20,7 @@ const PromptEditor = ({
   currentModule, testPrompts, editedTexts, setEditedTexts,
   saving, onSavePrompt, onTogglePrompt, onCreatePrompt,
 }: PromptEditorProps) => {
+  const [generatingAI, setGeneratingAI] = useState<string | null>(null);
   const currentPrompts = testPrompts.filter(p => p.test_id === currentModule.id);
   const byType: Record<string, TestPrompt> = {};
   currentPrompts.forEach(p => { byType[p.prompt_type] = p; });
@@ -27,6 +30,26 @@ const PromptEditor = ({
     if (!template) { toast.info('Nenhum template disponível para esta seção'); return; }
     setEditedTexts(prev => ({ ...prev, [`tp_${promptId}`]: template }));
     toast.success('Template aplicado — edite conforme necessário');
+  };
+
+  const generateWithAI = async (promptId: string, sectionType: string) => {
+    setGeneratingAI(sectionType);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-prompt', {
+        body: { testId: currentModule.id, sectionType },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      if (data?.prompt) {
+        setEditedTexts(prev => ({ ...prev, [`tp_${promptId}`]: data.prompt }));
+        toast.success('Prompt gerado pela IA — revise e salve');
+      }
+    } catch (e: any) {
+      console.error('AI prompt generation error:', e);
+      toast.error('Erro ao gerar prompt com IA');
+    } finally {
+      setGeneratingAI(null);
+    }
   };
 
   return (
@@ -132,6 +155,15 @@ const PromptEditor = ({
                               Usar Template
                             </button>
                           )}
+                          <button
+                            onClick={() => generateWithAI(prompt.id, section.type)}
+                            disabled={generatingAI === section.type}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[0.68rem] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                            title="Gerar prompt automaticamente com IA baseado no contexto do teste"
+                          >
+                            {generatingAI === section.type ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                            {generatingAI === section.type ? 'Gerando...' : 'Gerar com IA'}
+                          </button>
                         </div>
                         <button
                           onClick={() => onSavePrompt(prompt)}
