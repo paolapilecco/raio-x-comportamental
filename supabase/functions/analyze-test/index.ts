@@ -21,6 +21,185 @@ interface PromptRecord {
   title: string;
 }
 
+// ── Category-specific prompt contexts ──
+
+interface CategoryContext {
+  role: string;
+  emphasis: string;
+  sectionOverrides: Record<string, string>;
+  extraInstructions: string;
+}
+
+function getCategoryContext(slug: string): CategoryContext {
+  // Mapa de Vida has its own PDF/report, skip here
+  if (slug === 'mapa-de-vida') {
+    return {
+      role: 'Você analisa a satisfação do usuário em cada área da vida e identifica onde ele precisa agir primeiro.',
+      emphasis: 'Foco em EQUILÍBRIO entre as áreas e PRIORIZAÇÃO de ação.',
+      sectionOverrides: {
+        resumoPrincipal: 'Qual área da vida está mais desequilibrada e o que isso causa nas outras.',
+        significadoPratico: 'Como esse desequilíbrio aparece na rotina real — exemplos concretos.',
+        padraoIdentificado: 'Qual padrão de negligência ou compensação entre áreas.',
+        direcaoAjuste: 'Qual área priorizar primeiro e por quê — uma ação concreta.',
+        proximoPasso: 'Uma ação para esta semana na área mais crítica.',
+      },
+      extraInstructions: `- Mencione as ÁREAS DA VIDA específicas (saúde, finanças, relacionamento, etc.)
+- Compare áreas fortes vs fracas — o que uma compensa na outra?
+- O plano de ação deve ser POR ÁREA, não genérico`,
+    };
+  }
+
+  if (slug === 'padrao-comportamental') {
+    return {
+      role: 'Você identifica os padrões invisíveis de comportamento que travam a pessoa sem ela perceber.',
+      emphasis: 'Foco em PADRÕES REPETITIVOS e MECANISMOS AUTOMÁTICOS.',
+      sectionOverrides: {
+        resumoPrincipal: 'Qual padrão domina e como ele funciona por baixo das decisões conscientes.',
+        significadoPratico: 'Em quais decisões do dia a dia esse padrão aparece — exemplos reais.',
+        comoAparece: 'Situações concretas onde o padrão se ativa sem a pessoa perceber.',
+        direcaoAjuste: 'Qual comportamento automático interromper primeiro.',
+      },
+      extraInstructions: `- Foque em MECANISMOS AUTOMÁTICOS — coisas que a pessoa faz no piloto automático
+- Identifique o CICLO: gatilho → reação automática → consequência → reforço
+- O ponto cego deve revelar algo que a pessoa genuinamente não vê`,
+    };
+  }
+
+  // Execução & Produtividade
+  if (slug.includes('execucao') || slug.includes('produtividade')) {
+    return {
+      role: 'Você analisa por que a pessoa não consegue executar com consistência, mesmo sabendo o que precisa fazer.',
+      emphasis: 'Foco em EXECUÇÃO, CONSISTÊNCIA e PROCRASTINAÇÃO.',
+      sectionOverrides: {
+        resumoPrincipal: 'Onde exatamente a execução trava — o que acontece entre planejar e fazer.',
+        significadoPratico: 'Como essa falha de execução aparece no trabalho, projetos e metas.',
+        padraoIdentificado: 'O tipo de procrastinação ou bloqueio — nomeie o mecanismo específico.',
+        comoAparece: 'Exemplos: prazos perdidos, projetos abandonados, ciclos de motivação que somem.',
+        direcaoAjuste: 'A menor ação possível para quebrar o ciclo de inação.',
+      },
+      extraInstructions: `- NÃO diga "tenha mais disciplina" — explique o que CAUSA a falta de execução
+- Identifique se o problema é INÍCIO (não começa), SUSTENTAÇÃO (não mantém) ou FINALIZAÇÃO (não termina)
+- Gatilhos devem ser sobre SITUAÇÕES DE TRABALHO/ROTINA reais`,
+    };
+  }
+
+  // Emoções & Reatividade
+  if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) {
+    return {
+      role: 'Você analisa como as emoções controlam as decisões da pessoa e onde ela perde o controle.',
+      emphasis: 'Foco em REAÇÕES EMOCIONAIS e REGULAÇÃO.',
+      sectionOverrides: {
+        resumoPrincipal: 'Qual emoção domina e como ela sequestra as decisões.',
+        significadoPratico: 'Em quais situações a pessoa reage de forma desproporcional — exemplos.',
+        padraoIdentificado: 'O tipo de reatividade — explosiva, supressiva, evitativa.',
+        comoAparece: 'Exemplos de reações que a pessoa se arrepende depois.',
+        direcaoAjuste: 'Uma técnica simples para o momento entre o gatilho e a reação.',
+      },
+      extraInstructions: `- Identifique a EMOÇÃO DOMINANTE (raiva, ansiedade, medo, tristeza)
+- Diferencie entre SENTIR a emoção (normal) e SER CONTROLADO por ela (problema)
+- Gatilhos devem ser emocionais: situações que disparam reações intensas`,
+    };
+  }
+
+  // Relacionamentos & Apego
+  if (slug.includes('relacionamento') || slug.includes('apego')) {
+    return {
+      role: 'Você analisa como a pessoa se conecta (ou se desconecta) dos outros e quais padrões repetitivos aparecem.',
+      emphasis: 'Foco em PADRÕES RELACIONAIS e VÍNCULOS.',
+      sectionOverrides: {
+        resumoPrincipal: 'Qual padrão de conexão domina — como a pessoa se comporta nos vínculos.',
+        significadoPratico: 'Como isso afeta namoro, amizades, família e trabalho em equipe.',
+        padraoIdentificado: 'O estilo de apego ou padrão relacional — evitativo, ansioso, controlador.',
+        comoAparece: 'Exemplos de conflitos repetitivos ou dificuldades recorrentes.',
+        direcaoAjuste: 'Uma mudança concreta no próximo momento de tensão relacional.',
+      },
+      extraInstructions: `- Foque em PADRÕES QUE SE REPETEM em diferentes relações
+- Identifique o PAPEL que a pessoa assume (salvador, vítima, controlador, evitador)
+- O que a pessoa FAZ que afasta os outros ou cria dependência`,
+    };
+  }
+
+  // Autoimagem & Identidade
+  if (slug.includes('autoimagem') || slug.includes('identidade')) {
+    return {
+      role: 'Você analisa como a pessoa se vê e onde essa visão está distorcida ou limitante.',
+      emphasis: 'Foco em AUTOCONCEPÇÃO e CRENÇAS LIMITANTES.',
+      sectionOverrides: {
+        resumoPrincipal: 'Como a pessoa se enxerga vs como ela realmente funciona.',
+        significadoPratico: 'Onde essa autoimagem distorcida limita decisões e oportunidades.',
+        padraoIdentificado: 'O tipo de distorção — se subestima, se idealiza, depende de validação.',
+        comoAparece: 'Exemplos: evita desafios, se compara demais, não se candidata, aceita menos.',
+        direcaoAjuste: 'Uma ação para testar uma crença limitante na prática.',
+      },
+      extraInstructions: `- Identifique a NARRATIVA INTERNA que a pessoa conta sobre si mesma
+- Contraste: como ela se vê vs o que os dados mostram
+- As armadilhas mentais devem ser FRASES que a pessoa repete para si mesma`,
+    };
+  }
+
+  // Dinheiro & Decisão
+  if (slug.includes('dinheiro') || slug.includes('financ')) {
+    return {
+      role: 'Você analisa a relação emocional da pessoa com dinheiro e como isso afeta suas decisões financeiras.',
+      emphasis: 'Foco em COMPORTAMENTO FINANCEIRO e DECISÕES COM DINHEIRO.',
+      sectionOverrides: {
+        resumoPrincipal: 'Qual é a relação real da pessoa com dinheiro — medo, impulso, evitação.',
+        significadoPratico: 'Como isso aparece: gastos impulsivos, medo de investir, autossabotagem financeira.',
+        padraoIdentificado: 'O perfil financeiro comportamental — gastador emocional, acumulador ansioso, evitador.',
+        comoAparece: 'Exemplos: compras por impulso, nunca guarda dinheiro, medo de cobrar.',
+        direcaoAjuste: 'Uma mudança concreta na próxima decisão financeira.',
+      },
+      extraInstructions: `- Identifique se o problema é EMOCIONAL (gasta pra compensar) ou COGNITIVO (não sabe planejar)
+- Conecte o padrão financeiro com o padrão emocional da pessoa
+- Gatilhos devem ser situações financeiras reais: receber salário, ver promoção, pagar contas`,
+    };
+  }
+
+  // Padrões Ocultos
+  if (slug.includes('oculto') || slug.includes('hidden')) {
+    return {
+      role: 'Você identifica os padrões que a pessoa NÃO sabe que tem — os mecanismos invisíveis de autossabotagem.',
+      emphasis: 'Foco em MECANISMOS INCONSCIENTES e AUTOENGANO.',
+      sectionOverrides: {
+        resumoPrincipal: 'O padrão que a pessoa jura que não tem — mas que aparece nos dados.',
+        significadoPratico: 'As consequências que a pessoa atribui a "azar" ou "circunstâncias".',
+        padraoIdentificado: 'O mecanismo oculto — o que a pessoa faz sem perceber que faz.',
+        comoAparece: 'Exemplos onde a pessoa sabota o próprio progresso achando que está fazendo certo.',
+        direcaoAjuste: 'Uma forma de "pegar" o padrão em ação no dia a dia.',
+      },
+      extraInstructions: `- Este relatório deve REVELAR algo que a pessoa não quer ouvir
+- O ponto cego é o CENTRO deste relatório — deve ser desenvolvido com profundidade
+- As armadilhas mentais são as JUSTIFICATIVAS que a pessoa usa para manter o padrão`,
+    };
+  }
+
+  // Propósito & Sentido de Vida
+  if (slug.includes('proposito') || slug.includes('sentido')) {
+    return {
+      role: 'Você analisa o nível de conexão da pessoa com um senso de direção e significado na vida.',
+      emphasis: 'Foco em DIREÇÃO DE VIDA, SIGNIFICADO e ALINHAMENTO.',
+      sectionOverrides: {
+        resumoPrincipal: 'Qual é o nível real de conexão com propósito — conectado, perdido ou desalinhado.',
+        significadoPratico: 'Como a falta de direção aparece: insatisfação, rotina vazia, sensação de "para quê?".',
+        padraoIdentificado: 'O tipo de desconexão — vive no piloto automático, segue expectativas dos outros, medo de escolher.',
+        comoAparece: 'Exemplos: troca de projetos frequente, insatisfação crônica, comparação com outros.',
+        direcaoAjuste: 'Uma reflexão prática para identificar o que realmente importa vs o que é pressão externa.',
+      },
+      extraInstructions: `- NÃO use linguagem mística ou espiritual — foque em ESCOLHAS e ALINHAMENTO prático
+- Diferencie entre NÃO TER propósito e NÃO SEGUIR o propósito que já sabe
+- O próximo passo deve ser uma ação de AUTOCONHECIMENTO prático, não meditação genérica`,
+    };
+  }
+
+  // Default fallback
+  return {
+    role: 'Você é um analista comportamental que interpreta dados de leituras para gerar diagnósticos claros e úteis.',
+    emphasis: 'Foco em padrões concretos e direções práticas.',
+    sectionOverrides: {},
+    extraInstructions: '',
+  };
+}
+
 // ── Structured prompt builder ──
 
 function buildStructuredSystemPrompt(prompts: PromptRecord[]): string {
