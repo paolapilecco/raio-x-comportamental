@@ -401,6 +401,7 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
     corePain,
     criticalDiagnosis,
     direction,
+    keyUnlockArea,
     summary,
     impact,
     mechanism,
