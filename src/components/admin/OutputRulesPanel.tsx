@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RotateCcw, Plus, X } from 'lucide-react';
+import { Save, RotateCcw, Plus, X, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -49,6 +49,7 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [spreading, setSpreading] = useState<string | null>(null);
   const [newForbidden, setNewForbidden] = useState('');
   const [newRequired, setNewRequired] = useState('');
 
@@ -113,6 +114,54 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
     toast.info('Regras restauradas ao padrão');
   };
 
+  const spreadFieldToAll = async (field: 'all' | 'requiredBlocks' | 'forbiddenLanguage') => {
+    const label = field === 'all' ? 'regras de saída' : field === 'requiredBlocks' ? 'blocos obrigatórios' : 'linguagem proibida';
+    if (!confirm(`Replicar ${label} para TODOS os outros testes? Testes com configuração própria serão sobrescritos.`)) return;
+    setSpreading(field);
+    try {
+      await handleSave();
+
+      const { data: modules } = await supabase
+        .from('test_modules')
+        .select('id')
+        .neq('id', currentModule.id);
+
+      if (!modules) throw new Error('Falha ao buscar testes');
+
+      for (const mod of modules) {
+        const { data: existing } = await supabase
+          .from('report_templates')
+          .select('id, output_rules')
+          .eq('test_id', mod.id)
+          .maybeSingle();
+
+        let newRules: any;
+        if (field === 'all') {
+          newRules = { ...rules };
+        } else {
+          const current = (existing?.output_rules as Record<string, any>) || {};
+          newRules = { ...current, [field]: rules[field] };
+        }
+
+        if (existing) {
+          await supabase
+            .from('report_templates')
+            .update({ output_rules: newRules, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('report_templates')
+            .insert({ test_id: mod.id, output_rules: newRules });
+        }
+      }
+
+      toast.success(`${label.charAt(0).toUpperCase() + label.slice(1)} replicado(s) para ${modules.length} teste(s)`);
+    } catch {
+      toast.error('Erro ao replicar');
+    }
+    setSpreading(null);
+  };
+
   const addForbiddenWord = () => {
     const term = newForbidden.trim().toLowerCase();
     if (!term || rules.forbiddenLanguage.includes(term)) return;
@@ -135,6 +184,17 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
     setRules(prev => ({ ...prev, requiredBlocks: prev.requiredBlocks.filter((_, i) => i !== index) }));
   };
 
+  const SpreadButton = ({ field, label }: { field: 'all' | 'requiredBlocks' | 'forbiddenLanguage'; label: string }) => (
+    <button
+      onClick={() => spreadFieldToAll(field)}
+      disabled={spreading !== null}
+      className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[0.65rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-accent/50 transition-all disabled:opacity-50"
+    >
+      <Copy className="w-3 h-3" />
+      {spreading === field ? 'Replicando...' : label}
+    </button>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -146,14 +206,15 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h3 className="text-base font-semibold text-foreground">Regras de Saída</h3>
           <p className="text-[0.75rem] text-muted-foreground/60 mt-0.5">
             Controle tom, simplicidade, tamanho e linguagem dos relatórios gerados.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <SpreadButton field="all" label="Replicar tudo para todos" />
           <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-secondary/50 transition-all">
             <RotateCcw className="w-3 h-3" /> Restaurar padrão
           </button>
@@ -237,7 +298,10 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
 
       {/* Blocos obrigatórios */}
       <div className="border border-border/30 rounded-xl bg-card/60 p-4 space-y-3">
-        <label className="text-[0.75rem] font-semibold text-foreground/80">Blocos obrigatórios</label>
+        <div className="flex items-center justify-between">
+          <label className="text-[0.75rem] font-semibold text-foreground/80">Blocos obrigatórios</label>
+          <SpreadButton field="requiredBlocks" label="Replicar para todos" />
+        </div>
         <div className="flex flex-wrap gap-2">
           {rules.requiredBlocks.map((block, i) => (
             <span key={i} className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-[0.7rem] font-medium">
@@ -263,7 +327,10 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
 
       {/* Linguagem proibida */}
       <div className="border border-border/30 rounded-xl bg-card/60 p-4 space-y-3">
-        <label className="text-[0.75rem] font-semibold text-foreground/80">Linguagem proibida</label>
+        <div className="flex items-center justify-between">
+          <label className="text-[0.75rem] font-semibold text-foreground/80">Linguagem proibida</label>
+          <SpreadButton field="forbiddenLanguage" label="Replicar para todos" />
+        </div>
         <p className="text-[0.65rem] text-muted-foreground/50">
           Termos e expressões que nunca devem aparecer nos relatórios gerados.
         </p>
