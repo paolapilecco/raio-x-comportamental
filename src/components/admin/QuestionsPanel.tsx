@@ -957,6 +957,9 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-[0.8rem] text-foreground/80">{q.text}</p>
+                      {q.reasoning && (
+                        <p className="text-[0.6rem] text-muted-foreground/50 mt-1 italic">💡 {q.reasoning}</p>
+                      )}
                       <div className="flex gap-1.5 mt-1.5 flex-wrap">
                         <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{typeLabels[q.type] || q.type}</span>
                         {q.reverse && (
@@ -967,6 +970,9 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                         ))}
                         {q.axes?.length >= 2 && (
                           <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 font-medium">✕ Cruzamento</span>
+                        )}
+                        {q.weight > 1 && (
+                          <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">⚖ Peso {q.weight}</span>
                         )}
                       </div>
                     </div>
