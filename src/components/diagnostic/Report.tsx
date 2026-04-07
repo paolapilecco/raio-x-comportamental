@@ -393,7 +393,7 @@ function QuickReadCell({ icon, label, value, bold, colorClass }: { icon: React.R
         {icon}
         <p className="text-[9px] text-muted-foreground/45 uppercase tracking-widest">{label}</p>
       </div>
-      <p className={`text-sm leading-snug ${bold ? 'font-bold' : 'font-medium'} ${colorClass || 'text-foreground'}`}>
+      <p className={`text-sm leading-relaxed break-words hyphens-auto ${bold ? 'font-bold' : 'font-medium'} ${colorClass || 'text-foreground'}`}>
         {value}
       </p>
     </div>
