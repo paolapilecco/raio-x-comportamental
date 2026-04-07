@@ -335,8 +335,15 @@ ${promptMap.restrictions}`);
    - ✅ "Você foge de conversas difíceis. Quando algo incomoda, muda de assunto ou some."
    - ❌ "Há uma dinâmica de autossabotagem que se manifesta na procrastinação funcional"
    - ✅ "Você sabe o que precisa fazer, mas adia. Quando finalmente faz, já está atrasado."
-   - ❌ "Busque desenvolver sua inteligência emocional para melhorar seus relacionamentos"
-   - ✅ "Na próxima discussão, espere 5 segundos antes de responder. Só isso."`);
+    - ❌ "Busque desenvolver sua inteligência emocional para melhorar seus relacionamentos"
+    - ✅ "Na próxima discussão, espere 5 segundos antes de responder. Só isso."
+
+10. COMPLETUDE OBRIGATÓRIA — ZERO RESPOSTA APENAS EXPLICATIVA
+    - Se um bloco só EXPLICA sem dar DIREÇÃO PRÁTICA, está incompleto
+    - TODA saída deve conter os 3 elementos: DIAGNÓSTICO (o que acontece) + EXPLICAÇÃO SIMPLES (por que acontece) + AÇÃO EXECUTÁVEL (o que fazer)
+    - chamaAtencao = diagnóstico. padraoRepetido/comoAparece = explicação. corrigirPrimeiro/acaoInicial = ação
+    - Se corrigirPrimeiro ou acaoInicial estiverem vagos ou ausentes, o relatório FALHOU
+    - Teste: releia cada bloco e pergunte "a pessoa sabe O QUE FAZER depois de ler isso?" — se não, reescreva`);
 
   sections.push(`# OBJETIVO DA ANÁLISE
 
