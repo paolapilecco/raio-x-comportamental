@@ -21,6 +21,28 @@ interface PromptRecord {
   title: string;
 }
 
+interface ReportTemplate {
+  sections: TemplateSection[];
+  output_rules: OutputRules;
+}
+
+interface TemplateSection {
+  key: string;
+  name: string;
+  maxSize: number;
+  required: boolean;
+}
+
+interface OutputRules {
+  tone?: string;
+  simplicityLevel?: number;
+  maxSentencesPerBlock?: number;
+  maxTotalBlocks?: number;
+  repetitionProhibited?: boolean;
+  requiredBlocks?: string[];
+  forbiddenLanguage?: string[];
+}
+
 // ── Category-specific prompt contexts ──
 
 interface CategoryContext {
