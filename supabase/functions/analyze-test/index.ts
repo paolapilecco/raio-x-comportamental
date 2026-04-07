@@ -1167,6 +1167,8 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
     if (!result.impact) result.impact = "";
     if (!result.combinedTitle) result.combinedTitle = `${dominant.label}`;
     if (!Array.isArray(result.actionPlan)) result.actionPlan = [];
+    if (!Array.isArray(result.microAcoes)) result.microAcoes = [];
+    if (!result.focoMudanca) result.focoMudanca = "";
 
     // Correction 7: Validate AI result coherence with quantitative data
     // Log warning if AI's dominant pattern doesn't align with highest-scoring axis
