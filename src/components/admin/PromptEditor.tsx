@@ -1,7 +1,9 @@
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PromptEditorProps {
   currentModule: TestModule;
