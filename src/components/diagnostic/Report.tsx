@@ -131,14 +131,14 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         </motion.header>
 
         {/* ── Quick-read card ── */}
-        <motion.div {...fade} transition={{ delay: 0.12, duration: 0.45 }} className="mb-14">
-          <div className="rounded-2xl border border-border/40 overflow-hidden shadow-sm">
-            <div className="bg-secondary/50 px-5 py-3.5 border-b border-border/30">
+        <motion.div {...fade} transition={{ delay: 0.12, duration: 0.45 }} className="mb-16">
+          <div className="rounded-2xl border border-border/30 overflow-hidden shadow-md">
+            <div className="bg-secondary/50 px-6 py-4 border-b border-border/25">
               <p className="text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em] font-semibold">
                 Leitura rápida
               </p>
             </div>
-            <div className="grid grid-cols-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2">
               <QuickReadCell
                 icon={<Zap className="w-3.5 h-3.5 text-primary/50" />}
                 label="Padrão principal"
@@ -160,7 +160,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
               <QuickReadCell
                 icon={<Target className="w-3.5 h-3.5 text-primary/40" />}
                 label="Foco de mudança"
-                value={corrigirPrimeiro ? (corrigirPrimeiro.length > 70 ? corrigirPrimeiro.slice(0, 67) + '…' : corrigirPrimeiro) : 'Não identificado'}
+                value={corrigirPrimeiro || 'Não identificado'}
               />
             </div>
           </div>
