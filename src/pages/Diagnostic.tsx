@@ -395,16 +395,23 @@ const Diagnostic = () => {
         keyUnlockArea: ai.keyUnlockArea || ai.direcaoAjuste || '',
         criticalDiagnosis: ai.criticalDiagnosis || ai.resumoPrincipal || '',
         whatNotToDo: ai.whatNotToDo || ai.oQueEvitar || [],
-        // New template fields
-        resumoPrincipal: ai.resumoPrincipal || '',
-        significadoPratico: ai.significadoPratico || '',
-        padraoIdentificado: ai.padraoIdentificado || '',
+        // New 8-section template fields
+        chamaAtencao: ai.chamaAtencao || ai.resumoPrincipal || '',
+        padraoRepetido: ai.padraoRepetido || ai.padraoIdentificado || '',
         comoAparece: ai.comoAparece || '',
         gatilhos: ai.gatilhos || [],
+        comoAtrapalha: ai.comoAtrapalha || ai.significadoPratico || '',
+        corrigirPrimeiro: ai.corrigirPrimeiro || ai.direcaoAjuste || '',
+        pararDeFazer: ai.pararDeFazer || ai.oQueEvitar || [],
+        acaoInicial: ai.acaoInicial || ai.proximoPasso || ai.firstAction || '',
+        // Legacy fields for backward compat
+        resumoPrincipal: ai.resumoPrincipal || ai.chamaAtencao || '',
+        significadoPratico: ai.significadoPratico || ai.comoAtrapalha || '',
+        padraoIdentificado: ai.padraoIdentificado || ai.padraoRepetido || '',
         impactoVida: ai.impactoVida || [],
-        direcaoAjuste: ai.direcaoAjuste || '',
-        oQueEvitar: ai.oQueEvitar || [],
-        proximoPasso: ai.proximoPasso || ai.firstAction || '',
+        direcaoAjuste: ai.direcaoAjuste || ai.corrigirPrimeiro || '',
+        oQueEvitar: ai.oQueEvitar || ai.pararDeFazer || [],
+        proximoPasso: ai.proximoPasso || ai.acaoInicial || ai.firstAction || '',
       };
 
       return resultObj as DiagnosticResult;

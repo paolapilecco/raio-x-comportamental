@@ -19,59 +19,57 @@ const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg
 
 interface SectionTitles {
   header: string;
-  resumo: string;
-  significado: string;
-  padrao: string;
+  chamaAtencao: string;
+  padraoRepetido: string;
   comoAparece: string;
   gatilhos: string;
-  impacto: string;
-  direcao: string;
-  evitar: string;
-  proximo: string;
+  comoAtrapalha: string;
+  corrigirPrimeiro: string;
+  pararDeFazer: string;
+  acaoInicial: string;
 }
 
 function getCategorySectionTitles(slug?: string): SectionTitles {
   const base: SectionTitles = {
     header: 'Sua leitura',
-    resumo: 'Resumo principal',
-    significado: 'O que isso significa na prática',
-    padrao: 'Padrão identificado',
-    comoAparece: 'Como aparece no dia a dia',
-    gatilhos: 'Gatilhos principais',
-    impacto: 'Impacto nas áreas da vida',
-    direcao: 'Primeira direção de ajuste',
-    evitar: 'O que evitar agora',
-    proximo: 'Próximo passo simples',
+    chamaAtencao: 'O que mais chama atenção no seu resultado',
+    padraoRepetido: 'O padrão que mais se repete em você',
+    comoAparece: 'Como isso aparece na sua rotina',
+    gatilhos: 'O que geralmente dispara esse padrão',
+    comoAtrapalha: 'Como isso te atrapalha',
+    corrigirPrimeiro: 'O que você precisa corrigir primeiro',
+    pararDeFazer: 'O que parar de fazer agora',
+    acaoInicial: 'Ação inicial simples',
   };
 
   if (!slug) return base;
 
   if (slug.includes('execucao') || slug.includes('produtividade')) {
-    return { ...base, header: 'Sua leitura de execução', resumo: 'Onde sua execução trava', significado: 'O que isso causa no seu trabalho', padrao: 'Seu tipo de bloqueio', comoAparece: 'Como isso aparece nos seus projetos', gatilhos: 'O que ativa a procrastinação', direcao: 'A menor ação para destravar', proximo: 'Faça isso nos próximos 3 dias' };
+    return { ...base, header: 'Sua leitura de execução', chamaAtencao: 'Onde sua execução trava', padraoRepetido: 'Seu tipo de bloqueio', comoAparece: 'Como isso aparece nos seus projetos', gatilhos: 'O que ativa a procrastinação', comoAtrapalha: 'O que isso causa no seu trabalho', corrigirPrimeiro: 'A menor ação para destravar', acaoInicial: 'Faça isso nos próximos 3 dias' };
   }
   if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) {
-    return { ...base, header: 'Sua leitura emocional', resumo: 'O que domina suas reações', significado: 'Onde você perde o controle', padrao: 'Seu tipo de reatividade', comoAparece: 'Situações onde você reage demais', gatilhos: 'O que dispara suas reações', direcao: 'Como reagir diferente', proximo: 'Pratique isso na próxima vez' };
+    return { ...base, header: 'Sua leitura emocional', chamaAtencao: 'O que domina suas reações', padraoRepetido: 'Seu tipo de reatividade', comoAparece: 'Situações onde você reage demais', gatilhos: 'O que dispara suas reações', comoAtrapalha: 'Onde você perde o controle', corrigirPrimeiro: 'Como reagir diferente', acaoInicial: 'Pratique isso na próxima vez' };
   }
   if (slug.includes('relacionamento') || slug.includes('apego')) {
-    return { ...base, header: 'Sua leitura relacional', resumo: 'Como você se conecta com os outros', significado: 'O que isso causa nos seus vínculos', padrao: 'Seu padrão nos relacionamentos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa seu modo defensivo', direcao: 'Uma mudança no próximo conflito', proximo: 'Teste isso na próxima conversa difícil' };
+    return { ...base, header: 'Sua leitura relacional', chamaAtencao: 'Como você se conecta com os outros', padraoRepetido: 'Seu padrão nos relacionamentos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa seu modo defensivo', comoAtrapalha: 'O que isso causa nos seus vínculos', corrigirPrimeiro: 'Uma mudança no próximo conflito', acaoInicial: 'Teste isso na próxima conversa difícil' };
   }
   if (slug.includes('autoimagem') || slug.includes('identidade')) {
-    return { ...base, header: 'Sua leitura de autoimagem', resumo: 'Como você se enxerga', significado: 'Onde essa visão te limita', padrao: 'Sua distorção principal', comoAparece: 'Decisões que você evita por causa disso', gatilhos: 'O que ativa sua autocrítica', direcao: 'Uma crença para testar na prática', proximo: 'Desafie isso esta semana' };
+    return { ...base, header: 'Sua leitura de autoimagem', chamaAtencao: 'Como você se enxerga', padraoRepetido: 'Sua distorção principal', comoAparece: 'Decisões que você evita por causa disso', gatilhos: 'O que ativa sua autocrítica', comoAtrapalha: 'Onde essa visão te limita', corrigirPrimeiro: 'Uma crença para testar na prática', acaoInicial: 'Desafie isso esta semana' };
   }
   if (slug.includes('dinheiro') || slug.includes('financ')) {
-    return { ...base, header: 'Sua leitura financeira', resumo: 'Sua relação real com dinheiro', significado: 'Como isso afeta suas decisões', padrao: 'Seu perfil financeiro', comoAparece: 'Onde você perde dinheiro sem perceber', gatilhos: 'O que ativa seus impulsos financeiros', direcao: 'A primeira mudança com dinheiro', proximo: 'Faça isso na próxima compra' };
+    return { ...base, header: 'Sua leitura financeira', chamaAtencao: 'Sua relação real com dinheiro', padraoRepetido: 'Seu perfil financeiro', comoAparece: 'Onde você perde dinheiro sem perceber', gatilhos: 'O que ativa seus impulsos financeiros', comoAtrapalha: 'Como isso afeta suas decisões', corrigirPrimeiro: 'A primeira mudança com dinheiro', acaoInicial: 'Faça isso na próxima compra' };
   }
   if (slug.includes('oculto') || slug.includes('hidden')) {
-    return { ...base, header: 'Seus padrões ocultos', resumo: 'O que você não vê em si', significado: 'As consequências invisíveis', padrao: 'O mecanismo que opera por baixo', comoAparece: 'Onde você sabota sem perceber', gatilhos: 'O que ativa o padrão escondido', direcao: 'Como flagrar o padrão em ação', proximo: 'Observe isso nos próximos dias' };
+    return { ...base, header: 'Seus padrões ocultos', chamaAtencao: 'O que você não vê em si', padraoRepetido: 'O mecanismo que opera por baixo', comoAparece: 'Onde você sabota sem perceber', gatilhos: 'O que ativa o padrão escondido', comoAtrapalha: 'As consequências invisíveis', corrigirPrimeiro: 'Como flagrar o padrão em ação', acaoInicial: 'Observe isso nos próximos dias' };
   }
   if (slug.includes('proposito') || slug.includes('sentido')) {
-    return { ...base, header: 'Sua leitura de propósito', resumo: 'Seu nível de conexão com direção', significado: 'Onde a falta de rumo aparece', padrao: 'Seu tipo de desconexão', comoAparece: 'Sinais de que você está no piloto automático', gatilhos: 'O que ativa a sensação de vazio', direcao: 'O primeiro passo para se reconectar', proximo: 'Uma reflexão prática para esta semana' };
+    return { ...base, header: 'Sua leitura de propósito', chamaAtencao: 'Seu nível de conexão com direção', padraoRepetido: 'Seu tipo de desconexão', comoAparece: 'Sinais de que você está no piloto automático', gatilhos: 'O que ativa a sensação de vazio', comoAtrapalha: 'Onde a falta de rumo aparece', corrigirPrimeiro: 'O primeiro passo para se reconectar', acaoInicial: 'Uma reflexão prática para esta semana' };
   }
   if (slug === 'mapa-de-vida') {
-    return { ...base, header: 'Seu mapa de vida', resumo: 'Sua área mais desequilibrada', significado: 'O que esse desequilíbrio causa', padrao: 'Onde você compensa e onde negligencia', comoAparece: 'Como isso aparece na sua rotina', gatilhos: 'O que te faz negligenciar certas áreas', direcao: 'Qual área priorizar agora', proximo: 'Uma ação para a área mais crítica' };
+    return { ...base, header: 'Seu mapa de vida', chamaAtencao: 'Sua área mais desequilibrada', padraoRepetido: 'Onde você compensa e onde negligencia', comoAparece: 'Como isso aparece na sua rotina', gatilhos: 'O que te faz negligenciar certas áreas', comoAtrapalha: 'O que esse desequilíbrio causa', corrigirPrimeiro: 'Qual área priorizar agora', acaoInicial: 'Uma ação para a área mais crítica' };
   }
   if (slug === 'padrao-comportamental') {
-    return { ...base, header: 'Seu raio-x comportamental', resumo: 'Seu padrão dominante', significado: 'O que esse padrão causa na sua vida', padrao: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa no dia a dia', direcao: 'O comportamento para interromper primeiro', proximo: 'Faça isso nos próximos 3 dias' };
+    return { ...base, header: 'Seu raio-x comportamental', chamaAtencao: 'Seu padrão dominante', padraoRepetido: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa no dia a dia', comoAtrapalha: 'O que esse padrão causa na sua vida', corrigirPrimeiro: 'O comportamento para interromper primeiro', acaoInicial: 'Faça isso nos próximos 3 dias' };
   }
 
   return base;
@@ -89,17 +87,16 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   // Category-specific section titles
   const sectionTitles = getCategorySectionTitles(moduleSlug);
 
-  // Extract new-format fields with fallbacks to old fields
+  // Extract new-format fields with fallbacks
   const ai = (result as any);
-  const resumo = ai.resumoPrincipal || result.criticalDiagnosis;
-  const significado = ai.significadoPratico || result.corePain;
-  const padrao = ai.padraoIdentificado || result.mechanism;
+  const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
+  const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
   const comoAparece = ai.comoAparece || result.mentalState;
   const gatilhos = ai.gatilhos || result.triggers;
-  const impactoVida = ai.impactoVida || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact }));
-  const direcao = ai.direcaoAjuste || result.keyUnlockArea;
-  const oQueEvitar = ai.oQueEvitar || result.whatNotToDo;
-  const proximo = ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
+  const comoAtrapalha = ai.comoAtrapalha || ai.significadoPratico || result.corePain;
+  const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
+  const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
+  const acaoInicial = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
 
   const handleDownloadPdf = () => {
     if (moduleSlug === 'mapa-de-vida') {
@@ -131,10 +128,10 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
         <div className="space-y-10">
 
-          {/* 1. Resumo principal */}
-          <Block num={1} title={sectionTitles.resumo} delay={0.05}>
+          {/* 1. O que mais chama atenção */}
+          <Block num={1} title={sectionTitles.chamaAtencao} delay={0.05}>
             <Callout>
-              <p className="text-sm text-foreground leading-[1.7]">{resumo}</p>
+              <p className="text-sm text-foreground leading-[1.7]">{chamaAtencao}</p>
             </Callout>
           </Block>
 
@@ -156,13 +153,8 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </motion.div>
           )}
 
-          {/* 2. O que isso significa na prática */}
-          <Block num={2} title={sectionTitles.significado} delay={0.1}>
-            <p className="text-sm text-foreground/80 leading-[1.7]">{significado}</p>
-          </Block>
-
-          {/* 3. Padrão identificado */}
-          <Block num={3} title={sectionTitles.padrao} delay={0.14}>
+          {/* 2. O padrão que mais se repete */}
+          <Block num={2} title={sectionTitles.padraoRepetido} delay={0.1}>
             {result.interpretation?.behavioralProfile && (
               <div className="bg-secondary/40 border border-border/30 rounded-xl px-4 py-3 mb-3">
                 <p className="text-sm font-semibold text-foreground">
@@ -170,11 +162,11 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 </p>
               </div>
             )}
-            <p className="text-sm text-muted-foreground leading-[1.7]">{padrao}</p>
+            <p className="text-sm text-muted-foreground leading-[1.7]">{padraoRepetido}</p>
           </Block>
 
-          {/* 4. Como isso aparece no dia a dia */}
-          <Block num={4} title={sectionTitles.comoAparece} delay={0.18}>
+          {/* 3. Como isso aparece na sua rotina */}
+          <Block num={3} title={sectionTitles.comoAparece} delay={0.14}>
             <p className="text-sm text-muted-foreground leading-[1.7]">{comoAparece}</p>
             {result.selfSabotageCycle?.length > 0 && (
               <div className="mt-3 space-y-1">
@@ -190,9 +182,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             )}
           </Block>
 
-          {/* 5. Gatilhos principais */}
+          {/* 4. O que geralmente dispara esse padrão */}
           {gatilhos?.length > 0 && (
-            <Block num={5} title={sectionTitles.gatilhos} delay={0.22}>
+            <Block num={4} title={sectionTitles.gatilhos} delay={0.18}>
               <ul className="space-y-1.5">
                 {gatilhos.map((t: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
@@ -204,32 +196,23 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </Block>
           )}
 
-          {/* 6. Impacto nas áreas da vida */}
-          {impactoVida?.length > 0 && (
-            <Block num={6} title={sectionTitles.impacto} delay={0.26}>
-              <div className="space-y-2">
-                {impactoVida.map((item: any, i: number) => (
-                  <div key={i} className="border-l-2 border-border/40 pl-3 py-1">
-                    <p className="text-[10px] text-muted-foreground/50 uppercase tracking-widest">{item.area || item.pillar}</p>
-                    <p className="text-sm text-muted-foreground leading-[1.7] mt-0.5">{item.efeito || item.impact}</p>
-                  </div>
-                ))}
-              </div>
-            </Block>
-          )}
+          {/* 5. Como isso te atrapalha */}
+          <Block num={5} title={sectionTitles.comoAtrapalha} delay={0.22}>
+            <p className="text-sm text-foreground/80 leading-[1.7]">{comoAtrapalha}</p>
+          </Block>
 
-          {/* 7. Primeira direção de ajuste */}
-          <Block num={7} title={sectionTitles.direcao} delay={0.3}>
+          {/* 6. O que você precisa corrigir primeiro */}
+          <Block num={6} title={sectionTitles.corrigirPrimeiro} delay={0.26}>
             <Callout color="primary">
-              <p className="text-sm text-foreground leading-[1.7]">{direcao}</p>
+              <p className="text-sm text-foreground leading-[1.7]">{corrigirPrimeiro}</p>
             </Callout>
           </Block>
 
-          {/* 8. O que evitar agora */}
-          {oQueEvitar?.length > 0 && (
-            <Block num={8} title={sectionTitles.evitar} delay={0.34}>
+          {/* 7. O que parar de fazer agora */}
+          {pararDeFazer?.length > 0 && (
+            <Block num={7} title={sectionTitles.pararDeFazer} delay={0.3}>
               <div className="space-y-1.5">
-                {oQueEvitar.map((item: string, i: number) => (
+                {pararDeFazer.map((item: string, i: number) => (
                   <div key={i} className="flex items-start gap-2 py-1">
                     <span className="text-destructive/50 text-xs mt-0.5 shrink-0">✗</span>
                     <p className="text-sm text-muted-foreground leading-[1.7]">{item}</p>
@@ -239,10 +222,10 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </Block>
           )}
 
-          {/* 9. Próximo passo simples */}
-          <Block num={9} title={sectionTitles.proximo} delay={0.38}>
+          {/* 8. Ação inicial simples */}
+          <Block num={8} title={sectionTitles.acaoInicial} delay={0.34}>
             <div className="bg-primary/[0.04] border border-primary/15 rounded-xl px-4 py-4">
-              <p className="text-sm font-medium text-foreground leading-[1.7]">{proximo}</p>
+              <p className="text-sm font-medium text-foreground leading-[1.7]">{acaoInicial}</p>
             </div>
           </Block>
 
