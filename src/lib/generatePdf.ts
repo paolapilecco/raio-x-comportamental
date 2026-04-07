@@ -155,7 +155,37 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.roundedRect(M, ctx.y - 3, bw, 5.5, 2.5, 2.5, 'F');
   doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.white);
   doc.text(badge, M + 3.5, ctx.y);
-  ctx.y += 8;
+  ctx.y += 4;
+
+  // Quick-read block
+  pb(ctx, 32);
+  const qrY = ctx.y;
+  doc.setFillColor(245, 245, 248);
+  doc.roundedRect(M, qrY, CW, 28, 2, 2, 'F');
+  doc.setDrawColor(220, 220, 228);
+  doc.roundedRect(M, qrY, CW, 28, 2, 2, 'S');
+  doc.setFontSize(7); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.muted);
+  doc.text('LEITURA RÁPIDA', M + 4, qrY + 5);
+  const halfW = (CW - 6) / 2;
+  doc.setFontSize(6); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.light);
+  doc.text('Padrão principal', M + 4, qrY + 10);
+  doc.text('Intensidade', M + 4 + halfW + 2, qrY + 10);
+  doc.text('Ponto de travamento', M + 4, qrY + 20);
+  doc.text('Foco de mudança', M + 4 + halfW + 2, qrY + 20);
+  doc.setFontSize(7.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.dark);
+  const patternName = (result as any).interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '');
+  const pnTrunc = patternName.length > 28 ? patternName.slice(0, 25) + '…' : patternName;
+  doc.text(pnTrunc, M + 4, qrY + 14);
+  doc.setTextColor(...(intColor as [number, number, number]));
+  doc.text(intLabel, M + 4 + halfW + 2, qrY + 14);
+  doc.setTextColor(...C.dark);
+  const bp = ((result as any).blockingPoint || 'Não identificado');
+  const bpTrunc = bp.length > 35 ? bp.slice(0, 32) + '…' : bp;
+  doc.text(bpTrunc, M + 4, qrY + 24);
+  const cfp = corrigirPrimeiro || 'Não identificado';
+  const cfpTrunc = cfp.length > 35 ? cfp.slice(0, 32) + '…' : cfp;
+  doc.text(cfpTrunc, M + 4 + halfW + 2, qrY + 24);
+  ctx.y = qrY + 34;
 
   // 1. O que mais chama atenção
   sectionNum(ctx, 1, 'O que mais chama atenção no seu resultado');

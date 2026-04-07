@@ -126,6 +126,44 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           </div>
         </motion.header>
 
+        {/* Quick-read card */}
+        <motion.div {...fade} transition={{ delay: 0.15, duration: 0.4 }} className="mb-12">
+          <div className="border border-border/30 rounded-2xl overflow-hidden">
+            <div className="bg-secondary/40 px-5 py-3">
+              <p className="text-[10px] text-muted-foreground/50 uppercase tracking-[0.2em] font-medium">
+                Leitura rápida
+              </p>
+            </div>
+            <div className="grid grid-cols-2 gap-px bg-border/20">
+              <div className="bg-background px-4 py-3.5">
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-widest mb-1">Padrão principal</p>
+                <p className="text-sm font-semibold text-foreground leading-snug">
+                  {result.interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '')}
+                </p>
+              </div>
+              <div className="bg-background px-4 py-3.5">
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-widest mb-1">Intensidade</p>
+                <div className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full ${info.bg}`} />
+                  <p className={`text-sm font-semibold ${info.color}`}>{info.label}</p>
+                </div>
+              </div>
+              <div className="bg-background px-4 py-3.5">
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-widest mb-1">Ponto de travamento</p>
+                <p className="text-xs text-foreground/80 leading-snug">
+                  {ai.blockingPoint || result.blockingPoint || 'Não identificado'}
+                </p>
+              </div>
+              <div className="bg-background px-4 py-3.5">
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-widest mb-1">Foco de mudança</p>
+                <p className="text-xs text-foreground/80 leading-snug">
+                  {corrigirPrimeiro ? (corrigirPrimeiro.length > 80 ? corrigirPrimeiro.slice(0, 77) + '…' : corrigirPrimeiro) : 'Não identificado'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         <div className="space-y-10">
 
           {/* 1. O que mais chama atenção */}
