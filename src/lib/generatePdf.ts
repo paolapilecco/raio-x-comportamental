@@ -1,433 +1,317 @@
 import jsPDF from 'jspdf';
 import { DiagnosticResult } from '@/types/diagnostic';
 
-const MARGIN = 22;
-const PAGE_WIDTH = 210;
-const PAGE_HEIGHT = 297;
-const CONTENT_WIDTH = PAGE_WIDTH - MARGIN * 2;
-const LINE_HEIGHT = 6.5;
-const SECTION_GAP = 12;
+const M = 22; // margin
+const PW = 210;
+const PH = 297;
+const CW = PW - M * 2;
+const LH = 6;
 
-// Brand colors
-const COLORS = {
+const C = {
   dark: [25, 25, 30] as const,
-  accent: [90, 70, 180] as const,    // purple accent
-  accentLight: [240, 237, 255] as const,
+  accent: [90, 70, 180] as const,
+  accentSoft: [240, 237, 255] as const,
   red: [195, 55, 55] as const,
   yellow: [200, 160, 40] as const,
   green: [50, 150, 80] as const,
   text: [40, 40, 45] as const,
-  textLight: [100, 100, 110] as const,
-  textMuted: [140, 140, 150] as const,
-  border: [210, 210, 215] as const,
-  bgLight: [248, 248, 250] as const,
+  muted: [120, 120, 130] as const,
+  light: [160, 160, 170] as const,
+  border: [215, 215, 220] as const,
+  bg: [248, 248, 250] as const,
   white: [255, 255, 255] as const,
 };
 
-interface PDFContext {
-  doc: jsPDF;
-  y: number;
-}
+interface Ctx { doc: jsPDF; y: number; }
 
-function checkPageBreak(ctx: PDFContext, needed: number = 20) {
-  if (ctx.y + needed > PAGE_HEIGHT - MARGIN) {
+function pageBreak(ctx: Ctx, need = 18) {
+  if (ctx.y + need > PH - M) {
     ctx.doc.addPage();
-    ctx.y = MARGIN + 6;
-    // Subtle page header line
-    ctx.doc.setDrawColor(...COLORS.border);
-    ctx.doc.setLineWidth(0.3);
-    ctx.doc.line(MARGIN, ctx.y - 2, MARGIN + CONTENT_WIDTH, ctx.y - 2);
-    ctx.y += 4;
+    ctx.y = M + 8;
   }
 }
 
-// ─── Highlighted insight box (key takeaway) ───
-function addHighlightBox(ctx: PDFContext, label: string, text: string, color: readonly number[] = COLORS.accent) {
-  if (!text) return;
+function gap(ctx: Ctx, n = 6) { ctx.y += n; }
+
+// ── Primitives ──
+
+function heading(ctx: Ctx, num: number, text: string) {
+  pageBreak(ctx, 20);
+  gap(ctx, 8);
   const { doc } = ctx;
-  const lines = doc.splitTextToSize(text, CONTENT_WIDTH - 18);
-  const boxHeight = 10 + lines.length * LINE_HEIGHT + 4;
-  checkPageBreak(ctx, boxHeight + 4);
-
-  // Background
-  doc.setFillColor(...COLORS.accentLight);
-  doc.roundedRect(MARGIN, ctx.y, CONTENT_WIDTH, boxHeight, 2, 2, 'F');
-
-  // Left accent bar
-  doc.setFillColor(...(color as [number, number, number]));
-  doc.roundedRect(MARGIN, ctx.y, 3, boxHeight, 1.5, 1.5, 'F');
-
-  // Label
-  ctx.y += 7;
-  doc.setFontSize(8);
+  // Number badge
+  doc.setFillColor(...C.accent);
+  doc.roundedRect(M, ctx.y - 4, 8, 8, 2, 2, 'F');
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...(color as [number, number, number]));
-  doc.text(label.toUpperCase(), MARGIN + 8, ctx.y);
-  ctx.y += 5;
-
-  // Text
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...COLORS.text);
-  for (const line of lines) {
-    doc.text(line, MARGIN + 8, ctx.y);
-    ctx.y += LINE_HEIGHT;
-  }
+  doc.setTextColor(...C.white);
+  doc.text(String(num), M + 2.8, ctx.y + 1);
+  // Title
+  doc.setFontSize(13);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.dark);
+  doc.text(text, M + 12, ctx.y + 1);
+  ctx.y += 10;
+  doc.setDrawColor(...C.border);
+  doc.setLineWidth(0.3);
+  doc.line(M, ctx.y, M + CW, ctx.y);
   ctx.y += 6;
 }
 
-// ─── Block header with number badge ───
-function addBlockHeader(ctx: PDFContext, num: string, text: string) {
-  checkPageBreak(ctx, 24);
-  ctx.y += 8;
-
-  const { doc } = ctx;
-
-  // Number badge circle
-  doc.setFillColor(...COLORS.accent);
-  doc.circle(MARGIN + 5, ctx.y + 3, 5, 'F');
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.white);
-  doc.text(num, MARGIN + 3.5, ctx.y + 5.5);
-
-  // Title text
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.dark);
-  doc.text(text, MARGIN + 14, ctx.y + 5);
-
-  ctx.y += 12;
-
-  // Separator line
-  doc.setDrawColor(...COLORS.border);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, ctx.y, MARGIN + CONTENT_WIDTH, ctx.y);
-  ctx.y += 8;
-}
-
-function addTitle(ctx: PDFContext, text: string) {
-  checkPageBreak(ctx, 18);
-  ctx.doc.setFontSize(11);
+function label(ctx: Ctx, text: string) {
+  pageBreak(ctx, 12);
+  ctx.doc.setFontSize(8);
   ctx.doc.setFont('helvetica', 'bold');
-  ctx.doc.setTextColor(...COLORS.text);
-  ctx.doc.text(text, MARGIN, ctx.y);
-  ctx.y += 7;
+  ctx.doc.setTextColor(...C.muted);
+  ctx.doc.text(text.toUpperCase(), M, ctx.y);
+  ctx.y += 5;
 }
 
-function addParagraph(ctx: PDFContext, text: string) {
+function para(ctx: Ctx, text: string, color: readonly number[] = C.text) {
   if (!text) return;
-  ctx.doc.setFontSize(10);
-  ctx.doc.setFont('helvetica', 'normal');
-  ctx.doc.setTextColor(...COLORS.text);
-  const lines = ctx.doc.splitTextToSize(text, CONTENT_WIDTH);
+  const { doc } = ctx;
+  doc.setFontSize(9.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...(color as [number, number, number]));
+  const lines = doc.splitTextToSize(text, CW);
   for (const line of lines) {
-    checkPageBreak(ctx);
-    ctx.doc.text(line, MARGIN, ctx.y);
-    ctx.y += LINE_HEIGHT;
+    pageBreak(ctx);
+    doc.text(line, M, ctx.y);
+    ctx.y += LH;
   }
-  ctx.y += 3;
+  ctx.y += 2;
 }
 
-function addBullet(ctx: PDFContext, text: string, color: readonly number[] = COLORS.accent) {
+function bullet(ctx: Ctx, text: string) {
   const { doc } = ctx;
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...COLORS.text);
-  const lines = doc.splitTextToSize(text, CONTENT_WIDTH - 10);
-  checkPageBreak(ctx, lines.length * LINE_HEIGHT + 2);
-
-  // Colored bullet dot
-  doc.setFillColor(...(color as [number, number, number]));
-  doc.circle(MARGIN + 3, ctx.y - 1.5, 1.2, 'F');
-
-  for (let i = 0; i < lines.length; i++) {
-    doc.text(lines[i], MARGIN + 8, ctx.y);
-    ctx.y += LINE_HEIGHT;
+  doc.setTextColor(...C.text);
+  const lines = doc.splitTextToSize(text, CW - 8);
+  pageBreak(ctx, lines.length * LH + 2);
+  doc.setFillColor(...C.accent);
+  doc.circle(M + 2, ctx.y - 1.2, 1, 'F');
+  for (const line of lines) {
+    doc.text(line, M + 6, ctx.y);
+    ctx.y += LH;
   }
   ctx.y += 1;
 }
 
-function addNumberedStep(ctx: PDFContext, num: number, title: string, text: string) {
-  checkPageBreak(ctx, 22);
+function callout(ctx: Ctx, title: string, text: string, color: readonly number[] = C.accent) {
+  if (!text) return;
   const { doc } = ctx;
-
-  // Step number badge
-  doc.setFillColor(...COLORS.bgLight);
-  doc.roundedRect(MARGIN, ctx.y - 4, CONTENT_WIDTH, 6 + LINE_HEIGHT * (doc.splitTextToSize(text, CONTENT_WIDTH - 18).length + 1) + 4, 2, 2, 'F');
-
-  doc.setFontSize(10);
+  const lines = doc.splitTextToSize(text, CW - 14);
+  const h = 8 + lines.length * LH + 4;
+  pageBreak(ctx, h + 2);
+  doc.setFillColor(...C.accentSoft);
+  doc.roundedRect(M, ctx.y, CW, h, 2, 2, 'F');
+  doc.setFillColor(...(color as [number, number, number]));
+  doc.roundedRect(M, ctx.y, 2.5, h, 1, 1, 'F');
+  ctx.y += 6;
+  doc.setFontSize(7.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.accent);
-  doc.text(`Passo ${num}`, MARGIN + 4, ctx.y);
-  doc.setTextColor(...COLORS.text);
-  doc.text(`  ${title}`, MARGIN + 4 + doc.getTextWidth(`Passo ${num}`), ctx.y);
-  ctx.y += LINE_HEIGHT + 1;
-
+  doc.setTextColor(...(color as [number, number, number]));
+  doc.text(title.toUpperCase(), M + 7, ctx.y);
+  ctx.y += 4;
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...COLORS.text);
-  const lines = doc.splitTextToSize(text, CONTENT_WIDTH - 12);
+  doc.setTextColor(...C.text);
   for (const line of lines) {
-    checkPageBreak(ctx);
-    doc.text(line, MARGIN + 8, ctx.y);
-    ctx.y += LINE_HEIGHT;
+    doc.text(line, M + 7, ctx.y);
+    ctx.y += LH;
   }
   ctx.y += 5;
 }
 
-// ─── Pillar impact card ───
-function addPillarCard(ctx: PDFContext, pillar: string, impact: string) {
+function step(ctx: Ctx, num: number, title: string, action: string) {
+  pageBreak(ctx, 18);
   const { doc } = ctx;
-  const lines = doc.splitTextToSize(impact, CONTENT_WIDTH - 14);
-  const cardHeight = 8 + lines.length * LINE_HEIGHT + 4;
-  checkPageBreak(ctx, cardHeight + 2);
-
-  // Card background
-  doc.setFillColor(...COLORS.bgLight);
-  doc.roundedRect(MARGIN, ctx.y, CONTENT_WIDTH, cardHeight, 2, 2, 'F');
-
-  // Pillar name
-  ctx.y += 7;
-  doc.setFontSize(10);
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.accent);
-  doc.text(pillar, MARGIN + 5, ctx.y);
-  ctx.y += LINE_HEIGHT;
-
-  // Impact text
+  doc.setTextColor(...C.accent);
+  doc.text(`${num}.`, M, ctx.y);
+  doc.setTextColor(...C.text);
+  doc.text(title, M + 6, ctx.y);
+  ctx.y += LH;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...COLORS.text);
+  doc.setTextColor(...C.muted);
+  const lines = doc.splitTextToSize(action, CW - 8);
   for (const line of lines) {
-    doc.text(line, MARGIN + 5, ctx.y);
-    ctx.y += LINE_HEIGHT;
+    pageBreak(ctx);
+    doc.text(line, M + 6, ctx.y);
+    ctx.y += LH;
   }
-  ctx.y += 5;
+  ctx.y += 3;
 }
+
+// ── Main ──
 
 export function generateDiagnosticPdf(result: DiagnosticResult, userName?: string) {
   const doc = new jsPDF('p', 'mm', 'a4');
-  const ctx: PDFContext = { doc, y: MARGIN };
+  const ctx: Ctx = { doc, y: M };
 
-  // ═══════════════════════════════════
-  // CAPA
-  // ═══════════════════════════════════
-  doc.setFillColor(...COLORS.dark);
-  doc.rect(0, 0, PAGE_WIDTH, 65, 'F');
+  // ── Cover ──
+  doc.setFillColor(...C.dark);
+  doc.rect(0, 0, PW, 58, 'F');
+  doc.setFillColor(...C.accent);
+  doc.rect(0, 58, PW, 1.5, 'F');
 
-  // Accent strip
-  doc.setFillColor(...COLORS.accent);
-  doc.rect(0, 65, PAGE_WIDTH, 2, 'F');
-
-  doc.setFontSize(20);
+  doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.white);
-  doc.text('Raio-X Comportamental', MARGIN, 28);
+  doc.setTextColor(...C.white);
+  doc.text('Raio-X Comportamental', M, 26);
 
-  doc.setFontSize(11);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(180, 180, 190);
-  doc.text('Mapa de Funcionamento · Relatório Completo', MARGIN, 38);
-
-  if (userName) {
-    doc.setFontSize(10);
-    doc.setTextColor(160, 160, 170);
-    doc.text(userName, MARGIN, 50);
-  }
-
-  const date = new Date().toLocaleDateString('pt-BR');
-  doc.setFontSize(9);
-  doc.setTextColor(...COLORS.textMuted);
-  doc.text(date, PAGE_WIDTH - MARGIN - doc.getTextWidth(date), 50);
-
-  ctx.y = 78;
-
-  // ─── Combined Title ───
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.dark);
-  const titleLines = doc.splitTextToSize(result.combinedTitle, CONTENT_WIDTH);
-  for (const line of titleLines) {
-    doc.text(line, MARGIN, ctx.y);
-    ctx.y += 8;
-  }
-
-  // Intensity + Profile badge
-  ctx.y += 3;
-  const intensityLabel = result.intensity === 'alto' ? 'Alta' : result.intensity === 'moderado' ? 'Moderada' : 'Leve';
-  const intensityColor = result.intensity === 'alto' ? COLORS.red : result.intensity === 'moderado' ? COLORS.yellow : COLORS.green;
-
-  // Intensity badge
-  doc.setFillColor(...(intensityColor as [number, number, number]));
-  const badgeText = `Intensidade: ${intensityLabel}`;
-  doc.setFontSize(9);
-  const badgeWidth = doc.getTextWidth(badgeText) + 8;
-  doc.roundedRect(MARGIN, ctx.y - 4, badgeWidth, 7, 3, 3, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...COLORS.white);
-  doc.text(badgeText, MARGIN + 4, ctx.y);
-
-  // Profile name
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...COLORS.textLight);
-  doc.text(`Perfil: ${result.profileName}`, MARGIN + badgeWidth + 6, ctx.y);
+  doc.setTextColor(180, 180, 190);
+  doc.text('Relatório Simplificado', M, 36);
 
-  ctx.y += SECTION_GAP + 6;
+  if (userName) {
+    doc.setFontSize(9);
+    doc.setTextColor(160, 160, 170);
+    doc.text(userName, M, 47);
+  }
+  const date = new Date().toLocaleDateString('pt-BR');
+  doc.setFontSize(8);
+  doc.setTextColor(...C.light);
+  doc.text(date, PW - M - doc.getTextWidth(date), 47);
+
+  ctx.y = 68;
+
+  // Title + badge
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.dark);
+  const titleLines = doc.splitTextToSize(result.combinedTitle, CW);
+  for (const l of titleLines) { doc.text(l, M, ctx.y); ctx.y += 7; }
+  ctx.y += 2;
+
+  const intLabel = result.intensity === 'alto' ? 'Alta' : result.intensity === 'moderado' ? 'Moderada' : 'Leve';
+  const intColor = result.intensity === 'alto' ? C.red : result.intensity === 'moderado' ? C.yellow : C.green;
+  doc.setFillColor(...(intColor as [number, number, number]));
+  const badge = `Intensidade: ${intLabel}`;
+  doc.setFontSize(8);
+  const bw = doc.getTextWidth(badge) + 8;
+  doc.roundedRect(M, ctx.y - 3.5, bw, 6, 3, 3, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.white);
+  doc.text(badge, M + 4, ctx.y);
+  ctx.y += 10;
 
   // ═══════════════════════════════════
-  // BLOCO 1 — DIAGNÓSTICO
+  // BLOCO 1 — RESUMO
   // ═══════════════════════════════════
-  addBlockHeader(ctx, '1', 'Diagnóstico');
+  heading(ctx, 1, 'Resumo');
+  callout(ctx, 'O que está acontecendo', result.criticalDiagnosis, C.red);
 
-  // Key insight box for critical diagnosis
-  addHighlightBox(ctx, 'O que realmente te trava', result.criticalDiagnosis);
+  label(ctx, 'Dor Central');
+  para(ctx, result.corePain);
 
-  addTitle(ctx, 'Dor Central');
-  addParagraph(ctx, result.corePain);
-
-  addTitle(ctx, 'Estado Mental Atual');
-  addParagraph(ctx, result.mentalState);
-  ctx.y += SECTION_GAP - 6;
+  label(ctx, 'Estado Mental');
+  para(ctx, result.mentalState, C.muted);
+  gap(ctx, 4);
 
   // ═══════════════════════════════════
-  // BLOCO 2 — PADRÃO COMPORTAMENTAL
+  // BLOCO 2 — SEU PADRÃO
   // ═══════════════════════════════════
-  addBlockHeader(ctx, '2', 'Padrão Comportamental');
+  heading(ctx, 2, 'Seu Padrão');
 
-  addTitle(ctx, 'Como o padrão funciona');
-  addParagraph(ctx, result.mechanism);
+  label(ctx, 'Como funciona');
+  para(ctx, result.mechanism);
 
   if (result.selfSabotageCycle.length > 0) {
-    addTitle(ctx, 'Ciclo de Autossabotagem');
-    result.selfSabotageCycle.forEach((step, i) => {
-      addBullet(ctx, `${i + 1}. ${step}`);
-    });
-    ctx.y += 4;
+    label(ctx, 'Ciclo que se repete');
+    result.selfSabotageCycle.forEach((s, i) => bullet(ctx, `${i + 1}. ${s}`));
+    gap(ctx, 3);
   }
 
   if (result.triggers.length > 0) {
-    addTitle(ctx, 'Gatilhos');
-    result.triggers.forEach(t => addBullet(ctx, t));
-    ctx.y += 4;
+    label(ctx, 'O que ativa');
+    result.triggers.forEach(t => bullet(ctx, t));
+    gap(ctx, 3);
   }
 
   if (result.mentalTraps.length > 0) {
-    addHighlightBox(ctx, 'As frases que te mantêm preso(a)', result.mentalTraps.map(t => `"${t}"`).join('\n'), COLORS.red);
+    callout(ctx, 'Frases que te prendem', result.mentalTraps.map(t => `"${t}"`).join('\n'), C.red);
   }
 
-  addHighlightBox(ctx, 'Contradição Interna', result.contradiction, COLORS.yellow);
-  ctx.y += SECTION_GAP - 8;
+  label(ctx, 'Contradição');
+  para(ctx, result.contradiction);
+  gap(ctx, 4);
 
   // ═══════════════════════════════════
-  // BLOCO 3 — IMPACTO
+  // BLOCO 3 — O QUE FAZER
   // ═══════════════════════════════════
-  addBlockHeader(ctx, '3', 'Impacto na Vida');
+  heading(ctx, 3, 'O Que Fazer');
 
-  if (result.lifeImpact.length > 0) {
-    result.lifeImpact.forEach(item => {
-      addPillarCard(ctx, item.pillar, item.impact);
-    });
-    ctx.y += 2;
-  }
-
-  // ─── Intensity Map with legend ───
-  addTitle(ctx, 'Mapa de Intensidade por Eixo');
-
-  // Legend
-  const legendY = ctx.y;
-  const { doc: d } = ctx;
-  d.setFontSize(7);
-  d.setFont('helvetica', 'normal');
-  
-  d.setFillColor(...COLORS.green);
-  d.circle(MARGIN + 2, legendY - 1.2, 1.5, 'F');
-  d.setTextColor(...COLORS.textMuted);
-  d.text('Baixo (<40%)', MARGIN + 6, legendY);
-
-  d.setFillColor(...COLORS.yellow);
-  d.circle(MARGIN + 40, legendY - 1.2, 1.5, 'F');
-  d.text('Moderado (40-65%)', MARGIN + 44, legendY);
-
-  d.setFillColor(...COLORS.red);
-  d.circle(MARGIN + 88, legendY - 1.2, 1.5, 'F');
-  d.text('Alto (>65%)', MARGIN + 92, legendY);
-
-  ctx.y += 6;
-
-  result.allScores.slice(0, 8).forEach(score => {
-    checkPageBreak(ctx, 14);
-    d.setFontSize(9);
-    d.setFont('helvetica', 'normal');
-    d.setTextColor(...COLORS.text);
-    d.text(score.label, MARGIN + 2, ctx.y);
-
-    // Percentage right-aligned
-    d.setFont('helvetica', 'bold');
-    const pctText = `${score.percentage}%`;
-    d.text(pctText, MARGIN + CONTENT_WIDTH - d.getTextWidth(pctText), ctx.y);
-
-    const barY = ctx.y + 2.5;
-    const barWidth = CONTENT_WIDTH - 4;
-
-    // Bar background
-    d.setFillColor(...COLORS.border);
-    d.roundedRect(MARGIN + 2, barY, barWidth, 3.5, 1.5, 1.5, 'F');
-
-    // Bar fill with color
-    const barColor = score.percentage > 65 ? COLORS.red : score.percentage >= 40 ? COLORS.yellow : COLORS.green;
-    d.setFillColor(...(barColor as [number, number, number]));
-    const fillWidth = (score.percentage / 100) * barWidth;
-    if (fillWidth > 0) {
-      d.roundedRect(MARGIN + 2, barY, Math.max(fillWidth, 3), 3.5, 1.5, 1.5, 'F');
-    }
-    ctx.y += 11;
-  });
-  ctx.y += SECTION_GAP - 4;
-
-  // ═══════════════════════════════════
-  // BLOCO 4 — PLANO DE AÇÃO
-  // ═══════════════════════════════════
-  addBlockHeader(ctx, '4', 'Plano de Ação');
-
-  // Key unlock as highlight
-  addHighlightBox(ctx, 'Área-chave de destravamento', result.keyUnlockArea, COLORS.green);
-
-  addTitle(ctx, 'Direção de Mudança');
-  addParagraph(ctx, result.direction);
+  callout(ctx, 'Comece por aqui', result.keyUnlockArea, C.green);
 
   if (result.exitStrategy.length > 0) {
-    addTitle(ctx, 'Passos Práticos');
-    result.exitStrategy.forEach(step => {
-      addNumberedStep(ctx, step.step, step.title, step.action);
-    });
+    label(ctx, 'Passos práticos');
+    result.exitStrategy.forEach(s => step(ctx, s.step, s.title, s.action));
   }
 
   if (result.whatNotToDo.length > 0) {
-    addHighlightBox(ctx, 'Pare de fazer isso', result.whatNotToDo.map(item => `✗ ${item}`).join('\n'), COLORS.red);
+    callout(ctx, 'Pare de fazer', result.whatNotToDo.map(i => `✗ ${i}`).join('\n'), C.red);
   }
 
-  // ─── Footer ───
-  checkPageBreak(ctx, 24);
-  ctx.y += 8;
-  doc.setDrawColor(...COLORS.border);
-  doc.setLineWidth(0.3);
-  doc.line(MARGIN, ctx.y, MARGIN + CONTENT_WIDTH, ctx.y);
-  ctx.y += 6;
+  gap(ctx, 6);
 
-  doc.setFillColor(...COLORS.accent);
-  doc.rect(MARGIN, ctx.y + 8, CONTENT_WIDTH, 1, 'F');
+  // ═══════════════════════════════════
+  // MAPA DE INTENSIDADE
+  // ═══════════════════════════════════
+  label(ctx, 'Intensidade por eixo');
+  gap(ctx, 2);
 
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'italic');
-  doc.setTextColor(...COLORS.textMuted);
-  const notice = 'Este relatório oferece uma leitura comportamental baseada em suas respostas e não substitui avaliação psicológica ou clínica profissional.';
-  const noticeLines = doc.splitTextToSize(notice, CONTENT_WIDTH);
-  noticeLines.forEach((line: string) => {
-    doc.text(line, MARGIN, ctx.y);
-    ctx.y += 4.5;
+  // Legend
+  const ly = ctx.y;
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.setFillColor(...C.green);
+  doc.circle(M + 2, ly - 1, 1.2, 'F');
+  doc.setTextColor(...C.light);
+  doc.text('< 40%', M + 5, ly);
+  doc.setFillColor(...C.yellow);
+  doc.circle(M + 25, ly - 1, 1.2, 'F');
+  doc.text('40-65%', M + 28, ly);
+  doc.setFillColor(...C.red);
+  doc.circle(M + 52, ly - 1, 1.2, 'F');
+  doc.text('> 65%', M + 55, ly);
+  ctx.y += 5;
+
+  result.allScores.slice(0, 8).forEach(score => {
+    pageBreak(ctx, 12);
+    doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...C.text);
+    doc.text(score.label, M + 2, ctx.y);
+    doc.setFont('helvetica', 'bold');
+    const pct = `${score.percentage}%`;
+    doc.text(pct, M + CW - doc.getTextWidth(pct), ctx.y);
+    const by = ctx.y + 2;
+    doc.setFillColor(...C.border);
+    doc.roundedRect(M + 2, by, CW - 4, 3, 1.5, 1.5, 'F');
+    const bc = score.percentage > 65 ? C.red : score.percentage >= 40 ? C.yellow : C.green;
+    doc.setFillColor(...(bc as [number, number, number]));
+    const fw = (score.percentage / 100) * (CW - 4);
+    if (fw > 0) doc.roundedRect(M + 2, by, Math.max(fw, 3), 3, 1.5, 1.5, 'F');
+    ctx.y += 10;
   });
 
-  // Save
-  const filename = `raio-x-comportamental-${new Date().toISOString().slice(0, 10)}.pdf`;
-  doc.save(filename);
+  // ── Footer ──
+  pageBreak(ctx, 20);
+  gap(ctx, 6);
+  doc.setDrawColor(...C.border);
+  doc.setLineWidth(0.3);
+  doc.line(M, ctx.y, M + CW, ctx.y);
+  ctx.y += 5;
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(...C.light);
+  const notice = 'Este relatório oferece uma leitura comportamental baseada em suas respostas e não substitui avaliação psicológica ou clínica profissional.';
+  const nl = doc.splitTextToSize(notice, CW);
+  nl.forEach((line: string) => { doc.text(line, M, ctx.y); ctx.y += 4; });
+
+  doc.save(`raio-x-comportamental-${new Date().toISOString().slice(0, 10)}.pdf`);
 }
