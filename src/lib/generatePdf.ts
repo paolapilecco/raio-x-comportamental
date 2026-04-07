@@ -111,15 +111,14 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const ctx: Ctx = { doc, y: M };
 
   const ai = result as any;
-  const resumo = ai.resumoPrincipal || result.criticalDiagnosis;
-  const significado = ai.significadoPratico || result.corePain;
-  const padrao = ai.padraoIdentificado || result.mechanism;
+  const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
+  const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
   const comoAparece = ai.comoAparece || result.mentalState;
   const gatilhos = ai.gatilhos || result.triggers;
-  const impactoVida = ai.impactoVida || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact }));
-  const direcao = ai.direcaoAjuste || result.keyUnlockArea;
-  const oQueEvitar = ai.oQueEvitar || result.whatNotToDo;
-  const proximo = ai.proximoPasso || result.exitStrategy?.[0]?.action || result.direction;
+  const comoAtrapalha = ai.comoAtrapalha || ai.significadoPratico || result.corePain;
+  const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
+  const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
+  const acaoInicial = ai.acaoInicial || ai.proximoPasso || result.exitStrategy?.[0]?.action || result.direction;
 
   // Cover
   doc.setFillColor(...C.dark);
