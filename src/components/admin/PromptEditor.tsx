@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil } from 'lucide-react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil, BookmarkPlus } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PromptEditorProps {
   currentModule: TestModule;
@@ -27,11 +28,27 @@ const PromptEditor = ({
   currentModule, testPrompts, editedTexts, setEditedTexts,
   saving, onSavePrompt, onTogglePrompt, onCreatePrompt,
 }: PromptEditorProps) => {
+  const { user } = useAuth();
   const [generatingAI, setGeneratingAI] = useState<string | null>(null);
   const [aiPreview, setAiPreview] = useState<AIPreview | null>(null);
+  const [savingTemplate, setSavingTemplate] = useState(false);
   const currentPrompts = testPrompts.filter(p => p.test_id === currentModule.id);
   const byType: Record<string, TestPrompt> = {};
   currentPrompts.forEach(p => { byType[p.prompt_type] = p; });
+
+  const logGeneration = async (sectionType: string, content: string, action: string) => {
+    try {
+      await supabase.from('prompt_generation_history' as any).insert({
+        test_id: currentModule.id,
+        section_type: sectionType,
+        generated_content: content,
+        action,
+        generated_by: user?.id || null,
+      });
+    } catch (e) {
+      console.error('Failed to log generation:', e);
+    }
+  };
 
   const applyTemplate = (promptId: string, sectionType: string) => {
     const template = PROMPT_TEMPLATES[sectionType];
@@ -55,6 +72,7 @@ const PromptEditor = ({
       const prompt = await callAI(sectionType);
       if (prompt) {
         setAiPreview({ promptId, sectionType, content: prompt, editing: false });
+        await logGeneration(sectionType, prompt, 'generated');
       }
     } catch (e: any) {
       console.error('AI prompt generation error:', e);
@@ -71,6 +89,7 @@ const PromptEditor = ({
       const prompt = await callAI(aiPreview.sectionType);
       if (prompt) {
         setAiPreview(prev => prev ? { ...prev, content: prompt, editing: false } : null);
+        await logGeneration(aiPreview.sectionType, prompt, 'regenerated');
         toast.success('Nova versão gerada');
       }
     } catch (e: any) {
@@ -81,11 +100,48 @@ const PromptEditor = ({
     }
   };
 
-  const acceptAIPrompt = () => {
+  const acceptAIPrompt = async () => {
     if (!aiPreview) return;
     setEditedTexts(prev => ({ ...prev, [`tp_${aiPreview.promptId}`]: aiPreview.content }));
+    await logGeneration(aiPreview.sectionType, aiPreview.content, 'accepted');
     setAiPreview(null);
     toast.success('Prompt aceito — revise e salve quando quiser');
+  };
+
+  const saveAsTemplate = async () => {
+    if (!aiPreview) return;
+    setSavingTemplate(true);
+    try {
+      // Update the PROMPT_TEMPLATES in the report_templates table output_rules
+      const { data: existing } = await supabase
+        .from('report_templates')
+        .select('id, output_rules')
+        .eq('test_id', currentModule.id)
+        .maybeSingle();
+
+      const currentRules = (existing?.output_rules as any) || {};
+      const updatedRules = {
+        ...currentRules,
+        promptTemplates: {
+          ...(currentRules.promptTemplates || {}),
+          [aiPreview.sectionType]: aiPreview.content,
+        },
+      };
+
+      if (existing) {
+        await supabase.from('report_templates').update({ output_rules: updatedRules }).eq('id', existing.id);
+      } else {
+        await supabase.from('report_templates').insert({ test_id: currentModule.id, output_rules: updatedRules, sections: [] });
+      }
+
+      await logGeneration(aiPreview.sectionType, aiPreview.content, 'saved_as_template');
+      toast.success(`Salvo como template base de "${PROMPT_SECTIONS.find(s => s.type === aiPreview.sectionType)?.label}"`);
+    } catch (e) {
+      console.error('Save template error:', e);
+      toast.error('Erro ao salvar como template');
+    } finally {
+      setSavingTemplate(false);
+    }
   };
 
   const discardAIPrompt = () => {
@@ -197,6 +253,15 @@ const PromptEditor = ({
                         >
                           <Check className="w-3.5 h-3.5" />
                           Aceitar
+                        </button>
+                        <button
+                          onClick={saveAsTemplate}
+                          disabled={savingTemplate}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[0.75rem] font-semibold border border-amber-500/30 text-amber-600 hover:bg-amber-500/10 transition-all disabled:opacity-50"
+                          title="Salvar este prompt como template base para esta seção neste teste"
+                        >
+                          {savingTemplate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
+                          {savingTemplate ? 'Salvando...' : 'Salvar como template'}
                         </button>
                         <button
                           onClick={regenerateAI}
