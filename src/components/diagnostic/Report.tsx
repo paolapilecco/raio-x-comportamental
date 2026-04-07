@@ -94,6 +94,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const comoAparece = ai.comoAparece || result.mentalState;
   const gatilhos = ai.gatilhos || result.triggers;
   const comoAtrapalha = ai.comoAtrapalha || ai.significadoPratico || result.corePain;
+  const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
   const acaoInicial = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
@@ -234,9 +235,20 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </Block>
           )}
 
-          {/* 5. Como isso te atrapalha */}
+          {/* 5. Como isso te atrapalha — por área */}
           <Block num={5} title={sectionTitles.comoAtrapalha} delay={0.22}>
-            <p className="text-sm text-foreground/80 leading-[1.7]">{comoAtrapalha}</p>
+            {impactoPorArea.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {impactoPorArea.map((item, i) => (
+                  <div key={i} className="border border-border/30 rounded-xl px-3.5 py-2.5">
+                    <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest mb-0.5">{item.area}</p>
+                    <p className="text-xs text-foreground/80 leading-snug">{item.efeito}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-foreground/80 leading-[1.7]">{comoAtrapalha}</p>
+            )}
           </Block>
 
           {/* 6. O que você precisa corrigir primeiro */}

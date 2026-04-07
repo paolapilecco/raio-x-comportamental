@@ -116,6 +116,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const comoAparece = ai.comoAparece || result.mentalState;
   const gatilhos = ai.gatilhos || result.triggers;
   const comoAtrapalha = ai.comoAtrapalha || ai.significadoPratico || result.corePain;
+  const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
   const acaoInicial = ai.acaoInicial || ai.proximoPasso || result.exitStrategy?.[0]?.action || result.direction;
@@ -210,7 +211,13 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
 
   // 5. Como isso te atrapalha
   sectionNum(ctx, 5, 'Como isso te atrapalha');
-  text(ctx, comoAtrapalha);
+  if (impactoPorArea.length > 0) {
+    impactoPorArea.forEach((item: { area: string; efeito: string }) => {
+      pillarCard(ctx, item.area, item.efeito);
+    });
+  } else {
+    text(ctx, comoAtrapalha);
+  }
 
   // 6. O que você precisa corrigir primeiro
   sectionNum(ctx, 6, 'O que você precisa corrigir primeiro');
