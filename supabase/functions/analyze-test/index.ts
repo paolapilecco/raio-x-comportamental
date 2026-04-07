@@ -798,7 +798,13 @@ ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TE
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
   "firstAction": "Copie acaoInicial",
-  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa. Ex: Eu não preciso estar pronto pra começar.",
+  "focoMudanca": "Resuma em 1 frase curta QUAL área ou comportamento precisa de atenção prioritária. DIFERENTE e MAIS CURTO que corrigirPrimeiro. Ex: 'Finalização de tarefas'.",
+  "microAcoes": [
+    {"acao": "Ação 1 — verbo imperativo + objeto + prazo. Ex: Liste 3 coisas que precisa concluir até sexta.", "detalhe": "Instrução extra. Ex: Escreva num papel e cole na mesa."},
+    {"acao": "Ação 2 — Ex: Escolha 2 apps que mais te distraem e desligue as notificações agora.", "detalhe": ""},
+    {"acao": "Ação 3 — Ex: Amanhã, faça a 1ª tarefa da lista ANTES de abrir rede social. 25 min.", "detalhe": ""}
+  ],
+  "mentalCommand": "Frase de reprogramação em 1ª pessoa, máx 10 palavras. Ex: Eu não preciso estar pronto pra começar.",
   "mecanismoNeural": {
     "neurotransmissor": "Qual neurotransmissor está mais envolvido no padrão (cortisol, dopamina, serotonina, adrenalina) e como ele atua — 1 frase simples.",
     "cicloNeural": "Como o circuito neural se formou e por que se repete — 2 frases máximo.",
@@ -810,8 +816,10 @@ REGRAS FINAIS:
 - MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
 - NÃO repita a mesma ideia entre seções.
 - corrigirPrimeiro = DIREÇÃO (QUAL comportamento mudar, EM QUAL situação). acaoInicial = AÇÃO (QUANDO + COMO + QUANTO TEMPO). São OBRIGATORIAMENTE diferentes.
+- focoMudanca = RESUMO CURTO (1-3 palavras) da área prioritária. NÃO pode ser igual a corrigirPrimeiro.
+- microAcoes = 3 ações ESPECÍFICAS e EXECUTÁVEIS com verbo imperativo. Cada ação deve ser passo-a-passo que qualquer pessoa consegue fazer SEM pensar. Proibido ações vagas.
 - Proibido em corrigirPrimeiro: "mude sua relação com X", "busque equilíbrio", "tenha mais consciência"
-- Proibido em acaoInicial: "reflita sobre", "observe seus padrões", "tente se conhecer melhor"
+- Proibido em acaoInicial/microAcoes: "reflita sobre", "observe seus padrões", "tente se conhecer melhor", "anote o que muda"
 - pararDeFazer: cada item com SITUAÇÃO + COMPORTAMENTO. Proibido: "pare de se cobrar", "pare de procrastinar"
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
