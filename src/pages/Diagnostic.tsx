@@ -119,7 +119,7 @@ const Diagnostic = () => {
 
       const { data: questions, error } = await supabase
         .from('questions')
-        .select('sort_order, text, axes, type, options, context')
+        .select('sort_order, text, axes, type, options, option_scores, context')
         .eq('test_id', mod.id)
         .order('sort_order', { ascending: true });
 
@@ -182,6 +182,7 @@ const Diagnostic = () => {
         axes: q.axes || [],
         type: q.type || 'likert',
         options: q.options,
+        option_scores: q.option_scores,
         context: q.context || null,
       })));
       setStep('questionnaire');
