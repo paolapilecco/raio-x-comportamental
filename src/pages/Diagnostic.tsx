@@ -9,6 +9,7 @@ import { analyzePurposeAnswers } from '@/lib/purposeAnalysis';
 import { analyzeGenericTest } from '@/lib/genericAnalysis';
 import { getTestEngine } from '@/lib/testEngineRegistry';
 import { updateCentralProfile } from '@/lib/centralProfile';
+import { assembleReport } from '@/lib/reportAssembler';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -446,6 +447,8 @@ const Diagnostic = () => {
       analysisResult = runLocalAnalysis(answers);
     } else {
       console.log('[Diagnostic] Using AI-powered analysis from admin prompts');
+      // Apply structured block assembly + quality validation to AI output
+      analysisResult = assembleReport(analysisResult);
     }
 
     setResult(analysisResult);
