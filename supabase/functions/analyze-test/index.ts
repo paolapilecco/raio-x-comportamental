@@ -349,9 +349,17 @@ ${promptMap.restrictions}`);
 
 Identificar o PADRÃO COMPORTAMENTAL DOMINANTE do usuário com base nas respostas.
 
-REGRAS DE DETECÇÃO:
+REGRAS DE DADOS:
+- Cada resposta tem um "mappedScore" de 0% a 100% que indica a intensidade REAL da concordância
+- 0% = discordância total, 25% = discordância leve, 50% = neutro, 75% = concordância, 100% = concordância total
+- USE o mappedScore para determinar a intensidade — NÃO invente interpretações que contradigam os números
+- Se o mappedScore de uma resposta é 0-25%, o usuário DISCORDA daquilo — não diga que ele concorda
+- Se o mappedScore é 75-100%, o usuário CONCORDA fortemente — isso é evidência direta
+
+REGRAS DE DETECÇÃO DE PADRÕES:
 - NÃO analise respostas isoladas — busque o que se REPETE ao longo de várias respostas
 - Detecte REPETIÇÃO de comportamento: se 3+ respostas apontam para o mesmo mecanismo, esse é o padrão
+- O EIXO COM MAIOR SCORE é o padrão dominante — o diagnóstico DEVE girar em torno dele
 - Priorize estes padrões específicos quando detectados:
   • EVITAÇÃO: foge de situações desconfortáveis, adia decisões, evita conflitos
   • FUGA PARA TAREFAS FÁCEIS: troca o que importa por tarefas pequenas que dão sensação de produtividade
