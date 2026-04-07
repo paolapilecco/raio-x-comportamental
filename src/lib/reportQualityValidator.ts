@@ -71,6 +71,28 @@ const FORBIDDEN_PHRASES = [
   'confie no processo',
   'abrace suas imperfeições',
   'tudo tem seu tempo',
+  'mude sua mentalidade',
+  'trabalhe isso',
+  'reflita sobre',
+  'pense a respeito',
+  'tente melhorar',
+  'se esforce mais',
+  'busque ajuda',
+];
+
+/** Vague direction/action phrases — too generic to be useful */
+const VAGUE_ACTION_PHRASES = [
+  'mude sua forma de pensar',
+  'trabalhe sua autoestima',
+  'busque mais equilíbrio',
+  'tente ser mais consciente',
+  'procure se conhecer melhor',
+  'melhore sua rotina',
+  'cuide mais de você',
+  'preste mais atenção',
+  'seja mais disciplinado',
+  'organize melhor seu tempo',
+  'desenvolva mais paciência',
 ];
 
 // ── Helpers ──
