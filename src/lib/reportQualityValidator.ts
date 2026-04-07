@@ -17,6 +17,23 @@ function trimIfLong(text: string, maxSentences = 4): string {
   return sentences.slice(0, maxSentences).join(' ');
 }
 
+/** Enforce strict 2-sentence limit on main report blocks */
+function enforceMaxTwoSentences(text: string): string {
+  if (!text) return text;
+  const sentences = text.split(/(?<=[.!?])\s+/).filter(Boolean);
+  if (sentences.length <= 2) return text;
+  return sentences.slice(0, 2).join(' ');
+}
+
+/** Trim array items to 1 sentence each */
+function trimArrayItems(items: string[], maxItems: number): string[] {
+  if (!items) return items;
+  return items.slice(0, maxItems).map(item => {
+    const sentences = item.split(/(?<=[.!?])\s+/).filter(Boolean);
+    return sentences.length > 1 ? sentences[0] : item;
+  });
+}
+
 /**
  * Extract meaningful words from a text (ignoring stopwords).
  * Returns a Set for fast comparison.
