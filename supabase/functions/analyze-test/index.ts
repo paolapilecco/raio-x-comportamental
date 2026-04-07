@@ -445,7 +445,8 @@ REGRAS FINAIS:
 - Frases curtas (máx 1,5 linhas). Sem parágrafos longos.
 - ZERO palavras rebuscadas. Se existe uma palavra simples, use ela.
 - actionPlan: só para áreas abaixo de 70%. Ações com verbo no imperativo.
-- Se não houver áreas abaixo de 70%, retorne actionPlan como [].`;
+- Se não houver áreas abaixo de 70%, retorne actionPlan como [].
+${categoryCtx.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
 }
 
 function detectContradictions(scores: ScoreEntry[]): string {
