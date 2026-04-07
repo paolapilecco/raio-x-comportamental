@@ -255,48 +255,66 @@ ${promptMap.restrictions}`);
 
 1. LINGUAGEM SIMPLES — COMO CONVERSA
    - Escreva como se estivesse explicando para um amigo inteligente que NÃO é psicólogo
-   - Use palavras do dia a dia. Proibido: "resiliência", "protagonismo", "autoboicote", "ressignificar", "empoderamento", "assertividade", "proatividade", "autoconhecimento", "autossabotagem consciente", "padrão disfuncional"
+   - Use palavras do dia a dia. Proibido: "resiliência", "protagonismo", "autoboicote", "ressignificar", "empoderamento", "assertividade", "proatividade", "autoconhecimento", "autossabotagem consciente", "padrão disfuncional", "dinâmica relacional", "mecanismo compensatório"
    - Em vez de termos técnicos, DESCREVA o que acontece: "você trava quando precisa decidir" em vez de "paralisia decisória"
-   - Frases curtas — máximo 1,5 linhas. Se a frase precisa de vírgula no meio, quebre em duas.
-   - Proibido parágrafos com mais de 3 frases seguidas
+   - Frases curtas — máximo 1,5 linhas. Se precisa de vírgula, quebre em duas.
+   - Proibido parágrafos com mais de 2 frases seguidas
 
 2. ZERO PSICOLOGUÊS
-   - Não use termos que só um terapeuta entenderia
-   - Não use linguagem de autoajuda ("acredite no seu potencial", "honre sua jornada")
-   - Não use linguagem acadêmica ("dinâmica relacional", "mecanismo compensatório")
-   - Teste: se sua avó não entenderia a frase, reescreva
+   - Proibido termos de terapeuta ou coach: "zona de conforto", "crenças limitantes", "inner child", "self", "mindset"
+   - Proibido linguagem de autoajuda: "acredite no seu potencial", "honre sua jornada", "você é capaz"
+   - Proibido linguagem motivacional: "você pode mais", "é hora de brilhar", "transforme sua vida"
+   - Teste: se uma pessoa de 16 anos não entenderia, reescreva
 
 3. INTERPRETAR, NÃO INVENTAR
-   - Use SOMENTE os dados fornecidos (scores, eixos, padrões)
-   - Não invente situações ou exemplos pessoais
-   - Cada afirmação deve ser rastreável a um score
+   - Use SOMENTE os dados fornecidos (scores, eixos, respostas)
+   - Cada afirmação deve ser rastreável a um score ou resposta real
+   - Não invente situações, exemplos pessoais ou histórias
 
 4. ESPECIFICIDADE OBRIGATÓRIA
-   - Proibido: "tenha mais foco", "acredite em si mesmo", "saia da zona de conforto"
-   - Cada frase deve conter o padrão ESPECÍFICO do usuário
-   - Se não conseguir ser específico, não escreva
+   - Proibido frases genéricas: "tenha mais foco", "acredite em si", "busque equilíbrio"
+   - Cada frase deve conter o padrão ESPECÍFICO deste usuário
+   - Se a frase serve para qualquer pessoa, delete e reescreva
 
-5. FORMATO
+5. COERÊNCIA COM O TESTE
+   - O relatório DEVE refletir o tipo de teste feito. Teste emocional fala de emoções. Teste financeiro fala de dinheiro.
+   - NÃO misture linguagem de um tipo de teste com outro
+   - O vocabulário, os exemplos e as ações devem ser do UNIVERSO do teste aplicado
+   - O tom muda conforme o teste: financeiro é prático, emocional é acolhedor, execução é objetivo
+
+6. FORMATO E BREVIDADE
    - Fale em segunda pessoa ("você")
    - Não mencione nomes de variáveis ou percentuais numéricos
    - Seja direto — desconforto é aceitável, generalidade não
    - Responda EXCLUSIVAMENTE em JSON válido
-
-6. BREVIDADE
-   - criticalDiagnosis / resumoPrincipal: máximo 2 frases curtas
-   - corePain / significadoPratico: máximo 3 frases
-   - mechanism / padraoIdentificado: máximo 3 frases
-   - summary: máximo 1 parágrafo curto (3 frases)
-   - triggers / gatilhos: máximo 4 itens, cada um com 1 frase curta
-   - whatNotToDo / oQueEvitar: máximo 4 itens, cada um com 1 frase curta
-   - exitStrategy: máximo 4 passos, ações curtas e executáveis
+   - MÁXIMO 2 frases por bloco (chamaAtencao, padraoRepetido, comoAparece, corrigirPrimeiro, acaoInicial)
+   - Listas (gatilhos, pararDeFazer): máximo 4 itens, 1 frase cada
+   - exitStrategy: máximo 4 passos curtos
    - mentalTraps: máximo 4 frases curtas entre aspas
 
-7. EXEMPLOS DE TOM CORRETO
+7. ZERO REPETIÇÃO
+   - Cada seção DEVE trazer informação NOVA
+   - Se duas seções dizem a mesma coisa com palavras diferentes, reescreva uma delas
+   - chamaAtencao ≠ padraoRepetido ≠ comoAtrapalha — são ângulos DIFERENTES do mesmo problema
+   - corrigirPrimeiro (DIREÇÃO: o que mudar) ≠ acaoInicial (AÇÃO: o que fazer hoje)
+   - Se ao reler você encontrar repetição, corte e substitua
+
+8. ADAPTAÇÃO POR CATEGORIA
+   - Cada categoria de teste tem seu próprio estilo, vocabulário e foco
+   - Teste de execução: linguagem objetiva, exemplos de trabalho e projetos
+   - Teste emocional: linguagem acolhedora mas direta, exemplos de reações e sentimentos
+   - Teste relacional: linguagem sobre vínculos, exemplos de conflitos e conexões
+   - Teste financeiro: linguagem prática, exemplos de gastos e decisões com dinheiro
+   - Teste de propósito: linguagem reflexiva mas concreta, exemplos de direção e escolhas
+   - NUNCA use o mesmo estilo para testes diferentes
+
+9. EXEMPLOS DE TOM CORRETO
    - ❌ "Você apresenta um padrão de evitação emocional que compromete sua capacidade de engajamento relacional"
-   - ✅ "Você foge de conversas difíceis. Quando algo incomoda, você muda de assunto ou some."
+   - ✅ "Você foge de conversas difíceis. Quando algo incomoda, muda de assunto ou some."
    - ❌ "Há uma dinâmica de autossabotagem que se manifesta na procrastinação funcional"
-   - ✅ "Você sabe o que precisa fazer, mas fica adiando. Quando finalmente faz, já está atrasado e faz mal feito."`);
+   - ✅ "Você sabe o que precisa fazer, mas adia. Quando finalmente faz, já está atrasado."
+   - ❌ "Busque desenvolver sua inteligência emocional para melhorar seus relacionamentos"
+   - ✅ "Na próxima discussão, espere 5 segundos antes de responder. Só isso."`);
 
   sections.push(`# CAMADA DE PROFUNDIDADE
 
