@@ -184,7 +184,15 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
             Defina a estrutura do relatório: ordem, nomes, tamanho e obrigatoriedade de cada bloco.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleSpreadToAll}
+            disabled={spreading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-accent/50 transition-all disabled:opacity-50"
+          >
+            <Copy className="w-3 h-3" />
+            {spreading ? 'Replicando...' : 'Tornar padrão para todos'}
+          </button>
           <button
             onClick={handleReset}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-secondary/50 transition-all"
