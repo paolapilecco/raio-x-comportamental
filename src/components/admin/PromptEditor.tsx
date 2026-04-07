@@ -17,11 +17,19 @@ interface PromptEditorProps {
   onCreatePrompt: (testId: string, section: typeof PROMPT_SECTIONS[0]) => Promise<void>;
 }
 
+interface QualityInfo {
+  score: number;
+  level: 'high' | 'medium' | 'low';
+  issues: string[];
+  retried: boolean;
+}
+
 interface AIPreview {
   promptId: string;
   sectionType: string;
   content: string;
   editing: boolean;
+  quality?: QualityInfo;
 }
 
 const PromptEditor = ({
