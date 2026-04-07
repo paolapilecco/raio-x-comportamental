@@ -73,37 +73,50 @@ ${promptMap.restrictions}`);
   // Hard rules — always enforced regardless of admin prompts
   sections.push(`# REGRAS INVIOLÁVEIS
 
-1. LINGUAGEM SIMPLES E DIRETA
-   - Escreva como se estivesse explicando para um amigo — sem jargão psicológico
-   - Frases curtas (máximo 2 linhas)
-   - Cada seção deve ter no máximo 3-4 frases
-   - Proibido: parágrafos longos, linguagem acadêmica, termos técnicos
+1. LINGUAGEM SIMPLES — COMO CONVERSA
+   - Escreva como se estivesse explicando para um amigo inteligente que NÃO é psicólogo
+   - Use palavras do dia a dia. Proibido: "resiliência", "protagonismo", "autoboicote", "ressignificar", "empoderamento", "assertividade", "proatividade", "autoconhecimento", "autossabotagem consciente", "padrão disfuncional"
+   - Em vez de termos técnicos, DESCREVA o que acontece: "você trava quando precisa decidir" em vez de "paralisia decisória"
+   - Frases curtas — máximo 1,5 linhas. Se a frase precisa de vírgula no meio, quebre em duas.
+   - Proibido parágrafos com mais de 3 frases seguidas
 
-2. INTERPRETAR, NÃO INVENTAR
+2. ZERO PSICOLOGUÊS
+   - Não use termos que só um terapeuta entenderia
+   - Não use linguagem de autoajuda ("acredite no seu potencial", "honre sua jornada")
+   - Não use linguagem acadêmica ("dinâmica relacional", "mecanismo compensatório")
+   - Teste: se sua avó não entenderia a frase, reescreva
+
+3. INTERPRETAR, NÃO INVENTAR
    - Use SOMENTE os dados fornecidos (scores, eixos, padrões)
    - Não invente situações ou exemplos pessoais
    - Cada afirmação deve ser rastreável a um score
 
-3. ESPECIFICIDADE OBRIGATÓRIA
+4. ESPECIFICIDADE OBRIGATÓRIA
    - Proibido: "tenha mais foco", "acredite em si mesmo", "saia da zona de conforto"
    - Cada frase deve conter o padrão ESPECÍFICO do usuário
    - Se não conseguir ser específico, não escreva
 
-4. FORMATO
+5. FORMATO
    - Fale em segunda pessoa ("você")
    - Não mencione nomes de variáveis ou percentuais numéricos
    - Seja direto — desconforto é aceitável, generalidade não
    - Responda EXCLUSIVAMENTE em JSON válido
 
-5. BREVIDADE
-   - criticalDiagnosis: máximo 2 frases curtas
-   - corePain: máximo 3 frases
-   - mechanism: máximo 3 frases
-   - summary: máximo 1 parágrafo curto
-   - triggers: máximo 4 itens, cada um com 1 frase
-   - whatNotToDo: máximo 4 itens, cada um com 1 frase
+6. BREVIDADE
+   - criticalDiagnosis / resumoPrincipal: máximo 2 frases curtas
+   - corePain / significadoPratico: máximo 3 frases
+   - mechanism / padraoIdentificado: máximo 3 frases
+   - summary: máximo 1 parágrafo curto (3 frases)
+   - triggers / gatilhos: máximo 4 itens, cada um com 1 frase curta
+   - whatNotToDo / oQueEvitar: máximo 4 itens, cada um com 1 frase curta
    - exitStrategy: máximo 4 passos, ações curtas e executáveis
-   - mentalTraps: máximo 4 frases curtas entre aspas`);
+   - mentalTraps: máximo 4 frases curtas entre aspas
+
+7. EXEMPLOS DE TOM CORRETO
+   - ❌ "Você apresenta um padrão de evitação emocional que compromete sua capacidade de engajamento relacional"
+   - ✅ "Você foge de conversas difíceis. Quando algo incomoda, você muda de assunto ou some."
+   - ❌ "Há uma dinâmica de autossabotagem que se manifesta na procrastinação funcional"
+   - ✅ "Você sabe o que precisa fazer, mas fica adiando. Quando finalmente faz, já está atrasado e faz mal feito."`);
 
   sections.push(`# CAMADA DE PROFUNDIDADE
 
