@@ -31,6 +31,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const [sections, setSections] = useState<ReportSection[]>([]);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [spreading, setSpreading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
