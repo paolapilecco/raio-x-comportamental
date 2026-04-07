@@ -418,14 +418,35 @@ REGRAS DE INTERPRETAÇÃO:
 - O cérebro SEMPRE busca 3 coisas:
   1. EVITAR DESCONFORTO IMEDIATO — foge da dor antes que ela chegue
   2. BUSCAR ALÍVIO RÁPIDO — troca o difícil pelo fácil para sentir algo bom agora
-  3. REPETIR O QUE JÁ CONHECE — mesmo que dê errado, o familiar é "seguro" para o cérebro
+  3. REPETIR O QUE JÁ CONHECE — mesmo que dê errado, o familiar é "seguro" para o cérebro (PSICOADAPTAÇÃO)
+
+TÉTRADE EMOCIONAL — Use para explicar o estado da pessoa:
+- Todo comportamento é sustentado por 4 pilares: CRENÇAS + LINGUAGEM INTERNA + FOCO + FISIOLOGIA
+- Identifique qual pilar está mais desregulado e explique em linguagem simples
+- Ex: "Seu corpo trava (fisiologia) porque sua mente já decidiu que vai dar errado (crença)"
+
+METAPROGRAMAS — Use para descrever como a pessoa filtra a realidade:
+- Proativo/Reativo: "Você espera as coisas acontecerem em vez de agir" (reativo)
+- Interno/Externo: "Você precisa que alguém diga que está bom pra acreditar" (externo)
+- Associador/Desassociador: "Você sente tudo intensamente" (associador) ou "Você se desconecta pra não sentir" (desassociador)
+
+PSICOADAPTAÇÃO — Explique por que a pessoa não muda:
+- O cérebro se adaptou ao padrão disfuncional e agora o trata como "normal"
+- A pessoa não muda porque o sofrimento CONHECIDO é preferível ao desconforto DESCONHECIDO da mudança
+- Use: "Isso virou tão normal pra você que nem parece um problema"
+
+ANCORAGEM — Use para explicar gatilhos e sugerir mudanças:
+- ÂNCORAS NEGATIVAS: estímulos que disparam o padrão ruim automaticamente
+- ÂNCORAS DE RECURSO: estímulos que podem disparar um estado melhor
+- Sugira criar âncoras de recurso na direção prática
 
 OBRIGATÓRIO NA EXPLICAÇÃO:
 - Diga POR QUE o cérebro faz isso — qual ameaça ele está evitando
 - Diga qual RECOMPENSA está sendo buscada (alívio, validação, controle, conforto)
 - Use linguagem simples: "Seu cérebro aprendeu que..." / "Isso acontece porque sua mente associou..."
 - NUNCA diga "você escolhe fazer isso" — o padrão é AUTOMÁTICO até ser percebido
-- NUNCA trate como falha moral — é um mecanismo de proteção que já não serve mais`);
+- NUNCA trate como falha moral — é um mecanismo de proteção que já não serve mais
+- MANTENHA LINGUAGEM SIMPLES: use os conceitos neurocientíficos para EXPLICAR, não para impressionar`);
 
   sections.push(`# INTERVENÇÃO COMPORTAMENTAL
 
