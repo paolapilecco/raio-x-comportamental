@@ -20,6 +20,7 @@ const PromptEditor = ({
   currentModule, testPrompts, editedTexts, setEditedTexts,
   saving, onSavePrompt, onTogglePrompt, onCreatePrompt,
 }: PromptEditorProps) => {
+  const [generatingAI, setGeneratingAI] = useState<string | null>(null);
   const currentPrompts = testPrompts.filter(p => p.test_id === currentModule.id);
   const byType: Record<string, TestPrompt> = {};
   currentPrompts.forEach(p => { byType[p.prompt_type] = p; });
@@ -29,6 +30,26 @@ const PromptEditor = ({
     if (!template) { toast.info('Nenhum template disponível para esta seção'); return; }
     setEditedTexts(prev => ({ ...prev, [`tp_${promptId}`]: template }));
     toast.success('Template aplicado — edite conforme necessário');
+  };
+
+  const generateWithAI = async (promptId: string, sectionType: string) => {
+    setGeneratingAI(sectionType);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-prompt', {
+        body: { testId: currentModule.id, sectionType },
+      });
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      if (data?.prompt) {
+        setEditedTexts(prev => ({ ...prev, [`tp_${promptId}`]: data.prompt }));
+        toast.success('Prompt gerado pela IA — revise e salve');
+      }
+    } catch (e: any) {
+      console.error('AI prompt generation error:', e);
+      toast.error('Erro ao gerar prompt com IA');
+    } finally {
+      setGeneratingAI(null);
+    }
   };
 
   return (
