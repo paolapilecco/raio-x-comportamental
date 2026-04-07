@@ -338,6 +338,23 @@ ${promptMap.restrictions}`);
    - ❌ "Busque desenvolver sua inteligência emocional para melhorar seus relacionamentos"
    - ✅ "Na próxima discussão, espere 5 segundos antes de responder. Só isso."`);
 
+  sections.push(`# OBJETIVO DA ANÁLISE
+
+Identificar o PADRÃO COMPORTAMENTAL DOMINANTE do usuário com base nas respostas.
+
+REGRAS DE DETECÇÃO:
+- NÃO analise respostas isoladas — busque o que se REPETE ao longo de várias respostas
+- Detecte REPETIÇÃO de comportamento: se 3+ respostas apontam para o mesmo mecanismo, esse é o padrão
+- Priorize estes padrões específicos quando detectados:
+  • EVITAÇÃO: foge de situações desconfortáveis, adia decisões, evita conflitos
+  • FUGA PARA TAREFAS FÁCEIS: troca o que importa por tarefas pequenas que dão sensação de produtividade
+  • MEDO DE JULGAMENTO: deixa de agir por medo do que os outros vão pensar
+  • PERFECCIONISMO PARALISANTE: não começa ou não termina porque nunca está bom o suficiente
+  • ABANDONO APÓS PERDA DE EMPOLGAÇÃO: começa com energia, mas abandona quando a motivação inicial some
+- Se nenhum desses se encaixa, nomeie o padrão real encontrado nas respostas
+
+SAÍDA OBRIGATÓRIA: Nome do padrão + explicação direta baseada no comportamento observado nas respostas.`);
+
   sections.push(`# CAMADA DE PROFUNDIDADE
 
 Antes de gerar o diagnóstico:
