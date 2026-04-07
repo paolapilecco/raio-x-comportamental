@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Sparkles, Loader2, FileText, HelpCircle, Settings, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Brain, Sparkles, Loader2, FileText, HelpCircle, Settings, ChevronDown, ChevronRight, LayoutTemplate } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
@@ -12,6 +12,7 @@ import AIConfigPanel from '@/components/admin/AIConfigPanel';
 import SimulationPanel from '@/components/admin/SimulationPanel';
 import HistoryPanel from '@/components/admin/HistoryPanel';
 import QuestionsPanel from '@/components/admin/QuestionsPanel';
+import ReportTemplatePanel from '@/components/admin/ReportTemplatePanel';
 import {
   iconMap, PROMPT_SECTIONS,
   type TestPrompt, type TestModule, type GlobalAiConfig, type TestAiConfig,
@@ -224,20 +225,24 @@ const AdminPrompts = () => {
       {currentModule && (
         <motion.div {...fadeUp} transition={{ delay: 0.04 }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-3 h-12 bg-muted/30 p-1 rounded-xl gap-1">
+            <TabsList className="w-full grid grid-cols-4 h-12 bg-muted/30 p-1 rounded-xl gap-1">
               <TabsTrigger value="prompts" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
                 <FileText className="w-4 h-4" />
-                <span>Prompts</span>
+                <span className="hidden sm:inline">Prompts</span>
                 <span className="text-[0.6rem] font-mono opacity-60">{getModuleStats(currentModule.id).promptCount}/7</span>
               </TabsTrigger>
               <TabsTrigger value="questions" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
                 <HelpCircle className="w-4 h-4" />
-                <span>Perguntas</span>
+                <span className="hidden sm:inline">Perguntas</span>
                 <span className="text-[0.6rem] font-mono opacity-60">{questionCounts[currentModule.id] || 0}</span>
+              </TabsTrigger>
+              <TabsTrigger value="template" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
+                <LayoutTemplate className="w-4 h-4" />
+                <span className="hidden sm:inline">Template</span>
               </TabsTrigger>
               <TabsTrigger value="config" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
                 <Settings className="w-4 h-4" />
-                <span>Configuração</span>
+                <span className="hidden sm:inline">Config</span>
               </TabsTrigger>
             </TabsList>
 
