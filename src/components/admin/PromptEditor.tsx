@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
@@ -16,11 +16,19 @@ interface PromptEditorProps {
   onCreatePrompt: (testId: string, section: typeof PROMPT_SECTIONS[0]) => Promise<void>;
 }
 
+interface AIPreview {
+  promptId: string;
+  sectionType: string;
+  content: string;
+  editing: boolean;
+}
+
 const PromptEditor = ({
   currentModule, testPrompts, editedTexts, setEditedTexts,
   saving, onSavePrompt, onTogglePrompt, onCreatePrompt,
 }: PromptEditorProps) => {
   const [generatingAI, setGeneratingAI] = useState<string | null>(null);
+  const [aiPreview, setAiPreview] = useState<AIPreview | null>(null);
   const currentPrompts = testPrompts.filter(p => p.test_id === currentModule.id);
   const byType: Record<string, TestPrompt> = {};
   currentPrompts.forEach(p => { byType[p.prompt_type] = p; });
@@ -32,17 +40,21 @@ const PromptEditor = ({
     toast.success('Template aplicado — edite conforme necessário');
   };
 
+  const callAI = async (sectionType: string): Promise<string | null> => {
+    const { data, error } = await supabase.functions.invoke('generate-prompt', {
+      body: { testId: currentModule.id, sectionType },
+    });
+    if (error) throw error;
+    if (data?.error) { toast.error(data.error); return null; }
+    return data?.prompt || null;
+  };
+
   const generateWithAI = async (promptId: string, sectionType: string) => {
     setGeneratingAI(sectionType);
     try {
-      const { data, error } = await supabase.functions.invoke('generate-prompt', {
-        body: { testId: currentModule.id, sectionType },
-      });
-      if (error) throw error;
-      if (data?.error) { toast.error(data.error); return; }
-      if (data?.prompt) {
-        setEditedTexts(prev => ({ ...prev, [`tp_${promptId}`]: data.prompt }));
-        toast.success('Prompt gerado pela IA — revise e salve');
+      const prompt = await callAI(sectionType);
+      if (prompt) {
+        setAiPreview({ promptId, sectionType, content: prompt, editing: false });
       }
     } catch (e: any) {
       console.error('AI prompt generation error:', e);
@@ -50,6 +62,34 @@ const PromptEditor = ({
     } finally {
       setGeneratingAI(null);
     }
+  };
+
+  const regenerateAI = async () => {
+    if (!aiPreview) return;
+    setGeneratingAI(aiPreview.sectionType);
+    try {
+      const prompt = await callAI(aiPreview.sectionType);
+      if (prompt) {
+        setAiPreview(prev => prev ? { ...prev, content: prompt, editing: false } : null);
+        toast.success('Nova versão gerada');
+      }
+    } catch (e: any) {
+      console.error('AI regeneration error:', e);
+      toast.error('Erro ao regenerar prompt');
+    } finally {
+      setGeneratingAI(null);
+    }
+  };
+
+  const acceptAIPrompt = () => {
+    if (!aiPreview) return;
+    setEditedTexts(prev => ({ ...prev, [`tp_${aiPreview.promptId}`]: aiPreview.content }));
+    setAiPreview(null);
+    toast.success('Prompt aceito — revise e salve quando quiser');
+  };
+
+  const discardAIPrompt = () => {
+    setAiPreview(null);
   };
 
   return (
@@ -96,6 +136,7 @@ const PromptEditor = ({
         {PROMPT_SECTIONS.map(section => {
           const prompt = byType[section.type];
           const SIcon = section.icon;
+          const showPreview = aiPreview && aiPreview.sectionType === section.type;
           return (
             <TabsContent key={section.type} value={section.type} className="mt-4">
               <div className={`rounded-2xl border ${section.borderColor} overflow-hidden`}>
@@ -115,6 +156,67 @@ const PromptEditor = ({
 
                 {/* Content */}
                 <div className="p-5">
+                  {/* AI Preview Modal */}
+                  {showPreview && (
+                    <div className="mb-4 rounded-xl border-2 border-primary/30 bg-primary/[0.03] overflow-hidden">
+                      <div className="flex items-center gap-2 px-4 py-3 bg-primary/10 border-b border-primary/20">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        <span className="text-[0.8rem] font-semibold text-primary">Pré-visualização — Prompt gerado pela IA</span>
+                        <div className="flex-1" />
+                        {aiPreview.editing ? (
+                          <span className="text-[0.65rem] text-muted-foreground/60">Editando...</span>
+                        ) : (
+                          <button
+                            onClick={() => setAiPreview(prev => prev ? { ...prev, editing: true } : null)}
+                            className="flex items-center gap-1 px-2 py-1 rounded-md text-[0.65rem] font-medium text-muted-foreground hover:bg-background/50 transition-colors"
+                            title="Editar antes de aceitar"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            Editar
+                          </button>
+                        )}
+                      </div>
+                      <div className="p-4">
+                        {aiPreview.editing ? (
+                          <textarea
+                            value={aiPreview.content}
+                            onChange={(e) => setAiPreview(prev => prev ? { ...prev, content: e.target.value } : null)}
+                            rows={Math.max(8, aiPreview.content.split('\n').length)}
+                            className="w-full border rounded-xl p-4 text-[0.8rem] leading-[1.8] resize-y focus:outline-none focus:ring-2 focus:ring-primary/20 font-mono bg-background/50 border-border/20 text-foreground/80"
+                          />
+                        ) : (
+                          <pre className="whitespace-pre-wrap text-[0.78rem] leading-[1.8] text-foreground/70 font-mono max-h-[400px] overflow-y-auto">
+                            {aiPreview.content}
+                          </pre>
+                        )}
+                      </div>
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 px-4 py-3 bg-muted/20 border-t border-primary/10">
+                        <button
+                          onClick={acceptAIPrompt}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[0.75rem] font-semibold hover:opacity-90 transition-all"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          Aceitar
+                        </button>
+                        <button
+                          onClick={regenerateAI}
+                          disabled={generatingAI === aiPreview.sectionType}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[0.75rem] font-semibold border border-primary/30 text-primary hover:bg-primary/10 transition-all disabled:opacity-50"
+                        >
+                          {generatingAI === aiPreview.sectionType ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                          {generatingAI === aiPreview.sectionType ? 'Regenerando...' : 'Regenerar'}
+                        </button>
+                        <button
+                          onClick={discardAIPrompt}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[0.75rem] font-medium text-muted-foreground hover:bg-muted/30 transition-all"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          Descartar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {prompt ? (() => {
                     const currentContent = (editedTexts[`tp_${prompt.id}`] ?? prompt.content).trim();
                     const isEmptyAndActive = prompt.is_active && !currentContent;
