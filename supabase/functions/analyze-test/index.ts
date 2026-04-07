@@ -224,7 +224,7 @@ function getCategoryContext(slug: string): CategoryContext {
 
 // ── Structured prompt builder ──
 
-function buildStructuredSystemPrompt(prompts: PromptRecord[], categoryCtx: CategoryContext): string {
+function buildStructuredSystemPrompt(prompts: PromptRecord[], categoryCtx: CategoryContext, template?: ReportTemplate | null): string {
   const promptMap: Record<string, string> = {};
   prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
 
