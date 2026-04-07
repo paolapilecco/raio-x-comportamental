@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil } from 'lucide-react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil, BookmarkPlus } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PromptEditorProps {
   currentModule: TestModule;
