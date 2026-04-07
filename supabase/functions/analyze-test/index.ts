@@ -732,7 +732,12 @@ ${sectionLines.join(',\n')},
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
   "firstAction": "Copie acaoInicial ou proximoPasso",
-  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa, sem aspas internas. Ex: Eu não preciso estar pronto pra começar."
+  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa, sem aspas internas. Ex: Eu não preciso estar pronto pra começar.",
+  "mecanismoNeural": {
+    "neurotransmissor": "Qual neurotransmissor está mais envolvido no padrão (cortisol, dopamina, serotonina, adrenalina) e como ele atua — 1 frase simples. Ex: Seu cérebro libera cortisol (hormônio do estresse) toda vez que você pensa em começar algo difícil.",
+    "cicloNeural": "Como o circuito neural se formou e por que se repete — 2 frases máximo. Explique usando: repetição criou um caminho automático no cérebro.",
+    "neuroplasticidade": "Como a neuroplasticidade permite mudar esse padrão — 1-2 frases esperançosas mas realistas. Ex: A boa notícia: seu cérebro pode criar novos caminhos."
+  }
 }
 
 REGRAS FINAIS:
@@ -744,6 +749,7 @@ REGRAS FINAIS:
 - corrigirPrimeiro/direcaoAjuste: deve conter QUAL comportamento mudar e EM QUAL situação. Proibido: "mude sua relação com X", "busque equilíbrio", "tenha mais consciência".
 - acaoInicial/proximoPasso: deve conter QUANDO fazer + COMO fazer + por QUANTO TEMPO. Proibido: "reflita sobre", "observe seus padrões", "tente se conhecer melhor".
 - pararDeFazer: cada item deve ter SITUAÇÃO + COMPORTAMENTO específico. Proibido: "pare de se cobrar", "pare de procrastinar".
+- mecanismoNeural: use linguagem SIMPLES para explicar neurociência. Proibido: termos técnicos sem explicação entre parênteses.
 ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
   }
 
