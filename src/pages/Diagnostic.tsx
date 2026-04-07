@@ -43,23 +43,26 @@ function calculateRawScores(answers: Answer[], questions: DbQuestion[], axisKeys
     const question = questions.find(q => q.id === answer.questionId);
     if (!question) return;
 
-    // Determine the max possible value for this question
+    let scoreValue: number;
     let maxPerQuestion: number;
+
     if (question.option_scores && question.option_scores.length > 0) {
-      // Use the actual maximum from option_scores
+      // Map answer index (1-based) to the actual score from option_scores
+      const idx = Math.max(0, Math.min(answer.value - 1, question.option_scores.length - 1));
+      scoreValue = question.option_scores[idx];
       maxPerQuestion = Math.max(...question.option_scores);
     } else if (question.type === 'intensity') {
+      scoreValue = answer.value;
       maxPerQuestion = 10;
     } else {
-      maxPerQuestion = 5;
+      // Likert 1-5 → normalize to 0-4
+      scoreValue = Math.max(0, answer.value - 1);
+      maxPerQuestion = 4;
     }
-
-    // Clamp answer value to the max
-    const clampedValue = Math.min(answer.value, maxPerQuestion);
 
     question.axes.forEach(axis => {
       if (axis in rawScores) {
-        rawScores[axis] += clampedValue;
+        rawScores[axis] += scoreValue;
         maxScores[axis] += maxPerQuestion;
       }
     });

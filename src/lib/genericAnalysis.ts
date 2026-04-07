@@ -54,21 +54,24 @@ export function analyzeGenericTest(
     const question = questions.find(q => q.id === answer.questionId);
     if (!question) return;
 
-    // Determine the max possible value for this question
+    let scoreValue: number;
     let maxPerQuestion: number;
+
     if (question.option_scores && question.option_scores.length > 0) {
+      const idx = Math.max(0, Math.min(answer.value - 1, question.option_scores.length - 1));
+      scoreValue = question.option_scores[idx];
       maxPerQuestion = Math.max(...question.option_scores);
     } else if (question.type === 'intensity') {
+      scoreValue = answer.value;
       maxPerQuestion = 10;
     } else {
-      maxPerQuestion = 5;
+      scoreValue = Math.max(0, answer.value - 1);
+      maxPerQuestion = 4;
     }
-
-    const clampedValue = Math.min(answer.value, maxPerQuestion);
 
     question.axes.forEach(axis => {
       if (axis in rawScores) {
-        rawScores[axis] += clampedValue;
+        rawScores[axis] += scoreValue;
         maxScores[axis] += maxPerQuestion;
       }
     });
