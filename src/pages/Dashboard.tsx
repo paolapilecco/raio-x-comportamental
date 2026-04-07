@@ -270,14 +270,14 @@ const Dashboard = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-6xl mx-auto px-6 md:px-10 py-10 space-y-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10 space-y-8 sm:space-y-10">
 
         {/* Hero greeting */}
         <motion.section {...fadeIn} className="space-y-2">
-          <h1 className="text-3xl md:text-[2.5rem] font-semibold tracking-tight text-foreground leading-tight">
+          <h1 className="text-2xl sm:text-3xl md:text-[2.5rem] font-semibold tracking-tight text-foreground leading-tight">
             Bem-vindo, {displayName}.
           </h1>
-          <p className="text-base text-muted-foreground leading-relaxed max-w-xl">
+          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl">
             Avalie perfis comportamentais detalhados com base em suas respostas, {displayName}.
           </p>
         </motion.section>
@@ -395,7 +395,7 @@ const Dashboard = () => {
         {/* Empty state */}
         {!hasData && modules.length === 0 && role !== 'super_admin' && (
           <motion.section {...fadeIn}>
-            <div className="bg-card border border-dashed border-border/40 rounded-2xl p-16 text-center space-y-6">
+            <div className="bg-card border border-dashed border-border/40 rounded-2xl p-8 sm:p-16 text-center space-y-6">
               <div className="w-14 h-14 rounded-2xl bg-secondary/60 flex items-center justify-center mx-auto">
                 <Brain className="w-6 h-6 text-muted-foreground/40" />
               </div>
