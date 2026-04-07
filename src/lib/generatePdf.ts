@@ -221,7 +221,14 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     doc.setFillColor(220, 220, 220);
     doc.roundedRect(MARGIN + 2, barY, barWidth, 3, 1.5, 1.5, 'F');
 
-    doc.setFillColor(80, 80, 100);
+    // Color based on percentage: green (<40), yellow (40-65), red (>65)
+    if (score.percentage > 65) {
+      doc.setFillColor(200, 60, 60);   // red
+    } else if (score.percentage >= 40) {
+      doc.setFillColor(210, 170, 50);  // yellow
+    } else {
+      doc.setFillColor(60, 160, 90);   // green
+    }
     const fillWidth = (score.percentage / 100) * barWidth;
     if (fillWidth > 0) {
       doc.roundedRect(MARGIN + 2, barY, Math.max(fillWidth, 3), 3, 1.5, 1.5, 'F');
