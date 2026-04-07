@@ -87,6 +87,7 @@ const Dashboard = () => {
   const [modules, setModules] = useState<TestModule[]>([]);
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [latestModuleId, setLatestModuleId] = useState<string | null>(null);
 
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
