@@ -177,7 +177,7 @@ Nome: ${testModule.name}
 Slug: ${testModule.slug}
 Categoria: ${testModule.category}
 Descrição: ${testModule.description}
-
+${isLifeMap ? "\n⚠️ TIPO ESPECIAL: Mapa de Vida — usar lógica de ÁREAS DA VIDA, não padrões comportamentais.\n" : ""}
 ANÁLISE DOS EIXOS (por concentração):
 ${axisAnalysis || "Nenhum eixo identificado ainda."}
 
