@@ -228,6 +228,14 @@ const Dashboard = () => {
 
   const handleDownloadPdf = () => {
     if (!latestResult) return;
+
+    // Check if latest result is from "Mapa de Vida" module
+    const latestModule = modules.find(m => m.id === latestModuleId);
+    if (latestModule?.slug === 'mapa-de-vida') {
+      generateLifeMapPdf((latestResult.all_scores as any[]) || [], profile?.name);
+      return;
+    }
+
     const dominantDef = patternDefinitions?.[latestResult.dominant_pattern as PatternKey];
     const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
     const diagResult: DiagnosticResult = {
