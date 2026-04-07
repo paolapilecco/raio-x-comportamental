@@ -288,18 +288,19 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </p>
             <div className="space-y-3">
               {result.allScores.slice(0, 8).map((score) => {
-                const barColor = score.percentage > 65 ? 'bg-destructive/70' : score.percentage >= 40 ? 'bg-yellow-500/70' : 'bg-green-500/70';
+                const pct = Math.min(100, score.percentage);
+                const barColor = pct > 65 ? 'bg-destructive/70' : pct >= 40 ? 'bg-yellow-500/70' : 'bg-green-500/70';
                 return (
                   <div key={score.key}>
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-muted-foreground">{score.label}</span>
-                      <span className="text-muted-foreground/50 tabular-nums">{score.percentage}%</span>
+                      <span className="text-muted-foreground/50 tabular-nums">{pct}%</span>
                     </div>
                     <div className="h-1.5 rounded-full bg-border/40 overflow-hidden">
                       <motion.div
                         className={`h-full rounded-full ${barColor}`}
                         initial={{ width: 0 }}
-                        animate={{ width: `${score.percentage}%` }}
+                        animate={{ width: `${pct}%` }}
                         transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
                       />
                     </div>
