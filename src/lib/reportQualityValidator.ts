@@ -355,6 +355,9 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
     patternLabel
   );
 
+  // ── Step 2.7: Coherence — action must follow from direction ──
+  acaoInicial = ensureActionCoherence(corrigirPrimeiro || direction, acaoInicial, patternLabel);
+
   // ── Step 3: Cross-block deduplication ──
   const textBlocks: Record<string, string> = {};
   if (criticalDiagnosis) textBlocks.criticalDiagnosis = criticalDiagnosis;
