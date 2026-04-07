@@ -346,6 +346,15 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
   corrigirPrimeiro = simplifyLanguage(corrigirPrimeiro);
   acaoInicial = simplifyLanguage(acaoInicial);
 
+  // ── Step 2.5: Refine actionable fields (foco de mudança / direção) ──
+  const patternLabel = result.dominantPattern?.label || result.combinedTitle || '';
+  direction = refineActionableField(direction, patternLabel);
+  corrigirPrimeiro = refineActionableField(corrigirPrimeiro, patternLabel);
+  const keyUnlockArea = refineActionableField(
+    simplifyLanguage(result.keyUnlockArea || ''),
+    patternLabel
+  );
+
   // ── Step 3: Cross-block deduplication ──
   const textBlocks: Record<string, string> = {};
   if (criticalDiagnosis) textBlocks.criticalDiagnosis = criticalDiagnosis;
