@@ -8,6 +8,7 @@ import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, Check
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
