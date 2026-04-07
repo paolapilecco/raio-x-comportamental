@@ -116,7 +116,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         {/* Header */}
         <motion.header {...fade} transition={{ duration: 0.4 }} className="mb-12">
           <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.25em] font-light mb-3">
-            Sua leitura
+            {sectionTitles.header}
           </p>
           <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground leading-snug">
             {result.combinedTitle}
@@ -132,7 +132,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         <div className="space-y-10">
 
           {/* 1. Resumo principal */}
-          <Block num={1} title="Resumo principal" delay={0.05}>
+          <Block num={1} title={sectionTitles.resumo} delay={0.05}>
             <Callout>
               <p className="text-sm text-foreground leading-[1.7]">{resumo}</p>
             </Callout>
@@ -157,12 +157,12 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           )}
 
           {/* 2. O que isso significa na prática */}
-          <Block num={2} title="O que isso significa na prática" delay={0.1}>
+          <Block num={2} title={sectionTitles.significado} delay={0.1}>
             <p className="text-sm text-foreground/80 leading-[1.7]">{significado}</p>
           </Block>
 
           {/* 3. Padrão identificado */}
-          <Block num={3} title="Padrão identificado" delay={0.14}>
+          <Block num={3} title={sectionTitles.padrao} delay={0.14}>
             {result.interpretation?.behavioralProfile && (
               <div className="bg-secondary/40 border border-border/30 rounded-xl px-4 py-3 mb-3">
                 <p className="text-sm font-semibold text-foreground">
@@ -174,7 +174,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           </Block>
 
           {/* 4. Como isso aparece no dia a dia */}
-          <Block num={4} title="Como aparece no dia a dia" delay={0.18}>
+          <Block num={4} title={sectionTitles.comoAparece} delay={0.18}>
             <p className="text-sm text-muted-foreground leading-[1.7]">{comoAparece}</p>
             {result.selfSabotageCycle?.length > 0 && (
               <div className="mt-3 space-y-1">
@@ -192,7 +192,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
           {/* 5. Gatilhos principais */}
           {gatilhos?.length > 0 && (
-            <Block num={5} title="Gatilhos principais" delay={0.22}>
+            <Block num={5} title={sectionTitles.gatilhos} delay={0.22}>
               <ul className="space-y-1.5">
                 {gatilhos.map((t: string, i: number) => (
                   <li key={i} className="flex items-start gap-2">
@@ -206,7 +206,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
           {/* 6. Impacto nas áreas da vida */}
           {impactoVida?.length > 0 && (
-            <Block num={6} title="Impacto nas áreas da vida" delay={0.26}>
+            <Block num={6} title={sectionTitles.impacto} delay={0.26}>
               <div className="space-y-2">
                 {impactoVida.map((item: any, i: number) => (
                   <div key={i} className="border-l-2 border-border/40 pl-3 py-1">
@@ -219,7 +219,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           )}
 
           {/* 7. Primeira direção de ajuste */}
-          <Block num={7} title="Primeira direção de ajuste" delay={0.3}>
+          <Block num={7} title={sectionTitles.direcao} delay={0.3}>
             <Callout color="primary">
               <p className="text-sm text-foreground leading-[1.7]">{direcao}</p>
             </Callout>
@@ -227,7 +227,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
           {/* 8. O que evitar agora */}
           {oQueEvitar?.length > 0 && (
-            <Block num={8} title="O que evitar agora" delay={0.34}>
+            <Block num={8} title={sectionTitles.evitar} delay={0.34}>
               <div className="space-y-1.5">
                 {oQueEvitar.map((item: string, i: number) => (
                   <div key={i} className="flex items-start gap-2 py-1">
@@ -240,7 +240,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           )}
 
           {/* 9. Próximo passo simples */}
-          <Block num={9} title="Próximo passo simples" delay={0.38}>
+          <Block num={9} title={sectionTitles.proximo} delay={0.38}>
             <div className="bg-primary/[0.04] border border-primary/15 rounded-xl px-4 py-4">
               <p className="text-sm font-medium text-foreground leading-[1.7]">{proximo}</p>
             </div>
