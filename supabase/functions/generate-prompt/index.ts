@@ -16,6 +16,60 @@ const SECTION_PURPOSES: Record<string, string> = {
   restrictions: "Definir regras negativas obrigatórias — o que a IA NÃO deve fazer ao gerar os resultados.",
 };
 
+// ── MELHORIA 1: Exemplos de saída ideal por seção ──
+const SECTION_OUTPUT_EXAMPLES: Record<string, string> = {
+  interpretation: `EXEMPLO DE SAÍDA IDEAL (para referência de qualidade):
+---
+"Os eixos 'fuga_do_desconforto' (82%) e 'perfeccionismo_paralisante' (78%) formam um ciclo: o medo de errar (perfeccionismo) ativa a fuga para tarefas fáceis (desconforto). O eixo 'dependência_de_validação' (65%) reforça: a pessoa não age sem aprovação externa, o que alimenta tanto a paralisia quanto a fuga. Contradição central: o score alto em 'autocrítica_excessiva' (75%) mostra que a pessoa se cobra muito, mas o score baixo em 'execução_instável' (30%) indica que, quando age, executa bem — o problema não é capacidade, é INÍCIO."
+---
+Note: específico aos eixos, conecta dados entre si, identifica contradição com evidência.`,
+
+  diagnosis: `EXEMPLO DE SAÍDA IDEAL (para referência de qualidade):
+---
+"Ciclo de Paralisia por Antecipação: Você imagina todas as formas possíveis de dar errado antes de começar. O cérebro trata o 'possível erro futuro' como ameaça real e dispara a mesma resposta de quando algo realmente dá errado. Resultado: você sente o fracasso ANTES de fracassar. A causa não é preguiça — é um sistema de proteção que aprendeu a evitar dor antecipando-a. O mecanismo funciona assim: surge uma tarefa → você pensa no resultado → imagina o pior → sente a dor antecipada → adia para 'aliviar' → alívio temporário → culpa → mais paralisia."
+---
+Note: nomeia o ciclo, explica causa raiz, descreve mecanismo completo, sem psicologuês.`,
+
+  profile: `EXEMPLO DE SAÍDA IDEAL (para referência de qualidade):
+---
+"Nome: O Arquiteto de Planos que Nunca Saem do Papel. Estado mental: planejamento perpétuo como substituição de ação. Traços: (1) Coleciona informações antes de agir, (2) Troca de projeto quando o atual exige esforço real, (3) Confunde pesquisar sobre algo com fazer algo, (4) Sente que 'está quase pronto' há meses. Risco de autossabotagem: ALTO — o planejamento infinito é a armadilha mais difícil de perceber porque parece produtividade."
+---
+Note: nome criativo e revelador, traços concretos e observáveis, risco justificado.`,
+
+  core_pain: `EXEMPLO DE SAÍDA IDEAL (para referência de qualidade):
+---
+"Dor central: Medo de ser 'desmascarado' como incompetente. Não é insegurança genérica — é a crença de que qualquer erro público vai revelar que você não é tão capaz quanto os outros pensam. Isso se disfarça no cotidiano como perfeccionismo ('preciso entregar perfeito') e procrastinação ('se não fizer, não podem me julgar'). O comportamento de adiar não é sobre a tarefa — é sobre evitar a possibilidade de confirmação dessa crença."
+---
+Note: específico ao perfil, diferencia de sintomas, explica disfarce.`,
+
+  triggers: `EXEMPLO DE SAÍDA IDEAL (para referência de qualidade):
+---
+"GATILHOS: (1) Quando recebe uma tarefa com deadline visível para outros, (2) Quando alguém pergunta 'como está indo o projeto?', (3) Quando precisa apresentar algo em público, (4) Quando compara seu progresso com o de colegas.
+ARMADILHAS MENTAIS: (1) 'Se eu tivesse mais tempo, faria melhor', (2) 'Preciso estudar mais antes de começar', (3) 'Todo mundo parece fazer isso fácil, o problema sou eu', (4) 'Melhor fazer outra coisa produtiva enquanto penso nisso'.
+CICLO: Tarefa surge → Imagina julgamento → Ansiedade → Busca tarefa substituta → Alívio momentâneo → Prazo aperta → Faz correndo → Resultado medíocre → Confirma crença de incapacidade → Mais medo na próxima vez."
+---
+Note: gatilhos são situações concretas, armadilhas são frases reais, ciclo tem etapas claras.`,
+
+  direction: `EXEMPLO DE SAÍDA IDEAL (para referência de qualidade):
+---
+"PRIMEIRA AÇÃO (7 dias): Escolha a tarefa que está adiando há mais tempo. Trabalhe nela por 15 minutos cronometrados. Não precisa terminar — só começar. O critério de sucesso é sentar e abrir o arquivo/documento.
+ÁREA-CHAVE: O problema não está na execução — está no INÍCIO. Você executa bem quando começa. O bloqueio é o gap entre 'pensar sobre fazer' e 'fazer'.
+PONTO DE BLOQUEIO: Seu cérebro vai te oferecer uma tarefa 'mais urgente' nos primeiros 3 minutos. Isso é a fuga se ativando. Contorne: diga em voz alta 'isso é fuga' e volte.
+PARAR DE FAZER: Parar de pesquisar sobre produtividade — cada artigo/vídeo sobre 'como ser mais produtivo' é uma forma disfarçada de procrastinação."
+---
+Note: ação única e executável, identifica ponto exato do bloqueio, inclui o que PARAR.`,
+
+  restrictions: `EXEMPLO DE SAÍDA IDEAL (para referência de qualidade):
+---
+"1. NÃO diga 'você tem potencial' ou 'acredite em si' — isso é exatamente o que coaches genéricos dizem e não muda nada
+2. NÃO sugira 'faça listas' ou 'organize seu tempo' — o problema não é organização, é medo
+3. NÃO minimize o padrão — se os scores indicam risco alto, diga que é alto
+4. NÃO repita o diagnóstico na seção de direção — cada seção tem função diferente
+5. NÃO gere insights que se aplicariam a qualquer pessoa — se trocar o nome e ainda funcionar, reescreva"
+---
+Note: cada restrição é justificada e específica ao contexto do teste.`,
+};
+
 const LIFE_MAP_SLUGS = ["mapa-de-vida", "mapa-de-vida-e-evolucao", "life-map"];
 
 const LIFE_MAP_CONTEXT = `
@@ -56,6 +110,34 @@ function isLifeMapTest(slug: string): boolean {
   return LIFE_MAP_SLUGS.some(s => slug.toLowerCase().includes(s) || s.includes(slug.toLowerCase()));
 }
 
+// ── MELHORIA 3: Cross-validation — detect overlap between prompts ──
+function detectOverlap(otherPrompts: { prompt_type: string; content: string }[], sectionType: string): string {
+  if (otherPrompts.length === 0) return "";
+
+  // Extract key instruction phrases from existing prompts
+  const existingInstructions: { type: string; phrases: string[] }[] = [];
+  otherPrompts.forEach(p => {
+    if (p.prompt_type === sectionType || !p.content.trim()) return;
+    const lines = p.content.split('\n').filter(l => l.trim().length > 20);
+    const keyPhrases = lines
+      .filter(l => /^\d+\.|^-|^•|DEVE|PRECISA|OBRIGATÓRIO|PROIBIDO|NÃO|SEMPRE/i.test(l.trim()))
+      .map(l => l.trim().slice(0, 120));
+    if (keyPhrases.length > 0) {
+      existingInstructions.push({ type: p.prompt_type, phrases: keyPhrases.slice(0, 8) });
+    }
+  });
+
+  if (existingInstructions.length === 0) return "";
+
+  return `\n\nVALIDAÇÃO CRUZADA — INSTRUÇÕES QUE JÁ EXISTEM EM OUTROS PROMPTS (NÃO repita):
+${existingInstructions.map(ei =>
+    `[${ei.type}] contém:\n${ei.phrases.map(p => `  → ${p}`).join('\n')}`
+  ).join('\n\n')}
+
+REGRA: Se o prompt que você gerar contiver instruções SEMELHANTES às listadas acima, REESCREVA para trazer um ângulo DIFERENTE ou REMOVA.
+Cada prompt deve ter função ÚNICA — zero sobreposição.`;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -94,16 +176,24 @@ serve(async (req) => {
       });
     }
 
-    // Fetch questions, report template, and existing prompts in parallel
-    const [questionsRes, templateRes, promptsRes] = await Promise.all([
+    // Fetch questions, report template, existing prompts, AND prompt history in parallel
+    // MELHORIA 2: Feedback loop — fetch prompt_history to use admin-edited versions as reference
+    const [questionsRes, templateRes, promptsRes, historyRes] = await Promise.all([
       supabase.from("questions").select("text, type, axes, weight, options, context").eq("test_id", testId).order("sort_order").limit(50),
       supabase.from("report_templates").select("sections, output_rules").eq("test_id", testId).maybeSingle(),
       supabase.from("test_prompts").select("prompt_type, content, is_active").eq("test_id", testId).eq("is_active", true),
+      supabase.from("prompt_history")
+        .select("prompt_type, old_content, new_content, changed_at")
+        .eq("test_id", testId)
+        .eq("prompt_type", sectionType)
+        .order("changed_at", { ascending: false })
+        .limit(3),
     ]);
 
     const questions = questionsRes.data || [];
     const template = templateRes.data;
     const existingPrompts = promptsRes.data || [];
+    const editHistory = historyRes.data || [];
 
     // Build question analysis summary
     const questionsSummary = questions.length > 0
@@ -136,8 +226,45 @@ serve(async (req) => {
       .map(p => `[${p.prompt_type}]: ${p.content.slice(0, 300)}...`)
       .join("\n\n");
 
+    // MELHORIA 2: Build feedback loop context from edit history
+    let feedbackLoopContext = "";
+    if (editHistory.length > 0) {
+      const latestEdit = editHistory[0];
+      const editedContent = latestEdit.new_content?.trim();
+      if (editedContent && editedContent.length > 50) {
+        feedbackLoopContext = `\n\nREFERÊNCIA DE QUALIDADE — ÚLTIMA VERSÃO EDITADA PELO ADMIN:
+O administrador editou manualmente o prompt desta seção. A versão editada representa o padrão de qualidade desejado.
+Use esta versão como REFERÊNCIA DE ESTILO E PROFUNDIDADE (não copie literalmente — melhore):
+---
+${editedContent.slice(0, 800)}
+---
+INSTRUÇÃO: O prompt que você gerar deve manter o mesmo nível de especificidade, tom e estrutura da versão editada pelo admin, mas com conteúdo atualizado baseado nas perguntas atuais.`;
+      }
+    }
+
+    // MELHORIA 3: Cross-validation
+    const crossValidation = detectOverlap(existingPrompts, sectionType);
+
+    // MELHORIA 1: Get output example for this section
+    const outputExample = SECTION_OUTPUT_EXAMPLES[sectionType] || "";
+
     const isLifeMap = isLifeMapTest(testModule.slug);
     const lifeMapBlock = isLifeMap ? LIFE_MAP_CONTEXT : "";
+
+    // MELHORIA 4: Axis coverage analysis
+    const coveredAxesInPrompts: Set<string> = new Set();
+    existingPrompts.forEach(p => {
+      if (!p.content) return;
+      const lower = p.content.toLowerCase();
+      axes.forEach(a => {
+        if (lower.includes(a.toLowerCase())) coveredAxesInPrompts.add(a);
+      });
+    });
+    const uncoveredAxes = axes.filter(a => !coveredAxesInPrompts.has(a));
+    const axisCoverageNote = uncoveredAxes.length > 0
+      ? `\n\nALERTA DE COBERTURA: Os seguintes eixos NÃO são mencionados em nenhum prompt ativo: ${uncoveredAxes.join(", ")}. 
+O prompt que você gerar DEVE referenciar estes eixos descobertos para garantir cobertura completa.`
+      : "";
 
     const systemPrompt = `Você é um especialista sênior em engenharia de prompts para diagnósticos comportamentais e psicométricos.
 
@@ -163,11 +290,16 @@ REGRAS DE QUALIDADE PROFISSIONAL:
 9. Máximo 500 palavras
 10. Se o template do relatório existir, alinhe as instruções aos blocos que esta seção alimenta
 
+${outputExample ? `\n${outputExample}\n` : ""}
+
 PROIBIDO:
 - "busque equilíbrio", "tenha mais consciência", "acredite em si"
 - Instruções vagas como "analise profundamente" sem especificar O QUÊ
 - Repetir a descrição do teste como se fosse instrução
 - Ignorar os dados reais das perguntas
+${crossValidation}
+${feedbackLoopContext}
+${axisCoverageNote}
 
 Retorne APENAS o texto do prompt — sem explicações, sem markdown extra, sem comentários.`;
 
@@ -295,6 +427,36 @@ Gere o prompt profissional para esta seção. Baseie-se nos DADOS REAIS das perg
       qualityIssues.push("Não reflete o contexto específico do teste");
     }
 
+    // MELHORIA 3: Check for overlap with existing prompts
+    const overlapDetected: string[] = [];
+    existingPrompts.forEach(ep => {
+      if (ep.prompt_type === sectionType || !ep.content) return;
+      const epLines = ep.content.split('\n').filter(l => l.trim().length > 30);
+      epLines.forEach(line => {
+        const lineWords = line.toLowerCase().split(/\s+/).filter(w => w.length > 4);
+        if (lineWords.length < 4) return;
+        const matchCount = lineWords.filter(w => cleanedLower.includes(w)).length;
+        if (matchCount / lineWords.length > 0.7) {
+          overlapDetected.push(ep.prompt_type);
+        }
+      });
+    });
+    const uniqueOverlaps = [...new Set(overlapDetected)];
+    if (uniqueOverlaps.length > 0) {
+      qualityScore -= 15;
+      qualityIssues.push(`Possível sobreposição com: ${uniqueOverlaps.join(", ")}`);
+    }
+
+    // MELHORIA 4: Axis coverage in generated prompt
+    const coveredInGenerated = axes.filter(a => cleanedLower.includes(a.toLowerCase()));
+    const uncoveredInGenerated = axes.filter(a => !cleanedLower.includes(a.toLowerCase()));
+    const axisCoverage = {
+      total: axes.length,
+      covered: coveredInGenerated.length,
+      uncovered: uncoveredInGenerated,
+      percentage: axes.length > 0 ? Math.round((coveredInGenerated.length / axes.length) * 100) : 100,
+    };
+
     const qualityLevel = qualityScore >= 70 ? "high" : qualityScore >= 45 ? "medium" : "low";
 
     // If quality is low, auto-retry once
@@ -308,6 +470,7 @@ CORRIJA agora. Você DEVE:
 2. Conectar as instruções às perguntas reais do teste "${testModule.name}"
 3. Remover qualquer frase genérica de autoajuda
 4. Ser técnico e específico para a função "${sectionType}"
+${uncoveredInGenerated.length > 0 ? `5. COBRIR estes eixos que ficaram descobertos: ${uncoveredInGenerated.join(", ")}` : ""}
 
 Contexto do teste: ${testModule.description}
 Eixos: ${axes.join(", ")}
@@ -349,10 +512,21 @@ Gere novamente o prompt para "${sectionType}". Retorne APENAS o texto.`;
           const retryScore = 100 - (retryGeneric >= 3 ? 40 : retryGeneric * 15)
             - (axes.length > 0 && retryAxisRefs / Math.min(axes.length, 5) < 0.3 ? 30 : 0);
 
+          const retryCoveredAxes = axes.filter(a => retryLower.includes(a.toLowerCase()));
+          const retryUncovered = axes.filter(a => !retryLower.includes(a.toLowerCase()));
+
           if (retryScore > qualityScore) {
             return new Response(JSON.stringify({
               prompt: retryCleaned,
               quality: { score: retryScore, level: retryScore >= 70 ? "high" : "medium", issues: [], retried: true },
+              axisCoverage: {
+                total: axes.length,
+                covered: retryCoveredAxes.length,
+                uncovered: retryUncovered,
+                percentage: axes.length > 0 ? Math.round((retryCoveredAxes.length / axes.length) * 100) : 100,
+              },
+              feedbackUsed: editHistory.length > 0,
+              crossValidated: uniqueOverlaps.length > 0,
             }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
           }
         }
@@ -362,6 +536,9 @@ Gere novamente o prompt para "${sectionType}". Retorne APENAS o texto.`;
     return new Response(JSON.stringify({
       prompt: cleaned,
       quality: { score: qualityScore, level: qualityLevel, issues: qualityIssues, retried: false },
+      axisCoverage,
+      feedbackUsed: editHistory.length > 0,
+      crossValidated: uniqueOverlaps.length > 0,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("generate-prompt error:", e);
