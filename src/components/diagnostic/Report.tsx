@@ -4,6 +4,7 @@ import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import LifeMapReport from './LifeMapReport';
 
 interface ReportProps {
@@ -84,6 +85,7 @@ const fade = {
 const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
   const { profile } = useAuth();
+  const axisLabels = useAxisLabels();
 
   if (moduleSlug === 'mapa-de-vida') {
     return <LifeMapReport result={result} onRestart={onRestart} />;
@@ -320,7 +322,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 return (
                   <div key={score.key}>
                     <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-muted-foreground font-medium">{score.label}</span>
+                      <span className="text-muted-foreground font-medium">{axisLabels[score.key] || score.label || score.key}</span>
                       <span className={`tabular-nums font-semibold ${textColor}`}>{pct}%</span>
                     </div>
                     <div className="h-2 rounded-full bg-border/30 overflow-hidden">

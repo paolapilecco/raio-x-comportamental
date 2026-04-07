@@ -13,6 +13,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
 
@@ -48,6 +49,7 @@ const DiagnosticHistory = () => {
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const patternDefinitions = usePatternDefinitions();
+  const axisLabels = useAxisLabels();
 
   useEffect(() => {
     if (!user) return;
@@ -120,7 +122,7 @@ const DiagnosticHistory = () => {
         const curr = s.percentage;
         const diff = curr - prev;
         return {
-          area: s.label || s.key,
+          area: axisLabels[s.key] || s.label || s.key,
           antes: prev,
           depois: curr,
           diff,
@@ -132,7 +134,7 @@ const DiagnosticHistory = () => {
     ? ((latest.all_scores as any[]) || []).map((s: any) => {
         const prevScore = previous ? ((previous.all_scores as any[]) || []).find((ps: any) => ps.key === s.key) : null;
         return {
-          axis: s.label || s.key,
+          axis: axisLabels[s.key] || s.label || s.key,
           atual: s.percentage,
           anterior: prevScore?.percentage || 0,
         };
