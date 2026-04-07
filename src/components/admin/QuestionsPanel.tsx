@@ -115,6 +115,9 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
   const [aiModuleDescription, setAiModuleDescription] = useState('');
   const [aiQualityMetrics, setAiQualityMetrics] = useState<any>(null);
+  const [aiExtraInstructions, setAiExtraInstructions] = useState('');
+  const [aiContextSummary, setAiContextSummary] = useState<{ prompts: number; patterns: number; existingQuestions: number; otherQuestions: number; axes: string[] } | null>(null);
+  const [aiEditingIndex, setAiEditingIndex] = useState<number | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewAnswers, setPreviewAnswers] = useState<Record<string, number>>({});
