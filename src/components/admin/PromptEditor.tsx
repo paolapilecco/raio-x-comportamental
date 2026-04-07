@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil, BookmarkPlus } from 'lucide-react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil, BookmarkPlus, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
@@ -17,12 +17,46 @@ interface PromptEditorProps {
   onCreatePrompt: (testId: string, section: typeof PROMPT_SECTIONS[0]) => Promise<void>;
 }
 
+interface QualityInfo {
+  score: number;
+  level: 'high' | 'medium' | 'low';
+  issues: string[];
+  retried: boolean;
+}
+
 interface AIPreview {
   promptId: string;
   sectionType: string;
   content: string;
   editing: boolean;
+  quality?: QualityInfo;
 }
+
+const QualityBadge = ({ quality }: { quality?: QualityInfo }) => {
+  if (!quality) return null;
+  const config = {
+    high: { label: 'Alta qualidade', icon: ShieldCheck, cls: 'text-emerald-600 bg-emerald-500/10 border-emerald-500/20' },
+    medium: { label: 'Qualidade moderada', icon: ShieldAlert, cls: 'text-amber-600 bg-amber-500/10 border-amber-500/20' },
+    low: { label: 'Qualidade baixa', icon: ShieldAlert, cls: 'text-red-600 bg-red-500/10 border-red-500/20' },
+  }[quality.level];
+  const Icon = config.icon;
+  return (
+    <div className="space-y-1.5">
+      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.68rem] font-medium border ${config.cls}`}>
+        <Icon className="w-3.5 h-3.5" />
+        {config.label} ({quality.score}/100)
+        {quality.retried && <span className="text-[0.6rem] opacity-60">(auto-refinado)</span>}
+      </div>
+      {quality.issues.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {quality.issues.map((issue, i) => (
+            <span key={i} className="text-[0.62rem] px-2 py-0.5 rounded-md bg-muted/40 text-muted-foreground/70">{issue}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PromptEditor = ({
   currentModule, testPrompts, editedTexts, setEditedTexts,
@@ -57,22 +91,25 @@ const PromptEditor = ({
     toast.success('Template aplicado — edite conforme necessário');
   };
 
-  const callAI = async (sectionType: string): Promise<string | null> => {
+  const callAI = async (sectionType: string): Promise<{ prompt: string; quality?: QualityInfo } | null> => {
     const { data, error } = await supabase.functions.invoke('generate-prompt', {
       body: { testId: currentModule.id, sectionType },
     });
     if (error) throw error;
     if (data?.error) { toast.error(data.error); return null; }
-    return data?.prompt || null;
+    return data?.prompt ? { prompt: data.prompt, quality: data.quality } : null;
   };
 
   const generateWithAI = async (promptId: string, sectionType: string) => {
     setGeneratingAI(sectionType);
     try {
-      const prompt = await callAI(sectionType);
-      if (prompt) {
-        setAiPreview({ promptId, sectionType, content: prompt, editing: false });
-        await logGeneration(sectionType, prompt, 'generated');
+      const result = await callAI(sectionType);
+      if (result) {
+        setAiPreview({ promptId, sectionType, content: result.prompt, editing: false, quality: result.quality });
+        await logGeneration(sectionType, result.prompt, result.quality?.retried ? 'generated_retried' : 'generated');
+        if (result.quality?.level === 'medium') {
+          toast.info('Prompt gerado com qualidade moderada — revise os pontos indicados');
+        }
       }
     } catch (e: any) {
       console.error('AI prompt generation error:', e);
@@ -86,10 +123,10 @@ const PromptEditor = ({
     if (!aiPreview) return;
     setGeneratingAI(aiPreview.sectionType);
     try {
-      const prompt = await callAI(aiPreview.sectionType);
-      if (prompt) {
-        setAiPreview(prev => prev ? { ...prev, content: prompt, editing: false } : null);
-        await logGeneration(aiPreview.sectionType, prompt, 'regenerated');
+      const result = await callAI(aiPreview.sectionType);
+      if (result) {
+        setAiPreview(prev => prev ? { ...prev, content: result.prompt, editing: false, quality: result.quality } : null);
+        await logGeneration(aiPreview.sectionType, result.prompt, 'regenerated');
         toast.success('Nova versão gerada');
       }
     } catch (e: any) {
@@ -112,7 +149,6 @@ const PromptEditor = ({
     if (!aiPreview) return;
     setSavingTemplate(true);
     try {
-      // Update the PROMPT_TEMPLATES in the report_templates table output_rules
       const { data: existing } = await supabase
         .from('report_templates')
         .select('id, output_rules')
@@ -212,7 +248,7 @@ const PromptEditor = ({
 
                 {/* Content */}
                 <div className="p-5">
-                  {/* AI Preview Modal */}
+                  {/* AI Preview */}
                   {showPreview && (
                     <div className="mb-4 rounded-xl border-2 border-primary/30 bg-primary/[0.03] overflow-hidden">
                       <div className="flex items-center gap-2 px-4 py-3 bg-primary/10 border-b border-primary/20">
@@ -232,6 +268,12 @@ const PromptEditor = ({
                           </button>
                         )}
                       </div>
+                      {/* Quality badge */}
+                      {aiPreview.quality && (
+                        <div className="px-4 pt-3">
+                          <QualityBadge quality={aiPreview.quality} />
+                        </div>
+                      )}
                       <div className="p-4">
                         {aiPreview.editing ? (
                           <textarea
