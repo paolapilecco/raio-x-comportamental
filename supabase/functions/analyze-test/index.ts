@@ -718,6 +718,22 @@ serve(async (req) => {
       });
     }
 
+    // Fetch report template for this test (sections + output_rules)
+    let reportTemplate: ReportTemplate | null = null;
+    try {
+      const { data: tmpl } = await adminClient
+        .from("report_templates")
+        .select("sections, output_rules")
+        .eq("test_id", test_module_id)
+        .maybeSingle();
+      if (tmpl) {
+        reportTemplate = {
+          sections: Array.isArray(tmpl.sections) ? tmpl.sections as TemplateSection[] : [],
+          output_rules: (tmpl.output_rules && typeof tmpl.output_rules === 'object') ? tmpl.output_rules as OutputRules : {},
+        };
+      }
+    } catch { /* use defaults if template fetch fails */ }
+
     // Fetch user profile for context
     const { data: profile } = await userClient
       .from("profiles")
@@ -740,8 +756,8 @@ serve(async (req) => {
     // Build category-specific context
     const categoryCtx = getCategoryContext(slug);
 
-    // Build structured prompts
-    const systemPrompt = buildStructuredSystemPrompt(prompts as PromptRecord[], categoryCtx);
+    // Build structured prompts — now with template integration
+    const systemPrompt = buildStructuredSystemPrompt(prompts as PromptRecord[], categoryCtx, reportTemplate);
 
     const userContext = profile
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
@@ -750,7 +766,7 @@ serve(async (req) => {
     const answersSummary = buildAnswersSummary(structuredAnswers || []);
 
     const userPrompt = buildUserPrompt(
-      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary, categoryCtx
+      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary, categoryCtx, reportTemplate
     );
 
     // Build refine instruction if needed
