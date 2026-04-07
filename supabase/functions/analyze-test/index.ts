@@ -346,6 +346,46 @@ Antes de gerar o diagnóstico:
 3. A dor central NÃO é o padrão reformulado — é o mecanismo invisível por trás
 4. Teste anti-genericidade: se a frase serve para qualquer pessoa, reescreva
 5. Coerência: corePain → mechanism → contradiction → direction → firstAction`);
+
+  // Inject admin-configured output rules from report_templates
+  if (template?.output_rules) {
+    const rules = template.output_rules;
+    const ruleLines: string[] = [];
+    
+    if (rules.tone) {
+      ruleLines.push(`- TOM OBRIGATÓRIO: ${rules.tone}`);
+    }
+    if (rules.simplicityLevel) {
+      const levelDesc: Record<number, string> = {
+        1: 'Pode usar termos técnicos quando necessário',
+        2: 'Poucos termos técnicos, sempre explicados',
+        3: 'Linguagem moderada, acessível mas precisa',
+        4: 'Linguagem simples do dia a dia, sem jargão',
+        5: 'Ultra-simples: qualquer pessoa de 14 anos deve entender',
+      };
+      ruleLines.push(`- NÍVEL DE SIMPLICIDADE: ${levelDesc[rules.simplicityLevel] || 'Linguagem simples'}`);
+    }
+    if (rules.maxSentencesPerBlock) {
+      ruleLines.push(`- MÁXIMO ${rules.maxSentencesPerBlock} frases por bloco — sem exceção`);
+    }
+    if (rules.maxTotalBlocks) {
+      ruleLines.push(`- MÁXIMO ${rules.maxTotalBlocks} blocos no relatório total`);
+    }
+    if (rules.repetitionProhibited) {
+      ruleLines.push(`- REPETIÇÃO PROIBIDA: cada bloco DEVE trazer informação nova. Se dois blocos dizem a mesma coisa com palavras diferentes, reescreva um deles.`);
+    }
+    if (rules.forbiddenLanguage && rules.forbiddenLanguage.length > 0) {
+      ruleLines.push(`- TERMOS PROIBIDOS (nunca usar): ${rules.forbiddenLanguage.map(t => `"${t}"`).join(', ')}`);
+    }
+    if (rules.requiredBlocks && rules.requiredBlocks.length > 0) {
+      ruleLines.push(`- BLOCOS OBRIGATÓRIOS (devem estar presentes): ${rules.requiredBlocks.join(', ')}`);
+    }
+
+    if (ruleLines.length > 0) {
+      sections.push(`# REGRAS DE SAÍDA CONFIGURADAS PELO ADMINISTRADOR\n\n${ruleLines.join('\n')}`);
+    }
+  }
+
   return sections.join("\n\n---\n\n");
 }
 
