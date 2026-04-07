@@ -497,6 +497,38 @@ export type Database = {
           },
         ]
       }
+      report_templates: {
+        Row: {
+          created_at: string
+          id: string
+          sections: Json
+          test_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          sections?: Json
+          test_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          sections?: Json
+          test_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_templates_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: true
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       roadmap_tasks: {
         Row: {
           id: string
