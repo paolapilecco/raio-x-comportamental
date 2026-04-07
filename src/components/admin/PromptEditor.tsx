@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil, BookmarkPlus, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Save, ToggleRight, ToggleLeft, Plus, Lightbulb, AlertCircle, Sparkles, Loader2, RefreshCw, Check, X, Pencil, BookmarkPlus, ShieldCheck, ShieldAlert, BarChart3, Zap, PlayCircle } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { PROMPT_SECTIONS, PROMPT_TEMPLATES, type TestPrompt, type TestModule } from './promptConstants';
 import { toast } from 'sonner';
@@ -24,12 +24,22 @@ interface QualityInfo {
   retried: boolean;
 }
 
+interface AxisCoverageInfo {
+  total: number;
+  covered: number;
+  uncovered: string[];
+  percentage: number;
+}
+
 interface AIPreview {
   promptId: string;
   sectionType: string;
   content: string;
   editing: boolean;
   quality?: QualityInfo;
+  axisCoverage?: AxisCoverageInfo;
+  feedbackUsed?: boolean;
+  crossValidated?: boolean;
 }
 
 const QualityBadge = ({ quality }: { quality?: QualityInfo }) => {
@@ -58,6 +68,93 @@ const QualityBadge = ({ quality }: { quality?: QualityInfo }) => {
   );
 };
 
+// ── MELHORIA 4: Axis Coverage Badge ──
+const AxisCoverageBadge = ({ coverage }: { coverage?: AxisCoverageInfo }) => {
+  if (!coverage || coverage.total === 0) return null;
+  const pct = coverage.percentage;
+  const color = pct >= 80 ? 'emerald' : pct >= 50 ? 'amber' : 'red';
+  return (
+    <div className="space-y-1.5">
+      <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[0.68rem] font-medium border bg-${color}-500/10 text-${color}-600 border-${color}-500/20`}>
+        <BarChart3 className="w-3.5 h-3.5" />
+        Cobertura de eixos: {coverage.covered}/{coverage.total} ({pct}%)
+      </div>
+      {coverage.uncovered.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {coverage.uncovered.map((axis, i) => (
+            <span key={i} className="text-[0.62rem] px-2 py-0.5 rounded-md bg-red-500/10 text-red-500/80 border border-red-500/15">
+              ⚠ {axis.replace(/_/g, ' ')}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── MELHORIA 4: Global Axis Coverage Panel ──
+const AxisCoveragePanel = ({ currentModule, testPrompts, axes }: { currentModule: TestModule; testPrompts: TestPrompt[]; axes: string[] }) => {
+  if (axes.length === 0) return null;
+
+  const activePrompts = testPrompts.filter(p => p.test_id === currentModule.id && p.is_active);
+  const axisMap: Record<string, string[]> = {};
+  axes.forEach(a => { axisMap[a] = []; });
+
+  activePrompts.forEach(p => {
+    const lower = p.content?.toLowerCase() || '';
+    axes.forEach(a => {
+      if (lower.includes(a.toLowerCase())) {
+        axisMap[a].push(p.prompt_type);
+      }
+    });
+  });
+
+  const covered = axes.filter(a => axisMap[a].length > 0);
+  const uncovered = axes.filter(a => axisMap[a].length === 0);
+  const pct = Math.round((covered.length / axes.length) * 100);
+
+  return (
+    <div className={`rounded-xl border p-4 space-y-3 ${pct >= 80 ? 'border-emerald-500/20 bg-emerald-500/[0.02]' : pct >= 50 ? 'border-amber-500/20 bg-amber-500/[0.02]' : 'border-red-500/20 bg-red-500/[0.02]'}`}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BarChart3 className={`w-4 h-4 ${pct >= 80 ? 'text-emerald-500' : pct >= 50 ? 'text-amber-500' : 'text-red-500'}`} />
+          <h4 className="text-[0.8rem] font-semibold">Cobertura de Eixos nos Prompts</h4>
+        </div>
+        <span className={`text-[0.75rem] font-bold ${pct >= 80 ? 'text-emerald-600' : pct >= 50 ? 'text-amber-600' : 'text-red-600'}`}>
+          {covered.length}/{axes.length} ({pct}%)
+        </span>
+      </div>
+
+      <div className="w-full h-2 rounded-full bg-muted/30 overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all ${pct >= 80 ? 'bg-emerald-500' : pct >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+        {axes.map(axis => {
+          const refs = axisMap[axis];
+          const isCovered = refs.length > 0;
+          return (
+            <div key={axis} className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[0.68rem] ${isCovered ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:text-red-400'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isCovered ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <span className="truncate font-medium">{axis.replace(/_/g, ' ')}</span>
+              {isCovered && <span className="text-[0.58rem] opacity-60 ml-auto shrink-0">{refs.length}x</span>}
+            </div>
+          );
+        })}
+      </div>
+
+      {uncovered.length > 0 && (
+        <p className="text-[0.68rem] text-red-500/70">
+          ⚠ {uncovered.length} eixo(s) não mencionado(s) em nenhum prompt. Considere gerar novamente os prompts para cobrir todos os eixos.
+        </p>
+      )}
+    </div>
+  );
+};
+
 const PromptEditor = ({
   currentModule, testPrompts, editedTexts, setEditedTexts,
   saving, onSavePrompt, onTogglePrompt, onCreatePrompt,
@@ -66,9 +163,25 @@ const PromptEditor = ({
   const [generatingAI, setGeneratingAI] = useState<string | null>(null);
   const [aiPreview, setAiPreview] = useState<AIPreview | null>(null);
   const [savingTemplate, setSavingTemplate] = useState(false);
+  const [moduleAxes, setModuleAxes] = useState<string[]>([]);
+  // MELHORIA 5: Quick calibration state
+  const [calibrating, setCalibrating] = useState<string | null>(null);
+  const [calibrationResult, setCalibrationResult] = useState<{ sectionType: string; result: any } | null>(null);
+
   const currentPrompts = testPrompts.filter(p => p.test_id === currentModule.id);
   const byType: Record<string, TestPrompt> = {};
   currentPrompts.forEach(p => { byType[p.prompt_type] = p; });
+
+  // Load axes for coverage panel
+  useEffect(() => {
+    const loadAxes = async () => {
+      const { data } = await supabase.from('questions').select('axes').eq('test_id', currentModule.id);
+      const allAxes = new Set<string>();
+      (data || []).forEach((q: any) => (q.axes || []).forEach((a: string) => allAxes.add(a)));
+      setModuleAxes(Array.from(allAxes));
+    };
+    loadAxes();
+  }, [currentModule.id]);
 
   const logGeneration = async (sectionType: string, content: string, action: string) => {
     try {
@@ -91,13 +204,13 @@ const PromptEditor = ({
     toast.success('Template aplicado — edite conforme necessário');
   };
 
-  const callAI = async (sectionType: string): Promise<{ prompt: string; quality?: QualityInfo } | null> => {
+  const callAI = async (sectionType: string): Promise<{ prompt: string; quality?: QualityInfo; axisCoverage?: AxisCoverageInfo; feedbackUsed?: boolean; crossValidated?: boolean } | null> => {
     const { data, error } = await supabase.functions.invoke('generate-prompt', {
       body: { testId: currentModule.id, sectionType },
     });
     if (error) throw error;
     if (data?.error) { toast.error(data.error); return null; }
-    return data?.prompt ? { prompt: data.prompt, quality: data.quality } : null;
+    return data?.prompt ? { prompt: data.prompt, quality: data.quality, axisCoverage: data.axisCoverage, feedbackUsed: data.feedbackUsed, crossValidated: data.crossValidated } : null;
   };
 
   const generateWithAI = async (promptId: string, sectionType: string) => {
@@ -105,10 +218,13 @@ const PromptEditor = ({
     try {
       const result = await callAI(sectionType);
       if (result) {
-        setAiPreview({ promptId, sectionType, content: result.prompt, editing: false, quality: result.quality });
+        setAiPreview({ promptId, sectionType, content: result.prompt, editing: false, quality: result.quality, axisCoverage: result.axisCoverage, feedbackUsed: result.feedbackUsed, crossValidated: result.crossValidated });
         await logGeneration(sectionType, result.prompt, result.quality?.retried ? 'generated_retried' : 'generated');
         if (result.quality?.level === 'medium') {
           toast.info('Prompt gerado com qualidade moderada — revise os pontos indicados');
+        }
+        if (result.feedbackUsed) {
+          toast.info('🔄 Referência de edições anteriores foi utilizada', { duration: 3000 });
         }
       }
     } catch (e: any) {
@@ -125,7 +241,7 @@ const PromptEditor = ({
     try {
       const result = await callAI(aiPreview.sectionType);
       if (result) {
-        setAiPreview(prev => prev ? { ...prev, content: result.prompt, editing: false, quality: result.quality } : null);
+        setAiPreview(prev => prev ? { ...prev, content: result.prompt, editing: false, quality: result.quality, axisCoverage: result.axisCoverage } : null);
         await logGeneration(aiPreview.sectionType, result.prompt, 'regenerated');
         toast.success('Nova versão gerada');
       }
@@ -184,8 +300,49 @@ const PromptEditor = ({
     setAiPreview(null);
   };
 
+  // ── MELHORIA 5: Quick Calibration — run simulation with fake data to test prompt ──
+  const runCalibration = async (sectionType: string) => {
+    setCalibrating(sectionType);
+    setCalibrationResult(null);
+    try {
+      // Generate fake scores for all axes
+      const fakeScores = moduleAxes.map((axis, i) => ({
+        key: axis,
+        label: axis,
+        score: Math.round((70 + (i % 3) * 10 - i * 5) * 5 / 100),
+        maxScore: 5,
+        percentage: Math.max(20, Math.min(95, 70 + (i % 3) * 10 - i * 5)),
+      })).sort((a, b) => b.percentage - a.percentage);
+
+      const { data, error } = await supabase.functions.invoke('analyze-test', {
+        body: {
+          test_module_id: currentModule.id,
+          scores: fakeScores,
+          slug: currentModule.slug,
+          refine_level: 0,
+        },
+      });
+
+      if (error || data?.error) {
+        toast.error(data?.error || 'Erro na calibração');
+      } else {
+        const analysis = data?.analysis || data;
+        setCalibrationResult({ sectionType, result: analysis });
+        toast.success('Calibração concluída — veja o resultado abaixo');
+      }
+    } catch (e) {
+      console.error('Calibration error:', e);
+      toast.error('Erro inesperado na calibração');
+    } finally {
+      setCalibrating(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
+      {/* MELHORIA 4: Axis Coverage Panel */}
+      <AxisCoveragePanel currentModule={currentModule} testPrompts={testPrompts} axes={moduleAxes} />
+
       {/* Status bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-2 min-w-0">
@@ -229,6 +386,7 @@ const PromptEditor = ({
           const prompt = byType[section.type];
           const SIcon = section.icon;
           const showPreview = aiPreview && aiPreview.sectionType === section.type;
+          const showCalibration = calibrationResult && calibrationResult.sectionType === section.type;
           return (
             <TabsContent key={section.type} value={section.type} className="mt-4">
               <div className={`rounded-2xl border ${section.borderColor} overflow-hidden`}>
@@ -255,6 +413,13 @@ const PromptEditor = ({
                         <Sparkles className="w-4 h-4 text-primary" />
                         <span className="text-[0.8rem] font-semibold text-primary">Pré-visualização — Prompt gerado pela IA</span>
                         <div className="flex-1" />
+                        {/* Feedback & cross-validation badges */}
+                        {aiPreview.feedbackUsed && (
+                          <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 border border-blue-500/20">🔄 Feedback</span>
+                        )}
+                        {aiPreview.crossValidated && (
+                          <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 border border-violet-500/20">✓ Validado</span>
+                        )}
                         {aiPreview.editing ? (
                           <span className="text-[0.65rem] text-muted-foreground/60">Editando...</span>
                         ) : (
@@ -268,12 +433,11 @@ const PromptEditor = ({
                           </button>
                         )}
                       </div>
-                      {/* Quality badge */}
-                      {aiPreview.quality && (
-                        <div className="px-4 pt-3">
-                          <QualityBadge quality={aiPreview.quality} />
-                        </div>
-                      )}
+                      {/* Quality badge + Axis Coverage */}
+                      <div className="px-4 pt-3 flex flex-wrap gap-3">
+                        {aiPreview.quality && <QualityBadge quality={aiPreview.quality} />}
+                        {aiPreview.axisCoverage && <AxisCoverageBadge coverage={aiPreview.axisCoverage} />}
+                      </div>
                       <div className="p-4">
                         {aiPreview.editing ? (
                           <textarea
@@ -338,8 +502,20 @@ const PromptEditor = ({
                           </div>
                         </div>
                       )}
-                      {/* AI Generate button - above editor */}
-                      <div className="flex items-center justify-end">
+                      {/* Action buttons - above editor */}
+                      <div className="flex items-center justify-end gap-2">
+                        {/* MELHORIA 5: Quick Calibration */}
+                        {prompt.is_active && currentContent && moduleAxes.length > 0 && (
+                          <button
+                            onClick={() => runCalibration(section.type)}
+                            disabled={calibrating === section.type}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.7rem] font-medium border border-emerald-500/30 bg-emerald-500/5 text-emerald-600 hover:bg-emerald-500/15 transition-all disabled:opacity-40"
+                            title="Testar como a IA responde com este prompt usando dados simulados"
+                          >
+                            {calibrating === section.type ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <PlayCircle className="w-3.5 h-3.5" />}
+                            {calibrating === section.type ? 'Calibrando...' : 'Calibrar'}
+                          </button>
+                        )}
                         <button
                           onClick={() => generateWithAI(prompt.id, section.type)}
                           disabled={generatingAI === section.type}
@@ -385,6 +561,55 @@ const PromptEditor = ({
                           <Save className="w-3.5 h-3.5" /> {saving === prompt.id ? 'Salvando...' : 'Salvar'}
                         </button>
                       </div>
+
+                      {/* MELHORIA 5: Calibration Result */}
+                      {showCalibration && calibrationResult.result && (
+                        <div className="mt-4 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.02] overflow-hidden">
+                          <div className="flex items-center justify-between px-4 py-3 bg-emerald-500/[0.05] border-b border-emerald-500/15">
+                            <div className="flex items-center gap-2">
+                              <Zap className="w-4 h-4 text-emerald-500" />
+                              <h5 className="text-[0.8rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Calibração</h5>
+                            </div>
+                            <button onClick={() => setCalibrationResult(null)} className="text-muted-foreground/40 hover:text-muted-foreground/70">
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="p-4 space-y-3">
+                            <p className="text-[0.68rem] text-muted-foreground/50 italic">Resultado gerado com dados simulados — avalie se o tom, especificidade e estrutura estão adequados.</p>
+                            {calibrationResult.result.profileName && (
+                              <div className="p-3 rounded-lg bg-muted/15 border border-border/15">
+                                <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Perfil</span>
+                                <p className="text-[0.82rem] font-bold mt-1">{calibrationResult.result.profileName}</p>
+                                {calibrationResult.result.mentalState && <p className="text-[0.72rem] text-muted-foreground/60 italic">{calibrationResult.result.mentalState}</p>}
+                              </div>
+                            )}
+                            {calibrationResult.result.criticalDiagnosis && (
+                              <div className="p-3 rounded-lg bg-muted/15 border border-border/15">
+                                <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Diagnóstico</span>
+                                <p className="text-[0.75rem] text-foreground/70 mt-1 leading-relaxed">{calibrationResult.result.criticalDiagnosis}</p>
+                              </div>
+                            )}
+                            {calibrationResult.result.corePain && (
+                              <div className="p-3 rounded-lg bg-muted/15 border border-border/15">
+                                <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Dor Central</span>
+                                <p className="text-[0.75rem] text-foreground/70 mt-1 leading-relaxed">{calibrationResult.result.corePain}</p>
+                              </div>
+                            )}
+                            {calibrationResult.result.direction && (
+                              <div className="p-3 rounded-lg bg-muted/15 border border-border/15">
+                                <span className="text-[0.65rem] uppercase tracking-wider text-muted-foreground/40 font-semibold">Direção</span>
+                                <p className="text-[0.75rem] text-foreground/70 mt-1 leading-relaxed">{calibrationResult.result.direction}</p>
+                              </div>
+                            )}
+                            <details className="pt-2">
+                              <summary className="text-[0.65rem] cursor-pointer text-muted-foreground/40 hover:text-muted-foreground/60">Ver JSON completo</summary>
+                              <pre className="mt-2 p-3 rounded-lg bg-muted/10 text-[0.65rem] font-mono text-foreground/50 overflow-x-auto max-h-48">
+                                {JSON.stringify(calibrationResult.result, null, 2)}
+                              </pre>
+                            </details>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     );
                   })() : (
