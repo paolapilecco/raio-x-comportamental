@@ -7,10 +7,13 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from 'recharts';
-import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
+import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
 
 interface HistoryEntry {
   id: string;
