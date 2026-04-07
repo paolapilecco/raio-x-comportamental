@@ -405,46 +405,45 @@ ${answersSummary}
 
 ---
 
-Gere o diagnóstico em JSON com esta estrutura EXATA de 9 seções. LEMBRE-SE: linguagem simples, como conversa. Nada de psicologuês. Cada seção deve ser CURTA e NÃO repetir ideias de outra seção:
+Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 frases por bloco. Linguagem simples, direta, sem rodeio. Nada de psicologuês. Cada seção traz informação NOVA — ZERO repetição:
 {
-  "resumoPrincipal": "${ov.resumoPrincipal || '2-3 frases diretas e simples. O que está acontecendo com essa pessoa.'}",
-  "significadoPratico": "${ov.significadoPratico || 'O que isso causa na vida real — 2-3 frases concretas. DIFERENTE do resumo.'}",
-  "padraoIdentificado": "${ov.padraoIdentificado || 'Nome curto e claro do padrão (3-5 palavras) + 1-2 frases explicando como funciona.'}",
-  "comoAparece": "${ov.comoAparece || '2-3 exemplos do dia a dia — situações reais, não conceitos abstratos.'}",
-  "gatilhos": ["3-4 situações reais e específicas que ativam o padrão — frases curtas"],
-  "impactoVida": [{"area": "área da vida", "efeito": "o que acontece de concreto — 1 frase simples"}],
-  "direcaoAjuste": "${ov.direcaoAjuste || 'A primeira mudança concreta — tão clara que não precise pensar duas vezes.'}",
-  "oQueEvitar": ["3-4 coisas específicas para PARAR de fazer agora — escritas como conselho de amigo"],
-  "proximoPasso": "${ov.proximoPasso || 'UMA ação simples para os próximos 3 dias — qualquer pessoa entende na primeira leitura.'}",
+  "chamaAtencao": "${ov.resumoPrincipal || 'O que mais salta aos olhos no resultado — 1-2 frases diretas, sem introdução.'}",
+  "padraoRepetido": "${ov.padraoIdentificado || 'O padrão que mais se repete — nome curto + 1 frase explicando o mecanismo.'}",
+  "comoAparece": "${ov.comoAparece || '1-2 exemplos concretos do dia a dia onde isso aparece.'}",
+  "gatilhos": ["2-3 situações reais e específicas que disparam o padrão — 1 frase cada"],
+  "comoAtrapalha": "${ov.significadoPratico || 'O prejuízo real — como isso atrapalha a vida da pessoa. 1-2 frases.'}",
+  "corrigirPrimeiro": "${ov.direcaoAjuste || 'A primeira coisa a corrigir — específica e clara. 1-2 frases.'}",
+  "pararDeFazer": ["2-3 coisas para PARAR imediatamente — escritas como conselho direto"],
+  "acaoInicial": "${ov.proximoPasso || 'UMA ação simples para os próximos 3 dias — qualquer pessoa entende.'}",
 
   "profileName": "Nome criativo do perfil (3-5 palavras)",
-  "combinedTitle": "Título combinado dos padrões",
-  "blindSpot": {"perceivedProblem": "O que a pessoa acha que é o problema (linguagem simples)", "realProblem": "O que realmente acontece (linguagem simples)"},
-  "criticalDiagnosis": "Copie o conteúdo de resumoPrincipal",
-  "corePain": "Copie o conteúdo de significadoPratico",
-  "mentalState": "Estado mental atual em 1 frase simples",
-  "summary": "Copie o conteúdo de resumoPrincipal",
-  "mechanism": "Copie o conteúdo de padraoIdentificado",
-  "contradiction": "A contradição interna principal — 1 frase clara e simples",
-  "impact": "Impacto geral — 1 frase direta",
-  "direction": "Copie o conteúdo de direcaoAjuste",
-  "keyUnlockArea": "Copie o conteúdo de direcaoAjuste",
-  "blockingPoint": "Onde exatamente a pessoa trava — 1 frase simples",
+  "combinedTitle": "Título curto e impactante do diagnóstico",
+  "blindSpot": {"perceivedProblem": "O que a pessoa acha que é o problema", "realProblem": "O que realmente acontece"},
+  "criticalDiagnosis": "Copie chamaAtencao",
+  "corePain": "Copie comoAtrapalha",
+  "mentalState": "Estado mental atual em 1 frase",
+  "summary": "Copie chamaAtencao",
+  "mechanism": "Copie padraoRepetido",
+  "contradiction": "A contradição interna principal — 1 frase",
+  "impact": "Copie comoAtrapalha",
+  "direction": "Copie corrigirPrimeiro",
+  "keyUnlockArea": "Copie corrigirPrimeiro",
+  "blockingPoint": "Onde a pessoa trava — 1 frase",
   "triggers": ["mesmos gatilhos acima"],
-  "mentalTraps": ["3-4 pensamentos que a pessoa repete pra si mesma e que mantêm o padrão — entre aspas, linguagem natural"],
-  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem — frases curtas e claras"],
-  "whatNotToDo": ["mesmos itens de oQueEvitar"],
-  "lifeImpact": [{"pillar": "área", "impact": "efeito concreto"}],
-  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação clara e executável"}],
-  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta e simples"]}],
-  "firstAction": "Copie o conteúdo de proximoPasso"
+  "mentalTraps": ["2-3 pensamentos que a pessoa repete e que mantêm o padrão — entre aspas"],
+  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem — frases curtas"],
+  "whatNotToDo": ["mesmos itens de pararDeFazer"],
+  "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
+  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
+  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
+  "firstAction": "Copie acaoInicial"
 }
 
 REGRAS FINAIS:
-- NÃO repita a mesma ideia entre seções. Cada uma traz informação NOVA.
-- Frases curtas (máx 1,5 linhas). Sem parágrafos longos.
-- ZERO palavras rebuscadas. Se existe uma palavra simples, use ela.
-- actionPlan: só para áreas abaixo de 70%. Ações com verbo no imperativo.
+- MÁXIMO 2 frases por bloco. Sem exceção.
+- NÃO repita a mesma ideia entre seções.
+- ZERO palavras rebuscadas.
+- actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
 ${categoryCtx.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
 }
