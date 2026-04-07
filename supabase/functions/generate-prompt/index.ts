@@ -136,10 +136,13 @@ serve(async (req) => {
       .map(p => `[${p.prompt_type}]: ${p.content.slice(0, 300)}...`)
       .join("\n\n");
 
+    const isLifeMap = isLifeMapTest(testModule.slug);
+    const lifeMapBlock = isLifeMap ? LIFE_MAP_CONTEXT : "";
+
     const systemPrompt = `Você é um especialista sênior em engenharia de prompts para diagnósticos comportamentais e psicométricos.
 
 Sua tarefa é gerar um prompt profissional para a seção "${sectionType}" (${SECTION_PURPOSES[sectionType]}) de um teste diagnóstico.
-
+${lifeMapBlock}
 MÉTODO OBRIGATÓRIO — ANÁLISE ANTES DE GERAR:
 Antes de escrever o prompt, analise internamente:
 1. O que as perguntas cadastradas REALMENTE medem (não o nome do teste)
