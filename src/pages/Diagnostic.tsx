@@ -316,17 +316,47 @@ const Diagnostic = () => {
         label: engine?.definitions[s.key]?.label || s.label,
       }));
 
-      // Build structured answer data with question context
+      // Build structured answer data with question context + mapped scores
+      const LIKERT_LABELS: Record<number, string> = {
+        1: 'Discordo totalmente',
+        2: 'Discordo',
+        3: 'Neutro',
+        4: 'Concordo',
+        5: 'Concordo totalmente',
+      };
+
       const structuredAnswers = answers.map(a => {
         const q = dbQuestions.find(dq => dq.id === a.questionId);
         if (!q) return null;
-        const chosenOption = q.options && q.options[a.value - 1] ? q.options[a.value - 1] : null;
+        
+        // Determine the chosen option label
+        let chosenOption: string | null = null;
+        if (q.options && q.options[a.value - 1]) {
+          chosenOption = q.options[a.value - 1];
+        } else if ((q.type || 'likert') === 'likert') {
+          chosenOption = LIKERT_LABELS[a.value] || `Valor ${a.value}`;
+        }
+
+        // Calculate the mapped score (0-100) for this answer
+        let mappedScore: number;
+        if (q.option_scores && q.option_scores.length > 0) {
+          const idx = Math.max(0, Math.min(a.value - 1, q.option_scores.length - 1));
+          const maxOption = Math.max(...q.option_scores);
+          mappedScore = maxOption > 0 ? Math.round((q.option_scores[idx] / maxOption) * 100) : 0;
+        } else if (q.type === 'intensity') {
+          mappedScore = Math.round((a.value / 10) * 100);
+        } else {
+          // Likert 1-5 → 0-100
+          mappedScore = Math.round(((a.value - 1) / 4) * 100);
+        }
+
         return {
           questionId: a.questionId,
           questionText: q.text,
           questionType: q.type || 'likert',
           axes: q.axes,
           value: a.value,
+          mappedScore,
           chosenOption,
         };
       }).filter(Boolean);
