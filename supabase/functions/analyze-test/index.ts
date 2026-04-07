@@ -572,9 +572,9 @@ ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TE
     {"area": "Relações", "efeito": "1 frase sobre efeito nos relacionamentos"},
     {"area": "Autoconfiança", "efeito": "1 frase sobre impacto na autoimagem"}
   ],
-  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O QUE PRECISA MUDAR — a direção geral. NÃO é uma ação concreta. 1-2 frases.'}",
-  "pararDeFazer": ["2-3 coisas para PARAR imediatamente — escritas como conselho direto"],
-  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO CONCRETA para fazer HOJE ou nos próximos 3 dias. DIFERENTE de corrigirPrimeiro.'}",
+  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O comportamento ESPECÍFICO que precisa mudar. Diga QUAL comportamento, em QUAL situação. Exemplo: Em vez de dizer mude sua relação com trabalho, diga Pare de aceitar tarefas extras quando já está sobrecarregado. 1-2 frases.'}",
+  "pararDeFazer": ["2-3 coisas para PARAR imediatamente — cada item com SITUAÇÃO + COMPORTAMENTO. Exemplo: Parar de responder mensagens de trabalho depois das 21h"],
+  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO EXECUTÁVEL com QUANDO + COMO + QUANTO TEMPO. Exemplo: Amanhã de manhã, antes de abrir o celular, escreva 3 coisas que precisa fazer hoje e faça a primeira antes de qualquer outra coisa. DEVE ser diferente de corrigirPrimeiro. NÃO pode ser conselho genérico como reflita sobre ou observe seus padrões.'}",
 
   "profileName": "Nome criativo do perfil (3-5 palavras)",
   "combinedTitle": "Título curto e impactante do diagnóstico",
