@@ -184,9 +184,9 @@ function checkLanguageDifficulty(text: string, field: string): ValidationIssue[]
       issues.push({ field, type: 'complex_language', detail: `"${word}" → "${COMPLEX_WORDS[word]}"` });
     }
   }
-  for (const phrase of FORBIDDEN_PHRASES) {
+  for (const phrase of [...FORBIDDEN_PHRASES, ...VAGUE_ACTION_PHRASES]) {
     if (lower.includes(phrase)) {
-      issues.push({ field, type: 'forbidden_phrase', detail: `Frase genérica: "${phrase}"` });
+      issues.push({ field, type: 'forbidden_phrase', detail: `Frase genérica/vaga: "${phrase}"` });
     }
   }
   return issues;
@@ -203,8 +203,8 @@ function simplifyLanguage(text: string): string {
     const regex = new RegExp(complex, 'gi');
     result = result.replace(regex, simple);
   }
-  // Remove forbidden phrases
-  for (const phrase of FORBIDDEN_PHRASES) {
+  // Remove forbidden + vague phrases
+  for (const phrase of [...FORBIDDEN_PHRASES, ...VAGUE_ACTION_PHRASES]) {
     const regex = new RegExp(phrase, 'gi');
     result = result.replace(regex, '').replace(/\s{2,}/g, ' ').trim();
   }
