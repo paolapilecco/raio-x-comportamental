@@ -123,19 +123,14 @@ function drawWheel(
     return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
   });
 
-  // Fill polygon with semi-transparent accent
-  doc.setFillColor(90, 70, 180);
-  doc.setDrawColor(90, 70, 180);
-  doc.setLineWidth(1.5);
-
-  // Draw filled shape using triangle fan from center
+  // Draw filled shape using lines (no transparency — use light color instead)
+  doc.setFillColor(210, 205, 240); // light accent
+  
+  // Build polygon path manually
   for (let i = 0; i < points.length; i++) {
     const next = points[(i + 1) % points.length];
-    // Triangle: center → point[i] → point[i+1]
-    doc.setGState(new (doc as any).GState({ opacity: 0.12 }));
     doc.triangle(cx, cy, points[i][0], points[i][1], next[0], next[1], 'F');
   }
-  doc.setGState(new (doc as any).GState({ opacity: 1 }));
 
   // Outline of polygon
   doc.setDrawColor(...C.accent);
