@@ -1,0 +1,1 @@
+ALTER TABLE public.report_templates ADD COLUMN output_rules jsonb NOT NULL DEFAULT '{}'::jsonb;
