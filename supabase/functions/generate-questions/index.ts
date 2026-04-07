@@ -14,7 +14,7 @@ serve(async (req) => {
       testName, testDescription, questionCount = 10,
       promptsContext, existingQuestionsFromOtherTests,
       existingQuestionsFromThisTest, existingAxes,
-      testModuleId,
+      testModuleId, extraInstructions,
     } = await req.json();
 
     if (!testName || typeof testName !== "string" || testName.length > 200) {
@@ -206,6 +206,10 @@ Cada item:
 - reverse: boolean
 - reasoning: string curta explicando POR QUE esta pergunta existe e O QUE ela mede no contexto deste teste específico`;
 
+    const extraBlock = extraInstructions && typeof extraInstructions === "string" && extraInstructions.trim()
+      ? `\n\nINSTRUÇÕES ADICIONAIS DO ADMINISTRADOR:\n${extraInstructions.trim().slice(0, 1000)}`
+      : "";
+
     const userPrompt = `Gere ${count} perguntas para:
 
 NOME: ${testName}
@@ -217,6 +221,7 @@ REQUISITOS MÍNIMOS:
 ${existingAxes?.length ? `- Cobrir TODOS os ${existingAxes.length} eixos: ${existingAxes.join(', ')}` : ''}
 ${patternDefinitionsContext ? `- Cada padrão definido deve ter pelo menos 2-3 perguntas convergentes` : ''}
 ${reportTemplateSections ? `- Gerar dados suficientes para preencher TODAS as seções do relatório` : ''}
+${extraBlock}
 
 IMPORTANTE: Analise o tipo de teste, os prompts, os padrões e o template ANTES de gerar. Cada pergunta deve ter uma razão de existir.
 
