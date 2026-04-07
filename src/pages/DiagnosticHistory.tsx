@@ -49,6 +49,7 @@ const DiagnosticHistory = () => {
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const patternDefinitions = usePatternDefinitions();
+  const axisLabels = useAxisLabels();
 
   useEffect(() => {
     if (!user) return;
