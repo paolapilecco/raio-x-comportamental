@@ -16,6 +16,46 @@ const SECTION_PURPOSES: Record<string, string> = {
   restrictions: "Definir regras negativas obrigatórias — o que a IA NÃO deve fazer ao gerar os resultados.",
 };
 
+const LIFE_MAP_SLUGS = ["mapa-de-vida", "mapa-de-vida-e-evolucao", "life-map"];
+
+const LIFE_MAP_CONTEXT = `
+ATENÇÃO — REGRA ESPECIAL: Este teste é do tipo "Mapa de Vida & Evolução".
+Ele NÃO segue a lógica dos testes comportamentais tradicionais.
+
+DIFERENÇAS FUNDAMENTAIS:
+1. As perguntas medem ÁREAS DA VIDA (emocional, espiritual, profissional, financeiro, intelectual, saúde, social, família, relacionamento, propósito) com notas de 0 a 10
+2. O relatório analisa DESEQUILÍBRIO entre áreas — não padrões comportamentais
+3. A leitura é por ÁREA, não por eixo psicológico
+4. O foco é identificar: áreas fortes, áreas frágeis, hiato (gap) entre elas, fase atual (Consolidação/Ajuste/Reconstrução/Crítica)
+
+ESTRUTURA DO RELATÓRIO MAPA DE VIDA (7 seções):
+1. Fase Atual — classificar em Consolidação, Ajuste, Reconstrução ou Crítica
+2. Diagnóstico de Desequilíbrio — baseado no gap entre notas altas e baixas
+3. Áreas Fortes — quais áreas sustentam o indivíduo
+4. Áreas Frágeis — quais áreas precisam de atenção urgente
+5. Plano de Ação 60 dias — 3 ações concretas para cada área com nota < 7
+6. Comparação Histórica — antes vs depois (se houver dados anteriores)
+7. Revisão em 60 dias — marco de reavaliação
+
+PROIBIDO PARA MAPA DE VIDA:
+- Usar linguagem de "padrão comportamental" ou "ciclo de autossabotagem"
+- Tratar como teste psicológico tradicional
+- Gerar diagnóstico de perfil comportamental
+- Ignorar a lógica de áreas da vida
+- Usar termos como "padrão dominante", "perfil comportamental", "traço de personalidade"
+
+OBRIGATÓRIO PARA MAPA DE VIDA:
+- Referenciar ÁREAS DA VIDA específicas (emocional, financeiro, saúde, etc.)
+- Focar em equilíbrio/desequilíbrio entre áreas
+- Incluir lógica de plano de ação prático por área
+- Considerar a fase atual do indivíduo
+- Manter tom prático e orientado a resultados mensuráveis
+`;
+
+function isLifeMapTest(slug: string): boolean {
+  return LIFE_MAP_SLUGS.some(s => slug.toLowerCase().includes(s) || s.includes(slug.toLowerCase()));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
