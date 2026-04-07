@@ -9,7 +9,11 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { testName, testDescription, questionCount = 10, promptsContext, existingQuestionsFromOtherTests } = await req.json();
+    const {
+      testName, testDescription, questionCount = 10,
+      promptsContext, existingQuestionsFromOtherTests,
+      existingQuestionsFromThisTest, existingAxes,
+    } = await req.json();
 
     if (!testName || typeof testName !== "string" || testName.length > 200) {
       return new Response(JSON.stringify({ error: "Nome do diagnóstico inválido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -28,11 +32,24 @@ serve(async (req) => {
       promptContextBlock = `\n\nCONTEXTO DOS PROMPTS DO DIAGNÓSTICO (use como referência obrigatória para gerar perguntas coerentes):\n${promptsContext.slice(0, 3000)}`;
     }
 
-    // Build deduplication block
+    // Build deduplication block — OTHER tests
     let deduplicationBlock = "";
     if (Array.isArray(existingQuestionsFromOtherTests) && existingQuestionsFromOtherTests.length > 0) {
       const existing = existingQuestionsFromOtherTests.slice(0, 100).map((q: string) => `- ${q}`).join("\n");
       deduplicationBlock = `\n\nPERGUNTAS JÁ EXISTENTES EM OUTROS DIAGNÓSTICOS (NÃO REPITA nenhuma dessas, nem reformule de forma similar):\n${existing}`;
+    }
+
+    // Build deduplication block — SAME test (NEW: melhoria 1)
+    let internalDedupBlock = "";
+    if (Array.isArray(existingQuestionsFromThisTest) && existingQuestionsFromThisTest.length > 0) {
+      const internal = existingQuestionsFromThisTest.slice(0, 80).map((q: string) => `- ${q}`).join("\n");
+      internalDedupBlock = `\n\nPERGUNTAS JÁ EXISTENTES NESTE MESMO TESTE (NÃO DUPLIQUE, NÃO REFORMULE, NÃO REPITA O CONCEITO):\n${internal}`;
+    }
+
+    // Build axis coverage block (NEW: melhoria 5)
+    let axisCoverageBlock = "";
+    if (Array.isArray(existingAxes) && existingAxes.length > 0) {
+      axisCoverageBlock = `\n\nEIXOS COMPORTAMENTAIS DO DIAGNÓSTICO (OBRIGATÓRIO cobrir TODOS):\n${existingAxes.map((a: string) => `- ${a}`).join("\n")}\n\nGARANTA que as perguntas geradas cubram TODOS os eixos acima. Distribua as perguntas de forma equilibrada entre os eixos. Se um eixo não tiver perguntas suficientes, priorize-o.`;
     }
 
     const systemPrompt = `Você é um especialista em psicometria e análise comportamental. Gere perguntas estruturadas para diagnósticos comportamentais.
@@ -49,7 +66,36 @@ REGRAS OBRIGATÓRIAS:
 9. Use ESCOLHA COMPORTAMENTAL com moderação (10-20%)
 10. Os eixos devem ser específicos ao tema do diagnóstico, nunca genéricos
 11. CADA PERGUNTA DEVE SER ÚNICA — não repita conceitos, reformulações ou variações de perguntas já existentes
-12. As perguntas devem ser COERENTES com os prompts e metodologia do diagnóstico${promptContextBlock}${deduplicationBlock}
+12. As perguntas devem ser COERENTES com os prompts e metodologia do diagnóstico
+
+# PERGUNTAS INVERTIDAS (REVERSE-SCORED) — OBRIGATÓRIO
+- Pelo menos 20-30% das perguntas devem ser INVERTIDAS (reverse-scored)
+- Perguntas invertidas medem o OPOSTO do padrão, forçando o usuário a pensar em vez de responder no piloto automático
+- Marque perguntas invertidas com "reverse": true no JSON
+- Exemplo normal: "Eu começo tarefas mas não termino" (score alto = padrão forte)
+- Exemplo invertido: "Eu consigo manter o foco até concluir uma tarefa" (score alto = padrão FRACO)
+- A pontuação de perguntas invertidas será automaticamente espelhada (100→0, 75→25, etc.)
+- FUNDAMENTAL: perguntas invertidas devem parecer naturais e não óbvias
+
+# CRUZAMENTO OBRIGATÓRIO DE EIXOS
+- Pelo menos 40% das perguntas DEVEM ter EXATAMENTE 2 eixos
+- Perguntas com 2 eixos detectam CONTRADIÇÕES e CONFLITOS entre padrões
+- Ex: uma pergunta que cruza "perfeccionismo" com "procrastinação" revela o conflito interno
+- Perguntas de cruzamento são ESSENCIAIS para gerar diagnósticos precisos
+
+# ALINHAMENTO COM O MOTOR DE ANÁLISE
+O motor de análise precisa detectar:
+- PADRÃO NEURAL DOMINANTE: comportamento repetido em 3+ respostas
+- CICLO DE AUTOSSABOTAGEM: sequência gatilho → comportamento → consequência
+- CONTRADIÇÕES INTERNAS: conflitos entre o que a pessoa quer e o que faz
+- INTERVENÇÃO COMPORTAMENTAL: ação que quebre o ciclo automático
+- COMANDO MENTAL: frase de reprogramação baseada no padrão
+
+Para alimentar esses campos, as perguntas devem:
+1. Revelar REPETIÇÃO de comportamento (não apenas opinião)
+2. Expor a CAUSA por trás da ação (medo, alívio, recompensa)
+3. Mostrar CONSEQUÊNCIAS vividas (não hipotéticas)
+4. Permitir GRADUAÇÃO de intensidade (não apenas sim/não)${promptContextBlock}${deduplicationBlock}${internalDedupBlock}${axisCoverageBlock}
 
 CAMADA DE PROFUNDIDADE:
 - Cruze padrões entre os eixos comportamentais
@@ -64,12 +110,18 @@ Cada item deve ter:
 - axes: array de 1-2 eixos comportamentais específicos do diagnóstico
 - weight: número 0.5-2.0 (1 = padrão)
 - options: array de opções de resposta (usar padrão para likert/frequency, personalizar para behavior_choice)
-- option_scores: array de pontuações numéricas (0-100)`;
+- option_scores: array de pontuações numéricas (0-100)
+- reverse: boolean (true se a pergunta é invertida)`;
 
     const userPrompt = `Gere ${count} perguntas para o seguinte diagnóstico:
 
 NOME: ${testName}
 OBJETIVO: ${testDescription}
+
+REQUISITOS MÍNIMOS:
+- Pelo menos ${Math.max(2, Math.round(count * 0.25))} perguntas INVERTIDAS (reverse-scored)
+- Pelo menos ${Math.max(2, Math.round(count * 0.4))} perguntas com CRUZAMENTO DE 2 EIXOS
+${existingAxes?.length ? `- Cobrir TODOS os ${existingAxes.length} eixos: ${existingAxes.join(', ')}` : ''}
 
 Retorne APENAS um JSON array com as perguntas estruturadas. Sem texto adicional.`;
 
@@ -139,10 +191,20 @@ Retorne APENAS um JSON array com as perguntas estruturadas. Sem texto adicional.
       .map((q: any, i: number) => {
         const type = validTypes.includes(q.type) ? q.type : "likert";
         const axes = Array.isArray(q.axes) ? q.axes.filter((a: any) => typeof a === "string" && a.trim()).slice(0, 3) : ["geral"];
+        const isReverse = q.reverse === true;
         const options = Array.isArray(q.options) && q.options.length >= 2 ? q.options.map(String) : defaultOpts[type] || defaultOpts.likert;
-        const scores = Array.isArray(q.option_scores) && q.option_scores.length === options.length
-          ? q.option_scores.map((s: any) => Math.max(0, Math.min(100, Number(s) || 0)))
-          : defaultScores[type] || defaultScores.likert;
+        
+        let scores: number[];
+        if (Array.isArray(q.option_scores) && q.option_scores.length === options.length) {
+          scores = q.option_scores.map((s: any) => Math.max(0, Math.min(100, Number(s) || 0)));
+        } else {
+          scores = [...(defaultScores[type] || defaultScores.likert)];
+        }
+
+        // Invert scores for reverse-scored questions
+        if (isReverse && scores.length > 0) {
+          scores = scores.map(s => 100 - s);
+        }
 
         return {
           text: q.text.trim(),
@@ -152,10 +214,30 @@ Retorne APENAS um JSON array com as perguntas estruturadas. Sem texto adicional.
           sort_order: i + 1,
           options,
           option_scores: scores,
+          reverse: isReverse,
         };
       });
 
-    return new Response(JSON.stringify({ questions: normalized }), {
+    // Compute quality metrics for the generated batch
+    const totalQ = normalized.length;
+    const reverseCount = normalized.filter((q: any) => q.reverse).length;
+    const crossAxisCount = normalized.filter((q: any) => q.axes.length >= 2).length;
+    const allAxesUsed = new Set(normalized.flatMap((q: any) => q.axes));
+    const coveredAxes = existingAxes ? (existingAxes as string[]).filter((a: string) => allAxesUsed.has(a)) : [];
+    const uncoveredAxes = existingAxes ? (existingAxes as string[]).filter((a: string) => !allAxesUsed.has(a)) : [];
+
+    const qualityMetrics = {
+      total: totalQ,
+      reverseCount,
+      reversePercent: totalQ > 0 ? Math.round((reverseCount / totalQ) * 100) : 0,
+      crossAxisCount,
+      crossAxisPercent: totalQ > 0 ? Math.round((crossAxisCount / totalQ) * 100) : 0,
+      coveredAxes: coveredAxes.length,
+      totalAxes: existingAxes?.length || 0,
+      uncoveredAxes,
+    };
+
+    return new Response(JSON.stringify({ questions: normalized, qualityMetrics }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
