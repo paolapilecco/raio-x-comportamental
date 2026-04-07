@@ -296,6 +296,18 @@ const PromptEditor = ({
                           </div>
                         </div>
                       )}
+                      {/* AI Generate button - above editor */}
+                      <div className="flex items-center justify-end">
+                        <button
+                          onClick={() => generateWithAI(prompt.id, section.type)}
+                          disabled={generatingAI === section.type}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.7rem] font-medium border border-[hsl(var(--accent))]/30 bg-gradient-to-r from-[hsl(var(--accent))]/5 to-[hsl(var(--accent))]/10 text-[hsl(var(--accent-foreground))]/70 hover:from-[hsl(var(--accent))]/10 hover:to-[hsl(var(--accent))]/20 hover:border-[hsl(var(--accent))]/50 transition-all duration-300 disabled:opacity-40 shadow-sm"
+                          title="Gerar prompt automaticamente com IA baseado no contexto do teste"
+                        >
+                          {generatingAI === section.type ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 opacity-70" />}
+                          {generatingAI === section.type ? 'Gerando...' : 'Gerar com IA'}
+                        </button>
+                      </div>
                       <textarea
                         value={editedTexts[`tp_${prompt.id}`] ?? prompt.content}
                         onChange={(e) => setEditedTexts(prev => ({ ...prev, [`tp_${prompt.id}`]: e.target.value }))}
@@ -322,15 +334,6 @@ const PromptEditor = ({
                               Usar Template
                             </button>
                           )}
-                          <button
-                            onClick={() => generateWithAI(prompt.id, section.type)}
-                            disabled={generatingAI === section.type}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[0.68rem] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
-                            title="Gerar prompt automaticamente com IA baseado no contexto do teste"
-                          >
-                            {generatingAI === section.type ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                            {generatingAI === section.type ? 'Gerando...' : 'Gerar com IA'}
-                          </button>
                         </div>
                         <button
                           onClick={() => onSavePrompt(prompt)}
