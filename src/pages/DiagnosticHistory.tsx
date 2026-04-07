@@ -45,6 +45,8 @@ const DiagnosticHistory = () => {
   const [modules, setModules] = useState<TestModule[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const patternDefinitions = usePatternDefinitions();
 
   useEffect(() => {
     if (!user) return;
