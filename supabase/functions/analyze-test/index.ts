@@ -355,6 +355,24 @@ REGRAS DE DETECÇÃO:
 
 SAÍDA OBRIGATÓRIA: Nome do padrão + explicação direta baseada no comportamento observado nas respostas.`);
 
+  sections.push(`# INTERPRETAÇÃO NEUROCIENTÍFICA DO COMPORTAMENTO
+
+Todo padrão identificado é resultado de um CIRCUITO NEURAL AUTOMATIZADO — não é falta de disciplina, preguiça ou fraqueza.
+
+REGRAS DE INTERPRETAÇÃO:
+- O comportamento é REPETIÇÃO DE PADRÃO APRENDIDO — o cérebro gravou esse caminho e repete no automático
+- O cérebro SEMPRE busca 3 coisas:
+  1. EVITAR DESCONFORTO IMEDIATO — foge da dor antes que ela chegue
+  2. BUSCAR ALÍVIO RÁPIDO — troca o difícil pelo fácil para sentir algo bom agora
+  3. REPETIR O QUE JÁ CONHECE — mesmo que dê errado, o familiar é "seguro" para o cérebro
+
+OBRIGATÓRIO NA EXPLICAÇÃO:
+- Diga POR QUE o cérebro faz isso — qual ameaça ele está evitando
+- Diga qual RECOMPENSA está sendo buscada (alívio, validação, controle, conforto)
+- Use linguagem simples: "Seu cérebro aprendeu que..." / "Isso acontece porque sua mente associou..."
+- NUNCA diga "você escolhe fazer isso" — o padrão é AUTOMÁTICO até ser percebido
+- NUNCA trate como falha moral — é um mecanismo de proteção que já não serve mais`);
+
   sections.push(`# CAMADA DE PROFUNDIDADE
 
 Antes de gerar o diagnóstico:
