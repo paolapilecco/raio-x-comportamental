@@ -37,9 +37,9 @@ function getCategorySectionTitles(slug?: string): SectionTitles {
     comoAparece: 'Como isso aparece na sua rotina',
     gatilhos: 'O que geralmente dispara esse padrão',
     comoAtrapalha: 'Como isso te atrapalha',
-    corrigirPrimeiro: 'O que você precisa corrigir primeiro',
+    corrigirPrimeiro: 'Direção de ajuste',
     pararDeFazer: 'O que parar de fazer agora',
-    acaoInicial: 'Ação inicial simples',
+    acaoInicial: 'Próxima ação prática',
   };
 
   if (!slug) return base;
@@ -251,11 +251,12 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             )}
           </Block>
 
-          {/* 6. O que você precisa corrigir primeiro */}
+          {/* 6. Direção de ajuste */}
           <Block num={6} title={sectionTitles.corrigirPrimeiro} delay={0.26}>
-            <Callout color="primary">
+            <div className="border border-primary/15 bg-primary/[0.03] rounded-xl px-4 py-3">
+              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest mb-1.5">O que precisa mudar</p>
               <p className="text-sm text-foreground leading-[1.7]">{corrigirPrimeiro}</p>
-            </Callout>
+            </div>
           </Block>
 
           {/* 7. O que parar de fazer agora */}
@@ -272,9 +273,10 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </Block>
           )}
 
-          {/* 8. Ação inicial simples */}
+          {/* 8. Próxima ação prática */}
           <Block num={8} title={sectionTitles.acaoInicial} delay={0.34}>
-            <div className="bg-primary/[0.04] border border-primary/15 rounded-xl px-4 py-4">
+            <div className="bg-green-500/[0.06] border border-green-500/20 rounded-xl px-4 py-4">
+              <p className="text-[9px] text-green-700/60 dark:text-green-400/60 uppercase tracking-widest mb-1.5">Faça isso agora</p>
               <p className="text-sm font-medium text-foreground leading-[1.7]">{acaoInicial}</p>
             </div>
           </Block>
