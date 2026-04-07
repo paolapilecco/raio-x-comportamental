@@ -505,24 +505,29 @@ function buildAnswersSummary(answers: StructuredAnswer[]): string {
   if (!answers || answers.length === 0) return "Respostas brutas não disponíveis.";
 
   // Group answers by axis for pattern detection
-  const byAxis: Record<string, { question: string; value: number; option: string | null }[]> = {};
+  const byAxis: Record<string, { question: string; mappedScore: number; option: string | null }[]> = {};
   answers.forEach(a => {
+    const score = a.mappedScore ?? a.value;
     a.axes.forEach(axis => {
       if (!byAxis[axis]) byAxis[axis] = [];
-      byAxis[axis].push({ question: a.questionText, value: a.value, option: a.chosenOption });
+      byAxis[axis].push({ question: a.questionText, mappedScore: score, option: a.chosenOption });
     });
   });
 
   const lines: string[] = [];
 
-  // High-signal answers (extremes: 1 or 5 on likert, reveal strong positions)
-  const extremes = answers.filter(a => a.value === 1 || a.value >= 5);
+  // High-signal answers (extremes based on mappedScore: 0-20 or 80-100)
+  const extremes = answers.filter(a => {
+    const score = a.mappedScore ?? 0;
+    return score <= 20 || score >= 80;
+  });
   if (extremes.length > 0) {
     lines.push("### RESPOSTAS EXTREMAS (sinais fortes):");
     extremes.forEach(a => {
-      const label = a.value >= 5 ? "CONCORDÂNCIA TOTAL" : "DISCORDÂNCIA TOTAL";
+      const score = a.mappedScore ?? 0;
+      const label = score >= 80 ? "CONCORDÂNCIA FORTE" : "DISCORDÂNCIA FORTE";
       const optionText = a.chosenOption ? ` → "${a.chosenOption}"` : "";
-      lines.push(`- [${label}] "${a.questionText}" (eixos: ${a.axes.join(", ")})${optionText}`);
+      lines.push(`- [${label} — ${score}%] "${a.questionText}" (eixos: ${a.axes.join(", ")})${optionText}`);
     });
   }
 
@@ -531,22 +536,31 @@ function buildAnswersSummary(answers: StructuredAnswer[]): string {
   if (behaviorChoices.length > 0) {
     lines.push("\n### ESCOLHAS COMPORTAMENTAIS (comportamento real):");
     behaviorChoices.forEach(a => {
-      lines.push(`- "${a.questionText}" → escolheu: "${a.chosenOption}" (eixos: ${a.axes.join(", ")})`);
+      const score = a.mappedScore ?? a.value;
+      lines.push(`- "${a.questionText}" → escolheu: "${a.chosenOption}" (score: ${score}%, eixos: ${a.axes.join(", ")})`);
     });
   }
 
-  // Inconsistency detection: same axis, opposing answers
+  // All answers with mapped scores for full context
+  lines.push("\n### TODAS AS RESPOSTAS (com score mapeado):");
+  answers.forEach(a => {
+    const score = a.mappedScore ?? a.value;
+    const optionText = a.chosenOption ? ` → "${a.chosenOption}"` : "";
+    lines.push(`- [${score}%] "${a.questionText}"${optionText} (eixos: ${a.axes.join(", ")})`);
+  });
+
+  // Inconsistency detection: same axis, opposing mapped scores
   lines.push("\n### INCONSISTÊNCIAS DETECTADAS:");
   let hasInconsistency = false;
   Object.entries(byAxis).forEach(([axis, items]) => {
-    const values = items.map(i => i.value);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    if (max - min >= 3 && items.length >= 2) {
+    const scores = items.map(i => i.mappedScore);
+    const min = Math.min(...scores);
+    const max = Math.max(...scores);
+    if (max - min >= 60 && items.length >= 2) {
       hasInconsistency = true;
-      const high = items.find(i => i.value === max);
-      const low = items.find(i => i.value === min);
-      lines.push(`- Eixo "${axis}": resposta alta (${max}) em "${high?.question}" vs baixa (${min}) em "${low?.question}" — possível autoengano ou ambivalência`);
+      const high = items.find(i => i.mappedScore === max);
+      const low = items.find(i => i.mappedScore === min);
+      lines.push(`- Eixo "${axis}": resposta alta (${max}%) em "${high?.question}" vs baixa (${min}%) em "${low?.question}" — possível autoengano ou ambivalência`);
     }
   });
   if (!hasInconsistency) {
@@ -725,30 +739,49 @@ function detectContradictions(scores: ScoreEntry[]): string {
   scores.forEach((s) => { scoreMap[s.key] = s.percentage; });
 
   const contradictions: string[] = [];
+  const sortedScores = [...scores].sort((a, b) => b.percentage - a.percentage);
 
-  // High self-criticism + high validation dependency
-  if ((scoreMap['excessive_self_criticism'] ?? 0) >= 60 && (scoreMap['validation_dependency'] ?? 0) >= 60) {
-    contradictions.push("- Alta autocrítica combinada com dependência de validação: se critica internamente mas precisa de aprovação externa para agir");
+  // Dynamic contradiction detection: find any pair of high-scoring axes
+  // that could represent opposing behaviors
+  const highScores = sortedScores.filter(s => s.percentage >= 50);
+  
+  for (let i = 0; i < highScores.length; i++) {
+    for (let j = i + 1; j < highScores.length; j++) {
+      const a = highScores[i];
+      const b = highScores[j];
+      // Only flag if both are significantly high
+      if (a.percentage >= 55 && b.percentage >= 55) {
+        contradictions.push(`- Eixos "${a.label}" (${a.percentage}%) e "${b.label}" (${b.percentage}%) ambos altos — investigar se há tensão ou conflito entre esses dois comportamentos`);
+      }
+    }
   }
 
-  // High perfectionism + low execution
-  if ((scoreMap['paralyzing_perfectionism'] ?? 0) >= 60 && (scoreMap['unstable_execution'] ?? 0) >= 60) {
-    contradictions.push("- Perfeccionismo alto com execução instável: exige perfeição de si mesmo mas não consegue manter consistência");
+  // Also detect when top axis is very different from bottom axis
+  if (sortedScores.length >= 3) {
+    const top = sortedScores[0];
+    const bottom = sortedScores[sortedScores.length - 1];
+    if (top.percentage - bottom.percentage >= 40) {
+      contradictions.push(`- Grande disparidade: "${top.label}" (${top.percentage}%) é muito mais intenso que "${bottom.label}" (${bottom.percentage}%) — padrão concentrado em poucos eixos`);
+    }
   }
 
-  // High discomfort escape + high functional overload
-  if ((scoreMap['discomfort_escape'] ?? 0) >= 60 && (scoreMap['functional_overload'] ?? 0) >= 60) {
-    contradictions.push("- Fuga do desconforto com sobrecarga funcional: evita o que incomoda mas se sobrecarrega com atividades compensatórias");
-  }
+  // Known behavioral conflict pairs (kept for backward compat but now optional)
+  const knownPairs: [string, string, string][] = [
+    ['excessive_self_criticism', 'validation_dependency', 'Alta autocrítica combinada com dependência de validação'],
+    ['paralyzing_perfectionism', 'unstable_execution', 'Perfeccionismo alto com execução instável'],
+    ['discomfort_escape', 'functional_overload', 'Fuga do desconforto com sobrecarga funcional'],
+    ['excessive_self_criticism', 'low_routine_sustenance', 'Autocrítica alta com baixa sustentação de rotina'],
+    ['emotional_self_sabotage', 'validation_dependency', 'Autossabotagem emocional com dependência de validação'],
+  ];
 
-  // High self-criticism + low routine
-  if ((scoreMap['excessive_self_criticism'] ?? 0) >= 60 && (scoreMap['low_routine_sustenance'] ?? 0) >= 60) {
-    contradictions.push("- Autocrítica alta com baixa sustentação de rotina: se cobra intensamente mas não sustenta as mudanças que exige de si");
-  }
-
-  // Emotional sabotage + validation dependency
-  if ((scoreMap['emotional_self_sabotage'] ?? 0) >= 60 && (scoreMap['validation_dependency'] ?? 0) >= 60) {
-    contradictions.push("- Autossabotagem emocional com dependência de validação: sabota relações mas depende delas para se sentir válido");
+  for (const [keyA, keyB, desc] of knownPairs) {
+    if ((scoreMap[keyA] ?? 0) >= 55 && (scoreMap[keyB] ?? 0) >= 55) {
+      // Check if not already covered by dynamic detection
+      const alreadyCovered = contradictions.some(c => c.includes(keyA) || c.includes(keyB));
+      if (!alreadyCovered) {
+        contradictions.push(`- ${desc}`);
+      }
+    }
   }
 
   if (contradictions.length === 0) {
