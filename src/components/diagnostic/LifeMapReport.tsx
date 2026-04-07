@@ -1,9 +1,12 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DiagnosticResult } from '@/types/diagnostic';
 import { Download, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Calendar, CheckCircle2 } from 'lucide-react';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateAreaActions } from '@/lib/lifeMapActions';
+import { supabase } from '@/integrations/supabase/client';
+import { LifeMapComparison } from './LifeMapComparison';
 
 interface Props {
   result: DiagnosticResult;
@@ -36,8 +39,56 @@ function getPhaseLabel(avgPct: number): string {
 }
 
 const LifeMapReport = ({ result, onRestart }: Props) => {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const ai = result as any;
+
+  // Fetch previous mapa-de-vida result for comparison
+  const [previousScores, setPreviousScores] = useState<{ scores: any[]; date: string } | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const fetchPrevious = async () => {
+      try {
+        // Get mapa-de-vida module id
+        const { data: mod } = await supabase
+          .from('test_modules')
+          .select('id')
+          .eq('slug', 'mapa-de-vida')
+          .single();
+        if (!mod) return;
+
+        // Get previous completed sessions (skip the most recent one = current)
+        const { data: sessions } = await supabase
+          .from('diagnostic_sessions')
+          .select('id, completed_at')
+          .eq('user_id', user.id)
+          .eq('test_module_id', mod.id)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: false })
+          .limit(2);
+
+        if (!sessions || sessions.length < 2) return;
+
+        // The second session is the previous one
+        const prevSession = sessions[1];
+        const { data: prevResult } = await supabase
+          .from('diagnostic_results')
+          .select('all_scores, created_at')
+          .eq('session_id', prevSession.id)
+          .single();
+
+        if (prevResult?.all_scores) {
+          setPreviousScores({
+            scores: prevResult.all_scores as any[],
+            date: prevResult.created_at,
+          });
+        }
+      } catch (err) {
+        console.warn('[LifeMap] Could not fetch previous results:', err);
+      }
+    };
+    fetchPrevious();
+  }, [user?.id]);
 
   const areas: AreaScore[] = (result.allScores || []).map(s => ({
     key: s.key,
