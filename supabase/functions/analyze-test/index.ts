@@ -786,7 +786,12 @@ ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TE
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
   "firstAction": "Copie acaoInicial",
-  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa. Ex: Eu não preciso estar pronto pra começar."
+  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa. Ex: Eu não preciso estar pronto pra começar.",
+  "mecanismoNeural": {
+    "neurotransmissor": "Qual neurotransmissor está mais envolvido no padrão (cortisol, dopamina, serotonina, adrenalina) e como ele atua — 1 frase simples.",
+    "cicloNeural": "Como o circuito neural se formou e por que se repete — 2 frases máximo.",
+    "neuroplasticidade": "Como a neuroplasticidade permite mudar esse padrão — 1-2 frases esperançosas mas realistas."
+  }
 }
 
 REGRAS FINAIS:
@@ -798,6 +803,7 @@ REGRAS FINAIS:
 - pararDeFazer: cada item com SITUAÇÃO + COMPORTAMENTO. Proibido: "pare de se cobrar", "pare de procrastinar"
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
+- mecanismoNeural: use linguagem SIMPLES para explicar neurociência. Proibido: termos técnicos sem explicação entre parênteses.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
 ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
 }
