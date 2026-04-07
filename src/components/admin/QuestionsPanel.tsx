@@ -328,6 +328,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           existingQuestionsFromOtherTests,
           existingQuestionsFromThisTest,
           existingAxes,
+          testModuleId: currentModule.id,
         },
       });
       if (error) throw error;
