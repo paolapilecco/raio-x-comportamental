@@ -462,7 +462,8 @@ function buildUserPrompt(
   secondary: ScoreEntry[],
   contradictions: string,
   answersSummary: string,
-  categoryCtx: CategoryContext
+  categoryCtx: CategoryContext,
+  template?: ReportTemplate | null
 ): string {
   const ov = categoryCtx.sectionOverrides;
   return `${userContext}
