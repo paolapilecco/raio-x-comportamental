@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
+import { Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, RotateCcw, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -31,6 +31,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const [sections, setSections] = useState<ReportSection[]>([]);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [spreading, setSpreading] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -94,6 +95,51 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     toast.info('Template restaurado ao padrão');
   };
 
+  const handleSpreadToAll = async () => {
+    if (!confirm('Isso vai replicar este template para TODOS os outros testes. Testes que já possuem template próprio serão sobrescritos. Continuar?')) return;
+    setSpreading(true);
+    try {
+      const ordered = sections.map((s, i) => ({ ...s, order: i + 1 }));
+
+      // First save current template
+      await handleSave();
+
+      // Get all test modules except current
+      const { data: modules, error: modErr } = await supabase
+        .from('test_modules')
+        .select('id')
+        .neq('id', currentModule.id);
+
+      if (modErr || !modules) throw modErr;
+
+      let updated = 0;
+      for (const mod of modules) {
+        const { data: existing } = await supabase
+          .from('report_templates')
+          .select('id')
+          .eq('test_id', mod.id)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('report_templates')
+            .update({ sections: ordered as any, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('report_templates')
+            .insert({ test_id: mod.id, sections: ordered as any });
+        }
+        updated++;
+      }
+
+      toast.success(`Template replicado para ${updated} teste(s)`);
+    } catch (e) {
+      toast.error('Erro ao replicar template');
+    }
+    setSpreading(false);
+  };
+
   const moveSection = (index: number, direction: 'up' | 'down') => {
     const target = direction === 'up' ? index - 1 : index + 1;
     if (target < 0 || target >= sections.length) return;
@@ -138,7 +184,15 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
             Defina a estrutura do relatório: ordem, nomes, tamanho e obrigatoriedade de cada bloco.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleSpreadToAll}
+            disabled={spreading}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-accent/50 transition-all disabled:opacity-50"
+          >
+            <Copy className="w-3 h-3" />
+            {spreading ? 'Replicando...' : 'Tornar padrão para todos'}
+          </button>
           <button
             onClick={handleReset}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-secondary/50 transition-all"
