@@ -4,6 +4,7 @@ import { Download, ChevronRight } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
+import LifeMapReport from './LifeMapReport';
 
 interface ReportProps {
   result: DiagnosticResult;
@@ -83,6 +84,11 @@ const fade = {
 const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
   const { profile } = useAuth();
+
+  // Mapa de Vida gets its own dedicated report layout
+  if (moduleSlug === 'mapa-de-vida') {
+    return <LifeMapReport result={result} onRestart={onRestart} />;
+  }
 
   // Category-specific section titles
   const sectionTitles = getCategorySectionTitles(moduleSlug);
