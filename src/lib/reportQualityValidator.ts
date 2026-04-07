@@ -71,6 +71,28 @@ const FORBIDDEN_PHRASES = [
   'confie no processo',
   'abrace suas imperfeições',
   'tudo tem seu tempo',
+  'mude sua mentalidade',
+  'trabalhe isso',
+  'reflita sobre',
+  'pense a respeito',
+  'tente melhorar',
+  'se esforce mais',
+  'busque ajuda',
+];
+
+/** Vague direction/action phrases — too generic to be useful */
+const VAGUE_ACTION_PHRASES = [
+  'mude sua forma de pensar',
+  'trabalhe sua autoestima',
+  'busque mais equilíbrio',
+  'tente ser mais consciente',
+  'procure se conhecer melhor',
+  'melhore sua rotina',
+  'cuide mais de você',
+  'preste mais atenção',
+  'seja mais disciplinado',
+  'organize melhor seu tempo',
+  'desenvolva mais paciência',
 ];
 
 // ── Helpers ──
@@ -162,9 +184,9 @@ function checkLanguageDifficulty(text: string, field: string): ValidationIssue[]
       issues.push({ field, type: 'complex_language', detail: `"${word}" → "${COMPLEX_WORDS[word]}"` });
     }
   }
-  for (const phrase of FORBIDDEN_PHRASES) {
+  for (const phrase of [...FORBIDDEN_PHRASES, ...VAGUE_ACTION_PHRASES]) {
     if (lower.includes(phrase)) {
-      issues.push({ field, type: 'forbidden_phrase', detail: `Frase genérica: "${phrase}"` });
+      issues.push({ field, type: 'forbidden_phrase', detail: `Frase genérica/vaga: "${phrase}"` });
     }
   }
   return issues;
@@ -181,8 +203,8 @@ function simplifyLanguage(text: string): string {
     const regex = new RegExp(complex, 'gi');
     result = result.replace(regex, simple);
   }
-  // Remove forbidden phrases
-  for (const phrase of FORBIDDEN_PHRASES) {
+  // Remove forbidden + vague phrases
+  for (const phrase of [...FORBIDDEN_PHRASES, ...VAGUE_ACTION_PHRASES]) {
     const regex = new RegExp(phrase, 'gi');
     result = result.replace(regex, '').replace(/\s{2,}/g, ' ').trim();
   }
