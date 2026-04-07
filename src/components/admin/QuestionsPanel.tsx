@@ -289,12 +289,15 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const handleAIGenerate = async () => {
     setAiGenerating(true);
     setAiPreview(null);
+    setAiQualityMetrics(null);
     try {
-      // Fetch test description, prompts, and existing questions from other tests in parallel
-      const [moduleRes, promptsRes, otherQuestionsRes] = await Promise.all([
+      // Fetch test description, prompts, existing questions from other AND same test, plus pattern definitions
+      const [moduleRes, promptsRes, otherQuestionsRes, sameTestQuestionsRes, patternRes] = await Promise.all([
         supabase.from('test_modules').select('description').eq('id', currentModule.id).single(),
         supabase.from('test_prompts').select('prompt_type, content').eq('test_id', currentModule.id).eq('is_active', true),
         supabase.from('questions').select('text, test_id').neq('test_id', currentModule.id),
+        supabase.from('questions').select('text, axes').eq('test_id', currentModule.id),
+        supabase.from('pattern_definitions').select('pattern_key').eq('test_module_id', currentModule.id),
       ]);
 
       const desc = moduleRes.data?.description || currentModule.name;
@@ -308,6 +311,14 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       // Collect existing question texts from other tests for deduplication
       const existingQuestionsFromOtherTests = (otherQuestionsRes.data || []).map(q => q.text);
 
+      // Collect existing question texts from THIS test for internal deduplication
+      const existingQuestionsFromThisTest = (sameTestQuestionsRes.data || []).map(q => q.text);
+
+      // Collect all axes used in this test + pattern keys as required axes
+      const axesFromQuestions = new Set((sameTestQuestionsRes.data || []).flatMap(q => q.axes || []));
+      const axesFromPatterns = new Set((patternRes.data || []).map(p => p.pattern_key));
+      const existingAxes = Array.from(new Set([...axesFromQuestions, ...axesFromPatterns]));
+
       const { data, error } = await supabase.functions.invoke('generate-questions', {
         body: {
           testName: currentModule.name,
@@ -315,6 +326,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           questionCount: aiCount,
           promptsContext,
           existingQuestionsFromOtherTests,
+          existingQuestionsFromThisTest,
+          existingAxes,
         },
       });
       if (error) throw error;
@@ -322,6 +335,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       if (data?.questions?.length > 0) {
         setAiPreview(data.questions);
         setAiSelected(new Set(data.questions.map((_: any, i: number) => i)));
+        if (data.qualityMetrics) setAiQualityMetrics(data.qualityMetrics);
         toast.success(`${data.questions.length} perguntas geradas!`);
       } else {
         toast.error('Nenhuma pergunta gerada');
