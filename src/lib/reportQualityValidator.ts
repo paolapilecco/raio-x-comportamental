@@ -258,12 +258,119 @@ function makeUnique(text: string, referenceText: string, context: string): strin
   return fallbacks[context] || unique.length > 0 ? unique.join(' ') : text;
 }
 
-/** Cross-block deduplication: ensure no two blocks say the same thing */
-function crossBlockDedup(blocks: Record<string, string>): Record<string, string> {
+/**
+ * Extract the syntactic skeleton of a sentence:
+ * "Você tende a evitar conflitos" → "PRONOME + verbo + verbo + substantivo"
+ * We simplify to a pattern like: "você+V+V+N" to detect structural clones.
+ */
+function extractSentenceStructure(sentence: string): string {
+  if (!sentence) return '';
+  const words = sentence.toLowerCase().replace(/[^\p{L}\s]/gu, '').split(/\s+/).filter(Boolean);
+  
+  const pronouns = new Set(['você', 'eu', 'ele', 'ela', 'nós', 'eles', 'elas', 'isso', 'quem', 'seu', 'sua']);
+  const prepositions = new Set(['de', 'do', 'da', 'em', 'no', 'na', 'com', 'para', 'por', 'ao', 'à', 'entre', 'sem', 'sobre', 'até', 'dos', 'das', 'nos', 'nas', 'pelo', 'pela']);
+  const articles = new Set(['o', 'a', 'os', 'as', 'um', 'uma', 'uns', 'umas']);
+  const conjunctions = new Set(['e', 'ou', 'mas', 'que', 'se', 'quando', 'como', 'nem']);
+  // Common verb endings in Portuguese
+  const verbEndings = ['ar', 'er', 'ir', 'ando', 'endo', 'indo', 'ado', 'ido', 'ção', 'mente'];
+  
+  const tokens: string[] = [];
+  for (const w of words) {
+    if (pronouns.has(w)) tokens.push('P');
+    else if (prepositions.has(w)) tokens.push('p');
+    else if (articles.has(w)) continue; // skip articles
+    else if (conjunctions.has(w)) tokens.push('c');
+    else if (verbEndings.some(e => w.endsWith(e)) && w.length > 3) tokens.push('V');
+    else tokens.push('N');
+  }
+  return tokens.join('+');
+}
+
+/** Detect if two texts share the same sentence structure pattern (e.g. "Você + verbo + consequência") */
+function hasStructuralRepetition(textA: string, textB: string): boolean {
+  if (!textA || !textB) return false;
+  const sentencesA = splitSentences(textA);
+  const sentencesB = splitSentences(textB);
+  
+  for (const sA of sentencesA) {
+    const structA = extractSentenceStructure(sA);
+    if (structA.length < 5) continue; // too short to be meaningful
+    for (const sB of sentencesB) {
+      const structB = extractSentenceStructure(sB);
+      if (structA === structB && structA.length >= 5) return true;
+    }
+  }
+  return false;
+}
+
+/** Rewrite a sentence to break its structural pattern */
+function rewriteStructure(sentence: string, context: string): string {
+  if (!sentence) return sentence;
+  const lower = sentence.trimStart();
+  
+  // Pattern: "Você + verbo..." → invert to start with the consequence or action
+  if (/^você\s/i.test(lower)) {
+    // Try to split at first comma or dash and invert
+    const commaIdx = sentence.indexOf(',');
+    const dashIdx = sentence.indexOf('—');
+    const splitIdx = commaIdx > 5 ? commaIdx : dashIdx > 5 ? dashIdx : -1;
+    
+    if (splitIdx > 0) {
+      const partA = sentence.slice(0, splitIdx).trim();
+      const partB = sentence.slice(splitIdx + 1).trim();
+      if (partB.length > 10) {
+        return partB.charAt(0).toUpperCase() + partB.slice(1).replace(/\.$/, '') + ' — ' + partA.charAt(0).toLowerCase() + partA.slice(1);
+      }
+    }
+    
+    // Fallback: remove "Você" and restructure
+    const withoutVoce = lower.replace(/^você\s+/i, '');
+    const contextPrefixes: Record<string, string> = {
+      corePain: 'O que dói: ',
+      direction: 'O caminho: ',
+      impact: 'O efeito real: ',
+      mechanism: 'Como funciona: ',
+      comoAtrapalha: 'O problema concreto: ',
+      comoAparece: 'Na prática: ',
+      chamaAtencao: 'O ponto central: ',
+    };
+    const prefix = contextPrefixes[context] || '';
+    return prefix + withoutVoce;
+  }
+  
+  return sentence;
+}
+
+/** Fix structural repetition across blocks */
+function fixStructuralRepetition(blocks: Record<string, string>): Record<string, string> {
   const keys = Object.keys(blocks);
   const result = { ...blocks };
   
-  // Priority order: earlier blocks keep their content, later ones get rewritten
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = i + 1; j < keys.length; j++) {
+      if (hasStructuralRepetition(result[keys[i]], result[keys[j]])) {
+        // Rewrite the later block's sentences that match structure
+        const sentencesJ = splitSentences(result[keys[j]]);
+        const rewritten = sentencesJ.map(sJ => {
+          const structJ = extractSentenceStructure(sJ);
+          const matchesEarlier = splitSentences(result[keys[i]]).some(
+            sI => extractSentenceStructure(sI) === structJ && structJ.length >= 5
+          );
+          return matchesEarlier ? rewriteStructure(sJ, keys[j]) : sJ;
+        });
+        result[keys[j]] = rewritten.join(' ');
+      }
+    }
+  }
+  return result;
+}
+
+/** Cross-block deduplication: ensure no two blocks say the same thing */
+function crossBlockDedup(blocks: Record<string, string>): Record<string, string> {
+  const keys = Object.keys(blocks);
+  let result = { ...blocks };
+  
+  // Step 1: Semantic dedup (same words)
   for (let i = 0; i < keys.length; i++) {
     for (let j = i + 1; j < keys.length; j++) {
       if (isRedundant(result[keys[i]], result[keys[j]], 0.55)) {
@@ -271,6 +378,10 @@ function crossBlockDedup(blocks: Record<string, string>): Record<string, string>
       }
     }
   }
+  
+  // Step 2: Structural dedup (same sentence pattern, different words)
+  result = fixStructuralRepetition(result);
+  
   return result;
 }
 
