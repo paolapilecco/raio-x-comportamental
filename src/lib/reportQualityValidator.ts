@@ -93,6 +93,16 @@ const VAGUE_ACTION_PHRASES = [
   'seja mais disciplinado',
   'organize melhor seu tempo',
   'desenvolva mais paciência',
+  'interromper o comportamento',
+  'melhorar o padrão',
+  'interromper comportamento',
+  'melhorar padrão',
+  'mudar o comportamento',
+  'ajustar o padrão',
+  'desenvolver técnicas',
+  'trabalhar o autoconhecimento',
+  'fortalecer a consciência',
+  'aumentar a percepção',
 ];
 
 // ── Helpers ──
@@ -285,6 +295,22 @@ function deduplicateLifeImpact(items: { pillar: string; impact: string }[], mech
   });
 }
 
+/** Ensure focus-of-change fields are specific and actionable, not abstract */
+function refineActionableField(text: string, patternLabel: string): string {
+  if (!text) return text;
+  let refined = text;
+  // Strip vague phrases first
+  for (const phrase of VAGUE_ACTION_PHRASES) {
+    const regex = new RegExp(phrase + '[^.]*\\.?\\s*', 'gi');
+    refined = refined.replace(regex, '').trim();
+  }
+  // If stripped to empty or too short, generate a concrete fallback
+  if (refined.length < 15) {
+    refined = `Parar de repetir o ciclo de ${patternLabel.toLowerCase()} quando a pressão aparece.`;
+  }
+  return refined;
+}
+
 // ── Main Validator ──
 
 export function validateAndRefineReport(result: DiagnosticResult): DiagnosticResult {
@@ -319,6 +345,15 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
   comoAtrapalha = simplifyLanguage(comoAtrapalha);
   corrigirPrimeiro = simplifyLanguage(corrigirPrimeiro);
   acaoInicial = simplifyLanguage(acaoInicial);
+
+  // ── Step 2.5: Refine actionable fields (foco de mudança / direção) ──
+  const patternLabel = result.dominantPattern?.label || result.combinedTitle || '';
+  direction = refineActionableField(direction, patternLabel);
+  corrigirPrimeiro = refineActionableField(corrigirPrimeiro, patternLabel);
+  const keyUnlockArea = refineActionableField(
+    simplifyLanguage(result.keyUnlockArea || ''),
+    patternLabel
+  );
 
   // ── Step 3: Cross-block deduplication ──
   const textBlocks: Record<string, string> = {};
@@ -366,6 +401,7 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
     corePain,
     criticalDiagnosis,
     direction,
+    keyUnlockArea,
     summary,
     impact,
     mechanism,
