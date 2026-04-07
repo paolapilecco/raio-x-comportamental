@@ -20,21 +20,33 @@ function checkPageBreak(ctx: PDFContext, needed: number = 20) {
   }
 }
 
+function addBlockHeader(ctx: PDFContext, text: string) {
+  checkPageBreak(ctx, 28);
+  ctx.y += 6;
+  ctx.doc.setFillColor(30, 30, 35);
+  ctx.doc.roundedRect(MARGIN, ctx.y, CONTENT_WIDTH, 10, 1, 1, 'F');
+  ctx.doc.setFontSize(11);
+  ctx.doc.setFont('helvetica', 'bold');
+  ctx.doc.setTextColor(255, 255, 255);
+  ctx.doc.text(text.toUpperCase(), MARGIN + 4, ctx.y + 7);
+  ctx.y += 16;
+}
+
 function addTitle(ctx: PDFContext, text: string) {
   checkPageBreak(ctx, 20);
-  ctx.doc.setFontSize(13);
+  ctx.doc.setFontSize(12);
   ctx.doc.setFont('helvetica', 'bold');
   ctx.doc.setTextColor(30, 30, 30);
   ctx.doc.text(text, MARGIN, ctx.y);
-  ctx.y += 8;
-  // underline
-  ctx.doc.setDrawColor(100, 100, 100);
-  ctx.doc.setLineWidth(0.3);
+  ctx.y += 7;
+  ctx.doc.setDrawColor(180, 180, 180);
+  ctx.doc.setLineWidth(0.2);
   ctx.doc.line(MARGIN, ctx.y, MARGIN + CONTENT_WIDTH, ctx.y);
-  ctx.y += 6;
+  ctx.y += 5;
 }
 
 function addParagraph(ctx: PDFContext, text: string) {
+  if (!text) return;
   ctx.doc.setFontSize(10);
   ctx.doc.setFont('helvetica', 'normal');
   ctx.doc.setTextColor(60, 60, 60);
@@ -109,7 +121,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
 
   ctx.y = 72;
 
-  // ─── Combined Title ───
+  // ─── Combined Title + Intensity ───
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(30, 30, 30);
@@ -118,98 +130,83 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     doc.text(line, MARGIN, ctx.y);
     ctx.y += 8;
   }
-
-  // Intensity
   ctx.y += 2;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
   const intensityLabel = result.intensity === 'alto' ? 'Alta' : result.intensity === 'moderado' ? 'Moderada' : 'Leve';
-  doc.text(`Intensidade: ${intensityLabel}`, MARGIN, ctx.y);
+  doc.text(`Intensidade: ${intensityLabel}  ·  Perfil: ${result.profileName}`, MARGIN, ctx.y);
   ctx.y += SECTION_GAP + 4;
 
-  // ─── Profile Name ───
-  addTitle(ctx, 'Perfil Comportamental');
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(40, 40, 40);
-  doc.text(result.profileName, MARGIN, ctx.y);
-  ctx.y += SECTION_GAP;
+  // ══════════════════════════════════════════
+  // BLOCO 1 — DIAGNÓSTICO
+  // ══════════════════════════════════════════
+  addBlockHeader(ctx, '1. Diagnóstico');
 
-  // ─── Critical Diagnosis ───
   addTitle(ctx, 'Diagnóstico Crítico');
   addParagraph(ctx, result.criticalDiagnosis);
-  ctx.y += SECTION_GAP - 4;
+  ctx.y += 2;
 
-  // ─── Core Pain ───
   addTitle(ctx, 'Dor Central');
   addParagraph(ctx, result.corePain);
-  ctx.y += SECTION_GAP - 4;
+  ctx.y += 2;
 
-  // ─── Key Unlock Area ───
-  addTitle(ctx, 'Área-Chave de Destravamento');
-  addParagraph(ctx, result.keyUnlockArea);
-  ctx.y += SECTION_GAP - 4;
-
-  // ─── Mental State ───
   addTitle(ctx, 'Estado Mental Atual');
   addParagraph(ctx, result.mentalState);
   ctx.y += SECTION_GAP - 4;
 
-  // ─── Summary ───
-  addTitle(ctx, 'Resumo do Padrão');
-  addParagraph(ctx, result.summary);
-  ctx.y += SECTION_GAP - 4;
+  // ══════════════════════════════════════════
+  // BLOCO 2 — PADRÃO COMPORTAMENTAL
+  // ══════════════════════════════════════════
+  addBlockHeader(ctx, '2. Padrão Comportamental');
 
-  // ─── Mechanism ───
   addTitle(ctx, 'Mecanismo Principal');
   addParagraph(ctx, result.mechanism);
-  ctx.y += SECTION_GAP - 4;
+  ctx.y += 2;
 
-  // ─── Triggers ───
-  addTitle(ctx, 'Gatilhos Identificados');
-  result.triggers.forEach(t => addBullet(ctx, t));
-  ctx.y += SECTION_GAP - 4;
+  if (result.selfSabotageCycle.length > 0) {
+    addTitle(ctx, 'Ciclo de Autossabotagem');
+    result.selfSabotageCycle.forEach((step, i) => {
+      addBullet(ctx, `${i + 1}. ${step}`);
+    });
+    ctx.y += 4;
+  }
 
-  // ─── Mental Traps ───
-  addTitle(ctx, 'Armadilhas Mentais');
-  result.mentalTraps.forEach(t => {
-    addParagraph(ctx, `"${t}"`);
-  });
-  ctx.y += SECTION_GAP - 4;
+  if (result.triggers.length > 0) {
+    addTitle(ctx, 'Gatilhos Identificados');
+    result.triggers.forEach(t => addBullet(ctx, t));
+    ctx.y += 4;
+  }
 
-  // ─── Self-sabotage Cycle ───
-  addTitle(ctx, 'Ciclo de Autossabotagem');
-  result.selfSabotageCycle.forEach((step, i) => {
-    addBullet(ctx, `${i + 1}. ${step}`);
-  });
-  ctx.y += SECTION_GAP - 4;
+  if (result.mentalTraps.length > 0) {
+    addTitle(ctx, 'Armadilhas Mentais');
+    result.mentalTraps.forEach(t => addParagraph(ctx, `"${t}"`));
+    ctx.y += 2;
+  }
 
-  // ─── Blocking Point ───
-  addTitle(ctx, 'Ponto Exato de Travamento');
-  addParagraph(ctx, result.blockingPoint);
-  ctx.y += SECTION_GAP - 4;
-
-  // ─── Contradiction ───
   addTitle(ctx, 'Contradição Interna');
   addParagraph(ctx, result.contradiction);
   ctx.y += SECTION_GAP - 4;
 
-  // ─── Life Impact ───
-  addTitle(ctx, 'Impacto nos Pilares da Vida');
-  result.lifeImpact.forEach(item => {
-    checkPageBreak(ctx, 16);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(40, 40, 40);
-    doc.text(item.pillar, MARGIN + 2, ctx.y);
-    ctx.y += LINE_HEIGHT;
-    addParagraph(ctx, item.impact);
-    ctx.y += 2;
-  });
-  ctx.y += SECTION_GAP - 6;
+  // ══════════════════════════════════════════
+  // BLOCO 3 — IMPACTO
+  // ══════════════════════════════════════════
+  addBlockHeader(ctx, '3. Impacto na Vida');
 
-  // ─── Intensity Map (top 8) ───
+  if (result.lifeImpact.length > 0) {
+    result.lifeImpact.forEach(item => {
+      checkPageBreak(ctx, 16);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(40, 40, 40);
+      doc.text(item.pillar, MARGIN + 2, ctx.y);
+      ctx.y += LINE_HEIGHT;
+      addParagraph(ctx, item.impact);
+      ctx.y += 2;
+    });
+  }
+
+  // ─── Intensity Map ───
   addTitle(ctx, 'Mapa de Intensidade por Eixo');
   result.allScores.slice(0, 8).forEach(score => {
     checkPageBreak(ctx, 14);
@@ -219,13 +216,11 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     doc.text(score.label, MARGIN + 2, ctx.y);
     doc.text(`${score.percentage}%`, MARGIN + CONTENT_WIDTH - 10, ctx.y);
 
-    // bar background
     const barY = ctx.y + 2;
     const barWidth = CONTENT_WIDTH - 4;
     doc.setFillColor(220, 220, 220);
     doc.roundedRect(MARGIN + 2, barY, barWidth, 3, 1.5, 1.5, 'F');
 
-    // bar fill
     doc.setFillColor(80, 80, 100);
     const fillWidth = (score.percentage / 100) * barWidth;
     if (fillWidth > 0) {
@@ -235,28 +230,36 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   });
   ctx.y += SECTION_GAP - 4;
 
-  // ─── What NOT to do ───
-  addTitle(ctx, 'O Que NÃO Fazer');
-  result.whatNotToDo.forEach(item => {
-    addBullet(ctx, `✗ ${item}`);
-  });
-  ctx.y += SECTION_GAP - 4;
+  // ══════════════════════════════════════════
+  // BLOCO 4 — PLANO DE AÇÃO
+  // ══════════════════════════════════════════
+  addBlockHeader(ctx, '4. Plano de Ação');
 
-  // ─── Direction ───
-  addTitle(ctx, 'Direção Inicial de Mudança');
+  // Unified: Key unlock + direction + exit strategy
+  addTitle(ctx, 'Área-Chave de Destravamento');
+  addParagraph(ctx, result.keyUnlockArea);
   addParagraph(ctx, result.direction);
-  ctx.y += SECTION_GAP - 4;
+  ctx.y += 2;
 
-  // ─── Exit Strategy ───
-  addTitle(ctx, 'Estrutura Prática de Saída do Ciclo');
-  result.exitStrategy.forEach(step => {
-    addNumberedItem(ctx, step.step, step.title, step.action);
-  });
-  ctx.y += SECTION_GAP;
+  if (result.exitStrategy.length > 0) {
+    addTitle(ctx, 'Passos Práticos');
+    result.exitStrategy.forEach(step => {
+      addNumberedItem(ctx, step.step, step.title, step.action);
+    });
+    ctx.y += 4;
+  }
+
+  if (result.whatNotToDo.length > 0) {
+    addTitle(ctx, 'O Que NÃO Fazer');
+    result.whatNotToDo.forEach(item => {
+      addBullet(ctx, `✗ ${item}`);
+    });
+    ctx.y += 4;
+  }
 
   // ─── Footer notice ───
   checkPageBreak(ctx, 20);
-  ctx.y += 4;
+  ctx.y += 6;
   doc.setDrawColor(180, 180, 180);
   doc.setLineWidth(0.2);
   doc.line(MARGIN, ctx.y, MARGIN + CONTENT_WIDTH, ctx.y);
