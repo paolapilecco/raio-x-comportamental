@@ -577,8 +577,11 @@ serve(async (req) => {
 
     const contradictions = detectContradictions(sortedScores);
 
+    // Build category-specific context
+    const categoryCtx = getCategoryContext(slug);
+
     // Build structured prompts
-    const systemPrompt = buildStructuredSystemPrompt(prompts as PromptRecord[]);
+    const systemPrompt = buildStructuredSystemPrompt(prompts as PromptRecord[], categoryCtx);
 
     const userContext = profile
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
@@ -587,7 +590,7 @@ serve(async (req) => {
     const answersSummary = buildAnswersSummary(structuredAnswers || []);
 
     const userPrompt = buildUserPrompt(
-      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary
+      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary, categoryCtx
     );
 
     // Build refine instruction if needed
