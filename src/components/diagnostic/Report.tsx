@@ -101,8 +101,13 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const comoAtrapalha = ai.comoAtrapalha || ai.significadoPratico || result.corePain;
   const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
+  // "Foco de mudança" in QuickRead must be DIFFERENT from corrigirPrimeiro (Section 6)
+  const focoMudanca = ai.focoMudanca || result.keyUnlockArea || ai.blockingPoint || result.blockingPoint || corrigirPrimeiro;
   const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
-  const acaoInicial = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
+  // acaoInicial can now be a structured array of micro-actions
+  const acaoInicialRaw = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
+  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
+  const acaoInicial = typeof acaoInicialRaw === 'string' ? acaoInicialRaw : '';
   const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
 
   const handleDownloadPdf = () => {
@@ -163,7 +168,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
               <QuickReadCell
                 icon={<Target className="w-3.5 h-3.5 text-primary/40" />}
                 label="Foco de mudança"
-                value={corrigirPrimeiro || 'Não identificado'}
+                value={focoMudanca || 'Não identificado'}
               />
             </div>
           </div>
@@ -296,15 +301,45 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 </p>
               </div>
             )}
-            <CardBlock variant="success">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 text-green-600/60 mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-widest font-semibold mb-1.5">Faça isso agora</p>
-                  <p className="text-sm font-medium text-foreground leading-[1.8]">{acaoInicial}</p>
+
+            {/* Micro-ações específicas */}
+            {microAcoes.length > 0 ? (
+              <div className="space-y-3">
+                {microAcoes.map((item, i) => (
+                  <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-foreground leading-[1.7]">{item.acao}</p>
+                        {item.detalhe && (
+                          <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{item.detalhe}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="mt-4 rounded-xl border border-border/30 bg-secondary/30 px-5 py-4">
+                  <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.2em] font-semibold mb-2">
+                    Regra de ouro
+                  </p>
+                  <p className="text-sm text-foreground/80 leading-[1.8]">
+                    Só comece novas tarefas quando essas estiverem feitas. Sem exceção.
+                  </p>
                 </div>
               </div>
-            </CardBlock>
+            ) : (
+              <CardBlock variant="success">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-green-600/60 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-widest font-semibold mb-1.5">Faça isso agora</p>
+                    <p className="text-sm font-medium text-foreground leading-[1.8]">{acaoInicial}</p>
+                  </div>
+                </div>
+              </CardBlock>
+            )}
           </Section>
 
           {/* 9. Mecanismo Neural */}
