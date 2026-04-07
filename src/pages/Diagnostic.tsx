@@ -297,7 +297,7 @@ const Diagnostic = () => {
       const engine = getTestEngine(slug);
       const scores = calculateRawScores(answers, dbQuestions, axisKeys).map(s => ({
         ...s,
-        label: engine?.definitions[s.key]?.label || s.key,
+        label: engine?.definitions[s.key]?.label || s.label,
       }));
 
       // Build structured answer data with question context
