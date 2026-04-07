@@ -399,6 +399,36 @@ export type Database = {
         }
         Relationships: []
       }
+      prompt_generation_history: {
+        Row: {
+          action: string
+          created_at: string
+          generated_by: string | null
+          generated_content: string
+          id: string
+          section_type: string
+          test_id: string
+        }
+        Insert: {
+          action?: string
+          created_at?: string
+          generated_by?: string | null
+          generated_content: string
+          id?: string
+          section_type: string
+          test_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          generated_by?: string | null
+          generated_content?: string
+          id?: string
+          section_type?: string
+          test_id?: string
+        }
+        Relationships: []
+      }
       prompt_history: {
         Row: {
           changed_at: string
