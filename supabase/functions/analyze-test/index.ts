@@ -509,27 +509,39 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
       });
     }
 
-    // Validate required structured fields
-    const required = ["criticalDiagnosis", "corePain", "profileName", "mentalState", "summary", "mechanism", "contradiction", "direction"];
-    const missing = required.filter((f) => !result[f]);
-    if (missing.length > 0) {
-      console.error("AI response missing fields:", missing);
+    // Validate: accept either new template or legacy fields
+    const hasNewTemplate = result.resumoPrincipal && result.significadoPratico;
+    const hasLegacy = result.criticalDiagnosis && result.corePain;
+    
+    if (!hasNewTemplate && !hasLegacy) {
+      console.error("AI response missing required fields");
       return new Response(JSON.stringify({ useFallback: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
+    // Cross-fill between new and legacy fields
+    if (!result.criticalDiagnosis) result.criticalDiagnosis = result.resumoPrincipal || "";
+    if (!result.corePain) result.corePain = result.significadoPratico || "";
+    if (!result.mechanism) result.mechanism = result.padraoIdentificado || "";
+    if (!result.mentalState) result.mentalState = result.comoAparece || "";
+    if (!result.direction) result.direction = result.direcaoAjuste || "";
+    if (!result.keyUnlockArea) result.keyUnlockArea = result.direcaoAjuste || "";
+    if (!result.summary) result.summary = result.resumoPrincipal || "";
+    if (!result.profileName) result.profileName = "";
+    if (!result.contradiction) result.contradiction = "";
+
     // Ensure arrays and objects
-    ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo"].forEach((f) => {
+    ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "oQueEvitar"].forEach((f) => {
       if (!Array.isArray(result[f])) result[f] = [];
     });
     if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
+    if (!Array.isArray(result.impactoVida)) result.impactoVida = [];
     if (!Array.isArray(result.exitStrategy)) result.exitStrategy = [];
     if (!result.blindSpot || typeof result.blindSpot !== "object") {
       result.blindSpot = { perceivedProblem: "", realProblem: "" };
     }
-    if (!result.firstAction) result.firstAction = "";
-    if (!result.keyUnlockArea) result.keyUnlockArea = "";
+    if (!result.firstAction) result.firstAction = result.proximoPasso || "";
     if (!result.blockingPoint) result.blockingPoint = "";
     if (!result.impact) result.impact = "";
     if (!result.combinedTitle) result.combinedTitle = `${dominant.label}`;
