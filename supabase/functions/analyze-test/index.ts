@@ -497,6 +497,7 @@ interface StructuredAnswer {
   questionType: string;
   axes: string[];
   value: number;
+  mappedScore?: number;
   chosenOption: string | null;
 }
 
