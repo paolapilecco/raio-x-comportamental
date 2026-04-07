@@ -291,6 +291,29 @@ const LifeMapReport = ({ result, onRestart }: Props) => {
           )}
         </motion.section>
 
+        {/* Comparison with previous evaluation */}
+        {previousScores && (() => {
+          const comparisons = areas.map(area => {
+            const prev = (previousScores.scores as any[]).find(
+              (s: any) => s.key === area.key
+            );
+            const prevPct = prev ? Math.min(100, prev.percentage || 0) : 0;
+            return {
+              key: area.key,
+              label: area.label,
+              previous: prevPct,
+              current: area.percentage,
+              diff: area.percentage - prevPct,
+            };
+          });
+          return (
+            <LifeMapComparison
+              comparisons={comparisons}
+              previousDate={previousScores.date}
+            />
+          );
+        })()}
+
         {/* 7. Revisão em 60 dias */}
         <motion.section {...fade} transition={{ delay: 0.4 }} className="mb-10">
           <SectionHeader num={7} title="Revisão em 60 dias" />
