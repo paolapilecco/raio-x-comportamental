@@ -51,10 +51,15 @@ export function analyzeGenericTest(
   answers.forEach(answer => {
     const question = questions.find(q => q.id === answer.questionId);
     if (!question) return;
+
+    // For intensity questions (0-10 scale), maxScore is 10; for likert, maxScore is 5
+    const isIntensity = question.type === 'intensity';
+    const maxPerQuestion = isIntensity ? 10 : 5;
+
     question.axes.forEach(axis => {
       if (axis in rawScores) {
         rawScores[axis] += answer.value;
-        maxScores[axis] += 5;
+        maxScores[axis] += maxPerQuestion;
       }
     });
   });
