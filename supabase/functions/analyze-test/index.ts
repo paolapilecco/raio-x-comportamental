@@ -210,42 +210,46 @@ ${answersSummary}
 
 ---
 
-Gere o diagnóstico completo em JSON com esta estrutura EXATA:
+Gere o diagnóstico em JSON com esta estrutura EXATA de 9 seções. Cada seção deve ser CURTA e NÃO repetir ideias de outra seção:
 {
-  "criticalDiagnosis": "Diagnóstico crítico em 2-3 frases. O que está acontecendo de verdade — sem filtros.",
-  "corePain": "A dor central por trás de tudo. Deve responder: qual é o problema REAL, qual padrão causa o travamento, qual comportamento sustenta isso.",
-  "profileName": "Nome do perfil comportamental (3-5 palavras criativas e específicas)",
-  "mentalState": "Estado mental atual em uma frase direta",
-  "summary": "Resumo de 2-3 parágrafos descrevendo o funcionamento comportamental REAL — como os padrões se alimentam mutuamente",
-  "mechanism": "Descrição do mecanismo principal que sustenta o padrão — a engrenagem que mantém o ciclo",
-  "contradiction": "A contradição interna mais relevante entre o que a pessoa acredita e como age",
-  "blindSpot": {
-    "perceivedProblem": "O que o usuário acredita que é o problema",
-    "realProblem": "O que realmente está acontecendo por trás"
-  },
-  "impact": "O impacto principal e concreto na vida do usuário",
-  "keyUnlockArea": "A área-chave de destravamento — específica, não genérica. Ex: 'tolerância ao desconforto antes da ação'",
-  "direction": "A direção de transformação — concreta, com ação clara",
-  "combinedTitle": "Título combinado dos padrões (ex: 'Perfeccionismo com Evitação Emocional')",
-  "blockingPoint": "O ponto exato onde o usuário trava — o momento específico no ciclo",
-  "triggers": ["3-5 gatilhos ESPECÍFICOS baseados nos dados — não genéricos"],
-  "mentalTraps": ["3-5 armadilhas mentais concretas que o padrão gera"],
-  "selfSabotageCycle": ["3-5 etapas do ciclo de autossabotagem em ORDEM causal"],
-  "whatNotToDo": ["3-5 coisas específicas que o usuário NÃO deve fazer — baseadas no padrão detectado"],
-  "lifeImpact": [{"pillar": "área da vida", "impact": "impacto concreto e específico"}],
-  "exitStrategy": [{"step": 1, "title": "título do passo", "action": "ação detalhada e específica com prazo ou critério de sucesso"}],
-  "actionPlan": [{"area": "nome da área com nota abaixo de 7", "score": 5, "actions": ["ação 1 prática e executável em até 60 dias", "ação 2 prática e executável em até 60 dias", "ação 3 prática e executável em até 60 dias"]}],
-  "firstAction": "A PRIMEIRA ação concreta que o usuário deve tomar nos próximos 3 dias — específica o suficiente para ser executável"
+  "resumoPrincipal": "2-3 frases diretas. O que está acontecendo com essa pessoa. Sem rodeios.",
+  "significadoPratico": "O que isso significa no dia a dia — 2-3 frases concretas, sem teoria. DIFERENTE do resumo.",
+  "padraoIdentificado": "Nome curto do padrão (3-5 palavras) + 1-2 frases explicando a engrenagem central.",
+  "comoAparece": "2-3 exemplos concretos de como esse padrão aparece nas ações cotidianas.",
+  "gatilhos": ["3-4 gatilhos ESPECÍFICOS — situações reais que ativam o padrão"],
+  "impactoVida": [{"area": "área da vida", "efeito": "impacto concreto em 1 frase"}],
+  "direcaoAjuste": "A primeira mudança concreta que a pessoa precisa fazer — específica e executável.",
+  "oQueEvitar": ["3-4 coisas específicas para NÃO fazer agora — contra-intuitivas, não óbvias"],
+  "proximoPasso": "UMA ação simples para os próximos 3 dias — tão concreta que qualquer pessoa entende.",
+
+  "profileName": "Nome criativo do perfil (3-5 palavras)",
+  "combinedTitle": "Título combinado dos padrões",
+  "blindSpot": {"perceivedProblem": "O que a pessoa acredita ser o problema", "realProblem": "O que realmente acontece"},
+  "criticalDiagnosis": "Copie o conteúdo de resumoPrincipal",
+  "corePain": "Copie o conteúdo de significadoPratico",
+  "mentalState": "Estado mental atual em 1 frase",
+  "summary": "Copie o conteúdo de resumoPrincipal",
+  "mechanism": "Copie o conteúdo de padraoIdentificado",
+  "contradiction": "A contradição interna principal — 1 frase",
+  "impact": "Impacto geral — 1 frase",
+  "direction": "Copie o conteúdo de direcaoAjuste",
+  "keyUnlockArea": "Copie o conteúdo de direcaoAjuste",
+  "blockingPoint": "Onde exatamente a pessoa trava — 1 frase",
+  "triggers": ["mesmos gatilhos acima"],
+  "mentalTraps": ["3-4 frases internas que mantêm o padrão ativo"],
+  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem"],
+  "whatNotToDo": ["mesmos itens de oQueEvitar"],
+  "lifeImpact": [{"pillar": "área", "impact": "efeito"}],
+  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
+  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
+  "firstAction": "Copie o conteúdo de proximoPasso"
 }
 
-INSTRUÇÃO EXTRA PARA actionPlan:
-- Gere actionPlan SOMENTE para áreas/eixos com nota ABAIXO de 70% (ou abaixo de 7 em escala 0-10).
-- Cada ação deve ser um COMPORTAMENTO concreto, não teoria ou motivação.
-- Deve ser executável em até 60 dias por qualquer pessoa.
-- Formato: verbo no imperativo + o que fazer + quando/como medir.
-- Exemplos BONS: "Caminhe 20 minutos 3x por semana antes do trabalho", "Ligue para um familiar por 10 minutos toda segunda-feira", "Separe 10% do salário no dia do pagamento antes de qualquer gasto".
-- Exemplos PROIBIDOS: "Busque equilíbrio financeiro", "Invista em autoconhecimento", "Priorize sua saúde".
-- Se não houver áreas abaixo de 70%, retorne actionPlan como array vazio [].`;
+REGRAS:
+- NÃO repita a mesma ideia entre seções. Cada uma traz informação NOVA.
+- Frases curtas (máx 2 linhas). Sem parágrafos longos.
+- actionPlan: só para áreas abaixo de 70%. Ações com verbo no imperativo.
+- Se não houver áreas abaixo de 70%, retorne actionPlan como [].`;
 }
 
 function detectContradictions(scores: ScoreEntry[]): string {
