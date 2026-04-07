@@ -127,6 +127,7 @@ function rewriteSummaryIfRedundant(summary: string, criticalDiagnosis: string): 
 
 export function validateAndRefineReport(result: DiagnosticResult): DiagnosticResult {
   const dominantLabel = result.dominantPattern?.label || '';
+  const ai = result as any;
 
   // 1. Trim overly long sections
   let corePain = trimIfLong(result.corePain, 4);
@@ -141,10 +142,17 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
   impact = rewriteImpact(impact, result.mechanism || '');
   summary = rewriteSummaryIfRedundant(summary, criticalDiagnosis);
 
-  // 3. Deduplicate life impact against mechanism
+  // 3. Anti-repetition: corrigirPrimeiro vs acaoInicial
+  let corrigirPrimeiro = ai.corrigirPrimeiro || '';
+  let acaoInicial = ai.acaoInicial || '';
+  if (corrigirPrimeiro && acaoInicial && isRedundant(corrigirPrimeiro, acaoInicial, 0.5)) {
+    acaoInicial = `Na próxima vez que o padrão de ${dominantLabel.toLowerCase()} aparecer, pare e espere 60 segundos antes de reagir. Só isso.`;
+  }
+
+  // 4. Deduplicate life impact against mechanism
   const lifeImpact = deduplicateLifeImpact(result.lifeImpact || [], result.mechanism || '');
 
-  // 4. Deduplicate within arrays (triggers, traps, etc.)
+  // 5. Deduplicate within arrays (triggers, traps, etc.)
   const triggers = deduplicateArray(result.triggers || []).slice(0, 5);
   const mentalTraps = deduplicateArray(result.mentalTraps || []).slice(0, 4);
   const whatNotToDo = deduplicateArray(result.whatNotToDo || []).slice(0, 5);
@@ -161,5 +169,7 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
     mentalTraps,
     exitStrategy: (result.exitStrategy || []).slice(0, 5),
     whatNotToDo,
-  };
+    ...(corrigirPrimeiro ? { corrigirPrimeiro } : {}),
+    ...(acaoInicial ? { acaoInicial } : {}),
+  } as DiagnosticResult;
 }

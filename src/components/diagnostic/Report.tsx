@@ -37,39 +37,39 @@ function getCategorySectionTitles(slug?: string): SectionTitles {
     comoAparece: 'Como isso aparece na sua rotina',
     gatilhos: 'O que geralmente dispara esse padrão',
     comoAtrapalha: 'Como isso te atrapalha',
-    corrigirPrimeiro: 'O que você precisa corrigir primeiro',
+    corrigirPrimeiro: 'Direção de ajuste',
     pararDeFazer: 'O que parar de fazer agora',
-    acaoInicial: 'Ação inicial simples',
+    acaoInicial: 'Próxima ação prática',
   };
 
   if (!slug) return base;
 
   if (slug.includes('execucao') || slug.includes('produtividade')) {
-    return { ...base, header: 'Sua leitura de execução', chamaAtencao: 'Onde sua execução trava', padraoRepetido: 'Seu tipo de bloqueio', comoAparece: 'Como isso aparece nos seus projetos', gatilhos: 'O que ativa a procrastinação', comoAtrapalha: 'O que isso causa no seu trabalho', corrigirPrimeiro: 'A menor ação para destravar', acaoInicial: 'Faça isso nos próximos 3 dias' };
+    return { ...base, header: 'Sua leitura de execução', chamaAtencao: 'Onde sua execução trava', padraoRepetido: 'Seu tipo de bloqueio', comoAparece: 'Como isso aparece nos seus projetos', gatilhos: 'O que ativa a procrastinação', comoAtrapalha: 'O que isso causa no seu trabalho', corrigirPrimeiro: 'O que precisa mudar na sua execução', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Faça isso nos próximos 3 dias' };
   }
   if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) {
-    return { ...base, header: 'Sua leitura emocional', chamaAtencao: 'O que domina suas reações', padraoRepetido: 'Seu tipo de reatividade', comoAparece: 'Situações onde você reage demais', gatilhos: 'O que dispara suas reações', comoAtrapalha: 'Onde você perde o controle', corrigirPrimeiro: 'Como reagir diferente', acaoInicial: 'Pratique isso na próxima vez' };
+    return { ...base, header: 'Sua leitura emocional', chamaAtencao: 'O que domina suas reações', padraoRepetido: 'Seu tipo de reatividade', comoAparece: 'Situações onde você reage demais', gatilhos: 'O que dispara suas reações', comoAtrapalha: 'Onde você perde o controle', corrigirPrimeiro: 'O que precisa mudar nas suas reações', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Pratique isso na próxima vez' };
   }
   if (slug.includes('relacionamento') || slug.includes('apego')) {
-    return { ...base, header: 'Sua leitura relacional', chamaAtencao: 'Como você se conecta com os outros', padraoRepetido: 'Seu padrão nos relacionamentos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa seu modo defensivo', comoAtrapalha: 'O que isso causa nos seus vínculos', corrigirPrimeiro: 'Uma mudança no próximo conflito', acaoInicial: 'Teste isso na próxima conversa difícil' };
+    return { ...base, header: 'Sua leitura relacional', chamaAtencao: 'Como você se conecta com os outros', padraoRepetido: 'Seu padrão nos relacionamentos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa seu modo defensivo', comoAtrapalha: 'O que isso causa nos seus vínculos', corrigirPrimeiro: 'O que precisa mudar nos seus vínculos', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Teste isso na próxima conversa difícil' };
   }
   if (slug.includes('autoimagem') || slug.includes('identidade')) {
-    return { ...base, header: 'Sua leitura de autoimagem', chamaAtencao: 'Como você se enxerga', padraoRepetido: 'Sua distorção principal', comoAparece: 'Decisões que você evita por causa disso', gatilhos: 'O que ativa sua autocrítica', comoAtrapalha: 'Onde essa visão te limita', corrigirPrimeiro: 'Uma crença para testar na prática', acaoInicial: 'Desafie isso esta semana' };
+    return { ...base, header: 'Sua leitura de autoimagem', chamaAtencao: 'Como você se enxerga', padraoRepetido: 'Sua distorção principal', comoAparece: 'Decisões que você evita por causa disso', gatilhos: 'O que ativa sua autocrítica', comoAtrapalha: 'Onde essa visão te limita', corrigirPrimeiro: 'O que precisa mudar na sua autoimagem', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Desafie isso esta semana' };
   }
   if (slug.includes('dinheiro') || slug.includes('financ')) {
-    return { ...base, header: 'Sua leitura financeira', chamaAtencao: 'Sua relação real com dinheiro', padraoRepetido: 'Seu perfil financeiro', comoAparece: 'Onde você perde dinheiro sem perceber', gatilhos: 'O que ativa seus impulsos financeiros', comoAtrapalha: 'Como isso afeta suas decisões', corrigirPrimeiro: 'A primeira mudança com dinheiro', acaoInicial: 'Faça isso na próxima compra' };
+    return { ...base, header: 'Sua leitura financeira', chamaAtencao: 'Sua relação real com dinheiro', padraoRepetido: 'Seu perfil financeiro', comoAparece: 'Onde você perde dinheiro sem perceber', gatilhos: 'O que ativa seus impulsos financeiros', comoAtrapalha: 'Como isso afeta suas decisões', corrigirPrimeiro: 'O que precisa mudar na sua relação com dinheiro', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Faça isso na próxima compra' };
   }
   if (slug.includes('oculto') || slug.includes('hidden')) {
-    return { ...base, header: 'Seus padrões ocultos', chamaAtencao: 'O que você não vê em si', padraoRepetido: 'O mecanismo que opera por baixo', comoAparece: 'Onde você sabota sem perceber', gatilhos: 'O que ativa o padrão escondido', comoAtrapalha: 'As consequências invisíveis', corrigirPrimeiro: 'Como flagrar o padrão em ação', acaoInicial: 'Observe isso nos próximos dias' };
+    return { ...base, header: 'Seus padrões ocultos', chamaAtencao: 'O que você não vê em si', padraoRepetido: 'O mecanismo que opera por baixo', comoAparece: 'Onde você sabota sem perceber', gatilhos: 'O que ativa o padrão escondido', comoAtrapalha: 'As consequências invisíveis', corrigirPrimeiro: 'O que precisa mudar nos seus padrões ocultos', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Observe isso nos próximos dias' };
   }
   if (slug.includes('proposito') || slug.includes('sentido')) {
-    return { ...base, header: 'Sua leitura de propósito', chamaAtencao: 'Seu nível de conexão com direção', padraoRepetido: 'Seu tipo de desconexão', comoAparece: 'Sinais de que você está no piloto automático', gatilhos: 'O que ativa a sensação de vazio', comoAtrapalha: 'Onde a falta de rumo aparece', corrigirPrimeiro: 'O primeiro passo para se reconectar', acaoInicial: 'Uma reflexão prática para esta semana' };
+    return { ...base, header: 'Sua leitura de propósito', chamaAtencao: 'Seu nível de conexão com direção', padraoRepetido: 'Seu tipo de desconexão', comoAparece: 'Sinais de que você está no piloto automático', gatilhos: 'O que ativa a sensação de vazio', comoAtrapalha: 'Onde a falta de rumo aparece', corrigirPrimeiro: 'O que precisa mudar na sua busca de propósito', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Uma reflexão prática para esta semana' };
   }
   if (slug === 'mapa-de-vida') {
-    return { ...base, header: 'Seu mapa de vida', chamaAtencao: 'Sua área mais desequilibrada', padraoRepetido: 'Onde você compensa e onde negligencia', comoAparece: 'Como isso aparece na sua rotina', gatilhos: 'O que te faz negligenciar certas áreas', comoAtrapalha: 'O que esse desequilíbrio causa', corrigirPrimeiro: 'Qual área priorizar agora', acaoInicial: 'Uma ação para a área mais crítica' };
+    return { ...base, header: 'Seu mapa de vida', chamaAtencao: 'Sua área mais desequilibrada', padraoRepetido: 'Onde você compensa e onde negligencia', comoAparece: 'Como isso aparece na sua rotina', gatilhos: 'O que te faz negligenciar certas áreas', comoAtrapalha: 'O que esse desequilíbrio causa', corrigirPrimeiro: 'Qual área priorizar e por quê', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Uma ação para a área mais crítica esta semana' };
   }
   if (slug === 'padrao-comportamental') {
-    return { ...base, header: 'Seu raio-x comportamental', chamaAtencao: 'Seu padrão dominante', padraoRepetido: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa no dia a dia', comoAtrapalha: 'O que esse padrão causa na sua vida', corrigirPrimeiro: 'O comportamento para interromper primeiro', acaoInicial: 'Faça isso nos próximos 3 dias' };
+    return { ...base, header: 'Seu raio-x comportamental', chamaAtencao: 'Seu padrão dominante', padraoRepetido: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa no dia a dia', comoAtrapalha: 'O que esse padrão causa na sua vida', corrigirPrimeiro: 'O comportamento que precisa mudar primeiro', pararDeFazer: 'O que parar de fazer agora', acaoInicial: 'Faça isso nos próximos 3 dias' };
   }
 
   return base;
@@ -251,11 +251,12 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             )}
           </Block>
 
-          {/* 6. O que você precisa corrigir primeiro */}
+          {/* 6. Direção de ajuste */}
           <Block num={6} title={sectionTitles.corrigirPrimeiro} delay={0.26}>
-            <Callout color="primary">
+            <div className="border border-primary/15 bg-primary/[0.03] rounded-xl px-4 py-3">
+              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest mb-1.5">O que precisa mudar</p>
               <p className="text-sm text-foreground leading-[1.7]">{corrigirPrimeiro}</p>
-            </Callout>
+            </div>
           </Block>
 
           {/* 7. O que parar de fazer agora */}
@@ -272,9 +273,10 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </Block>
           )}
 
-          {/* 8. Ação inicial simples */}
+          {/* 8. Próxima ação prática */}
           <Block num={8} title={sectionTitles.acaoInicial} delay={0.34}>
-            <div className="bg-primary/[0.04] border border-primary/15 rounded-xl px-4 py-4">
+            <div className="bg-green-500/[0.06] border border-green-500/20 rounded-xl px-4 py-4">
+              <p className="text-[9px] text-green-700/60 dark:text-green-400/60 uppercase tracking-widest mb-1.5">Faça isso agora</p>
               <p className="text-sm font-medium text-foreground leading-[1.7]">{acaoInicial}</p>
             </div>
           </Block>

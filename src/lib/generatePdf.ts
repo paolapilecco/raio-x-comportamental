@@ -219,9 +219,12 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     text(ctx, comoAtrapalha);
   }
 
-  // 6. O que você precisa corrigir primeiro
-  sectionNum(ctx, 6, 'O que você precisa corrigir primeiro');
-  callout(ctx, corrigirPrimeiro, C.green);
+  // 6. Direção de ajuste
+  sectionNum(ctx, 6, 'Direção de ajuste');
+  pb(ctx, 14);
+  doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.light);
+  doc.text('O QUE PRECISA MUDAR', M + 4, ctx.y); ctx.y += 3;
+  callout(ctx, corrigirPrimeiro, C.accent);
 
   // 7. O que parar de fazer agora
   if (pararDeFazer?.length > 0) {
@@ -229,9 +232,12 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     pararDeFazer.forEach((item: string) => bullet(ctx, `✗ ${item}`, C.red));
   }
 
-  // 8. Ação inicial simples
-  sectionNum(ctx, 8, 'Ação inicial simples');
-  callout(ctx, acaoInicial, C.accent);
+  // 8. Próxima ação prática
+  sectionNum(ctx, 8, 'Próxima ação prática');
+  pb(ctx, 14);
+  doc.setFontSize(6.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...C.light);
+  doc.text('FAÇA ISSO AGORA', M + 4, ctx.y); ctx.y += 3;
+  callout(ctx, acaoInicial, C.green);
 
   // Intensity map
   ctx.y += 4;

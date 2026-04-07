@@ -418,9 +418,9 @@ Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 fr
     {"area": "Relações", "efeito": "1 frase sobre efeito nos relacionamentos"},
     {"area": "Autoconfiança", "efeito": "1 frase sobre impacto na autoimagem"}
   ],
-  "corrigirPrimeiro": "${ov.direcaoAjuste || 'A primeira coisa a corrigir — específica e clara. 1-2 frases.'}",
+  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O QUE PRECISA MUDAR — a direção geral. Ex: parar de evitar conflitos, ou aprender a dizer não. NÃO é uma ação concreta. 1-2 frases.'}",
   "pararDeFazer": ["2-3 coisas para PARAR imediatamente — escritas como conselho direto"],
-  "acaoInicial": "${ov.proximoPasso || 'UMA ação simples para os próximos 3 dias — qualquer pessoa entende.'}",
+  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO CONCRETA para fazer HOJE ou nos próximos 3 dias. Deve ser específica e executável agora — tipo: na próxima vez que X acontecer, faça Y. DIFERENTE de corrigirPrimeiro — aqui é o PASSO PRÁTICO, não a direção.'}",
 
   "profileName": "Nome criativo do perfil (3-5 palavras)",
   "combinedTitle": "Título curto e impactante do diagnóstico",
@@ -448,6 +448,7 @@ Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 fr
 REGRAS FINAIS:
 - MÁXIMO 2 frases por bloco. Sem exceção.
 - NÃO repita a mesma ideia entre seções.
+- corrigirPrimeiro = DIREÇÃO (o que mudar). acaoInicial = AÇÃO (o que fazer agora). São OBRIGATORIAMENTE diferentes.
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
