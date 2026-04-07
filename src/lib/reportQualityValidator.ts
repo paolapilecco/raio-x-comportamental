@@ -311,6 +311,38 @@ function refineActionableField(text: string, patternLabel: string): string {
   return refined;
 }
 
+/**
+ * Ensure the action is a direct consequence of the direction.
+ * If there's no semantic overlap (< 0.2), derive a coherent action from the direction.
+ */
+function ensureActionCoherence(directionText: string, actionText: string, patternLabel: string): string {
+  if (!directionText || !actionText) return actionText;
+  
+  const overlap = semanticOverlap(directionText, actionText);
+  
+  // If there's reasonable connection (≥ 0.2 overlap), keep as-is
+  if (overlap >= 0.2) return actionText;
+  
+  // Extract the core verb/concept from direction to build a coherent action
+  const directionSentences = splitSentences(directionText);
+  const firstDirection = directionSentences[0] || directionText;
+  
+  // Build a concrete action derived from the direction
+  const dirLower = firstDirection.toLowerCase();
+  
+  // Try to extract the key behavior from the direction
+  const actionVerbs = ['parar de', 'deixar de', 'começar a', 'passar a', 'criar', 'estabelecer', 'definir'];
+  for (const verb of actionVerbs) {
+    if (dirLower.includes(verb)) {
+      // Direction already has a concrete verb — derive action from it
+      return `Nos próximos 3 dias: ${firstDirection.charAt(0).toLowerCase() + firstDirection.slice(1).replace(/\.$/, '')} — comece pela situação mais frequente.`;
+    }
+  }
+  
+  // Fallback: generic but connected action
+  return `Nos próximos 3 dias, aplique isso: ${firstDirection.charAt(0).toLowerCase() + firstDirection.slice(1).replace(/\.$/, '')}. Anote o que muda.`;
+}
+
 // ── Main Validator ──
 
 export function validateAndRefineReport(result: DiagnosticResult): DiagnosticResult {
@@ -354,6 +386,9 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
     simplifyLanguage(result.keyUnlockArea || ''),
     patternLabel
   );
+
+  // ── Step 2.7: Coherence — action must follow from direction ──
+  acaoInicial = ensureActionCoherence(corrigirPrimeiro || direction, acaoInicial, patternLabel);
 
   // ── Step 3: Cross-block deduplication ──
   const textBlocks: Record<string, string> = {};
