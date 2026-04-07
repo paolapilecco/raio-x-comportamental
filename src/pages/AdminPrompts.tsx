@@ -265,6 +265,11 @@ const AdminPrompts = () => {
               <QuestionsPanel currentModule={currentModule} />
             </TabsContent>
 
+            {/* TAB: Template do Relatório */}
+            <TabsContent value="template" className="mt-5">
+              <ReportTemplatePanel currentModule={currentModule} />
+            </TabsContent>
+
             {/* TAB: Configuração */}
             <TabsContent value="config" className="mt-5">
               <AIConfigPanel
