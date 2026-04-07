@@ -14,7 +14,7 @@ serve(async (req) => {
       testName, testDescription, questionCount = 10,
       promptsContext, existingQuestionsFromOtherTests,
       existingQuestionsFromThisTest, existingAxes,
-      testModuleId,
+      testModuleId, extraInstructions,
     } = await req.json();
 
     if (!testName || typeof testName !== "string" || testName.length > 200) {
