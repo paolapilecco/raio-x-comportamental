@@ -381,8 +381,10 @@ function buildUserPrompt(
   dominant: ScoreEntry,
   secondary: ScoreEntry[],
   contradictions: string,
-  answersSummary: string
+  answersSummary: string,
+  categoryCtx: CategoryContext
 ): string {
+  const ov = categoryCtx.sectionOverrides;
   return `${userContext}
 Teste: ${slug}
 Intensidade geral: ${intensity}
@@ -405,15 +407,15 @@ ${answersSummary}
 
 Gere o diagnóstico em JSON com esta estrutura EXATA de 9 seções. LEMBRE-SE: linguagem simples, como conversa. Nada de psicologuês. Cada seção deve ser CURTA e NÃO repetir ideias de outra seção:
 {
-  "resumoPrincipal": "2-3 frases diretas e simples. O que está acontecendo com essa pessoa. Sem rodeios, sem termos técnicos.",
-  "significadoPratico": "O que isso causa na vida real — 2-3 frases concretas, como se estivesse explicando para a pessoa. DIFERENTE do resumo.",
-  "padraoIdentificado": "Nome curto e claro do padrão (3-5 palavras simples) + 1-2 frases explicando como funciona.",
-  "comoAparece": "2-3 exemplos do dia a dia — situações reais, não conceitos abstratos.",
+  "resumoPrincipal": "${ov.resumoPrincipal || '2-3 frases diretas e simples. O que está acontecendo com essa pessoa.'}",
+  "significadoPratico": "${ov.significadoPratico || 'O que isso causa na vida real — 2-3 frases concretas. DIFERENTE do resumo.'}",
+  "padraoIdentificado": "${ov.padraoIdentificado || 'Nome curto e claro do padrão (3-5 palavras) + 1-2 frases explicando como funciona.'}",
+  "comoAparece": "${ov.comoAparece || '2-3 exemplos do dia a dia — situações reais, não conceitos abstratos.'}",
   "gatilhos": ["3-4 situações reais e específicas que ativam o padrão — frases curtas"],
   "impactoVida": [{"area": "área da vida", "efeito": "o que acontece de concreto — 1 frase simples"}],
-  "direcaoAjuste": "A primeira mudança que a pessoa precisa fazer — tão clara que não precise pensar duas vezes.",
+  "direcaoAjuste": "${ov.direcaoAjuste || 'A primeira mudança concreta — tão clara que não precise pensar duas vezes.'}",
   "oQueEvitar": ["3-4 coisas específicas para PARAR de fazer agora — escritas como conselho de amigo"],
-  "proximoPasso": "UMA ação simples para os próximos 3 dias — qualquer pessoa deve entender na primeira leitura.",
+  "proximoPasso": "${ov.proximoPasso || 'UMA ação simples para os próximos 3 dias — qualquer pessoa entende na primeira leitura.'}",
 
   "profileName": "Nome criativo do perfil (3-5 palavras)",
   "combinedTitle": "Título combinado dos padrões",
