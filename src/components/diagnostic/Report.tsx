@@ -85,6 +85,7 @@ const fade = {
 const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
   const { profile } = useAuth();
+  const axisLabels = useAxisLabels();
 
   if (moduleSlug === 'mapa-de-vida') {
     return <LifeMapReport result={result} onRestart={onRestart} />;
