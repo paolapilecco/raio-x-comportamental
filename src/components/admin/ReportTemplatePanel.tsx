@@ -229,6 +229,9 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
             {aiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
             {aiGenerating ? 'Gerando...' : 'Preencher com IA'}
           </button>
+          <button
+            onClick={handleSpreadToAll}
+            disabled={spreading}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-accent/50 transition-all disabled:opacity-50"
           >
             <Copy className="w-3 h-3" />
