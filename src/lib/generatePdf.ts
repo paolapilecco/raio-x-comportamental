@@ -157,50 +157,44 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.text(badge, M + 3.5, ctx.y);
   ctx.y += 8;
 
-  // 1. Resumo principal
-  sectionNum(ctx, 1, 'Resumo principal');
-  callout(ctx, resumo, C.red);
+  // 1. O que mais chama atenção
+  sectionNum(ctx, 1, 'O que mais chama atenção no seu resultado');
+  callout(ctx, chamaAtencao, C.red);
 
-  // 2. O que isso significa na prática
-  sectionNum(ctx, 2, 'O que isso significa na prática');
-  text(ctx, significado);
+  // 2. O padrão que mais se repete
+  sectionNum(ctx, 2, 'O padrão que mais se repete em você');
+  text(ctx, padraoRepetido);
 
-  // 3. Padrão identificado
-  sectionNum(ctx, 3, 'Padrão identificado');
-  text(ctx, padrao);
-
-  // 4. Como aparece no dia a dia
-  sectionNum(ctx, 4, 'Como aparece no dia a dia');
+  // 3. Como isso aparece na sua rotina
+  sectionNum(ctx, 3, 'Como isso aparece na sua rotina');
   text(ctx, comoAparece, C.muted);
   if (result.selfSabotageCycle?.length > 0) {
     result.selfSabotageCycle.forEach((s, i) => bullet(ctx, `${i + 1}. ${s}`, C.muted));
   }
 
-  // 5. Gatilhos principais
+  // 4. O que geralmente dispara esse padrão
   if (gatilhos?.length > 0) {
-    sectionNum(ctx, 5, 'Gatilhos principais');
+    sectionNum(ctx, 4, 'O que geralmente dispara esse padrão');
     gatilhos.forEach((t: string) => bullet(ctx, t, C.red));
   }
 
-  // 6. Impacto nas áreas da vida
-  if (impactoVida?.length > 0) {
-    sectionNum(ctx, 6, 'Impacto nas áreas da vida');
-    impactoVida.forEach((item: any) => pillarCard(ctx, item.area || item.pillar, item.efeito || item.impact));
+  // 5. Como isso te atrapalha
+  sectionNum(ctx, 5, 'Como isso te atrapalha');
+  text(ctx, comoAtrapalha);
+
+  // 6. O que você precisa corrigir primeiro
+  sectionNum(ctx, 6, 'O que você precisa corrigir primeiro');
+  callout(ctx, corrigirPrimeiro, C.green);
+
+  // 7. O que parar de fazer agora
+  if (pararDeFazer?.length > 0) {
+    sectionNum(ctx, 7, 'O que parar de fazer agora');
+    pararDeFazer.forEach((item: string) => bullet(ctx, `✗ ${item}`, C.red));
   }
 
-  // 7. Primeira direção de ajuste
-  sectionNum(ctx, 7, 'Primeira direção de ajuste');
-  callout(ctx, direcao, C.green);
-
-  // 8. O que evitar agora
-  if (oQueEvitar?.length > 0) {
-    sectionNum(ctx, 8, 'O que evitar agora');
-    oQueEvitar.forEach((item: string) => bullet(ctx, `✗ ${item}`, C.red));
-  }
-
-  // 9. Próximo passo simples
-  sectionNum(ctx, 9, 'Próximo passo simples');
-  callout(ctx, proximo, C.accent);
+  // 8. Ação inicial simples
+  sectionNum(ctx, 8, 'Ação inicial simples');
+  callout(ctx, acaoInicial, C.accent);
 
   // Intensity map
   ctx.y += 4;
