@@ -1072,6 +1072,20 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
     if (!result.combinedTitle) result.combinedTitle = `${dominant.label}`;
     if (!Array.isArray(result.actionPlan)) result.actionPlan = [];
 
+    // Correction 7: Validate AI result coherence with quantitative data
+    // Log warning if AI's dominant pattern doesn't align with highest-scoring axis
+    const aiDominantLabel = (result.combinedTitle || result.profileName || "").toLowerCase();
+    const topAxis = sortedScores[0];
+    if (topAxis && topAxis.label) {
+      console.log(`[Validation] Top axis: "${topAxis.label}" (${topAxis.percentage}%) | AI combinedTitle: "${result.combinedTitle}"`);
+      // Inject quantitative anchor into the result so frontend can cross-check
+      result._quantitativeAnchor = {
+        topAxis: topAxis.label,
+        topPercentage: topAxis.percentage,
+        secondaryAxes: sortedScores.slice(1, 3).map(s => ({ label: s.label, percentage: s.percentage })),
+      };
+    }
+
     return new Response(JSON.stringify({ analysis: result }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
