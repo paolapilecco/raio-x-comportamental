@@ -222,8 +222,13 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <button
-            onClick={handleSpreadToAll}
-            disabled={spreading}
+            onClick={handleAIGenerate}
+            disabled={aiGenerating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] font-medium bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {aiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            {aiGenerating ? 'Gerando...' : 'Preencher com IA'}
+          </button>
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-accent/50 transition-all disabled:opacity-50"
           >
             <Copy className="w-3 h-3" />
