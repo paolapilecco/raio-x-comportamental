@@ -208,6 +208,7 @@ const Dashboard = () => {
         setModules((modulesRes.data as TestModule[]) || []);
 
         if (sessions.length > 0) {
+          setLatestModuleId(sessions[0].test_module_id || null);
           const { data: result, error: resultErr } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).maybeSingle();
           if (resultErr) {
             console.error('Error fetching latest result:', resultErr);
