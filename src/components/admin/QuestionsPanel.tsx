@@ -114,6 +114,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const [aiPreview, setAiPreview] = useState<any[] | null>(null);
   const [aiSelected, setAiSelected] = useState<Set<number>>(new Set());
   const [aiModuleDescription, setAiModuleDescription] = useState('');
+  const [aiQualityMetrics, setAiQualityMetrics] = useState<any>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [previewIndex, setPreviewIndex] = useState(0);
   const [previewAnswers, setPreviewAnswers] = useState<Record<string, number>>({});
@@ -288,12 +289,15 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   const handleAIGenerate = async () => {
     setAiGenerating(true);
     setAiPreview(null);
+    setAiQualityMetrics(null);
     try {
-      // Fetch test description, prompts, and existing questions from other tests in parallel
-      const [moduleRes, promptsRes, otherQuestionsRes] = await Promise.all([
+      // Fetch test description, prompts, existing questions from other AND same test, plus pattern definitions
+      const [moduleRes, promptsRes, otherQuestionsRes, sameTestQuestionsRes, patternRes] = await Promise.all([
         supabase.from('test_modules').select('description').eq('id', currentModule.id).single(),
         supabase.from('test_prompts').select('prompt_type, content').eq('test_id', currentModule.id).eq('is_active', true),
         supabase.from('questions').select('text, test_id').neq('test_id', currentModule.id),
+        supabase.from('questions').select('text, axes').eq('test_id', currentModule.id),
+        supabase.from('pattern_definitions').select('pattern_key').eq('test_module_id', currentModule.id),
       ]);
 
       const desc = moduleRes.data?.description || currentModule.name;
@@ -307,6 +311,14 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       // Collect existing question texts from other tests for deduplication
       const existingQuestionsFromOtherTests = (otherQuestionsRes.data || []).map(q => q.text);
 
+      // Collect existing question texts from THIS test for internal deduplication
+      const existingQuestionsFromThisTest = (sameTestQuestionsRes.data || []).map(q => q.text);
+
+      // Collect all axes used in this test + pattern keys as required axes
+      const axesFromQuestions = new Set((sameTestQuestionsRes.data || []).flatMap(q => q.axes || []));
+      const axesFromPatterns = new Set((patternRes.data || []).map(p => p.pattern_key));
+      const existingAxes = Array.from(new Set([...axesFromQuestions, ...axesFromPatterns]));
+
       const { data, error } = await supabase.functions.invoke('generate-questions', {
         body: {
           testName: currentModule.name,
@@ -314,6 +326,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
           questionCount: aiCount,
           promptsContext,
           existingQuestionsFromOtherTests,
+          existingQuestionsFromThisTest,
+          existingAxes,
         },
       });
       if (error) throw error;
@@ -321,6 +335,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
       if (data?.questions?.length > 0) {
         setAiPreview(data.questions);
         setAiSelected(new Set(data.questions.map((_: any, i: number) => i)));
+        if (data.qualityMetrics) setAiQualityMetrics(data.qualityMetrics);
         toast.success(`${data.questions.length} perguntas geradas!`);
       } else {
         toast.error('Nenhuma pergunta gerada');
@@ -888,6 +903,39 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                 </div>
               </div>
 
+              {/* Quality Metrics Banner */}
+              {aiQualityMetrics && (
+                <div className="p-3 rounded-xl border border-border/20 bg-muted/10 space-y-2">
+                  <p className="text-[0.7rem] font-semibold text-foreground/70">📊 Métricas de Qualidade</p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="text-center">
+                      <p className={`text-lg font-bold ${aiQualityMetrics.reversePercent >= 20 ? 'text-emerald-600' : 'text-amber-500'}`}>
+                        {aiQualityMetrics.reversePercent}%
+                      </p>
+                      <p className="text-[0.6rem] text-muted-foreground/60">Invertidas ({aiQualityMetrics.reverseCount}/{aiQualityMetrics.total})</p>
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-lg font-bold ${aiQualityMetrics.crossAxisPercent >= 35 ? 'text-emerald-600' : 'text-amber-500'}`}>
+                        {aiQualityMetrics.crossAxisPercent}%
+                      </p>
+                      <p className="text-[0.6rem] text-muted-foreground/60">Cruzam 2 eixos ({aiQualityMetrics.crossAxisCount}/{aiQualityMetrics.total})</p>
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-lg font-bold ${aiQualityMetrics.uncoveredAxes?.length === 0 ? 'text-emerald-600' : 'text-amber-500'}`}>
+                        {aiQualityMetrics.coveredAxes}/{aiQualityMetrics.totalAxes}
+                      </p>
+                      <p className="text-[0.6rem] text-muted-foreground/60">Eixos cobertos</p>
+                    </div>
+                  </div>
+                  {aiQualityMetrics.uncoveredAxes?.length > 0 && (
+                    <div className="flex items-start gap-2 text-[0.65rem] text-amber-600/80">
+                      <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                      <span>Eixos sem cobertura: <strong>{aiQualityMetrics.uncoveredAxes.join(', ')}</strong></span>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-1.5 max-h-[400px] overflow-y-auto pr-1">
                 {aiPreview.map((q, i) => (
                   <div
@@ -910,9 +958,15 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
                       <p className="text-[0.8rem] text-foreground/80">{q.text}</p>
                       <div className="flex gap-1.5 mt-1.5 flex-wrap">
                         <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{typeLabels[q.type] || q.type}</span>
+                        {q.reverse && (
+                          <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 font-medium">↔ Invertida</span>
+                        )}
                         {q.axes?.map((a: string) => (
                           <span key={a} className="text-[0.6rem] px-2 py-0.5 rounded-full bg-muted/40 text-muted-foreground/60">{a}</span>
                         ))}
+                        {q.axes?.length >= 2 && (
+                          <span className="text-[0.6rem] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 font-medium">✕ Cruzamento</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -920,7 +974,7 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
               </div>
 
               <div className="flex gap-2 justify-end pt-2">
-                <button onClick={() => { setAiPreview(null); setAiSelected(new Set()); }} className="px-4 py-2 rounded-lg text-[0.8rem] text-muted-foreground hover:text-foreground transition-colors">Descartar</button>
+                <button onClick={() => { setAiPreview(null); setAiSelected(new Set()); setAiQualityMetrics(null); }} className="px-4 py-2 rounded-lg text-[0.8rem] text-muted-foreground hover:text-foreground transition-colors">Descartar</button>
                 <button onClick={handleAIGenerate} disabled={aiGenerating} className="px-4 py-2 rounded-lg text-[0.8rem] text-violet-600 hover:bg-violet-500/10 transition-colors flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" /> Regenerar
                 </button>
