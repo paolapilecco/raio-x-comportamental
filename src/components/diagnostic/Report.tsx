@@ -17,6 +17,66 @@ const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg
   alto: { label: 'Alto', color: 'text-destructive', bg: 'bg-destructive' },
 };
 
+interface SectionTitles {
+  header: string;
+  resumo: string;
+  significado: string;
+  padrao: string;
+  comoAparece: string;
+  gatilhos: string;
+  impacto: string;
+  direcao: string;
+  evitar: string;
+  proximo: string;
+}
+
+function getCategorySectionTitles(slug?: string): SectionTitles {
+  const base: SectionTitles = {
+    header: 'Sua leitura',
+    resumo: 'Resumo principal',
+    significado: 'O que isso significa na prática',
+    padrao: 'Padrão identificado',
+    comoAparece: 'Como aparece no dia a dia',
+    gatilhos: 'Gatilhos principais',
+    impacto: 'Impacto nas áreas da vida',
+    direcao: 'Primeira direção de ajuste',
+    evitar: 'O que evitar agora',
+    proximo: 'Próximo passo simples',
+  };
+
+  if (!slug) return base;
+
+  if (slug.includes('execucao') || slug.includes('produtividade')) {
+    return { ...base, header: 'Sua leitura de execução', resumo: 'Onde sua execução trava', significado: 'O que isso causa no seu trabalho', padrao: 'Seu tipo de bloqueio', comoAparece: 'Como isso aparece nos seus projetos', gatilhos: 'O que ativa a procrastinação', direcao: 'A menor ação para destravar', proximo: 'Faça isso nos próximos 3 dias' };
+  }
+  if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) {
+    return { ...base, header: 'Sua leitura emocional', resumo: 'O que domina suas reações', significado: 'Onde você perde o controle', padrao: 'Seu tipo de reatividade', comoAparece: 'Situações onde você reage demais', gatilhos: 'O que dispara suas reações', direcao: 'Como reagir diferente', proximo: 'Pratique isso na próxima vez' };
+  }
+  if (slug.includes('relacionamento') || slug.includes('apego')) {
+    return { ...base, header: 'Sua leitura relacional', resumo: 'Como você se conecta com os outros', significado: 'O que isso causa nos seus vínculos', padrao: 'Seu padrão nos relacionamentos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa seu modo defensivo', direcao: 'Uma mudança no próximo conflito', proximo: 'Teste isso na próxima conversa difícil' };
+  }
+  if (slug.includes('autoimagem') || slug.includes('identidade')) {
+    return { ...base, header: 'Sua leitura de autoimagem', resumo: 'Como você se enxerga', significado: 'Onde essa visão te limita', padrao: 'Sua distorção principal', comoAparece: 'Decisões que você evita por causa disso', gatilhos: 'O que ativa sua autocrítica', direcao: 'Uma crença para testar na prática', proximo: 'Desafie isso esta semana' };
+  }
+  if (slug.includes('dinheiro') || slug.includes('financ')) {
+    return { ...base, header: 'Sua leitura financeira', resumo: 'Sua relação real com dinheiro', significado: 'Como isso afeta suas decisões', padrao: 'Seu perfil financeiro', comoAparece: 'Onde você perde dinheiro sem perceber', gatilhos: 'O que ativa seus impulsos financeiros', direcao: 'A primeira mudança com dinheiro', proximo: 'Faça isso na próxima compra' };
+  }
+  if (slug.includes('oculto') || slug.includes('hidden')) {
+    return { ...base, header: 'Seus padrões ocultos', resumo: 'O que você não vê em si', significado: 'As consequências invisíveis', padrao: 'O mecanismo que opera por baixo', comoAparece: 'Onde você sabota sem perceber', gatilhos: 'O que ativa o padrão escondido', direcao: 'Como flagrar o padrão em ação', proximo: 'Observe isso nos próximos dias' };
+  }
+  if (slug.includes('proposito') || slug.includes('sentido')) {
+    return { ...base, header: 'Sua leitura de propósito', resumo: 'Seu nível de conexão com direção', significado: 'Onde a falta de rumo aparece', padrao: 'Seu tipo de desconexão', comoAparece: 'Sinais de que você está no piloto automático', gatilhos: 'O que ativa a sensação de vazio', direcao: 'O primeiro passo para se reconectar', proximo: 'Uma reflexão prática para esta semana' };
+  }
+  if (slug === 'mapa-de-vida') {
+    return { ...base, header: 'Seu mapa de vida', resumo: 'Sua área mais desequilibrada', significado: 'O que esse desequilíbrio causa', padrao: 'Onde você compensa e onde negligencia', comoAparece: 'Como isso aparece na sua rotina', gatilhos: 'O que te faz negligenciar certas áreas', direcao: 'Qual área priorizar agora', proximo: 'Uma ação para a área mais crítica' };
+  }
+  if (slug === 'padrao-comportamental') {
+    return { ...base, header: 'Seu raio-x comportamental', resumo: 'Seu padrão dominante', significado: 'O que esse padrão causa na sua vida', padrao: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa no dia a dia', direcao: 'O comportamento para interromper primeiro', proximo: 'Faça isso nos próximos 3 dias' };
+  }
+
+  return base;
+}
+
 const fade = {
   initial: { opacity: 0, y: 10 },
   animate: { opacity: 1, y: 0 },
