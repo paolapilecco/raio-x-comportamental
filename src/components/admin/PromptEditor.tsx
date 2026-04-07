@@ -255,6 +255,15 @@ const PromptEditor = ({
                           Aceitar
                         </button>
                         <button
+                          onClick={saveAsTemplate}
+                          disabled={savingTemplate}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[0.75rem] font-semibold border border-amber-500/30 text-amber-600 hover:bg-amber-500/10 transition-all disabled:opacity-50"
+                          title="Salvar este prompt como template base para esta seção neste teste"
+                        >
+                          {savingTemplate ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <BookmarkPlus className="w-3.5 h-3.5" />}
+                          {savingTemplate ? 'Salvando...' : 'Salvar como template'}
+                        </button>
+                        <button
                           onClick={regenerateAI}
                           disabled={generatingAI === aiPreview.sectionType}
                           className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-[0.75rem] font-semibold border border-primary/30 text-primary hover:bg-primary/10 transition-all disabled:opacity-50"
