@@ -7,10 +7,13 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from 'recharts';
-import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
+import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
 
 interface HistoryEntry {
   id: string;
@@ -42,6 +45,8 @@ const DiagnosticHistory = () => {
   const [modules, setModules] = useState<TestModule[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const patternDefinitions = usePatternDefinitions();
 
   useEffect(() => {
     if (!user) return;
@@ -143,6 +148,65 @@ const DiagnosticHistory = () => {
   };
 
   const trend = getIntensityTrend();
+
+  const handleDownloadPdf = async (entry: HistoryEntry) => {
+    setDownloadingId(entry.id);
+    try {
+      const { data: fullResult, error } = await supabase
+        .from('diagnostic_results')
+        .select('*')
+        .eq('id', entry.id)
+        .maybeSingle();
+
+      if (error || !fullResult) {
+        toast.error('Erro ao carregar dados do relatório.');
+        return;
+      }
+
+      const dominantDef = patternDefinitions?.[fullResult.dominant_pattern as PatternKey];
+      const secondaryDefs = (fullResult.secondary_patterns || []).map((k: string) => patternDefinitions?.[k as PatternKey]).filter(Boolean);
+
+      const diagResult: DiagnosticResult = {
+        dominantPattern: dominantDef,
+        secondaryPatterns: secondaryDefs,
+        intensity: fullResult.intensity as IntensityLevel,
+        allScores: (fullResult.all_scores as any[]) || [],
+        summary: fullResult.state_summary,
+        mechanism: fullResult.mechanism,
+        contradiction: fullResult.contradiction,
+        impact: fullResult.impact || dominantDef?.impact || '',
+        direction: fullResult.direction,
+        combinedTitle: fullResult.combined_title,
+        profileName: fullResult.profile_name,
+        mentalState: fullResult.mental_state,
+        triggers: fullResult.triggers || [],
+        mentalTraps: fullResult.traps || [],
+        selfSabotageCycle: fullResult.self_sabotage_cycle || [],
+        blockingPoint: fullResult.blocking_point,
+        lifeImpact: (fullResult.life_impact as any[]) || [],
+        exitStrategy: (fullResult.exit_strategy as any[]) || [],
+        corePain: fullResult.core_pain || dominantDef?.corePain || '',
+        keyUnlockArea: fullResult.key_unlock_area || dominantDef?.keyUnlockArea || '',
+        criticalDiagnosis: fullResult.critical_diagnosis || dominantDef?.criticalDiagnosis || '',
+        whatNotToDo: fullResult.what_not_to_do || dominantDef?.whatNotToDo || [],
+      };
+
+      // Fetch user name for the PDF
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      generateDiagnosticPdf(diagResult, profile?.name);
+      toast.success('PDF gerado com sucesso!');
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      toast.error('Erro ao gerar PDF.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   // Unique modules that have results
   const modulesWithResults = modules.filter(m => history.some(h => h.test_module_id === m.id));
@@ -308,7 +372,7 @@ const DiagnosticHistory = () => {
                 const moduleName = modules.find(m => m.id === entry.test_module_id)?.name;
                 return (
                   <div key={entry.id} className="bg-card rounded-2xl border border-border/30 p-5 flex items-center justify-between hover:border-primary/15 transition-colors">
-                    <div className="space-y-1">
+                    <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-foreground text-sm">{entry.combined_title}</span>
                         {i === 0 && <span className="text-[10px] tracking-wider uppercase bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">Mais recente</span>}
@@ -322,7 +386,17 @@ const DiagnosticHistory = () => {
                         {moduleName && <span className="text-primary/60">{moduleName}</span>}
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground/50 italic hidden sm:block">{entry.profile_name}</span>
+                    <div className="flex items-center gap-3 ml-3">
+                      <span className="text-xs text-muted-foreground/50 italic hidden sm:block">{entry.profile_name}</span>
+                      <button
+                        onClick={() => handleDownloadPdf(entry)}
+                        disabled={downloadingId === entry.id}
+                        className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                        title="Baixar PDF"
+                      >
+                        <Download className={`w-4 h-4 ${downloadingId === entry.id ? 'animate-pulse' : ''}`} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
