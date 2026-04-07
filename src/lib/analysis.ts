@@ -3,6 +3,7 @@ import { questions } from '@/data/questions';
 import { patternDefinitions } from '@/data/patterns';
 import { generateInterpretation } from './interpretationEngine';
 import { validateAndRefineReport } from './reportQualityValidator';
+import { normalizeScoresForDiagnosis } from './scoreNormalization';
 
 const ALL_PATTERNS: PatternKey[] = [
   'unstable_execution',
@@ -34,13 +35,15 @@ function calculateScores(answers: Answer[]): PatternScore[] {
     });
   });
 
-  return ALL_PATTERNS.map((key) => ({
+  const scores: PatternScore[] = ALL_PATTERNS.map((key) => ({
     key,
     label: patternDefinitions[key].label,
     score: rawScores[key],
     maxScore: maxScores[key],
     percentage: maxScores[key] > 0 ? Math.min(100, Math.round((rawScores[key] / maxScores[key]) * 100)) : 0,
   })).sort((a, b) => b.percentage - a.percentage);
+
+  return normalizeScoresForDiagnosis(scores);
 }
 
 function getIntensity(percentage: number): IntensityLevel {

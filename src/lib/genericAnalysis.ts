@@ -1,6 +1,7 @@
 import { Answer, DiagnosticResult, IntensityLevel, PatternScore } from '@/types/diagnostic';
 import { generateInterpretation } from './interpretationEngine';
 import { validateAndRefineReport } from './reportQualityValidator';
+import { normalizeScoresForDiagnosis } from './scoreNormalization';
 
 export interface GenericPatternDefinition {
   key: string;
@@ -73,13 +74,15 @@ export function analyzeGenericTest(
     });
   });
 
-  const allScores: PatternScore[] = axisKeys.map(key => ({
+  const rawAllScores: PatternScore[] = axisKeys.map(key => ({
     key: key as any,
     label: definitions[key]?.label || key,
     score: rawScores[key],
     maxScore: maxScores[key],
     percentage: maxScores[key] > 0 ? Math.min(100, Math.round((rawScores[key] / maxScores[key]) * 100)) : 0,
   })).sort((a, b) => b.percentage - a.percentage);
+
+  const allScores = normalizeScoresForDiagnosis(rawAllScores);
 
   const dominant = allScores[0];
   const secondary = allScores.slice(1, 3).filter(s => s.percentage >= 40);
