@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { AlertTriangle, Brain, Target, ArrowRight, Eye, Compass, LifeBuoy, Download, XCircle, Flame, Key, EyeOff, MapPin } from 'lucide-react';
+import { Download, ChevronRight } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,14 +11,14 @@ interface ReportProps {
   moduleSlug?: string;
 }
 
-const intensityConfig: Record<IntensityLevel, { label: string; class: string; bgClass: string }> = {
-  leve: { label: 'Leve', class: 'intensity-low', bgClass: 'bg-intensity-low' },
-  moderado: { label: 'Moderado', class: 'intensity-moderate', bgClass: 'bg-intensity-moderate' },
-  alto: { label: 'Alto', class: 'intensity-high', bgClass: 'bg-intensity-high' },
+const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg: string }> = {
+  leve: { label: 'Leve', color: 'text-green-600', bg: 'bg-green-500' },
+  moderado: { label: 'Moderado', color: 'text-yellow-600', bg: 'bg-yellow-500' },
+  alto: { label: 'Alto', color: 'text-destructive', bg: 'bg-destructive' },
 };
 
 const fadeUp = {
-  initial: { opacity: 0, y: 16 },
+  initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
 };
 
@@ -36,286 +36,265 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Document container */}
-      <div className="max-w-2xl mx-auto px-6 md:px-10 py-16 md:py-24">
+      <div className="max-w-xl mx-auto px-5 md:px-8 py-12 md:py-20">
 
-        {/* — Cover / Header — */}
-        <motion.header {...fadeUp} transition={{ duration: 0.5 }} className="text-center mb-20">
-          <p className="text-[11px] text-muted-foreground/50 uppercase tracking-[0.2em] font-light mb-6">
-            Leitura Comportamental
+        {/* ── Header ── */}
+        <motion.header {...fadeUp} transition={{ duration: 0.4 }} className="mb-14">
+          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.25em] font-light mb-4">
+            Sua leitura
           </p>
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight leading-tight text-foreground">
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground leading-snug">
             {result.combinedTitle}
           </h1>
-          <div className="flex items-center justify-center gap-3 mt-5">
-            <span className={`text-sm font-medium ${intensityInfo.class}`}>
-              {intensityInfo.label}
+          <div className="flex items-center gap-2 mt-3">
+            <span className={`w-2 h-2 rounded-full ${intensityInfo.bg}`} />
+            <span className={`text-xs font-medium ${intensityInfo.color}`}>
+              Intensidade {intensityInfo.label.toLowerCase()}
             </span>
-            <span className={`w-1.5 h-1.5 rounded-full ${intensityInfo.bgClass}`} />
           </div>
-          <div className="w-12 h-px bg-border mx-auto mt-8" />
         </motion.header>
 
-        {/* — Sections — */}
-        <div className="space-y-16">
+        {/* ═══════════════════════════════════════ */}
+        {/* BLOCO 1 — RESUMO */}
+        {/* ═══════════════════════════════════════ */}
+        <BlockHeader num={1} title="Resumo" delay={0.05} />
 
-          {/* Profile Classification */}
-          {result.interpretation?.behavioralProfile && (
-            <ReportSection delay={0.04}>
-              <div className="text-center space-y-4">
-                <SectionLabel>Seu perfil hoje</SectionLabel>
-                <p className="text-2xl font-semibold text-foreground">
-                  {result.interpretation.behavioralProfile.name}
-                </p>
-                <p className="text-sm text-muted-foreground leading-[1.8] max-w-lg mx-auto">
-                  {result.interpretation.behavioralProfile.description}
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                  <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                    result.interpretation.behavioralProfile.riskLevel === 'critical' ? 'bg-destructive/10 text-destructive' :
-                    result.interpretation.behavioralProfile.riskLevel === 'high' ? 'bg-orange-500/10 text-orange-600' :
-                    result.interpretation.behavioralProfile.riskLevel === 'moderate' ? 'bg-yellow-500/10 text-yellow-600' :
-                    'bg-green-500/10 text-green-600'
-                  }`}>
-                    {result.interpretation.behavioralProfile.riskLevel === 'critical' ? 'Risco crítico' :
-                     result.interpretation.behavioralProfile.riskLevel === 'high' ? 'Risco alto' :
-                     result.interpretation.behavioralProfile.riskLevel === 'moderate' ? 'Risco moderado' : 'Risco baixo'}
-                  </span>
-                  {result.interpretation.behavioralProfile.dominantTraits.map((trait, i) => (
-                    <span key={i} className="text-xs bg-secondary/60 border border-border/30 rounded-full px-3 py-1 text-muted-foreground">
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </ReportSection>
-          )}
-
-          {/* Blind Spot */}
-          {result.interpretation?.blindSpot && (
-            <ReportSection delay={0.08} icon={<EyeOff className="w-4 h-4" />} title="Ponto cego">
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground leading-[1.8] italic">
-                  {result.interpretation.blindSpot.perceivedProblem}
-                </p>
-                <div className="border-l-2 border-destructive/20 pl-5">
-                  <p className="text-sm text-foreground leading-[1.8] font-medium">
-                    {result.interpretation.blindSpot.realProblem}
-                  </p>
-                </div>
-              </div>
-            </ReportSection>
-          )}
-
-          {/* Core Pain */}
-          <ReportSection delay={0.1} icon={<Flame className="w-4 h-4" />} title="O que realmente te trava">
-            <div className="space-y-5">
-              <p className="text-sm text-foreground/80 leading-[1.8]">{result.corePain}</p>
-              <div className="border-l-2 border-primary/20 pl-5">
-                <p className="text-sm text-muted-foreground leading-[1.8]">
-                  O padrão de <span className="font-medium text-foreground">{result.dominantPattern.label.toLowerCase()}</span> sustenta isso: {result.blockingPoint.charAt(0).toLowerCase() + result.blockingPoint.slice(1)}
-                </p>
-              </div>
-              {result.interpretation && result.interpretation.selfDeceptionIndex >= 40 && (
-                <div className="bg-destructive/[0.03] border border-destructive/10 rounded-2xl px-5 py-4">
-                  <p className="text-sm text-foreground/70 leading-[1.8]">
-                    <span className="font-medium text-destructive/70">Atenção:</span> existe uma distância de {result.interpretation.behaviorVsPerceptionGap}% entre como você se vê e como realmente se comporta.
-                  </p>
-                </div>
-              )}
+        {/* Profile badge */}
+        {result.interpretation?.behavioralProfile && (
+          <Section delay={0.08}>
+            <div className="bg-secondary/40 border border-border/30 rounded-xl px-4 py-3">
+              <p className="text-xs text-muted-foreground/60 mb-1">Perfil identificado</p>
+              <p className="text-sm font-semibold text-foreground">
+                {result.interpretation.behavioralProfile.name}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                {result.interpretation.behavioralProfile.description}
+              </p>
             </div>
-          </ReportSection>
+          </Section>
+        )}
 
-          {/* Critical Diagnosis */}
-          <ReportSection delay={0.12}>
-            <div className="border-l-2 border-destructive/20 pl-5">
-              <p className="text-sm text-foreground font-medium leading-[1.8]">{result.criticalDiagnosis}</p>
+        {/* Critical diagnosis — the "headline" */}
+        <Section delay={0.1}>
+          <CalloutBox color="destructive">
+            <p className="text-sm text-foreground leading-[1.7]">{result.criticalDiagnosis}</p>
+          </CalloutBox>
+        </Section>
+
+        {/* Blind Spot */}
+        {result.interpretation?.blindSpot?.realProblem && (
+          <Section delay={0.12}>
+            <Label>Ponto cego</Label>
+            <div className="mt-2 space-y-2">
+              <p className="text-xs text-muted-foreground italic leading-relaxed">
+                O que você acredita: {result.interpretation.blindSpot.perceivedProblem}
+              </p>
+              <div className="flex items-start gap-2">
+                <ChevronRight className="w-3 h-3 text-destructive/50 mt-0.5 shrink-0" />
+                <p className="text-sm text-foreground leading-[1.7]">
+                  {result.interpretation.blindSpot.realProblem}
+                </p>
+              </div>
             </div>
-          </ReportSection>
+          </Section>
+        )}
 
-          {/* Key Unlock */}
-          <ReportSection delay={0.14} icon={<Key className="w-4 h-4" />} title="Por onde começar">
-            <p className="text-sm text-foreground/80 leading-[1.8]">{result.keyUnlockArea}</p>
-            <p className="text-xs text-muted-foreground/60 mt-3 font-light leading-relaxed">
-              {result.interpretation?.internalConflicts && result.interpretation.internalConflicts.length > 0
-                ? `Corrigir isso reduz a tensão em ${result.interpretation.internalConflicts.length} ponto${result.interpretation.internalConflicts.length > 1 ? 's' : ''} de conflito interno.`
-                : `Esse é o ponto que alimenta todos os outros. Mexa aqui primeiro.`
-              }
-            </p>
-          </ReportSection>
+        {/* Self-deception alert */}
+        {result.interpretation && result.interpretation.selfDeceptionIndex >= 40 && (
+          <Section delay={0.14}>
+            <div className="bg-destructive/[0.04] border border-destructive/10 rounded-xl px-4 py-3">
+              <p className="text-xs text-foreground/70 leading-relaxed">
+                ⚠️ Existe uma distância de <span className="font-semibold">{result.interpretation.behaviorVsPerceptionGap}%</span> entre como você se vê e como realmente se comporta.
+              </p>
+            </div>
+          </Section>
+        )}
 
-          {/* Mental State */}
-          <ReportSection delay={0.16} icon={<Brain className="w-4 h-4" />} title="Como sua mente opera agora">
-            <p className="text-sm text-muted-foreground leading-[1.8]">{result.mentalState}</p>
-          </ReportSection>
+        <Divider />
 
-          {/* Cycle */}
-          <ReportSection delay={0.2} icon={<Target className="w-4 h-4" />} title="O ciclo que se repete">
-            <div className="space-y-0">
+        {/* ═══════════════════════════════════════ */}
+        {/* BLOCO 2 — SEU PADRÃO */}
+        {/* ═══════════════════════════════════════ */}
+        <BlockHeader num={2} title="Seu padrão" delay={0.16} />
+
+        {/* Core pain */}
+        <Section delay={0.18}>
+          <Label>O que te trava</Label>
+          <p className="text-sm text-foreground/80 leading-[1.7] mt-2">{result.corePain}</p>
+        </Section>
+
+        {/* Mechanism — short */}
+        <Section delay={0.2}>
+          <Label>Como funciona</Label>
+          <p className="text-sm text-muted-foreground leading-[1.7] mt-2">{result.mechanism}</p>
+        </Section>
+
+        {/* Cycle */}
+        {result.selfSabotageCycle.length > 0 && (
+          <Section delay={0.22}>
+            <Label>O ciclo que se repete</Label>
+            <div className="mt-3 space-y-0">
               {result.selfSabotageCycle.map((step, i) => (
-                <div key={i} className="flex items-stretch gap-4">
-                  <div className="flex flex-col items-center">
-                    <div className="w-7 h-7 rounded-xl bg-secondary/80 border border-border/30 flex items-center justify-center text-xs font-medium text-muted-foreground shrink-0">
-                      {i + 1}
-                    </div>
-                    {i < result.selfSabotageCycle.length - 1 && (
-                      <div className="w-px flex-1 bg-border/50 my-1" />
-                    )}
-                  </div>
-                  <div className="pb-4 pt-1">
-                    <p className="text-sm text-muted-foreground leading-[1.8]">{step}</p>
-                  </div>
-                </div>
-              ))}
-              <div className="flex items-center gap-3 pt-3 border-t border-dashed border-border/40 ml-11">
-                <ArrowRight className="w-3 h-3 text-muted-foreground/25" />
-                <p className="text-xs text-muted-foreground/35 italic font-light">E recomeça.</p>
-              </div>
-            </div>
-          </ReportSection>
-
-          {/* Triggers */}
-          <ReportSection delay={0.24} icon={<AlertTriangle className="w-4 h-4" />} title="O que ativa o padrão">
-            <div className="space-y-2">
-              {result.triggers.map((trigger, i) => (
                 <div key={i} className="flex items-start gap-3 py-1.5">
-                  <span className="mt-2.5 w-1 h-1 rounded-full bg-muted-foreground/25 shrink-0" />
-                  <p className="text-sm text-muted-foreground leading-[1.8]">{trigger}</p>
+                  <span className="w-5 h-5 rounded-full bg-secondary border border-border/40 flex items-center justify-center text-[10px] font-medium text-muted-foreground shrink-0 mt-0.5">
+                    {i + 1}
+                  </span>
+                  <p className="text-sm text-muted-foreground leading-[1.7]">{step}</p>
                 </div>
               ))}
             </div>
-          </ReportSection>
+          </Section>
+        )}
 
-          {/* Mental Traps */}
-          <ReportSection delay={0.28} icon={<Eye className="w-4 h-4" />} title="As frases que te mantêm preso">
-            <div className="space-y-3">
+        {/* Triggers */}
+        {result.triggers.length > 0 && (
+          <Section delay={0.24}>
+            <Label>O que ativa isso</Label>
+            <ul className="mt-2 space-y-1.5">
+              {result.triggers.map((t, i) => (
+                <li key={i} className="flex items-start gap-2">
+                  <span className="mt-2 w-1 h-1 rounded-full bg-muted-foreground/30 shrink-0" />
+                  <p className="text-sm text-muted-foreground leading-[1.7]">{t}</p>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        {/* Mental traps — compact */}
+        {result.mentalTraps.length > 0 && (
+          <Section delay={0.26}>
+            <Label>Frases que te prendem</Label>
+            <div className="mt-2 flex flex-wrap gap-2">
               {result.mentalTraps.map((trap, i) => (
-                <div key={i} className="bg-secondary/30 border border-border/20 rounded-2xl px-5 py-4">
-                  <p className="text-sm text-muted-foreground italic leading-[1.8]">{trap}</p>
-                </div>
+                <span key={i} className="text-xs italic bg-secondary/50 border border-border/20 rounded-lg px-3 py-2 text-muted-foreground leading-relaxed">
+                  "{trap}"
+                </span>
               ))}
             </div>
-          </ReportSection>
+          </Section>
+        )}
 
-          {/* Contradiction */}
-          <ReportSection delay={0.32}>
-            <SectionLabel>A contradição</SectionLabel>
-            <p className="text-sm text-foreground/70 leading-[1.8] mt-3">{result.contradiction}</p>
-          </ReportSection>
+        {/* Contradiction — inline */}
+        <Section delay={0.28}>
+          <Label>Contradição</Label>
+          <p className="text-sm text-foreground/70 leading-[1.7] mt-2">{result.contradiction}</p>
+        </Section>
 
-          {/* Blocking Point */}
-          <ReportSection delay={0.35} icon={<MapPin className="w-4 h-4" />} title="Onde trava">
-            <p className="text-sm text-foreground/80 leading-[1.8]">{result.blockingPoint}</p>
-          </ReportSection>
+        <Divider />
 
-          {/* Life Impact */}
-          <ReportSection delay={0.38} title="O custo real">
-            <div className="space-y-5">
-              {result.lifeImpact.map((item, i) => (
-                <div key={i} className="border-l-2 border-border/50 pl-5 py-1">
-                  <p className="text-[11px] text-muted-foreground/50 uppercase tracking-[0.15em] font-light mb-1.5">{item.pillar}</p>
-                  <p className="text-sm text-muted-foreground leading-[1.8]">{item.impact}</p>
-                </div>
-              ))}
-            </div>
-          </ReportSection>
+        {/* ═══════════════════════════════════════ */}
+        {/* BLOCO 3 — O QUE FAZER */}
+        {/* ═══════════════════════════════════════ */}
+        <BlockHeader num={3} title="O que fazer" delay={0.3} />
 
-          {/* What NOT to do */}
-          <ReportSection delay={0.42} icon={<XCircle className="w-4 h-4" />} title="Pare de fazer isso">
-            <div className="space-y-2.5">
-              {result.whatNotToDo.map((item, i) => (
-                <div key={i} className="flex items-start gap-3 py-3 bg-destructive/[0.02] border border-destructive/[0.06] rounded-2xl px-5">
-                  <span className="mt-0.5 text-destructive/40 font-medium text-xs shrink-0">✗</span>
-                  <p className="text-sm text-muted-foreground leading-[1.8]">{item}</p>
-                </div>
-              ))}
-            </div>
-          </ReportSection>
+        {/* Key unlock */}
+        <Section delay={0.32}>
+          <CalloutBox color="primary">
+            <p className="text-xs text-muted-foreground/60 mb-1">Comece por aqui</p>
+            <p className="text-sm text-foreground leading-[1.7]">{result.keyUnlockArea}</p>
+          </CalloutBox>
+        </Section>
 
-          {/* Direction */}
-          <ReportSection delay={0.46} icon={<Compass className="w-4 h-4" />} title="A direção">
-            <p className="text-sm text-foreground/80 leading-[1.8]">{result.direction}</p>
-          </ReportSection>
-
-          {/* Exit Strategy */}
-          <ReportSection delay={0.5} icon={<LifeBuoy className="w-4 h-4" />} title="Saída prática">
-            <div className="space-y-5">
+        {/* Exit strategy */}
+        {result.exitStrategy.length > 0 && (
+          <Section delay={0.34}>
+            <Label>Passos práticos</Label>
+            <div className="mt-3 space-y-3">
               {result.exitStrategy.map((step) => (
-                <div key={step.step} className="flex gap-4">
-                  <div className="w-7 h-7 rounded-xl bg-primary/10 flex items-center justify-center text-xs font-medium text-primary shrink-0">
+                <div key={step.step} className="flex gap-3">
+                  <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[10px] font-semibold text-primary shrink-0 mt-0.5">
                     {step.step}
-                  </div>
-                  <div className="pt-0.5">
-                    <h4 className="text-sm font-medium text-foreground">{step.title}</h4>
-                    <p className="text-sm text-muted-foreground leading-[1.8] mt-1">{step.action}</p>
+                  </span>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{step.title}</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{step.action}</p>
                   </div>
                 </div>
               ))}
             </div>
-          </ReportSection>
+          </Section>
+        )}
 
-          {/* Intensity Map */}
-          <ReportSection delay={0.54}>
-            <SectionLabel>Intensidade por eixo</SectionLabel>
-            <div className="space-y-4 mt-5">
-              {result.allScores.slice(0, 8).map((score) => (
-                <div key={score.key} className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground font-light">{score.label}</span>
-                    <span className="text-muted-foreground/40 font-light tabular-nums">{score.percentage}%</span>
+        {/* What NOT to do */}
+        {result.whatNotToDo.length > 0 && (
+          <Section delay={0.36}>
+            <Label>Pare de fazer</Label>
+            <div className="mt-2 space-y-1.5">
+              {result.whatNotToDo.map((item, i) => (
+                <div key={i} className="flex items-start gap-2 py-1">
+                  <span className="text-destructive/50 text-xs mt-0.5 shrink-0">✗</span>
+                  <p className="text-sm text-muted-foreground leading-[1.7]">{item}</p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        <Divider />
+
+        {/* ═══════════════════════════════════════ */}
+        {/* MAPA DE INTENSIDADE */}
+        {/* ═══════════════════════════════════════ */}
+        <Section delay={0.4}>
+          <Label>Intensidade por eixo</Label>
+          <div className="mt-4 space-y-3">
+            {result.allScores.slice(0, 8).map((score) => {
+              const barColor = score.percentage > 65 ? 'bg-destructive/70' : score.percentage >= 40 ? 'bg-yellow-500/70' : 'bg-green-500/70';
+              return (
+                <div key={score.key}>
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-muted-foreground">{score.label}</span>
+                    <span className="text-muted-foreground/50 tabular-nums">{score.percentage}%</span>
                   </div>
-                  <div className="h-[3px] rounded-full bg-border/50 overflow-hidden">
+                  <div className="h-1.5 rounded-full bg-border/40 overflow-hidden">
                     <motion.div
-                      className="h-full rounded-full bg-primary/50"
+                      className={`h-full rounded-full ${barColor}`}
                       initial={{ width: 0 }}
                       animate={{ width: `${score.percentage}%` }}
-                      transition={{ duration: 0.8, delay: 0.6, ease: 'easeOut' }}
+                      transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
                     />
                   </div>
                 </div>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* Secondary patterns — brief */}
+        {result.secondaryPatterns.length > 0 && (
+          <Section delay={0.44}>
+            <Label>Também presente</Label>
+            <div className="mt-2 space-y-2">
+              {result.secondaryPatterns.map((p) => (
+                <div key={p.key} className="border-l-2 border-border/40 pl-3">
+                  <p className="text-sm font-medium text-foreground">{p.label}</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">{p.description}</p>
+                </div>
               ))}
             </div>
-          </ReportSection>
+          </Section>
+        )}
 
-          {/* Secondary Patterns */}
-          {result.secondaryPatterns.length > 0 && (
-            <ReportSection delay={0.58}>
-              <SectionLabel>Também presente</SectionLabel>
-              <div className="space-y-5 mt-4">
-                {result.secondaryPatterns.map((pattern) => (
-                  <div key={pattern.key} className="border-l-2 border-border/50 pl-5 py-1">
-                    <p className="text-sm font-medium text-foreground">{pattern.label}</p>
-                    <p className="text-sm text-muted-foreground leading-[1.8] mt-1">{pattern.description}</p>
-                  </div>
-                ))}
-              </div>
-            </ReportSection>
-          )}
-        </div>
-
-        {/* — Footer — */}
-        <div className="mt-20 space-y-8">
-          <div className="w-12 h-px bg-border mx-auto" />
-
-          <motion.p {...fadeUp} transition={{ delay: 0.7, duration: 0.4 }}
-            className="text-xs text-muted-foreground/35 font-light leading-relaxed max-w-md mx-auto text-center"
-          >
+        {/* ── Footer ── */}
+        <div className="mt-16 space-y-6">
+          <div className="w-8 h-px bg-border mx-auto" />
+          <p className="text-[10px] text-muted-foreground/30 text-center font-light leading-relaxed max-w-sm mx-auto">
             Leitura comportamental baseada em suas respostas. Não substitui avaliação profissional.
-          </motion.p>
-
-          <motion.div {...fadeUp} transition={{ delay: 0.8, duration: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-16"
+          </p>
+          <motion.div {...fadeUp} transition={{ delay: 0.5, duration: 0.3 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-12"
           >
             <button
               onClick={handleDownloadPdf}
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:brightness-90 transition-all duration-200 active:scale-[0.97]"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:brightness-90 transition-all active:scale-[0.97]"
             >
               <Download className="w-4 h-4" />
               Baixar PDF
             </button>
             <button
               onClick={onRestart}
-              className="text-sm text-muted-foreground hover:text-foreground transition-all duration-200 px-4 py-2 rounded-xl hover:bg-secondary/50"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors px-4 py-2 rounded-lg hover:bg-secondary/50"
             >
               Ir para o Dashboard
             </button>
@@ -326,42 +305,48 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   );
 };
 
-/* — Sub-components — */
+/* ── Sub-components ── */
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
+function BlockHeader({ num, title, delay = 0 }: { num: number; title: string; delay?: number }) {
   return (
-    <p className="text-[11px] text-muted-foreground/50 uppercase tracking-[0.2em] font-light">
+    <motion.div {...fadeUp} transition={{ delay, duration: 0.35 }} className="flex items-center gap-2.5 mb-6 mt-2">
+      <span className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center text-[11px] font-bold text-primary">
+        {num}
+      </span>
+      <h2 className="text-base font-semibold text-foreground tracking-tight">{title}</h2>
+    </motion.div>
+  );
+}
+
+function Section({ delay = 0, children }: { delay?: number; children: React.ReactNode }) {
+  return (
+    <motion.div {...fadeUp} transition={{ delay, duration: 0.35 }} className="mb-6">
+      {children}
+    </motion.div>
+  );
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-[10px] text-muted-foreground/50 uppercase tracking-[0.2em] font-medium">
       {children}
     </p>
   );
 }
 
-function ReportSection({
-  title,
-  delay = 0,
-  icon,
-  children,
-}: {
-  title?: string;
-  delay?: number;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
+function CalloutBox({ color, children }: { color: 'primary' | 'destructive'; children: React.ReactNode }) {
+  const styles = color === 'destructive'
+    ? 'border-destructive/15 bg-destructive/[0.03]'
+    : 'border-primary/15 bg-primary/[0.03]';
   return (
-    <motion.section
-      {...fadeUp}
-      transition={{ delay, duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="space-y-4"
-    >
-      {title && (
-        <div className="flex items-center gap-2.5">
-          {icon && <span className="text-muted-foreground/50">{icon}</span>}
-          <h2 className="text-lg font-semibold text-foreground tracking-tight">{title}</h2>
-        </div>
-      )}
+    <div className={`border rounded-xl px-4 py-3 ${styles}`}>
       {children}
-    </motion.section>
+    </div>
   );
+}
+
+function Divider() {
+  return <div className="w-full h-px bg-border/40 my-10" />;
 }
 
 export default Report;
