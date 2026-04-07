@@ -976,14 +976,19 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
       }
     } catch { /* use defaults */ }
 
+    // Clamp temperature to 0.5-0.6 range for diagnostic precision
+    const clampedTemp = aiTemperature !== undefined 
+      ? Math.min(0.6, Math.max(0.5, aiTemperature)) 
+      : 0.55;
+
     const aiBody: Record<string, unknown> = {
       model: aiModel,
       messages: [
         { role: "system", content: systemPrompt + (refineLevel > 0 ? refineInstruction : "") },
         { role: "user", content: userPrompt },
       ],
+      temperature: clampedTemp,
     };
-    if (aiTemperature !== undefined) aiBody.temperature = aiTemperature;
     if (aiMaxTokens !== undefined) aiBody.max_tokens = aiMaxTokens;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
