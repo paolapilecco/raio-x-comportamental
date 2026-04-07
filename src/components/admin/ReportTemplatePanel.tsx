@@ -95,6 +95,51 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     toast.info('Template restaurado ao padrão');
   };
 
+  const handleSpreadToAll = async () => {
+    if (!confirm('Isso vai replicar este template para TODOS os outros testes. Testes que já possuem template próprio serão sobrescritos. Continuar?')) return;
+    setSpreading(true);
+    try {
+      const ordered = sections.map((s, i) => ({ ...s, order: i + 1 }));
+
+      // First save current template
+      await handleSave();
+
+      // Get all test modules except current
+      const { data: modules, error: modErr } = await supabase
+        .from('test_modules')
+        .select('id')
+        .neq('id', currentModule.id);
+
+      if (modErr || !modules) throw modErr;
+
+      let updated = 0;
+      for (const mod of modules) {
+        const { data: existing } = await supabase
+          .from('report_templates')
+          .select('id')
+          .eq('test_id', mod.id)
+          .maybeSingle();
+
+        if (existing) {
+          await supabase
+            .from('report_templates')
+            .update({ sections: ordered as any, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+        } else {
+          await supabase
+            .from('report_templates')
+            .insert({ test_id: mod.id, sections: ordered as any });
+        }
+        updated++;
+      }
+
+      toast.success(`Template replicado para ${updated} teste(s)`);
+    } catch (e) {
+      toast.error('Erro ao replicar template');
+    }
+    setSpreading(false);
+  };
+
   const moveSection = (index: number, direction: 'up' | 'down') => {
     const target = direction === 'up' ? index - 1 : index + 1;
     if (target < 0 || target >= sections.length) return;
