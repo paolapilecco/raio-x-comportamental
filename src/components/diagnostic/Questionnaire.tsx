@@ -146,7 +146,9 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
             {/* Response options */}
             <div className="space-y-3" role="radiogroup" aria-labelledby={`question-${question.id}`}>
               {responseLabels.map((label, index) => {
-                const value = index + 1;
+                // For intensity questions (0-10 scale), use 0-based index as value
+                // For other types (likert 1-5, etc.), use 1-based index
+                const value = question.type === 'intensity' ? index : index + 1;
                 const isSelected = currentAnswer === value;
                 return (
                   <motion.button
