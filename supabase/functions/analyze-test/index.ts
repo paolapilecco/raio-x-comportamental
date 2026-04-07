@@ -73,65 +73,46 @@ ${promptMap.restrictions}`);
   // Hard rules — always enforced regardless of admin prompts
   sections.push(`# REGRAS INVIOLÁVEIS
 
-1. INTERPRETAR, NÃO INVENTAR
-   - Use SOMENTE os dados fornecidos (scores, eixos, padrões)
-   - Não invente situações, exemplos pessoais ou contextos que não existam nos dados
-   - Cada afirmação deve ser rastreável a um score ou combinação de scores
+1. LINGUAGEM SIMPLES E DIRETA
+   - Escreva como se estivesse explicando para um amigo — sem jargão psicológico
+   - Frases curtas (máximo 2 linhas)
+   - Cada seção deve ter no máximo 3-4 frases
+   - Proibido: parágrafos longos, linguagem acadêmica, termos técnicos
 
-2. ESPECIFICIDADE OBRIGATÓRIA
-   - Proibido usar frases genéricas: "tenha mais foco", "acredite em si mesmo", "saia da zona de conforto"
-   - Cada frase deve conter o PADRÃO ESPECÍFICO do usuário
+2. INTERPRETAR, NÃO INVENTAR
+   - Use SOMENTE os dados fornecidos (scores, eixos, padrões)
+   - Não invente situações ou exemplos pessoais
+   - Cada afirmação deve ser rastreável a um score
+
+3. ESPECIFICIDADE OBRIGATÓRIA
+   - Proibido: "tenha mais foco", "acredite em si mesmo", "saia da zona de conforto"
+   - Cada frase deve conter o padrão ESPECÍFICO do usuário
    - Se não conseguir ser específico, não escreva
 
-3. ESTRUTURA DA RESPOSTA
+4. FORMATO
    - Fale em segunda pessoa ("você")
-   - Não mencione nomes de variáveis, eixos técnicos ou percentuais numéricos
-   - Use linguagem acessível mas com profundidade psicológica
-   - Seja direto — desconforto é aceitável, generalidade não é
+   - Não mencione nomes de variáveis ou percentuais numéricos
+   - Seja direto — desconforto é aceitável, generalidade não
+   - Responda EXCLUSIVAMENTE em JSON válido
 
-4. PROIBIÇÕES
-   - Não seja motivacional
-   - Não suavize o diagnóstico
-   - Não repita a descrição dos eixos como diagnóstico
-   - Não use bullet points genéricos
-   - Não diga "você pode melhorar" sem dizer COMO especificamente
+5. BREVIDADE
+   - criticalDiagnosis: máximo 2 frases curtas
+   - corePain: máximo 3 frases
+   - mechanism: máximo 3 frases
+   - summary: máximo 1 parágrafo curto
+   - triggers: máximo 4 itens, cada um com 1 frase
+   - whatNotToDo: máximo 4 itens, cada um com 1 frase
+   - exitStrategy: máximo 4 passos, ações curtas e executáveis
+   - mentalTraps: máximo 4 frases curtas entre aspas`);
 
-5. FORMATO: Responda EXCLUSIVAMENTE em JSON válido com a estrutura exata especificada`);
+  sections.push(`# CAMADA DE PROFUNDIDADE
 
-  // Deep analysis layer — mandatory cross-pattern reasoning
-  sections.push(`# CAMADA DE PROFUNDIDADE (obrigatória)
-
-Antes de gerar o diagnóstico, execute mentalmente estas etapas — o resultado deve estar REFLETIDO em cada campo da resposta:
-
-## 1. CRUZAMENTO DE PADRÕES
-- Não analise cada eixo isoladamente. Cruze o padrão dominante com CADA padrão secundário.
-- Para cada cruzamento, identifique: como um ALIMENTA ou MASCARA o outro?
-- Exemplo: se há alta autocrítica E alta fuga do desconforto, a autocrítica pode ser o MOTOR da fuga — não são problemas separados.
-- O campo "mechanism" DEVE descrever essa engrenagem cruzada, não apenas o padrão dominante.
-
-## 2. DETECÇÃO DE CONTRADIÇÕES REAIS
-- Use as evidências das respostas (seção "EVIDÊNCIAS DAS RESPOSTAS DO USUÁRIO") para identificar onde o usuário DIZ uma coisa e FAZ outra.
-- Contradição válida = resposta extrema em uma direção + resposta oposta no mesmo eixo ou eixo relacionado.
-- O campo "contradiction" deve citar o COMPORTAMENTO contraditório específico, não conceitos abstratos.
-- O campo "blindSpot" deve surpreender — se for óbvio, está errado.
-
-## 3. CAUSA RAIZ (não sintoma)
-- O campo "corePain" NÃO é o padrão dominante reformulado. É o MECANISMO INVISÍVEL por trás dele.
-- Pergunte-se: "por que esse padrão existe?" — a resposta é a dor central.
-- Se a dor central pudesse ser resolvida em uma frase genérica, você errou. Deve ser específica ao perfil dos dados.
-
-## 4. FILTRO ANTI-GENERICIDADE
-- Releia cada campo antes de finalizar. Se uma frase poderia se aplicar a QUALQUER pessoa, reescreva.
-- Teste mental: substitua os dados por outros completamente diferentes. Se a frase ainda funcionaria, ela é genérica — descarte.
-- Campos mais críticos: criticalDiagnosis, corePain, blindSpot, firstAction.
-- triggers e whatNotToDo devem ser tão específicos que SOMENTE alguém com esse perfil se identificaria.
-
-## 5. COERÊNCIA INTERNA
-- O diagnóstico é uma NARRATIVA — cada campo deve se conectar ao anterior.
-- corePain → mechanism → contradiction → blindSpot → blockingPoint → direction → firstAction
-- Se a firstAction não ataca diretamente o blockingPoint, está incoerente.
-- Se o blindSpot não surpreende dado o corePain, está superficial.`);
-
+Antes de gerar o diagnóstico:
+1. Cruze o padrão dominante com os secundários — como um alimenta o outro?
+2. Identifique onde o usuário diz uma coisa e faz outra (use as respostas)
+3. A dor central NÃO é o padrão reformulado — é o mecanismo invisível por trás
+4. Teste anti-genericidade: se a frase serve para qualquer pessoa, reescreva
+5. Coerência: corePain → mechanism → contradiction → direction → firstAction`);
   return sections.join("\n\n---\n\n");
 }
 
