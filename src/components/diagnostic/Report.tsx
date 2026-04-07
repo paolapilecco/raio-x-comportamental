@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3 } from 'lucide-react';
+import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, Brain } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -103,6 +103,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
   const acaoInicial = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
+  const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
 
   const handleDownloadPdf = () => {
     if (moduleSlug === 'mapa-de-vida') {
@@ -305,6 +306,35 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
               </div>
             </CardBlock>
           </Section>
+
+          {/* 9. Mecanismo Neural */}
+          {mecanismoNeural && (mecanismoNeural.neurotransmissor || mecanismoNeural.cicloNeural || mecanismoNeural.neuroplasticidade) && (
+            <Section num={9} title="Mecanismo Neural" delay={0.38} accent="primary">
+              <div className="space-y-4">
+                {mecanismoNeural.neurotransmissor && (
+                  <div className="rounded-xl border border-primary/15 bg-primary/[0.03] px-5 py-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Brain className="w-3.5 h-3.5 text-primary/50" />
+                      <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold">Neurotransmissor envolvido</p>
+                    </div>
+                    <p className="text-sm text-foreground leading-[1.8]">{mecanismoNeural.neurotransmissor}</p>
+                  </div>
+                )}
+                {mecanismoNeural.cicloNeural && (
+                  <div className="rounded-xl border border-border/40 bg-card px-5 py-4">
+                    <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.2em] font-semibold mb-2">Como o circuito se formou</p>
+                    <p className="text-sm text-muted-foreground leading-[1.8]">{mecanismoNeural.cicloNeural}</p>
+                  </div>
+                )}
+                {mecanismoNeural.neuroplasticidade && (
+                  <div className="rounded-xl border border-green-500/20 bg-green-500/[0.04] px-5 py-4">
+                    <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-[0.2em] font-semibold mb-2">Neuroplasticidade — a boa notícia</p>
+                    <p className="text-sm text-foreground leading-[1.8]">{mecanismoNeural.neuroplasticidade}</p>
+                  </div>
+                )}
+              </div>
+            </Section>
+          )}
 
           {/* ── Intensity bars ── */}
           <motion.section {...fade} transition={{ delay: 0.42 }}>

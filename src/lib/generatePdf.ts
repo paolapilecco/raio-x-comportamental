@@ -239,7 +239,30 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.text('FAÇA ISSO AGORA', M + 4, ctx.y); ctx.y += 3;
   callout(ctx, acaoInicial, C.green);
 
-  // Intensity map
+  // 9. Mecanismo Neural
+  const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
+  if (mecanismoNeural && (mecanismoNeural.neurotransmissor || mecanismoNeural.cicloNeural || mecanismoNeural.neuroplasticidade)) {
+    sectionNum(ctx, 9, 'Mecanismo Neural');
+    if (mecanismoNeural.neurotransmissor) {
+      pb(ctx, 10);
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.accent);
+      doc.text('NEUROTRANSMISSOR ENVOLVIDO', M + 4, ctx.y); ctx.y += 3;
+      text(ctx, mecanismoNeural.neurotransmissor);
+    }
+    if (mecanismoNeural.cicloNeural) {
+      pb(ctx, 10);
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.muted);
+      doc.text('COMO O CIRCUITO SE FORMOU', M + 4, ctx.y); ctx.y += 3;
+      text(ctx, mecanismoNeural.cicloNeural, C.muted);
+    }
+    if (mecanismoNeural.neuroplasticidade) {
+      pb(ctx, 10);
+      doc.setFontSize(6.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.green);
+      doc.text('NEUROPLASTICIDADE — A BOA NOTÍCIA', M + 4, ctx.y); ctx.y += 3;
+      callout(ctx, mecanismoNeural.neuroplasticidade, C.green);
+    }
+  }
+
   ctx.y += 4;
   pb(ctx, 20);
   doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.setTextColor(...C.muted);
