@@ -156,7 +156,7 @@ function drawWheel(
     // Score dot
     doc.setFillColor(...C.white);
     doc.circle(px, py, 2.8, 'F');
-    const dotColor = area.score >= 7 ? C.green : area.score >= 4 ? C.yellow : C.red;
+    const dotColor: [number, number, number] = area.score >= 7 ? [...C.green] : area.score >= 4 ? [...C.yellow] : [...C.red];
     doc.setFillColor(...dotColor);
     doc.circle(px, py, 2.2, 'F');
 
