@@ -2,11 +2,13 @@ import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { AlertTriangle, Brain, Target, ArrowRight, Eye, Compass, LifeBuoy, Download, XCircle, Flame, Key, EyeOff, MapPin } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ReportProps {
   result: DiagnosticResult;
   onRestart: () => void;
+  moduleSlug?: string;
 }
 
 const intensityConfig: Record<IntensityLevel, { label: string; class: string; bgClass: string }> = {
@@ -20,12 +22,16 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
-const Report = ({ result, onRestart }: ReportProps) => {
+const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const intensityInfo = intensityConfig[result.intensity];
   const { profile } = useAuth();
 
   const handleDownloadPdf = () => {
-    generateDiagnosticPdf(result, profile?.name);
+    if (moduleSlug === 'mapa-de-vida') {
+      generateLifeMapPdf(result.allScores, profile?.name);
+    } else {
+      generateDiagnosticPdf(result, profile?.name);
+    }
   };
 
   return (

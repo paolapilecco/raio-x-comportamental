@@ -8,6 +8,7 @@ import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, Check
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
@@ -86,6 +87,7 @@ const Dashboard = () => {
   const [modules, setModules] = useState<TestModule[]>([]);
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [latestModuleId, setLatestModuleId] = useState<string | null>(null);
 
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
@@ -206,6 +208,7 @@ const Dashboard = () => {
         setModules((modulesRes.data as TestModule[]) || []);
 
         if (sessions.length > 0) {
+          setLatestModuleId(sessions[0].test_module_id || null);
           const { data: result, error: resultErr } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).maybeSingle();
           if (resultErr) {
             console.error('Error fetching latest result:', resultErr);
@@ -225,6 +228,14 @@ const Dashboard = () => {
 
   const handleDownloadPdf = () => {
     if (!latestResult) return;
+
+    // Check if latest result is from "Mapa de Vida" module
+    const latestModule = modules.find(m => m.id === latestModuleId);
+    if (latestModule?.slug === 'mapa-de-vida') {
+      generateLifeMapPdf((latestResult.all_scores as any[]) || [], profile?.name);
+      return;
+    }
+
     const dominantDef = patternDefinitions?.[latestResult.dominant_pattern as PatternKey];
     const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
     const diagResult: DiagnosticResult = {
