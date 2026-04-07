@@ -732,6 +732,12 @@ ${sectionLines.join(',\n')},
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
   "firstAction": "Copie acaoInicial ou proximoPasso",
+  "focoMudanca": "Resuma em 1 frase curta QUAL área ou comportamento precisa de atenção prioritária. Deve ser DIFERENTE e MAIS CURTO que corrigirPrimeiro. Ex: 'Finalização de tarefas' ou 'Reação ao tédio nos projetos'.",
+  "microAcoes": [
+    {"acao": "Ação específica 1 — verbo no imperativo + objeto + prazo. Ex: Liste 3 tarefas que precisa concluir até sexta-feira.", "detalhe": "Instrução complementar opcional. Ex: Escreva num papel e cole na mesa."},
+    {"acao": "Ação específica 2 — Ex: Escolha 2 aplicativos que mais te distraem e desligue as notificações agora.", "detalhe": ""},
+    {"acao": "Ação específica 3 — Ex: Amanhã, faça a primeira tarefa da lista ANTES de abrir qualquer rede social.", "detalhe": "Timer de 25 minutos. Sem pausas."}
+  ],
   "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa, sem aspas internas. Ex: Eu não preciso estar pronto pra começar.",
   "mecanismoNeural": {
     "neurotransmissor": "Qual neurotransmissor está mais envolvido no padrão (cortisol, dopamina, serotonina, adrenalina) e como ele atua — 1 frase simples. Ex: Seu cérebro libera cortisol (hormônio do estresse) toda vez que você pensa em começar algo difícil.",
