@@ -295,6 +295,22 @@ function deduplicateLifeImpact(items: { pillar: string; impact: string }[], mech
   });
 }
 
+/** Ensure focus-of-change fields are specific and actionable, not abstract */
+function refineActionableField(text: string, patternLabel: string): string {
+  if (!text) return text;
+  let refined = text;
+  // Strip vague phrases first
+  for (const phrase of VAGUE_ACTION_PHRASES) {
+    const regex = new RegExp(phrase + '[^.]*\\.?\\s*', 'gi');
+    refined = refined.replace(regex, '').trim();
+  }
+  // If stripped to empty or too short, generate a concrete fallback
+  if (refined.length < 15) {
+    refined = `Parar de repetir o ciclo de ${patternLabel.toLowerCase()} quando a pressão aparece.`;
+  }
+  return refined;
+}
+
 // ── Main Validator ──
 
 export function validateAndRefineReport(result: DiagnosticResult): DiagnosticResult {
