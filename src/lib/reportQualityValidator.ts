@@ -146,22 +146,30 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
   const dominantLabel = result.dominantPattern?.label || '';
   const ai = result as any;
 
-  // 1. Trim overly long sections
-  let corePain = trimIfLong(result.corePain, 4);
-  let criticalDiagnosis = trimIfLong(result.criticalDiagnosis, 3);
-  let direction = trimIfLong(result.direction, 3);
-  let summary = trimIfLong(result.summary, 5);
-  let impact = result.impact || '';
+  // 1. Enforce strict 2-sentence density limit on all main blocks
+  let corePain = enforceMaxTwoSentences(result.corePain);
+  let criticalDiagnosis = enforceMaxTwoSentences(result.criticalDiagnosis);
+  let direction = enforceMaxTwoSentences(result.direction);
+  let summary = trimIfLong(result.summary, 3);
+  let impact = enforceMaxTwoSentences(result.impact || '');
+  let mechanism = enforceMaxTwoSentences(result.mechanism || '');
+  let contradiction = enforceMaxTwoSentences(result.contradiction || '');
+
+  // Enforce density on new AI fields
+  let chamaAtencao = enforceMaxTwoSentences(ai.chamaAtencao || '');
+  let padraoRepetido = enforceMaxTwoSentences(ai.padraoRepetido || '');
+  let comoAparece = enforceMaxTwoSentences(ai.comoAparece || '');
+  let comoAtrapalha = enforceMaxTwoSentences(ai.comoAtrapalha || '');
+  let corrigirPrimeiro = enforceMaxTwoSentences(ai.corrigirPrimeiro || '');
+  let acaoInicial = enforceMaxTwoSentences(ai.acaoInicial || '');
 
   // 2. Anti-repetition: check pairs and rewrite if redundant
   corePain = rewriteCorePain(corePain, criticalDiagnosis, dominantLabel);
   direction = rewriteDirection(direction, result.whatNotToDo || [], dominantLabel);
-  impact = rewriteImpact(impact, result.mechanism || '');
+  impact = rewriteImpact(impact, mechanism);
   summary = rewriteSummaryIfRedundant(summary, criticalDiagnosis);
 
   // 3. Anti-repetition: corrigirPrimeiro vs acaoInicial
-  let corrigirPrimeiro = ai.corrigirPrimeiro || '';
-  let acaoInicial = ai.acaoInicial || '';
   if (corrigirPrimeiro && acaoInicial && isRedundant(corrigirPrimeiro, acaoInicial, 0.5)) {
     acaoInicial = `Na próxima vez que o padrão de ${dominantLabel.toLowerCase()} aparecer, pare e espere 60 segundos antes de reagir. Só isso.`;
   }
@@ -169,10 +177,12 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
   // 4. Deduplicate life impact against mechanism
   const lifeImpact = deduplicateLifeImpact(result.lifeImpact || [], result.mechanism || '');
 
-  // 5. Deduplicate within arrays (triggers, traps, etc.)
-  const triggers = deduplicateArray(result.triggers || []).slice(0, 5);
-  const mentalTraps = deduplicateArray(result.mentalTraps || []).slice(0, 4);
-  const whatNotToDo = deduplicateArray(result.whatNotToDo || []).slice(0, 5);
+  // 5. Trim arrays: max items + 1 sentence per item (except lists which are already short)
+  const triggers = trimArrayItems(deduplicateArray(result.triggers || []), 4);
+  const mentalTraps = trimArrayItems(deduplicateArray(result.mentalTraps || []), 4);
+  const whatNotToDo = trimArrayItems(deduplicateArray(result.whatNotToDo || []), 4);
+  const gatilhos = trimArrayItems(deduplicateArray(ai.gatilhos || []), 4);
+  const pararDeFazer = trimArrayItems(deduplicateArray(ai.pararDeFazer || []), 4);
 
   return {
     ...result,
@@ -181,12 +191,20 @@ export function validateAndRefineReport(result: DiagnosticResult): DiagnosticRes
     direction,
     summary,
     impact,
+    mechanism,
+    contradiction,
     lifeImpact,
     triggers,
     mentalTraps,
-    exitStrategy: (result.exitStrategy || []).slice(0, 5),
+    exitStrategy: (result.exitStrategy || []).slice(0, 4),
     whatNotToDo,
+    ...(chamaAtencao ? { chamaAtencao } : {}),
+    ...(padraoRepetido ? { padraoRepetido } : {}),
+    ...(comoAparece ? { comoAparece } : {}),
+    ...(comoAtrapalha ? { comoAtrapalha } : {}),
     ...(corrigirPrimeiro ? { corrigirPrimeiro } : {}),
     ...(acaoInicial ? { acaoInicial } : {}),
+    ...(gatilhos.length > 0 ? { gatilhos } : {}),
+    ...(pararDeFazer.length > 0 ? { pararDeFazer } : {}),
   } as DiagnosticResult;
 }
