@@ -93,6 +93,16 @@ const VAGUE_ACTION_PHRASES = [
   'seja mais disciplinado',
   'organize melhor seu tempo',
   'desenvolva mais paciência',
+  'interromper o comportamento',
+  'melhorar o padrão',
+  'interromper comportamento',
+  'melhorar padrão',
+  'mudar o comportamento',
+  'ajustar o padrão',
+  'desenvolver técnicas',
+  'trabalhar o autoconhecimento',
+  'fortalecer a consciência',
+  'aumentar a percepção',
 ];
 
 // ── Helpers ──
