@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult } from '@/types/diagnostic';
-import { Download, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Calendar } from 'lucide-react';
+import { Download, ChevronRight, TrendingUp, TrendingDown, AlertTriangle, Calendar, CheckCircle2 } from 'lucide-react';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
+import { generateAreaActions } from '@/lib/lifeMapActions';
 
 interface Props {
   result: DiagnosticResult;
@@ -58,10 +59,16 @@ const LifeMapReport = ({ result, onRestart }: Props) => {
   // AI-generated content with fallbacks
   const visaoGeral = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis || '';
   const oQueRevela = ai.comoAtrapalha || ai.significadoPratico || getPhaseLabel(avgPct);
-  const planoAcao: { area: string; acao: string }[] = ai.planoAcaoPorArea || 
-    ai.impactoPorArea?.map((i: any) => ({ area: i.area, acao: i.efeito })) ||
-    result.lifeImpact?.map(l => ({ area: l.pillar, acao: l.impact })) || [];
   const acaoInicial = ai.acaoInicial || ai.proximoPasso || result.direction || '';
+
+  // Areas below 70% get 3 practical actions each
+  const areasNeedingAction = sorted.filter(a => a.percentage < 70);
+  const actionPlanByArea = areasNeedingAction.map(area => ({
+    area: area.label,
+    percentage: area.percentage,
+    actions: (ai.planoAcaoPorArea?.find((p: any) => p.area === area.label)?.acoes as string[]) 
+      || generateAreaActions(area.key, area.percentage),
+  }));
 
   const handleDownloadPdf = () => {
     generateLifeMapPdf(result.allScores, profile?.name);
@@ -199,34 +206,35 @@ const LifeMapReport = ({ result, onRestart }: Props) => {
         {/* 6. Plano de ação por área */}
         <motion.section {...fade} transition={{ delay: 0.35 }} className="mb-10">
           <SectionHeader num={6} title="Plano de ação por área" />
-          {planoAcao.length > 0 ? (
-            <div className="space-y-2 mt-4">
-              {planoAcao.map((item, i) => (
-                <div key={i} className="border border-border/30 rounded-xl px-4 py-3">
-                  <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest mb-1">{item.area}</p>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-3 h-3 text-primary/50 mt-1 shrink-0" />
-                    <p className="text-sm text-foreground/80 leading-snug">{item.acao}</p>
+          <p className="text-xs text-muted-foreground/60 mt-2 mb-4 leading-relaxed">
+            {areasNeedingAction.length > 0 
+              ? `${areasNeedingAction.length} área${areasNeedingAction.length > 1 ? 's' : ''} abaixo de 70% — cada uma com 3 ações práticas para os próximos 60 dias.`
+              : 'Todas as áreas estão acima de 70%. Continue mantendo o equilíbrio.'}
+          </p>
+          {actionPlanByArea.length > 0 ? (
+            <div className="space-y-4">
+              {actionPlanByArea.map((item, i) => {
+                const color = getAreaColor(item.percentage);
+                return (
+                  <div key={i} className="border border-border/30 rounded-xl overflow-hidden">
+                    <div className={`flex items-center justify-between px-4 py-2.5 ${color.bg}`}>
+                      <p className="text-xs font-semibold text-foreground">{item.area}</p>
+                      <span className={`text-[10px] font-medium ${color.text} tabular-nums`}>{item.percentage}%</span>
+                    </div>
+                    <div className="px-4 py-3 space-y-2">
+                      {item.actions.slice(0, 3).map((action, j) => (
+                        <div key={j} className="flex items-start gap-2.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-primary/40 mt-0.5 shrink-0" />
+                          <p className="text-sm text-foreground/80 leading-snug">{action}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : weakest.length > 0 ? (
-            <div className="space-y-2 mt-4">
-              {weakest.map((area) => (
-                <div key={area.key} className="border border-border/30 rounded-xl px-4 py-3">
-                  <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest mb-1">{area.label}</p>
-                  <div className="flex items-start gap-2">
-                    <ChevronRight className="w-3 h-3 text-primary/50 mt-1 shrink-0" />
-                    <p className="text-sm text-foreground/80 leading-snug">
-                      Dedique 15 minutos por dia a essa área nos próximos 7 dias. Escolha uma ação simples e repita.
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-sm text-muted-foreground">
               {acaoInicial || 'Continue mantendo as áreas equilibradas e observe onde surgem novas necessidades.'}
             </p>
           )}
