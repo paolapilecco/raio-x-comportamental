@@ -149,6 +149,65 @@ const DiagnosticHistory = () => {
 
   const trend = getIntensityTrend();
 
+  const handleDownloadPdf = async (entry: HistoryEntry) => {
+    setDownloadingId(entry.id);
+    try {
+      const { data: fullResult, error } = await supabase
+        .from('diagnostic_results')
+        .select('*')
+        .eq('id', entry.id)
+        .maybeSingle();
+
+      if (error || !fullResult) {
+        toast.error('Erro ao carregar dados do relatório.');
+        return;
+      }
+
+      const dominantDef = patternDefinitions?.[fullResult.dominant_pattern as PatternKey];
+      const secondaryDefs = (fullResult.secondary_patterns || []).map((k: string) => patternDefinitions?.[k as PatternKey]).filter(Boolean);
+
+      const diagResult: DiagnosticResult = {
+        dominantPattern: dominantDef,
+        secondaryPatterns: secondaryDefs,
+        intensity: fullResult.intensity as IntensityLevel,
+        allScores: (fullResult.all_scores as any[]) || [],
+        summary: fullResult.state_summary,
+        mechanism: fullResult.mechanism,
+        contradiction: fullResult.contradiction,
+        impact: fullResult.impact || dominantDef?.impact || '',
+        direction: fullResult.direction,
+        combinedTitle: fullResult.combined_title,
+        profileName: fullResult.profile_name,
+        mentalState: fullResult.mental_state,
+        triggers: fullResult.triggers || [],
+        mentalTraps: fullResult.traps || [],
+        selfSabotageCycle: fullResult.self_sabotage_cycle || [],
+        blockingPoint: fullResult.blocking_point,
+        lifeImpact: (fullResult.life_impact as any[]) || [],
+        exitStrategy: (fullResult.exit_strategy as any[]) || [],
+        corePain: fullResult.core_pain || dominantDef?.corePain || '',
+        keyUnlockArea: fullResult.key_unlock_area || dominantDef?.keyUnlockArea || '',
+        criticalDiagnosis: fullResult.critical_diagnosis || dominantDef?.criticalDiagnosis || '',
+        whatNotToDo: fullResult.what_not_to_do || dominantDef?.whatNotToDo || [],
+      };
+
+      // Fetch user name for the PDF
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+
+      generateDiagnosticPdf(diagResult, profile?.name);
+      toast.success('PDF gerado com sucesso!');
+    } catch (err) {
+      console.error('Error generating PDF:', err);
+      toast.error('Erro ao gerar PDF.');
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   // Unique modules that have results
   const modulesWithResults = modules.filter(m => history.some(h => h.test_module_id === m.id));
 
