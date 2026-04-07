@@ -605,7 +605,10 @@ ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TE
 REGRAS FINAIS:
 - MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
 - NÃO repita a mesma ideia entre seções.
-- corrigirPrimeiro = DIREÇÃO (o que mudar). acaoInicial = AÇÃO (o que fazer agora). São OBRIGATORIAMENTE diferentes.
+- corrigirPrimeiro = DIREÇÃO (QUAL comportamento mudar, EM QUAL situação). acaoInicial = AÇÃO (QUANDO + COMO + QUANTO TEMPO). São OBRIGATORIAMENTE diferentes.
+- Proibido em corrigirPrimeiro: "mude sua relação com X", "busque equilíbrio", "tenha mais consciência"
+- Proibido em acaoInicial: "reflita sobre", "observe seus padrões", "tente se conhecer melhor"
+- pararDeFazer: cada item com SITUAÇÃO + COMPORTAMENTO. Proibido: "pare de se cobrar", "pare de procrastinar"
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
