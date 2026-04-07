@@ -555,6 +555,9 @@ REGRAS FINAIS:
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
+- corrigirPrimeiro/direcaoAjuste: deve conter QUAL comportamento mudar e EM QUAL situação. Proibido: "mude sua relação com X", "busque equilíbrio", "tenha mais consciência".
+- acaoInicial/proximoPasso: deve conter QUANDO fazer + COMO fazer + por QUANTO TEMPO. Proibido: "reflita sobre", "observe seus padrões", "tente se conhecer melhor".
+- pararDeFazer: cada item deve ter SITUAÇÃO + COMPORTAMENTO específico. Proibido: "pare de se cobrar", "pare de procrastinar".
 ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
   }
 
