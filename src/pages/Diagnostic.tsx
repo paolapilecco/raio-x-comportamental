@@ -368,7 +368,7 @@ const Diagnostic = () => {
         whatNotToDo: ai.whatNotToDo || [],
       };
 
-      return {
+      const resultObj: any = {
         dominantPattern,
         secondaryPatterns: secondary.map(s => ({
           ...dominantPattern,
@@ -377,25 +377,37 @@ const Diagnostic = () => {
         })),
         intensity: intensity as any,
         allScores: scores,
-        summary: ai.summary || '',
-        mechanism: ai.mechanism || '',
+        summary: ai.summary || ai.resumoPrincipal || '',
+        mechanism: ai.mechanism || ai.padraoIdentificado || '',
         contradiction: ai.contradiction || '',
         impact: ai.impact || '',
-        direction: ai.direction || '',
+        direction: ai.direction || ai.direcaoAjuste || '',
         combinedTitle: ai.combinedTitle || dominant.label,
         profileName: ai.profileName || '',
-        mentalState: ai.mentalState || '',
-        triggers: ai.triggers || [],
+        mentalState: ai.mentalState || ai.comoAparece || '',
+        triggers: ai.triggers || ai.gatilhos || [],
         mentalTraps: ai.mentalTraps || [],
         selfSabotageCycle: ai.selfSabotageCycle || [],
         blockingPoint: ai.blockingPoint || '',
         lifeImpact: ai.lifeImpact || [],
         exitStrategy: ai.exitStrategy || [],
-        corePain: ai.corePain || '',
-        keyUnlockArea: ai.keyUnlockArea || '',
-        criticalDiagnosis: ai.criticalDiagnosis || '',
-        whatNotToDo: ai.whatNotToDo || [],
+        corePain: ai.corePain || ai.significadoPratico || '',
+        keyUnlockArea: ai.keyUnlockArea || ai.direcaoAjuste || '',
+        criticalDiagnosis: ai.criticalDiagnosis || ai.resumoPrincipal || '',
+        whatNotToDo: ai.whatNotToDo || ai.oQueEvitar || [],
+        // New template fields
+        resumoPrincipal: ai.resumoPrincipal || '',
+        significadoPratico: ai.significadoPratico || '',
+        padraoIdentificado: ai.padraoIdentificado || '',
+        comoAparece: ai.comoAparece || '',
+        gatilhos: ai.gatilhos || [],
+        impactoVida: ai.impactoVida || [],
+        direcaoAjuste: ai.direcaoAjuste || '',
+        oQueEvitar: ai.oQueEvitar || [],
+        proximoPasso: ai.proximoPasso || ai.firstAction || '',
       };
+
+      return resultObj as DiagnosticResult;
     } catch (err) {
       console.warn('[AI Analysis] Unexpected error:', err);
       return null;
