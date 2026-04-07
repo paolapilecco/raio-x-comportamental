@@ -21,6 +21,28 @@ interface PromptRecord {
   title: string;
 }
 
+interface ReportTemplate {
+  sections: TemplateSection[];
+  output_rules: OutputRules;
+}
+
+interface TemplateSection {
+  key: string;
+  name: string;
+  maxSize: number;
+  required: boolean;
+}
+
+interface OutputRules {
+  tone?: string;
+  simplicityLevel?: number;
+  maxSentencesPerBlock?: number;
+  maxTotalBlocks?: number;
+  repetitionProhibited?: boolean;
+  requiredBlocks?: string[];
+  forbiddenLanguage?: string[];
+}
+
 // ── Category-specific prompt contexts ──
 
 interface CategoryContext {
@@ -202,7 +224,7 @@ function getCategoryContext(slug: string): CategoryContext {
 
 // ── Structured prompt builder ──
 
-function buildStructuredSystemPrompt(prompts: PromptRecord[], categoryCtx: CategoryContext): string {
+function buildStructuredSystemPrompt(prompts: PromptRecord[], categoryCtx: CategoryContext, template?: ReportTemplate | null): string {
   const promptMap: Record<string, string> = {};
   prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
 
@@ -324,6 +346,46 @@ Antes de gerar o diagnóstico:
 3. A dor central NÃO é o padrão reformulado — é o mecanismo invisível por trás
 4. Teste anti-genericidade: se a frase serve para qualquer pessoa, reescreva
 5. Coerência: corePain → mechanism → contradiction → direction → firstAction`);
+
+  // Inject admin-configured output rules from report_templates
+  if (template?.output_rules) {
+    const rules = template.output_rules;
+    const ruleLines: string[] = [];
+    
+    if (rules.tone) {
+      ruleLines.push(`- TOM OBRIGATÓRIO: ${rules.tone}`);
+    }
+    if (rules.simplicityLevel) {
+      const levelDesc: Record<number, string> = {
+        1: 'Pode usar termos técnicos quando necessário',
+        2: 'Poucos termos técnicos, sempre explicados',
+        3: 'Linguagem moderada, acessível mas precisa',
+        4: 'Linguagem simples do dia a dia, sem jargão',
+        5: 'Ultra-simples: qualquer pessoa de 14 anos deve entender',
+      };
+      ruleLines.push(`- NÍVEL DE SIMPLICIDADE: ${levelDesc[rules.simplicityLevel] || 'Linguagem simples'}`);
+    }
+    if (rules.maxSentencesPerBlock) {
+      ruleLines.push(`- MÁXIMO ${rules.maxSentencesPerBlock} frases por bloco — sem exceção`);
+    }
+    if (rules.maxTotalBlocks) {
+      ruleLines.push(`- MÁXIMO ${rules.maxTotalBlocks} blocos no relatório total`);
+    }
+    if (rules.repetitionProhibited) {
+      ruleLines.push(`- REPETIÇÃO PROIBIDA: cada bloco DEVE trazer informação nova. Se dois blocos dizem a mesma coisa com palavras diferentes, reescreva um deles.`);
+    }
+    if (rules.forbiddenLanguage && rules.forbiddenLanguage.length > 0) {
+      ruleLines.push(`- TERMOS PROIBIDOS (nunca usar): ${rules.forbiddenLanguage.map(t => `"${t}"`).join(', ')}`);
+    }
+    if (rules.requiredBlocks && rules.requiredBlocks.length > 0) {
+      ruleLines.push(`- BLOCOS OBRIGATÓRIOS (devem estar presentes): ${rules.requiredBlocks.join(', ')}`);
+    }
+
+    if (ruleLines.length > 0) {
+      sections.push(`# REGRAS DE SAÍDA CONFIGURADAS PELO ADMINISTRADOR\n\n${ruleLines.join('\n')}`);
+    }
+  }
+
   return sections.join("\n\n---\n\n");
 }
 
@@ -400,7 +462,8 @@ function buildUserPrompt(
   secondary: ScoreEntry[],
   contradictions: string,
   answersSummary: string,
-  categoryCtx: CategoryContext
+  categoryCtx: CategoryContext,
+  template?: ReportTemplate | null
 ): string {
   const ov = categoryCtx.sectionOverrides;
   return `${userContext}
@@ -423,7 +486,80 @@ ${answersSummary}
 
 ---
 
-Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 frases por bloco. Linguagem simples, direta, sem rodeio. Nada de psicologuês. Cada seção traz informação NOVA — ZERO repetição:
+${buildJsonOutputSchema(ov, template, categoryCtx)}`;
+}
+
+/**
+ * Build the JSON output schema dynamically.
+ * If a report_template with sections exists, use those sections.
+ * Otherwise, fall back to the default 8-section structure.
+ */
+function buildJsonOutputSchema(
+  ov: Record<string, string>,
+  template?: ReportTemplate | null,
+  categoryCtx?: CategoryContext
+): string {
+  const maxSentences = template?.output_rules?.maxSentencesPerBlock || 2;
+
+  // If template has custom sections, build dynamic schema
+  if (template?.sections && Array.isArray(template.sections) && template.sections.length > 0) {
+    const sectionLines = template.sections.map((sec) => {
+      const instruction = ov[sec.key] || `Conteúdo para "${sec.name}" — máximo ${sec.maxSize || maxSentences} frases.`;
+      // Determine if it's a list or text field based on key patterns
+      const isListField = ['gatilhos', 'pararDeFazer', 'mentalTraps', 'selfSabotageCycle', 'whatNotToDo', 'oQueEvitar'].includes(sec.key);
+      if (isListField) {
+        return `  "${sec.key}": ["${instruction}"]`;
+      }
+      if (sec.key === 'impactoPorArea') {
+        return `  "impactoPorArea": [
+    {"area": "Rotina", "efeito": "1 frase"},
+    {"area": "Trabalho", "efeito": "1 frase"},
+    {"area": "Emocional", "efeito": "1 frase"},
+    {"area": "Relações", "efeito": "1 frase"},
+    {"area": "Autoconfiança", "efeito": "1 frase"}
+  ]`;
+      }
+      return `  "${sec.key}": "${instruction}"`;
+    });
+
+    return `Gere o diagnóstico em JSON com esta estrutura personalizada para este teste. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta, sem rodeio. Cada seção traz informação NOVA — ZERO repetição:
+{
+${sectionLines.join(',\n')},
+
+  "profileName": "Nome criativo do perfil (3-5 palavras)",
+  "combinedTitle": "Título curto e impactante do diagnóstico",
+  "blindSpot": {"perceivedProblem": "O que a pessoa acha que é o problema", "realProblem": "O que realmente acontece"},
+  "criticalDiagnosis": "Copie chamaAtencao ou resumoPrincipal",
+  "corePain": "Resuma o impacto em 1 frase",
+  "mentalState": "Estado mental atual em 1 frase",
+  "summary": "Copie chamaAtencao ou resumoPrincipal",
+  "mechanism": "Copie padraoRepetido ou padraoIdentificado",
+  "contradiction": "A contradição interna principal — 1 frase",
+  "impact": "Resuma o impacto em 1 frase",
+  "direction": "Copie corrigirPrimeiro ou direcaoAjuste",
+  "keyUnlockArea": "Copie corrigirPrimeiro ou direcaoAjuste",
+  "blockingPoint": "Onde a pessoa trava — 1 frase",
+  "triggers": ["mesmos gatilhos acima"],
+  "mentalTraps": ["2-3 pensamentos que mantêm o padrão — entre aspas"],
+  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem — frases curtas"],
+  "whatNotToDo": ["mesmos itens de pararDeFazer"],
+  "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
+  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
+  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
+  "firstAction": "Copie acaoInicial ou proximoPasso"
+}
+
+REGRAS FINAIS:
+- MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
+- NÃO repita a mesma ideia entre seções.
+- ZERO palavras rebuscadas.
+- actionPlan: só para áreas abaixo de 70%.
+- Se não houver áreas abaixo de 70%, retorne actionPlan como [].
+${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
+  }
+
+  // Default 8-section structure (fallback)
+  return `Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta, sem rodeio. Nada de psicologuês. Cada seção traz informação NOVA — ZERO repetição:
 {
   "chamaAtencao": "${ov.resumoPrincipal || 'O que mais salta aos olhos no resultado — 1-2 frases diretas, sem introdução.'}",
   "padraoRepetido": "${ov.padraoIdentificado || 'O padrão que mais se repete — nome curto + 1 frase explicando o mecanismo.'}",
@@ -436,9 +572,9 @@ Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 fr
     {"area": "Relações", "efeito": "1 frase sobre efeito nos relacionamentos"},
     {"area": "Autoconfiança", "efeito": "1 frase sobre impacto na autoimagem"}
   ],
-  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O QUE PRECISA MUDAR — a direção geral. Ex: parar de evitar conflitos, ou aprender a dizer não. NÃO é uma ação concreta. 1-2 frases.'}",
+  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O QUE PRECISA MUDAR — a direção geral. NÃO é uma ação concreta. 1-2 frases.'}",
   "pararDeFazer": ["2-3 coisas para PARAR imediatamente — escritas como conselho direto"],
-  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO CONCRETA para fazer HOJE ou nos próximos 3 dias. Deve ser específica e executável agora — tipo: na próxima vez que X acontecer, faça Y. DIFERENTE de corrigirPrimeiro — aqui é o PASSO PRÁTICO, não a direção.'}",
+  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO CONCRETA para fazer HOJE ou nos próximos 3 dias. DIFERENTE de corrigirPrimeiro.'}",
 
   "profileName": "Nome criativo do perfil (3-5 palavras)",
   "combinedTitle": "Título curto e impactante do diagnóstico",
@@ -464,13 +600,13 @@ Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 fr
 }
 
 REGRAS FINAIS:
-- MÁXIMO 2 frases por bloco. Sem exceção.
+- MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
 - NÃO repita a mesma ideia entre seções.
 - corrigirPrimeiro = DIREÇÃO (o que mudar). acaoInicial = AÇÃO (o que fazer agora). São OBRIGATORIAMENTE diferentes.
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
-${categoryCtx.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
+${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
 }
 
 function detectContradictions(scores: ScoreEntry[]): string {
@@ -582,6 +718,22 @@ serve(async (req) => {
       });
     }
 
+    // Fetch report template for this test (sections + output_rules)
+    let reportTemplate: ReportTemplate | null = null;
+    try {
+      const { data: tmpl } = await adminClient
+        .from("report_templates")
+        .select("sections, output_rules")
+        .eq("test_id", test_module_id)
+        .maybeSingle();
+      if (tmpl) {
+        reportTemplate = {
+          sections: Array.isArray(tmpl.sections) ? tmpl.sections as TemplateSection[] : [],
+          output_rules: (tmpl.output_rules && typeof tmpl.output_rules === 'object') ? tmpl.output_rules as OutputRules : {},
+        };
+      }
+    } catch { /* use defaults if template fetch fails */ }
+
     // Fetch user profile for context
     const { data: profile } = await userClient
       .from("profiles")
@@ -604,8 +756,8 @@ serve(async (req) => {
     // Build category-specific context
     const categoryCtx = getCategoryContext(slug);
 
-    // Build structured prompts
-    const systemPrompt = buildStructuredSystemPrompt(prompts as PromptRecord[], categoryCtx);
+    // Build structured prompts — now with template integration
+    const systemPrompt = buildStructuredSystemPrompt(prompts as PromptRecord[], categoryCtx, reportTemplate);
 
     const userContext = profile
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
@@ -614,7 +766,7 @@ serve(async (req) => {
     const answersSummary = buildAnswersSummary(structuredAnswers || []);
 
     const userPrompt = buildUserPrompt(
-      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary, categoryCtx
+      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary, categoryCtx, reportTemplate
     );
 
     // Build refine instruction if needed
