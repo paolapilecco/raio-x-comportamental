@@ -29,9 +29,12 @@ function calculateScores(answers: Answer[]): PatternScore[] {
     const question = questions.find((q) => q.id === answer.questionId);
     if (!question) return;
 
+    // Subtract 1 so that "discordo totalmente" (1) = 0 points, "concordo totalmente" (5) = 4 points
+    const normalizedValue = Math.max(0, answer.value - 1);
+
     question.axes.forEach((axis) => {
-      rawScores[axis] += answer.value;
-      maxScores[axis] += 5;
+      rawScores[axis] += normalizedValue;
+      maxScores[axis] += 4; // max is now 4 (5-1) per question
     });
   });
 
