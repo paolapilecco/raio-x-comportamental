@@ -155,6 +155,15 @@ const PromptEditor = ({
                               Usar Template
                             </button>
                           )}
+                          <button
+                            onClick={() => generateWithAI(prompt.id, section.type)}
+                            disabled={generatingAI === section.type}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[0.68rem] font-medium bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                            title="Gerar prompt automaticamente com IA baseado no contexto do teste"
+                          >
+                            {generatingAI === section.type ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                            {generatingAI === section.type ? 'Gerando...' : 'Gerar com IA'}
+                          </button>
                         </div>
                         <button
                           onClick={() => onSavePrompt(prompt)}
