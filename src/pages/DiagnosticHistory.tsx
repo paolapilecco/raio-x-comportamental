@@ -372,7 +372,7 @@ const DiagnosticHistory = () => {
                 const moduleName = modules.find(m => m.id === entry.test_module_id)?.name;
                 return (
                   <div key={entry.id} className="bg-card rounded-2xl border border-border/30 p-5 flex items-center justify-between hover:border-primary/15 transition-colors">
-                    <div className="space-y-1">
+                    <div className="space-y-1 flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-foreground text-sm">{entry.combined_title}</span>
                         {i === 0 && <span className="text-[10px] tracking-wider uppercase bg-primary/10 text-primary px-2 py-0.5 rounded-full font-semibold">Mais recente</span>}
@@ -386,7 +386,17 @@ const DiagnosticHistory = () => {
                         {moduleName && <span className="text-primary/60">{moduleName}</span>}
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground/50 italic hidden sm:block">{entry.profile_name}</span>
+                    <div className="flex items-center gap-3 ml-3">
+                      <span className="text-xs text-muted-foreground/50 italic hidden sm:block">{entry.profile_name}</span>
+                      <button
+                        onClick={() => handleDownloadPdf(entry)}
+                        disabled={downloadingId === entry.id}
+                        className="p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                        title="Baixar PDF"
+                      >
+                        <Download className={`w-4 h-4 ${downloadingId === entry.id ? 'animate-pulse' : ''}`} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
