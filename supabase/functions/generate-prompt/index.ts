@@ -65,13 +65,27 @@ serve(async (req) => {
     const template = templateRes.data;
     const existingPrompts = promptsRes.data || [];
 
-    // Build context summary
+    // Build question analysis summary
     const questionsSummary = questions.length > 0
-      ? questions.slice(0, 30).map((q, i) => `${i + 1}. [${q.type}] "${q.text}" (eixos: ${(q.axes || []).join(", ")}${q.context ? `, contexto: ${q.context}` : ""})`).join("\n")
+      ? questions.slice(0, 30).map((q, i) => `${i + 1}. [${q.type}] "${q.text}" (eixos: ${(q.axes || []).join(", ")}, peso: ${q.weight}${q.context ? `, contexto: ${q.context}` : ""})`).join("\n")
       : "Nenhuma pergunta cadastrada ainda.";
 
     const axes = [...new Set(questions.flatMap(q => q.axes || []))];
     const questionTypes = [...new Set(questions.map(q => q.type))];
+
+    // Analyze what questions actually measure
+    const axisWeights: Record<string, { count: number; totalWeight: number }> = {};
+    questions.forEach(q => {
+      (q.axes || []).forEach((axis: string) => {
+        if (!axisWeights[axis]) axisWeights[axis] = { count: 0, totalWeight: 0 };
+        axisWeights[axis].count++;
+        axisWeights[axis].totalWeight += Number(q.weight) || 1;
+      });
+    });
+    const axisAnalysis = Object.entries(axisWeights)
+      .sort((a, b) => b[1].totalWeight - a[1].totalWeight)
+      .map(([axis, info]) => `${axis}: ${info.count} perguntas, peso acumulado ${info.totalWeight.toFixed(1)}`)
+      .join("\n");
 
     const templateInfo = template
       ? `Seções do relatório: ${JSON.stringify(template.sections)}\nRegras de saída: ${JSON.stringify(template.output_rules)}`
@@ -79,23 +93,40 @@ serve(async (req) => {
 
     const otherPrompts = existingPrompts
       .filter(p => p.prompt_type !== sectionType && p.content.trim())
-      .map(p => `[${p.prompt_type}]: ${p.content.slice(0, 200)}...`)
+      .map(p => `[${p.prompt_type}]: ${p.content.slice(0, 300)}...`)
       .join("\n\n");
 
-    const systemPrompt = `Você é um especialista em engenharia de prompts para diagnósticos comportamentais e psicométricos.
+    const systemPrompt = `Você é um especialista sênior em engenharia de prompts para diagnósticos comportamentais e psicométricos.
 
-Sua tarefa é gerar um prompt altamente específico para a seção "${sectionType}" (${SECTION_PURPOSES[sectionType]}) de um teste diagnóstico.
+Sua tarefa é gerar um prompt profissional para a seção "${sectionType}" (${SECTION_PURPOSES[sectionType]}) de um teste diagnóstico.
 
-REGRAS ABSOLUTAS:
-1. O prompt gerado deve ser 100% específico para ESTE teste — nunca genérico
-2. Referencie os eixos reais, tipos de pergunta e temas das questões cadastradas
-3. O tom deve ser profissional e direto
-4. Inclua regras claras do que fazer e do que NÃO fazer
-5. Estruture com seções numeradas
-6. Máximo 500 palavras
-7. Considere as regras de saída do template se existirem
-8. Não repita instruções que já existam em outros prompts do mesmo teste
-9. Retorne APENAS o texto do prompt — sem explicações, sem markdown extra`;
+MÉTODO OBRIGATÓRIO — ANÁLISE ANTES DE GERAR:
+Antes de escrever o prompt, analise internamente:
+1. O que as perguntas cadastradas REALMENTE medem (não o nome do teste)
+2. Quais padrões comportamentais podem ser inferidos das respostas
+3. Quais eixos têm maior concentração de perguntas e peso
+4. Que tipo de conflito ou contradição pode surgir entre eixos
+5. Quais blocos do template do relatório este prompt deve alimentar
+
+REGRAS DE QUALIDADE PROFISSIONAL:
+1. Linguagem CLARA e DIRETA — sem psicologuês vazio
+2. Função ESPECÍFICA — o prompt deve servir APENAS para "${sectionType}"
+3. ZERO generalização — cada instrução deve ser rastreável aos eixos/perguntas reais
+4. ZERO frases motivacionais ou de autoajuda
+5. ZERO repetição de instruções que existam em outros prompts do teste
+6. Referencie EXPLICITAMENTE os eixos reais e o que eles captam
+7. Inclua regras claras do que fazer E do que NÃO fazer
+8. Estruture com seções numeradas
+9. Máximo 500 palavras
+10. Se o template do relatório existir, alinhe as instruções aos blocos que esta seção alimenta
+
+PROIBIDO:
+- "busque equilíbrio", "tenha mais consciência", "acredite em si"
+- Instruções vagas como "analise profundamente" sem especificar O QUÊ
+- Repetir a descrição do teste como se fosse instrução
+- Ignorar os dados reais das perguntas
+
+Retorne APENAS o texto do prompt — sem explicações, sem markdown extra, sem comentários.`;
 
     const userPrompt = `CONTEXTO COMPLETO DO TESTE:
 
@@ -104,17 +135,19 @@ Slug: ${testModule.slug}
 Categoria: ${testModule.category}
 Descrição: ${testModule.description}
 
-EIXOS IDENTIFICADOS: ${axes.length > 0 ? axes.join(", ") : "nenhum ainda"}
-TIPOS DE PERGUNTA: ${questionTypes.length > 0 ? questionTypes.join(", ") : "nenhum ainda"}
+ANÁLISE DOS EIXOS (por concentração):
+${axisAnalysis || "Nenhum eixo identificado ainda."}
+
+TIPOS DE PERGUNTA USADOS: ${questionTypes.length > 0 ? questionTypes.join(", ") : "nenhum ainda"}
 TOTAL DE PERGUNTAS: ${questions.length}
 
-PERGUNTAS CADASTRADAS:
+PERGUNTAS CADASTRADAS (analise o que elas REALMENTE medem):
 ${questionsSummary}
 
-TEMPLATE DO RELATÓRIO:
+TEMPLATE DO RELATÓRIO (o prompt deve alimentar estes blocos):
 ${templateInfo}
 
-OUTROS PROMPTS JÁ CONFIGURADOS:
+OUTROS PROMPTS JÁ CONFIGURADOS (NÃO repita estas instruções):
 ${otherPrompts || "Nenhum outro prompt configurado ainda."}
 
 ---
@@ -122,7 +155,7 @@ ${otherPrompts || "Nenhum outro prompt configurado ainda."}
 SEÇÃO A GERAR: ${sectionType}
 FUNÇÃO DESTA SEÇÃO: ${SECTION_PURPOSES[sectionType]}
 
-Gere o prompt otimizado para esta seção, considerando todo o contexto acima.`;
+Gere o prompt profissional para esta seção. Baseie-se nos DADOS REAIS das perguntas, não em conceitos abstratos.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
