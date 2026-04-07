@@ -138,7 +138,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
               <div className="bg-background px-4 py-3.5">
                 <p className="text-[9px] text-muted-foreground/40 uppercase tracking-widest mb-1">Padrão principal</p>
                 <p className="text-sm font-semibold text-foreground leading-snug">
-                  {result.interpretation?.behavioralProfile?.name || result.profileName || result.dominantPattern}
+                  {result.interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '')}
                 </p>
               </div>
               <div className="bg-background px-4 py-3.5">
