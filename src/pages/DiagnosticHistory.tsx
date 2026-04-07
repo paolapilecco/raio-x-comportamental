@@ -13,6 +13,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
 
