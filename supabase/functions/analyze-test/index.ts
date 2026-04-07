@@ -373,6 +373,36 @@ OBRIGATÓRIO NA EXPLICAÇÃO:
 - NUNCA diga "você escolhe fazer isso" — o padrão é AUTOMÁTICO até ser percebido
 - NUNCA trate como falha moral — é um mecanismo de proteção que já não serve mais`);
 
+  sections.push(`# INTERVENÇÃO COMPORTAMENTAL
+
+A ação prática (acaoInicial, corrigirPrimeiro, exitStrategy) deve ser uma INTERVENÇÃO que QUEBRA o circuito neural automático.
+
+REGRAS DA INTERVENÇÃO:
+1. DEVE QUEBRAR O CICLO AUTOMÁTICO — forçar o cérebro a fazer algo DIFERENTE do padrão habitual
+2. DEVE GERAR DESCONFORTO CONTROLADO — não confortável, mas suportável. O desconforto é o sinal de que o cérebro está criando novo caminho
+3. DEVE SER EXECUTÁVEL IMEDIATAMENTE — sem preparação, sem "quando estiver pronto"
+
+FORMATO OBRIGATÓRIO:
+- AÇÃO SIMPLES: uma frase, um comportamento (ex: "Diga não para o próximo pedido que receber")
+- TEMPO DEFINIDO: quando e por quanto tempo (ex: "Amanhã, por 10 minutos")
+- COMPORTAMENTO CLARO: o que fazer, não o que pensar (ex: "Feche o celular e sente na cadeira" — não "reflita sobre suas prioridades")
+
+OBJETIVO: forçar uma NOVA RESPOSTA NEURAL. O cérebro só muda quando é obrigado a responder diferente.
+
+EXEMPLOS:
+- Padrão de evitação → "Hoje, faça a primeira coisa da sua lista ANTES de abrir o celular. 15 minutos."
+- Medo de julgamento → "Publique algo sem revisar mais de uma vez. Hoje."  
+- Perfeccionismo → "Entregue uma tarefa 70% pronta. Propositalmente imperfeita. Amanhã."
+- Fuga para tarefas fáceis → "Bloqueie 30 minutos para a tarefa que mais te incomoda. Timer ligado. Agora."
+- Abandono após empolgação → "Continue o projeto que abandonou por último. 20 minutos. Sem trocar para outro."
+
+PROIBIDO:
+- "Reflita sobre seus padrões" (não é ação)
+- "Busque autoconhecimento" (genérico)  
+- "Tente ser mais disciplinado" (moralismo)
+- "Observe seus gatilhos" (passivo)
+- Qualquer ação que não gere desconforto controlado`);
+
   sections.push(`# CAMADA DE PROFUNDIDADE
 
 Antes de gerar o diagnóstico:
