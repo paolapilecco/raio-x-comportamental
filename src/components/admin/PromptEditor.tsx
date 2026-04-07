@@ -32,10 +32,10 @@ const PromptEditor = ({
   return (
     <div className="space-y-4">
       {/* Status bar */}
-      <div className="flex items-center justify-between px-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold">{currentModule.name}</h2>
-          <span className="text-[0.65rem] font-mono text-muted-foreground/40">{currentModule.slug}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <h2 className="text-base sm:text-lg font-semibold truncate">{currentModule.name}</h2>
+          <span className="text-[0.65rem] font-mono text-muted-foreground/40 hidden sm:inline">{currentModule.slug}</span>
         </div>
         <div className="flex items-center gap-1.5">
           {PROMPT_SECTIONS.map(s => {
@@ -117,9 +117,9 @@ const PromptEditor = ({
                             : 'bg-background/50 border-border/20 text-foreground/80 focus:ring-primary/20 placeholder:text-muted-foreground/30'
                         }`}
                       />
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <span className="text-[0.65rem] text-muted-foreground/30">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                          <span className="text-[0.6rem] sm:text-[0.65rem] text-muted-foreground/30">
                             Última edição: {new Date(prompt.updated_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                           </span>
                           {PROMPT_TEMPLATES[section.type] && (
@@ -136,7 +136,7 @@ const PromptEditor = ({
                         <button
                           onClick={() => onSavePrompt(prompt)}
                           disabled={(editedTexts[`tp_${prompt.id}`] ?? prompt.content) === prompt.content || saving === prompt.id}
-                          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[0.75rem] font-semibold disabled:opacity-20 hover:opacity-90 transition-all"
+                          className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-[0.75rem] font-semibold disabled:opacity-20 hover:opacity-90 transition-all w-full sm:w-auto justify-center"
                         >
                           <Save className="w-3.5 h-3.5" /> {saving === prompt.id ? 'Salvando...' : 'Salvar'}
                         </button>

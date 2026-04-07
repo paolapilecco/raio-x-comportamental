@@ -153,7 +153,7 @@ const DiagnosticHistory = () => {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto px-6 md:px-10 py-10 space-y-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10 space-y-6 sm:space-y-8">
         {/* Header */}
         <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="flex items-center gap-4">
           <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">

@@ -153,7 +153,7 @@ const Profile = () => {
         </motion.div>
 
         {/* Stats Grid */}
-        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-4">
+        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-3 gap-2 sm:gap-4">
           {[
             { value: centralProfile?.tests_completed || 0, label: 'Leituras', icon: BarChart3 },
             { value: `${completedCount}/${totalModules}`, label: 'Módulos', icon: Layers },
@@ -169,11 +169,11 @@ const Profile = () => {
             return (
               <div
                 key={stat.label}
-                className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-5 text-center"
+                className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-3 sm:p-5 text-center"
               >
-                <StatIcon className="w-4 h-4 text-primary/40 mx-auto mb-3" />
-                <p className="text-xl text-foreground/85 tracking-[-0.02em]">{stat.value}</p>
-                <p className="text-[0.65rem] text-muted-foreground/45 tracking-[0.12em] uppercase mt-1.5 font-display font-medium">{stat.label}</p>
+                <StatIcon className="w-4 h-4 text-primary/40 mx-auto mb-2 sm:mb-3" />
+                <p className="text-lg sm:text-xl text-foreground/85 tracking-[-0.02em]">{stat.value}</p>
+                <p className="text-[0.6rem] sm:text-[0.65rem] text-muted-foreground/45 tracking-[0.12em] uppercase mt-1 sm:mt-1.5 font-display font-medium">{stat.label}</p>
               </div>
             );
           })}

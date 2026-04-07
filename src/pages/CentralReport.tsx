@@ -223,7 +223,7 @@ const CentralReport = () => {
 
   return (
     <div className="min-h-screen px-4 py-8 md:py-12">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
         {/* Header */}
         <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center gap-4">
           <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
@@ -312,7 +312,7 @@ const CentralReport = () => {
         )}
 
         {/* Dominant Trigger + Risk */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
             <div className="flex items-center gap-3 mb-4">
               <Crosshair className="w-5 h-5 text-primary" />
@@ -387,10 +387,10 @@ const CentralReport = () => {
             <Activity className="w-5 h-5 text-primary" />
             <h3 className="text-xl font-serif">Mapa de Funcionamento Global</h3>
           </div>
-          <ResponsiveContainer width="100%" height={320}>
+          <ResponsiveContainer width="100%" height={280}>
             <RadarChart data={radarData}>
               <PolarGrid stroke="hsl(var(--border))" />
-              <PolarAngleAxis dataKey="axis" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+              <PolarAngleAxis dataKey="axis" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
               <Radar name="Score Global" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} />
             </RadarChart>
           </ResponsiveContainer>
@@ -404,11 +404,11 @@ const CentralReport = () => {
               <h3 className="text-xl font-serif">Evolução ao Longo do Tempo</h3>
             </div>
             <p className="text-xs text-muted-foreground mb-4">Cada ponto representa uma leitura realizada</p>
-            <ResponsiveContainer width="100%" height={350}>
+            <ResponsiveContainer width="100%" height={300}>
               <LineChart data={timelineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                <XAxis dataKey="date" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} width={30} />
                 <Tooltip />
                 <Legend />
                 {timelineKeys.map((key, i) => (
