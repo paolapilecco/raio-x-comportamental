@@ -753,7 +753,9 @@ REGRAS FINAIS:
 - actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
 - corrigirPrimeiro/direcaoAjuste: deve conter QUAL comportamento mudar e EM QUAL situação. Proibido: "mude sua relação com X", "busque equilíbrio", "tenha mais consciência".
-- acaoInicial/proximoPasso: deve conter QUANDO fazer + COMO fazer + por QUANTO TEMPO. Proibido: "reflita sobre", "observe seus padrões", "tente se conhecer melhor".
+- focoMudanca: RESUMO CURTO (1-5 palavras) da área prioritária. NÃO pode ser igual a corrigirPrimeiro.
+- microAcoes: 3 ações ESPECÍFICAS e EXECUTÁVEIS com verbo imperativo. Cada ação = passo-a-passo que qualquer pessoa faz SEM pensar. Proibido ações vagas.
+- acaoInicial/proximoPasso: deve conter QUANDO fazer + COMO fazer + por QUANTO TEMPO. Proibido: "reflita sobre", "observe seus padrões", "anote o que muda".
 - pararDeFazer: cada item deve ter SITUAÇÃO + COMPORTAMENTO específico. Proibido: "pare de se cobrar", "pare de procrastinar".
 - mecanismoNeural: use linguagem SIMPLES para explicar neurociência. Proibido: termos técnicos sem explicação entre parênteses.
 ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
