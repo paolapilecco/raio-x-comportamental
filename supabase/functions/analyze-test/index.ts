@@ -401,7 +401,37 @@ PROIBIDO:
 - "Busque autoconhecimento" (genérico)  
 - "Tente ser mais disciplinado" (moralismo)
 - "Observe seus gatilhos" (passivo)
-- Qualquer ação que não gere desconforto controlado`);
+- Qualquer ação que não gere desconforto controlado
+
+## COMANDO MENTAL DE REPROGRAMAÇÃO (mentalCommand)
+
+Além da ação prática, gere UMA FRASE de reprogramação mental que o usuário deve repetir ANTES de executar a ação.
+
+OBJETIVO:
+- Enfraquecer o padrão neural antigo
+- Reforçar o novo comportamento
+- Preparar o cérebro para agir diferente
+
+REGRAS:
+- Frase em PRIMEIRA PESSOA ("Eu...")
+- CURTA: máximo 10 palavras
+- DIRETA: sem floreio, sem motivação genérica
+- Deve CONTRADIZER a crença que mantém o padrão
+- Deve ser ESPECÍFICA ao padrão identificado
+
+EXEMPLOS POR PADRÃO:
+- Evitação → "Eu não preciso estar pronto pra começar."
+- Perfeccionismo → "Feito imperfeito vale mais que perfeito adiado."
+- Medo de julgamento → "A opinião dos outros não paga minhas contas."
+- Fuga para tarefas fáceis → "O fácil me engana. O difícil me move."
+- Abandono → "Eu termino o que começo, mesmo sem vontade."
+
+PROIBIDO:
+- "Eu sou capaz" (genérico)
+- "Eu mereço o melhor" (autoajuda)
+- "Eu confio no processo" (vazio)
+- Qualquer frase que sirva para qualquer pessoa`);
+
 
   sections.push(`# CAMADA DE PROFUNDIDADE
 
@@ -611,7 +641,8 @@ ${sectionLines.join(',\n')},
   "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
-  "firstAction": "Copie acaoInicial ou proximoPasso"
+  "firstAction": "Copie acaoInicial ou proximoPasso",
+  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa, sem aspas internas. Ex: Eu não preciso estar pronto pra começar."
 }
 
 REGRAS FINAIS:
@@ -664,7 +695,8 @@ ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TE
   "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
   "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
   "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
-  "firstAction": "Copie acaoInicial"
+  "firstAction": "Copie acaoInicial",
+  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa. Ex: Eu não preciso estar pronto pra começar."
 }
 
 REGRAS FINAIS:
