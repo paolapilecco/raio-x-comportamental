@@ -451,6 +451,11 @@ const Diagnostic = () => {
         corrigirPrimeiro: ai.corrigirPrimeiro || ai.direcaoAjuste || '',
         pararDeFazer: ai.pararDeFazer || ai.oQueEvitar || [],
         acaoInicial: ai.acaoInicial || ai.proximoPasso || ai.firstAction || '',
+        // New structured fields
+        microAcoes: ai.microAcoes || [],
+        mentalCommand: ai.mentalCommand || '',
+        mecanismoNeural: ai.mecanismoNeural || null,
+        focoMudanca: ai.focoMudanca || '',
         // Legacy fields for backward compat
         resumoPrincipal: ai.resumoPrincipal || ai.chamaAtencao || '',
         significadoPratico: ai.significadoPratico || ai.comoAtrapalha || '',
