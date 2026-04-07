@@ -4,6 +4,7 @@ import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAxisLabels } from '@/hooks/useAxisLabels';
 import LifeMapReport from './LifeMapReport';
 
 interface ReportProps {
