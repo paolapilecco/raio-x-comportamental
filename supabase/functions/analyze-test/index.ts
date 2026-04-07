@@ -53,172 +53,211 @@ interface CategoryContext {
 }
 
 function getCategoryContext(slug: string): CategoryContext {
+  // ── Neuroscience vocabulary shared across all categories ──
+  const neuroBase = `
+VOCABULÁRIO NEUROCIENTÍFICO (use naturalmente, sem jargão pesado):
+- TÉTRADE EMOCIONAL: Todo estado emocional é formado por 4 pilares — CRENÇAS (o que a pessoa acredita ser verdade), LINGUAGEM INTERNA (o que ela diz para si mesma), FOCO (para onde direciona a atenção) e FISIOLOGIA (como o corpo responde). Identifique qual pilar da Tétrade está mais desregulado.
+- METAPROGRAMAS: Filtros mentais automáticos que determinam como a pessoa processa informação — Proativo vs Reativo (age ou espera?), Referência Interna vs Externa (decide por si ou precisa de aprovação?), Associador vs Desassociador (se conecta ou se distancia emocionalmente?). Identifique os metaprogramas dominantes nas respostas.
+- PSICOADAPTAÇÃO: O cérebro se adapta ao sofrimento e transforma o padrão disfuncional em "normal". A pessoa não muda porque o desconforto virou familiar — o cérebro prefere o sofrimento CONHECIDO ao desconforto DESCONHECIDO da mudança. Explique onde a psicoadaptação mantém o padrão ativo.
+- ANCORAGEM: Estímulos (situações, pessoas, lugares) que ativam automaticamente um estado emocional ou comportamento. Identifique as ÂNCORAS NEGATIVAS (o que dispara o padrão ruim) e sugira ÂNCORAS DE RECURSO (o que pode disparar um estado melhor).
+- ESTADOS COM/SEM RECURSOS: A pessoa alterna entre estados "com recursos" (calma, clareza, energia) e "sem recursos" (ansiedade, confusão, paralisia). O padrão se ativa quando ela entra em estado sem recursos. Identifique o que a tira do estado de recursos.`;
+
   // Mapa de Vida has its own PDF/report, skip here
   if (slug === 'mapa-de-vida') {
     return {
-      role: 'Você analisa a satisfação do usuário em cada área da vida e identifica onde ele precisa agir primeiro.',
-      emphasis: 'Foco em EQUILÍBRIO entre as áreas e PRIORIZAÇÃO de ação.',
+      role: 'Você analisa a satisfação do usuário em cada área da vida e identifica onde ele precisa agir primeiro, usando princípios de neurociência comportamental.',
+      emphasis: 'Foco em EQUILÍBRIO entre as áreas, PRIORIZAÇÃO de ação e identificação de ÂNCORAS de desequilíbrio.',
       sectionOverrides: {
-        resumoPrincipal: 'Qual área da vida está mais desequilibrada e o que isso causa nas outras.',
-        significadoPratico: 'Como esse desequilíbrio aparece na rotina real — exemplos concretos.',
-        padraoIdentificado: 'Qual padrão de negligência ou compensação entre áreas.',
-        direcaoAjuste: 'Qual área priorizar primeiro e por quê — uma ação concreta.',
-        proximoPasso: 'Uma ação para esta semana na área mais crítica.',
+        resumoPrincipal: 'Qual área da vida está mais desequilibrada e o que isso causa nas outras. Identifique o metaprograma dominante (proativo/reativo) em cada área.',
+        significadoPratico: 'Como esse desequilíbrio aparece na rotina real — use o conceito de Tétrade para explicar: qual crença, linguagem interna, foco ou fisiologia mantém o desequilíbrio.',
+        padraoIdentificado: 'Qual padrão de negligência ou compensação entre áreas. A psicoadaptação fez esse desequilíbrio parecer "normal"?',
+        direcaoAjuste: 'Qual área priorizar primeiro e por quê — crie uma ÂNCORA DE RECURSO para essa área.',
+        proximoPasso: 'Uma ação para esta semana na área mais crítica que quebre a psicoadaptação.',
       },
       extraInstructions: `- Mencione as ÁREAS DA VIDA específicas (saúde, finanças, relacionamento, etc.)
 - Compare áreas fortes vs fracas — o que uma compensa na outra?
-- O plano de ação deve ser POR ÁREA, não genérico`,
+- O plano de ação deve ser POR ÁREA, não genérico
+- Identifique onde a PSICOADAPTAÇÃO fez o desequilíbrio parecer aceitável
+- Sugira uma ÂNCORA DE RECURSO prática para a área mais crítica
+${neuroBase}`,
     };
   }
 
   if (slug === 'padrao-comportamental') {
     return {
-      role: 'Você identifica os padrões invisíveis de comportamento que travam a pessoa sem ela perceber.',
-      emphasis: 'Foco em PADRÕES REPETITIVOS e MECANISMOS AUTOMÁTICOS.',
+      role: 'Você identifica os padrões invisíveis de comportamento (circuitos neurais automatizados) que travam a pessoa sem ela perceber.',
+      emphasis: 'Foco em PADRÕES REPETITIVOS, MECANISMOS AUTOMÁTICOS e METAPROGRAMAS dominantes.',
       sectionOverrides: {
-        resumoPrincipal: 'Qual padrão domina e como ele funciona por baixo das decisões conscientes.',
-        significadoPratico: 'Em quais decisões do dia a dia esse padrão aparece — exemplos reais.',
-        comoAparece: 'Situações concretas onde o padrão se ativa sem a pessoa perceber.',
-        direcaoAjuste: 'Qual comportamento automático interromper primeiro.',
+        resumoPrincipal: 'Qual padrão domina e como ele funciona por baixo das decisões conscientes. Identifique o metaprograma dominante (proativo/reativo, interno/externo).',
+        significadoPratico: 'Em quais decisões do dia a dia esse padrão aparece — quais ÂNCORAS NEGATIVAS ativam o ciclo.',
+        comoAparece: 'Situações concretas onde o padrão se ativa sem a pessoa perceber. Use a Tétrade: qual pilar (crença, linguagem, foco ou fisiologia) está disparando?',
+        direcaoAjuste: 'Qual comportamento automático interromper primeiro — crie uma ÂNCORA DE RECURSO substituta.',
       },
       extraInstructions: `- Foque em MECANISMOS AUTOMÁTICOS — coisas que a pessoa faz no piloto automático
-- Identifique o CICLO: gatilho → reação automática → consequência → reforço
-- O ponto cego deve revelar algo que a pessoa genuinamente não vê`,
+- Identifique o CICLO: gatilho (âncora) → reação automática → consequência → reforço (psicoadaptação)
+- O ponto cego deve revelar algo que a pessoa genuinamente não vê
+- Identifique se a pessoa opera com metaprograma REATIVO (espera acontecer) ou PROATIVO (age antes)
+- Explique onde a PSICOADAPTAÇÃO tornou o padrão "invisível"
+${neuroBase}`,
     };
   }
 
   // Execução & Produtividade
   if (slug.includes('execucao') || slug.includes('produtividade')) {
     return {
-      role: 'Você analisa por que a pessoa não consegue executar com consistência, mesmo sabendo o que precisa fazer.',
-      emphasis: 'Foco em EXECUÇÃO, CONSISTÊNCIA e PROCRASTINAÇÃO.',
+      role: 'Você analisa por que a pessoa não consegue executar com consistência, usando neurociência para explicar o mecanismo de travamento.',
+      emphasis: 'Foco em EXECUÇÃO, CONSISTÊNCIA, PROCRASTINAÇÃO e o metaprograma Proativo/Reativo.',
       sectionOverrides: {
-        resumoPrincipal: 'Onde exatamente a execução trava — o que acontece entre planejar e fazer.',
-        significadoPratico: 'Como essa falha de execução aparece no trabalho, projetos e metas.',
-        padraoIdentificado: 'O tipo de procrastinação ou bloqueio — nomeie o mecanismo específico.',
-        comoAparece: 'Exemplos: prazos perdidos, projetos abandonados, ciclos de motivação que somem.',
-        direcaoAjuste: 'A menor ação possível para quebrar o ciclo de inação.',
+        resumoPrincipal: 'Onde exatamente a execução trava — qual pilar da Tétrade (crença, foco, linguagem interna ou fisiologia) está bloqueando a ação.',
+        significadoPratico: 'Como essa falha de execução aparece no trabalho. Quais ÂNCORAS NEGATIVAS associam "começar" a desconforto.',
+        padraoIdentificado: 'O tipo de procrastinação ou bloqueio — nomeie o mecanismo específico. A pessoa é Reativa (espera motivação) ou o problema é Desassociação (se desconecta da consequência)?',
+        comoAparece: 'Exemplos: prazos perdidos, projetos abandonados, ciclos de motivação que somem. A psicoadaptação faz isso parecer "normal"?',
+        direcaoAjuste: 'A menor ação possível para quebrar o ciclo de inação — uma ÂNCORA DE RECURSO para associar "começar" a algo positivo.',
       },
-      extraInstructions: `- NÃO diga "tenha mais disciplina" — explique o que CAUSA a falta de execução
+      extraInstructions: `- NÃO diga "tenha mais disciplina" — explique o que CAUSA a falta de execução usando neurociência
 - Identifique se o problema é INÍCIO (não começa), SUSTENTAÇÃO (não mantém) ou FINALIZAÇÃO (não termina)
-- Gatilhos devem ser sobre SITUAÇÕES DE TRABALHO/ROTINA reais`,
+- Gatilhos devem ser sobre SITUAÇÕES DE TRABALHO/ROTINA reais
+- Identifique o metaprograma: PROATIVO (age sem esperar) vs REATIVO (precisa de pressão externa)
+- Explique como a PSICOADAPTAÇÃO transformou a procrastinação em rotina "aceitável"
+${neuroBase}`,
     };
   }
 
   // Emoções & Reatividade
   if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) {
     return {
-      role: 'Você analisa como as emoções controlam as decisões da pessoa e onde ela perde o controle.',
-      emphasis: 'Foco em REAÇÕES EMOCIONAIS e REGULAÇÃO.',
+      role: 'Você analisa como as emoções controlam as decisões da pessoa, usando a Tétrade Emocional para mapear o mecanismo.',
+      emphasis: 'Foco em REAÇÕES EMOCIONAIS, REGULAÇÃO e os 4 pilares da TÉTRADE.',
       sectionOverrides: {
-        resumoPrincipal: 'Qual emoção domina e como ela sequestra as decisões.',
-        significadoPratico: 'Em quais situações a pessoa reage de forma desproporcional — exemplos.',
-        padraoIdentificado: 'O tipo de reatividade — explosiva, supressiva, evitativa.',
-        comoAparece: 'Exemplos de reações que a pessoa se arrepende depois.',
-        direcaoAjuste: 'Uma técnica simples para o momento entre o gatilho e a reação.',
+        resumoPrincipal: 'Qual emoção domina e como ela sequestra as decisões. Mapeie pela Tétrade: qual CRENÇA alimenta, qual LINGUAGEM INTERNA reforça, para onde vai o FOCO e como o CORPO reage.',
+        significadoPratico: 'Em quais situações a pessoa reage de forma desproporcional — quais são as ÂNCORAS NEGATIVAS que disparam a reatividade.',
+        padraoIdentificado: 'O tipo de reatividade — explosiva, supressiva, evitativa. A pessoa é Associadora (sente tudo intensamente) ou Desassociadora (se desconecta para não sentir)?',
+        comoAparece: 'Exemplos de reações que a pessoa se arrepende depois. Qual estado "sem recursos" ela entra.',
+        direcaoAjuste: 'Uma técnica simples para o momento entre o gatilho e a reação — uma ÂNCORA DE RECURSO para acessar estado com recursos.',
       },
       extraInstructions: `- Identifique a EMOÇÃO DOMINANTE (raiva, ansiedade, medo, tristeza)
 - Diferencie entre SENTIR a emoção (normal) e SER CONTROLADO por ela (problema)
-- Gatilhos devem ser emocionais: situações que disparam reações intensas`,
+- Gatilhos devem ser emocionais: situações que disparam reações intensas
+- Use a TÉTRADE para explicar: qual dos 4 pilares está mais desregulado
+- Identifique o metaprograma ASSOCIADOR (sente demais) vs DESASSOCIADOR (anestesia emoções)
+- Sugira ÂNCORAS DE RECURSO para acessar calma nos momentos de crise
+${neuroBase}`,
     };
   }
 
   // Relacionamentos & Apego
   if (slug.includes('relacionamento') || slug.includes('apego')) {
     return {
-      role: 'Você analisa como a pessoa se conecta (ou se desconecta) dos outros e quais padrões repetitivos aparecem.',
-      emphasis: 'Foco em PADRÕES RELACIONAIS e VÍNCULOS.',
+      role: 'Você analisa como a pessoa se conecta (ou se desconecta) dos outros e quais metaprogramas relacionais dominam.',
+      emphasis: 'Foco em PADRÕES RELACIONAIS, VÍNCULOS e o metaprograma Referência Interna/Externa.',
       sectionOverrides: {
-        resumoPrincipal: 'Qual padrão de conexão domina — como a pessoa se comporta nos vínculos.',
-        significadoPratico: 'Como isso afeta namoro, amizades, família e trabalho em equipe.',
-        padraoIdentificado: 'O estilo de apego ou padrão relacional — evitativo, ansioso, controlador.',
-        comoAparece: 'Exemplos de conflitos repetitivos ou dificuldades recorrentes.',
-        direcaoAjuste: 'Uma mudança concreta no próximo momento de tensão relacional.',
+        resumoPrincipal: 'Qual padrão de conexão domina — a pessoa tem Referência Interna (decide sozinha, se isola) ou Externa (depende do outro para validação)?',
+        significadoPratico: 'Como isso afeta namoro, amizades, família. Quais ÂNCORAS NEGATIVAS (situações, pessoas, memórias) disparam o padrão relacional.',
+        padraoIdentificado: 'O estilo de apego ou padrão relacional. A psicoadaptação fez esse padrão parecer "jeito de ser"?',
+        comoAparece: 'Exemplos de conflitos repetitivos. Qual pilar da Tétrade está mais ativo nos conflitos (crença sobre si, linguagem interna, foco no outro ou reação do corpo)?',
+        direcaoAjuste: 'Uma mudança concreta no próximo momento de tensão relacional — uma ÂNCORA DE RECURSO para manter estado com recursos durante conflitos.',
       },
       extraInstructions: `- Foque em PADRÕES QUE SE REPETEM em diferentes relações
 - Identifique o PAPEL que a pessoa assume (salvador, vítima, controlador, evitador)
-- O que a pessoa FAZ que afasta os outros ou cria dependência`,
+- O que a pessoa FAZ que afasta os outros ou cria dependência
+- Identifique o metaprograma: REFERÊNCIA INTERNA (não precisa de ninguém) vs EXTERNA (precisa de aprovação constante)
+- Explique como a PSICOADAPTAÇÃO normalizou o padrão relacional disfuncional
+${neuroBase}`,
     };
   }
 
   // Autoimagem & Identidade
   if (slug.includes('autoimagem') || slug.includes('identidade')) {
     return {
-      role: 'Você analisa como a pessoa se vê e onde essa visão está distorcida ou limitante.',
-      emphasis: 'Foco em AUTOCONCEPÇÃO e CRENÇAS LIMITANTES.',
+      role: 'Você analisa como a pessoa se vê e onde essa visão está distorcida, usando a Tétrade para mapear as crenças centrais.',
+      emphasis: 'Foco em AUTOCONCEPÇÃO, CRENÇAS CENTRAIS e o pilar CRENÇAS da Tétrade.',
       sectionOverrides: {
-        resumoPrincipal: 'Como a pessoa se enxerga vs como ela realmente funciona.',
-        significadoPratico: 'Onde essa autoimagem distorcida limita decisões e oportunidades.',
-        padraoIdentificado: 'O tipo de distorção — se subestima, se idealiza, depende de validação.',
-        comoAparece: 'Exemplos: evita desafios, se compara demais, não se candidata, aceita menos.',
-        direcaoAjuste: 'Uma ação para testar uma crença limitante na prática.',
+        resumoPrincipal: 'Como a pessoa se enxerga vs como ela realmente funciona. Qual CRENÇA central (pilar 1 da Tétrade) sustenta essa distorção.',
+        significadoPratico: 'Onde essa autoimagem distorcida limita decisões. Qual LINGUAGEM INTERNA (pilar 2 da Tétrade) reforça: "eu não consigo", "eu não mereço", "eu não sou suficiente".',
+        padraoIdentificado: 'O tipo de distorção — se subestima, se idealiza, depende de validação. A pessoa tem Referência Interna (se julga sozinha) ou Externa (precisa que outros validem)?',
+        comoAparece: 'Exemplos: evita desafios, se compara demais, não se candidata, aceita menos. A psicoadaptação tornou essa identidade "confortável"?',
+        direcaoAjuste: 'Uma ação para testar uma crença limitante na prática — crie uma ÂNCORA DE RECURSO que contradiga a crença central.',
       },
-      extraInstructions: `- Identifique a NARRATIVA INTERNA que a pessoa conta sobre si mesma
+      extraInstructions: `- Identifique a NARRATIVA INTERNA que a pessoa conta sobre si mesma (pilar LINGUAGEM da Tétrade)
 - Contraste: como ela se vê vs o que os dados mostram
-- As armadilhas mentais devem ser FRASES que a pessoa repete para si mesma`,
+- As armadilhas mentais devem ser FRASES que a pessoa repete para si mesma
+- Identifique qual CRENÇA CENTRAL (Tétrade) está na raiz da distorção
+- Explique como a PSICOADAPTAÇÃO transformou essa crença em "identidade"
+${neuroBase}`,
     };
   }
 
   // Dinheiro & Decisão
   if (slug.includes('dinheiro') || slug.includes('financ')) {
     return {
-      role: 'Você analisa a relação emocional da pessoa com dinheiro e como isso afeta suas decisões financeiras.',
-      emphasis: 'Foco em COMPORTAMENTO FINANCEIRO e DECISÕES COM DINHEIRO.',
+      role: 'Você analisa a relação emocional da pessoa com dinheiro usando neurociência — quais âncoras e crenças controlam as decisões financeiras.',
+      emphasis: 'Foco em COMPORTAMENTO FINANCEIRO, ÂNCORAS com dinheiro e CRENÇAS da Tétrade sobre abundância/escassez.',
       sectionOverrides: {
-        resumoPrincipal: 'Qual é a relação real da pessoa com dinheiro — medo, impulso, evitação.',
-        significadoPratico: 'Como isso aparece: gastos impulsivos, medo de investir, autossabotagem financeira.',
-        padraoIdentificado: 'O perfil financeiro comportamental — gastador emocional, acumulador ansioso, evitador.',
-        comoAparece: 'Exemplos: compras por impulso, nunca guarda dinheiro, medo de cobrar.',
-        direcaoAjuste: 'Uma mudança concreta na próxima decisão financeira.',
+        resumoPrincipal: 'Qual é a relação real da pessoa com dinheiro — medo, impulso, evitação. Qual CRENÇA central (Tétrade) governa: "dinheiro é difícil", "não mereço ter", "se ganhar vou perder".',
+        significadoPratico: 'Como isso aparece: gastos impulsivos, medo de investir. Quais ÂNCORAS NEGATIVAS associam dinheiro a estresse, culpa ou medo.',
+        padraoIdentificado: 'O perfil financeiro comportamental. A PSICOADAPTAÇÃO fez o padrão financeiro parecer "meu jeito de lidar com dinheiro"?',
+        comoAparece: 'Exemplos: compras por impulso, nunca guarda dinheiro, medo de cobrar. Identifique se a pessoa é DESASSOCIADORA (não olha para os números) ou ASSOCIADORA demais (ansiedade com cada centavo).',
+        direcaoAjuste: 'Uma mudança concreta na próxima decisão financeira — crie uma ÂNCORA DE RECURSO que associe dinheiro a segurança em vez de estresse.',
       },
       extraInstructions: `- Identifique se o problema é EMOCIONAL (gasta pra compensar) ou COGNITIVO (não sabe planejar)
 - Conecte o padrão financeiro com o padrão emocional da pessoa
-- Gatilhos devem ser situações financeiras reais: receber salário, ver promoção, pagar contas`,
+- Gatilhos devem ser situações financeiras reais: receber salário, ver promoção, pagar contas
+- Use a TÉTRADE para mapear: qual CRENÇA sobre dinheiro, qual LINGUAGEM INTERNA ("não dá pra mim"), onde está o FOCO (escassez ou oportunidade)
+- Explique como a PSICOADAPTAÇÃO normalizou a relação disfuncional com dinheiro
+${neuroBase}`,
     };
   }
 
   // Padrões Ocultos
   if (slug.includes('oculto') || slug.includes('hidden')) {
     return {
-      role: 'Você identifica os padrões que a pessoa NÃO sabe que tem — os mecanismos invisíveis de autossabotagem.',
-      emphasis: 'Foco em MECANISMOS INCONSCIENTES e AUTOENGANO.',
+      role: 'Você identifica os padrões que a pessoa NÃO sabe que tem — os circuitos neurais que operam abaixo da consciência.',
+      emphasis: 'Foco em MECANISMOS INCONSCIENTES, AUTOENGANO e PSICOADAPTAÇÃO profunda.',
       sectionOverrides: {
-        resumoPrincipal: 'O padrão que a pessoa jura que não tem — mas que aparece nos dados.',
-        significadoPratico: 'As consequências que a pessoa atribui a "azar" ou "circunstâncias".',
-        padraoIdentificado: 'O mecanismo oculto — o que a pessoa faz sem perceber que faz.',
-        comoAparece: 'Exemplos onde a pessoa sabota o próprio progresso achando que está fazendo certo.',
-        direcaoAjuste: 'Uma forma de "pegar" o padrão em ação no dia a dia.',
+        resumoPrincipal: 'O padrão que a pessoa jura que não tem — mas que aparece nos dados. Use os METAPROGRAMAS para revelar: como ela filtra a realidade sem perceber.',
+        significadoPratico: 'As consequências que a pessoa atribui a "azar" ou "circunstâncias". A PSICOADAPTAÇÃO é tão profunda que o padrão se tornou "personalidade".',
+        padraoIdentificado: 'O mecanismo oculto — qual pilar da TÉTRADE (crença inconsciente, linguagem interna automática, foco seletivo ou tensão corporal) está operando.',
+        comoAparece: 'Exemplos onde a pessoa sabota o próprio progresso achando que está fazendo certo. Quais ÂNCORAS NEGATIVAS operam sem percepção consciente.',
+        direcaoAjuste: 'Uma forma de "pegar" o padrão em ação no dia a dia — interromper a ANCORAGEM automática.',
       },
       extraInstructions: `- Este relatório deve REVELAR algo que a pessoa não quer ouvir
 - O ponto cego é o CENTRO deste relatório — deve ser desenvolvido com profundidade
-- As armadilhas mentais são as JUSTIFICATIVAS que a pessoa usa para manter o padrão`,
+- As armadilhas mentais são as JUSTIFICATIVAS que a pessoa usa para manter o padrão
+- A PSICOADAPTAÇÃO é o conceito central aqui — o padrão se tornou "eu sou assim"
+- Use METAPROGRAMAS para mostrar como a pessoa filtra a realidade para não ver o padrão
+- Identifique ÂNCORAS NEGATIVAS inconscientes que mantêm o ciclo ativo
+${neuroBase}`,
     };
   }
 
   // Propósito & Sentido de Vida
   if (slug.includes('proposito') || slug.includes('sentido')) {
     return {
-      role: 'Você analisa o nível de conexão da pessoa com um senso de direção e significado na vida.',
-      emphasis: 'Foco em DIREÇÃO DE VIDA, SIGNIFICADO e ALINHAMENTO.',
+      role: 'Você analisa o nível de conexão da pessoa com um senso de direção e significado, usando neurociência para explicar por que o cérebro evita escolher.',
+      emphasis: 'Foco em DIREÇÃO DE VIDA, SIGNIFICADO, ALINHAMENTO e o metaprograma Proativo/Reativo.',
       sectionOverrides: {
-        resumoPrincipal: 'Qual é o nível real de conexão com propósito — conectado, perdido ou desalinhado.',
-        significadoPratico: 'Como a falta de direção aparece: insatisfação, rotina vazia, sensação de "para quê?".',
-        padraoIdentificado: 'O tipo de desconexão — vive no piloto automático, segue expectativas dos outros, medo de escolher.',
-        comoAparece: 'Exemplos: troca de projetos frequente, insatisfação crônica, comparação com outros.',
-        direcaoAjuste: 'Uma reflexão prática para identificar o que realmente importa vs o que é pressão externa.',
+        resumoPrincipal: 'Qual é o nível real de conexão com propósito — conectado, perdido ou desalinhado. A pessoa é PROATIVA (cria direção) ou REATIVA (espera que a vida mostre)?',
+        significadoPratico: 'Como a falta de direção aparece. Qual pilar da TÉTRADE está travando: CRENÇA ("não sei o que quero"), FOCO (disperso em muitas coisas) ou LINGUAGEM INTERNA ("para quê?").',
+        padraoIdentificado: 'O tipo de desconexão — vive no piloto automático, segue expectativas dos outros, medo de escolher. A PSICOADAPTAÇÃO transformou a falta de propósito em "rotina normal"?',
+        comoAparece: 'Exemplos: troca de projetos frequente, insatisfação crônica, comparação com outros. Referência INTERNA (sabe mas não segue) ou EXTERNA (faz o que esperam)?',
+        direcaoAjuste: 'Uma reflexão prática para identificar o que realmente importa — crie uma ÂNCORA DE RECURSO que conecte a pessoa ao que dá energia.',
       },
       extraInstructions: `- NÃO use linguagem mística ou espiritual — foque em ESCOLHAS e ALINHAMENTO prático
 - Diferencie entre NÃO TER propósito e NÃO SEGUIR o propósito que já sabe
-- O próximo passo deve ser uma ação de AUTOCONHECIMENTO prático, não meditação genérica`,
+- O próximo passo deve ser uma ação de AUTOCONHECIMENTO prático, não meditação genérica
+- Identifique o metaprograma: PROATIVO (cria direção) vs REATIVO (espera a vida mostrar)
+- Use a TÉTRADE para mapear: qual CRENÇA sobre propósito, qual LINGUAGEM INTERNA, onde está o FOCO
+- Explique como a PSICOADAPTAÇÃO normalizou viver sem direção
+${neuroBase}`,
     };
   }
 
   // Default fallback
   return {
-    role: 'Você é um analista comportamental que interpreta dados de leituras para gerar diagnósticos claros e úteis.',
-    emphasis: 'Foco em padrões concretos e direções práticas.',
+    role: 'Você é um analista comportamental com base neurocientífica que interpreta dados de leituras para gerar diagnósticos claros e úteis.',
+    emphasis: 'Foco em padrões concretos, direções práticas e mecanismos neurais.',
     sectionOverrides: {},
-    extraInstructions: '',
+    extraInstructions: neuroBase,
   };
 }
 
