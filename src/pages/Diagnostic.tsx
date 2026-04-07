@@ -25,6 +25,7 @@ interface DbQuestion {
   axes: string[];
   type?: string;
   options?: string[] | null;
+  option_scores?: number[] | null;
   context?: string | null;
 }
 
@@ -41,13 +42,23 @@ function calculateRawScores(answers: Answer[], questions: DbQuestion[], axisKeys
     const question = questions.find(q => q.id === answer.questionId);
     if (!question) return;
 
-    // For intensity questions (0-10 scale), maxScore is 10; for likert, maxScore is 5
-    const isIntensity = question.type === 'intensity';
-    const maxPerQuestion = isIntensity ? 10 : 5;
+    // Determine the max possible value for this question
+    let maxPerQuestion: number;
+    if (question.option_scores && question.option_scores.length > 0) {
+      // Use the actual maximum from option_scores
+      maxPerQuestion = Math.max(...question.option_scores);
+    } else if (question.type === 'intensity') {
+      maxPerQuestion = 10;
+    } else {
+      maxPerQuestion = 5;
+    }
+
+    // Clamp answer value to the max
+    const clampedValue = Math.min(answer.value, maxPerQuestion);
 
     question.axes.forEach(axis => {
       if (axis in rawScores) {
-        rawScores[axis] += answer.value;
+        rawScores[axis] += clampedValue;
         maxScores[axis] += maxPerQuestion;
       }
     });
@@ -66,7 +77,7 @@ function calculateRawScores(answers: Answer[], questions: DbQuestion[], axisKeys
     label: AXIS_LABELS[key] || key,
     score: rawScores[key],
     maxScore: maxScores[key],
-    percentage: maxScores[key] > 0 ? Math.round((rawScores[key] / maxScores[key]) * 100) : 0,
+    percentage: maxScores[key] > 0 ? Math.min(100, Math.round((rawScores[key] / maxScores[key]) * 100)) : 0,
   })).sort((a, b) => b.percentage - a.percentage);
 }
 
