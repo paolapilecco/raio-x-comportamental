@@ -401,6 +401,7 @@ const Diagnostic = () => {
         comoAparece: ai.comoAparece || '',
         gatilhos: ai.gatilhos || [],
         comoAtrapalha: ai.comoAtrapalha || ai.significadoPratico || '',
+        impactoPorArea: ai.impactoPorArea || [],
         corrigirPrimeiro: ai.corrigirPrimeiro || ai.direcaoAjuste || '',
         pararDeFazer: ai.pararDeFazer || ai.oQueEvitar || [],
         acaoInicial: ai.acaoInicial || ai.proximoPasso || ai.firstAction || '',
