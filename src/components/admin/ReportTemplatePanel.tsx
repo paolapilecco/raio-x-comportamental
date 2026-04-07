@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, RotateCcw, Copy } from 'lucide-react';
+import { Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, RotateCcw, Copy, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -33,6 +33,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const [saving, setSaving] = useState(false);
   const [spreading, setSpreading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [aiGenerating, setAiGenerating] = useState(false);
 
   useEffect(() => {
     fetchTemplate();
@@ -140,6 +141,41 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     setSpreading(false);
   };
 
+  const handleAIGenerate = async () => {
+    setAiGenerating(true);
+    try {
+      const [moduleRes, promptsRes, questionsRes] = await Promise.all([
+        supabase.from('test_modules').select('description').eq('id', currentModule.id).single(),
+        supabase.from('test_prompts').select('prompt_type, content').eq('test_id', currentModule.id).eq('is_active', true),
+        supabase.from('questions').select('text, type, axes').eq('test_id', currentModule.id).order('sort_order'),
+      ]);
+
+      const { data, error } = await supabase.functions.invoke('generate-template', {
+        body: {
+          testName: currentModule.name,
+          testDescription: moduleRes.data?.description || '',
+          prompts: promptsRes.data || [],
+          questions: questionsRes.data || [],
+          existingSections: sections,
+        },
+      });
+
+      if (error) throw error;
+      if (data?.error) { toast.error(data.error); return; }
+      if (data?.sections?.length > 0) {
+        setSections(data.sections);
+        toast.success(`Template gerado com ${data.sections.length} seções!`);
+      } else {
+        toast.error('Nenhuma seção gerada');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Erro ao gerar template com IA');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
   const moveSection = (index: number, direction: 'up' | 'down') => {
     const target = direction === 'up' ? index - 1 : index + 1;
     if (target < 0 || target >= sections.length) return;
@@ -185,6 +221,14 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleAIGenerate}
+            disabled={aiGenerating}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] font-medium bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:opacity-90 transition-all disabled:opacity-50"
+          >
+            {aiGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+            {aiGenerating ? 'Gerando...' : 'Preencher com IA'}
+          </button>
           <button
             onClick={handleSpreadToAll}
             disabled={spreading}
