@@ -22,12 +22,16 @@ const fadeUp = {
   animate: { opacity: 1, y: 0 },
 };
 
-const Report = ({ result, onRestart }: ReportProps) => {
+const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const intensityInfo = intensityConfig[result.intensity];
   const { profile } = useAuth();
 
   const handleDownloadPdf = () => {
-    generateDiagnosticPdf(result, profile?.name);
+    if (moduleSlug === 'mapa-de-vida') {
+      generateLifeMapPdf(result.allScores, profile?.name);
+    } else {
+      generateDiagnosticPdf(result, profile?.name);
+    }
   };
 
   return (
