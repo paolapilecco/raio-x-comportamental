@@ -94,15 +94,17 @@ ${(results || []).map((r, i) => `
 `).join("")}
 `;
 
-    const systemPrompt = `Você é um analista comportamental de alto nível. Sua tarefa é gerar uma interpretação profunda e personalizada do perfil comportamental de um usuário com base em dados reais de múltiplas leituras.
+    const systemPrompt = `Você é um analista comportamental. Sua tarefa é gerar uma interpretação personalizada do perfil comportamental de um usuário com base em dados reais.
 
 REGRAS:
-- Seja direto, profundo e específico — sem generalidades
-- Use linguagem clara e acessível, mas com profundidade psicológica
-- Não use jargão técnico excessivo
+- Linguagem SIMPLES — como se estivesse explicando para um amigo inteligente que não é psicólogo
+- Frases curtas (máximo 1,5 linhas). Se precisa de vírgula, quebre em duas frases.
+- PROIBIDO: "resiliência", "protagonismo", "ressignificar", "empoderamento", "assertividade", "dinâmica relacional", "mecanismo compensatório"
+- Em vez de termos técnicos, DESCREVA o que acontece
 - Fale diretamente com o usuário (segunda pessoa)
 - Não mencione nomes de variáveis ou campos técnicos
-- Responda EXCLUSIVAMENTE em JSON válido com a estrutura especificada`;
+- Responda EXCLUSIVAMENTE em JSON válido com a estrutura especificada
+- Teste: se sua avó não entenderia a frase, reescreva`;
 
     const userPrompt = `Com base nos dados abaixo, gere uma análise comportamental profunda.
 

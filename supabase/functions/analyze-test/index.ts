@@ -73,37 +73,50 @@ ${promptMap.restrictions}`);
   // Hard rules — always enforced regardless of admin prompts
   sections.push(`# REGRAS INVIOLÁVEIS
 
-1. LINGUAGEM SIMPLES E DIRETA
-   - Escreva como se estivesse explicando para um amigo — sem jargão psicológico
-   - Frases curtas (máximo 2 linhas)
-   - Cada seção deve ter no máximo 3-4 frases
-   - Proibido: parágrafos longos, linguagem acadêmica, termos técnicos
+1. LINGUAGEM SIMPLES — COMO CONVERSA
+   - Escreva como se estivesse explicando para um amigo inteligente que NÃO é psicólogo
+   - Use palavras do dia a dia. Proibido: "resiliência", "protagonismo", "autoboicote", "ressignificar", "empoderamento", "assertividade", "proatividade", "autoconhecimento", "autossabotagem consciente", "padrão disfuncional"
+   - Em vez de termos técnicos, DESCREVA o que acontece: "você trava quando precisa decidir" em vez de "paralisia decisória"
+   - Frases curtas — máximo 1,5 linhas. Se a frase precisa de vírgula no meio, quebre em duas.
+   - Proibido parágrafos com mais de 3 frases seguidas
 
-2. INTERPRETAR, NÃO INVENTAR
+2. ZERO PSICOLOGUÊS
+   - Não use termos que só um terapeuta entenderia
+   - Não use linguagem de autoajuda ("acredite no seu potencial", "honre sua jornada")
+   - Não use linguagem acadêmica ("dinâmica relacional", "mecanismo compensatório")
+   - Teste: se sua avó não entenderia a frase, reescreva
+
+3. INTERPRETAR, NÃO INVENTAR
    - Use SOMENTE os dados fornecidos (scores, eixos, padrões)
    - Não invente situações ou exemplos pessoais
    - Cada afirmação deve ser rastreável a um score
 
-3. ESPECIFICIDADE OBRIGATÓRIA
+4. ESPECIFICIDADE OBRIGATÓRIA
    - Proibido: "tenha mais foco", "acredite em si mesmo", "saia da zona de conforto"
    - Cada frase deve conter o padrão ESPECÍFICO do usuário
    - Se não conseguir ser específico, não escreva
 
-4. FORMATO
+5. FORMATO
    - Fale em segunda pessoa ("você")
    - Não mencione nomes de variáveis ou percentuais numéricos
    - Seja direto — desconforto é aceitável, generalidade não
    - Responda EXCLUSIVAMENTE em JSON válido
 
-5. BREVIDADE
-   - criticalDiagnosis: máximo 2 frases curtas
-   - corePain: máximo 3 frases
-   - mechanism: máximo 3 frases
-   - summary: máximo 1 parágrafo curto
-   - triggers: máximo 4 itens, cada um com 1 frase
-   - whatNotToDo: máximo 4 itens, cada um com 1 frase
+6. BREVIDADE
+   - criticalDiagnosis / resumoPrincipal: máximo 2 frases curtas
+   - corePain / significadoPratico: máximo 3 frases
+   - mechanism / padraoIdentificado: máximo 3 frases
+   - summary: máximo 1 parágrafo curto (3 frases)
+   - triggers / gatilhos: máximo 4 itens, cada um com 1 frase curta
+   - whatNotToDo / oQueEvitar: máximo 4 itens, cada um com 1 frase curta
    - exitStrategy: máximo 4 passos, ações curtas e executáveis
-   - mentalTraps: máximo 4 frases curtas entre aspas`);
+   - mentalTraps: máximo 4 frases curtas entre aspas
+
+7. EXEMPLOS DE TOM CORRETO
+   - ❌ "Você apresenta um padrão de evitação emocional que compromete sua capacidade de engajamento relacional"
+   - ✅ "Você foge de conversas difíceis. Quando algo incomoda, você muda de assunto ou some."
+   - ❌ "Há uma dinâmica de autossabotagem que se manifesta na procrastinação funcional"
+   - ✅ "Você sabe o que precisa fazer, mas fica adiando. Quando finalmente faz, já está atrasado e faz mal feito."`);
 
   sections.push(`# CAMADA DE PROFUNDIDADE
 
@@ -210,44 +223,45 @@ ${answersSummary}
 
 ---
 
-Gere o diagnóstico em JSON com esta estrutura EXATA de 9 seções. Cada seção deve ser CURTA e NÃO repetir ideias de outra seção:
+Gere o diagnóstico em JSON com esta estrutura EXATA de 9 seções. LEMBRE-SE: linguagem simples, como conversa. Nada de psicologuês. Cada seção deve ser CURTA e NÃO repetir ideias de outra seção:
 {
-  "resumoPrincipal": "2-3 frases diretas. O que está acontecendo com essa pessoa. Sem rodeios.",
-  "significadoPratico": "O que isso significa no dia a dia — 2-3 frases concretas, sem teoria. DIFERENTE do resumo.",
-  "padraoIdentificado": "Nome curto do padrão (3-5 palavras) + 1-2 frases explicando a engrenagem central.",
-  "comoAparece": "2-3 exemplos concretos de como esse padrão aparece nas ações cotidianas.",
-  "gatilhos": ["3-4 gatilhos ESPECÍFICOS — situações reais que ativam o padrão"],
-  "impactoVida": [{"area": "área da vida", "efeito": "impacto concreto em 1 frase"}],
-  "direcaoAjuste": "A primeira mudança concreta que a pessoa precisa fazer — específica e executável.",
-  "oQueEvitar": ["3-4 coisas específicas para NÃO fazer agora — contra-intuitivas, não óbvias"],
-  "proximoPasso": "UMA ação simples para os próximos 3 dias — tão concreta que qualquer pessoa entende.",
+  "resumoPrincipal": "2-3 frases diretas e simples. O que está acontecendo com essa pessoa. Sem rodeios, sem termos técnicos.",
+  "significadoPratico": "O que isso causa na vida real — 2-3 frases concretas, como se estivesse explicando para a pessoa. DIFERENTE do resumo.",
+  "padraoIdentificado": "Nome curto e claro do padrão (3-5 palavras simples) + 1-2 frases explicando como funciona.",
+  "comoAparece": "2-3 exemplos do dia a dia — situações reais, não conceitos abstratos.",
+  "gatilhos": ["3-4 situações reais e específicas que ativam o padrão — frases curtas"],
+  "impactoVida": [{"area": "área da vida", "efeito": "o que acontece de concreto — 1 frase simples"}],
+  "direcaoAjuste": "A primeira mudança que a pessoa precisa fazer — tão clara que não precise pensar duas vezes.",
+  "oQueEvitar": ["3-4 coisas específicas para PARAR de fazer agora — escritas como conselho de amigo"],
+  "proximoPasso": "UMA ação simples para os próximos 3 dias — qualquer pessoa deve entender na primeira leitura.",
 
   "profileName": "Nome criativo do perfil (3-5 palavras)",
   "combinedTitle": "Título combinado dos padrões",
-  "blindSpot": {"perceivedProblem": "O que a pessoa acredita ser o problema", "realProblem": "O que realmente acontece"},
+  "blindSpot": {"perceivedProblem": "O que a pessoa acha que é o problema (linguagem simples)", "realProblem": "O que realmente acontece (linguagem simples)"},
   "criticalDiagnosis": "Copie o conteúdo de resumoPrincipal",
   "corePain": "Copie o conteúdo de significadoPratico",
-  "mentalState": "Estado mental atual em 1 frase",
+  "mentalState": "Estado mental atual em 1 frase simples",
   "summary": "Copie o conteúdo de resumoPrincipal",
   "mechanism": "Copie o conteúdo de padraoIdentificado",
-  "contradiction": "A contradição interna principal — 1 frase",
-  "impact": "Impacto geral — 1 frase",
+  "contradiction": "A contradição interna principal — 1 frase clara e simples",
+  "impact": "Impacto geral — 1 frase direta",
   "direction": "Copie o conteúdo de direcaoAjuste",
   "keyUnlockArea": "Copie o conteúdo de direcaoAjuste",
-  "blockingPoint": "Onde exatamente a pessoa trava — 1 frase",
+  "blockingPoint": "Onde exatamente a pessoa trava — 1 frase simples",
   "triggers": ["mesmos gatilhos acima"],
-  "mentalTraps": ["3-4 frases internas que mantêm o padrão ativo"],
-  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem"],
+  "mentalTraps": ["3-4 pensamentos que a pessoa repete pra si mesma e que mantêm o padrão — entre aspas, linguagem natural"],
+  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem — frases curtas e claras"],
   "whatNotToDo": ["mesmos itens de oQueEvitar"],
-  "lifeImpact": [{"pillar": "área", "impact": "efeito"}],
-  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
-  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
+  "lifeImpact": [{"pillar": "área", "impact": "efeito concreto"}],
+  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação clara e executável"}],
+  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta e simples"]}],
   "firstAction": "Copie o conteúdo de proximoPasso"
 }
 
-REGRAS:
+REGRAS FINAIS:
 - NÃO repita a mesma ideia entre seções. Cada uma traz informação NOVA.
-- Frases curtas (máx 2 linhas). Sem parágrafos longos.
+- Frases curtas (máx 1,5 linhas). Sem parágrafos longos.
+- ZERO palavras rebuscadas. Se existe uma palavra simples, use ela.
 - actionPlan: só para áreas abaixo de 70%. Ações com verbo no imperativo.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].`;
 }
