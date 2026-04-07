@@ -205,9 +205,121 @@ Gere o prompt profissional para esta seção. Baseie-se nos DADOS REAIS das perg
     const fenceMatch = cleaned.match(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?```$/);
     if (fenceMatch) cleaned = fenceMatch[1].trim();
 
-    return new Response(JSON.stringify({ prompt: cleaned }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // === QUALITY VALIDATION ===
+    const genericPhrases = [
+      "busque equilíbrio", "tenha mais consciência", "acredite em si",
+      "pratique mindfulness", "saia da zona de conforto", "mude seu mindset",
+      "analise profundamente", "reflita sobre", "busque autoconhecimento",
+      "tenha mais foco", "seja mais produtivo", "acredite no seu potencial",
+    ];
+    const cleanedLower = cleaned.toLowerCase();
+    const genericCount = genericPhrases.filter(p => cleanedLower.includes(p)).length;
+
+    // Check if prompt references actual axes from the test
+    const axisReferences = axes.filter(a => cleanedLower.includes(a.toLowerCase())).length;
+    const axisRatio = axes.length > 0 ? axisReferences / Math.min(axes.length, 5) : 0;
+
+    // Check minimum length
+    const wordCount = cleaned.split(/\s+/).length;
+
+    // Quality scoring
+    let qualityScore = 100;
+    const qualityIssues: string[] = [];
+
+    if (genericCount >= 3) {
+      qualityScore -= 40;
+      qualityIssues.push("Contém muitas frases genéricas");
+    } else if (genericCount >= 1) {
+      qualityScore -= 15;
+      qualityIssues.push("Contém frases genéricas");
+    }
+
+    if (axes.length > 0 && axisRatio < 0.3) {
+      qualityScore -= 30;
+      qualityIssues.push("Não referencia os eixos reais do teste");
+    }
+
+    if (wordCount < 80) {
+      qualityScore -= 25;
+      qualityIssues.push("Prompt muito curto para ser útil");
+    }
+
+    // Check if it mentions the test name or its specific context
+    const testNameWords = testModule.name.toLowerCase().split(/\s+/).filter((w: string) => w.length > 3);
+    const nameReferences = testNameWords.filter((w: string) => cleanedLower.includes(w)).length;
+    if (testNameWords.length > 0 && nameReferences === 0) {
+      qualityScore -= 20;
+      qualityIssues.push("Não reflete o contexto específico do teste");
+    }
+
+    const qualityLevel = qualityScore >= 70 ? "high" : qualityScore >= 45 ? "medium" : "low";
+
+    // If quality is low, auto-retry once
+    if (qualityLevel === "low") {
+      console.log(`Low quality prompt (score: ${qualityScore}), retrying...`);
+
+      const retryPrompt = `O prompt anterior ficou GENÉRICO e de baixa qualidade. Problemas: ${qualityIssues.join("; ")}.
+
+CORRIJA agora. Você DEVE:
+1. Referenciar EXPLICITAMENTE estes eixos: ${axes.join(", ")}
+2. Conectar as instruções às perguntas reais do teste "${testModule.name}"
+3. Remover qualquer frase genérica de autoajuda
+4. Ser técnico e específico para a função "${sectionType}"
+
+Contexto do teste: ${testModule.description}
+Eixos: ${axes.join(", ")}
+Tipos: ${questionTypes.join(", ")}
+
+Gere novamente o prompt para "${sectionType}". Retorne APENAS o texto.`;
+
+      const retryResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+            { role: "assistant", content: cleaned },
+            { role: "user", content: retryPrompt },
+          ],
+          temperature: 0.4,
+          max_tokens: 2000,
+        }),
+      });
+
+      if (retryResponse.ok) {
+        const retryData = await retryResponse.json();
+        const retryContent = retryData.choices?.[0]?.message?.content || "";
+        if (retryContent.trim()) {
+          let retryCleaned = retryContent.trim();
+          const retryFence = retryCleaned.match(/^```(?:\w+)?\s*\n?([\s\S]*?)\n?```$/);
+          if (retryFence) retryCleaned = retryFence[1].trim();
+
+          // Re-score retry
+          const retryLower = retryCleaned.toLowerCase();
+          const retryGeneric = genericPhrases.filter(p => retryLower.includes(p)).length;
+          const retryAxisRefs = axes.filter(a => retryLower.includes(a.toLowerCase())).length;
+          const retryScore = 100 - (retryGeneric >= 3 ? 40 : retryGeneric * 15)
+            - (axes.length > 0 && retryAxisRefs / Math.min(axes.length, 5) < 0.3 ? 30 : 0);
+
+          if (retryScore > qualityScore) {
+            return new Response(JSON.stringify({
+              prompt: retryCleaned,
+              quality: { score: retryScore, level: retryScore >= 70 ? "high" : "medium", issues: [], retried: true },
+            }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+          }
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({
+      prompt: cleaned,
+      quality: { score: qualityScore, level: qualityLevel, issues: qualityIssues, retried: false },
+    }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e) {
     console.error("generate-prompt error:", e);
     return new Response(JSON.stringify({ error: "Erro interno ao gerar prompt" }), {
