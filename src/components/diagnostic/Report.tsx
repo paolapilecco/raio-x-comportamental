@@ -112,17 +112,17 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-xl mx-auto px-5 md:px-8 py-12 md:py-20">
+      <div className="max-w-xl mx-auto px-6 md:px-10 py-14 md:py-24">
 
         {/* ── Header ── */}
-        <motion.header {...fade} transition={{ duration: 0.5 }} className="mb-10">
-          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.3em] font-light mb-4">
+        <motion.header {...fade} transition={{ duration: 0.5 }} className="mb-12">
+          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.3em] font-light mb-5">
             {sectionTitles.header}
           </p>
-          <h1 className="text-[1.65rem] md:text-3xl font-bold tracking-tight text-foreground leading-[1.25]">
+          <h1 className="text-2xl md:text-[2rem] font-extrabold tracking-tight text-foreground leading-[1.2]">
             {result.combinedTitle}
           </h1>
-          <div className="flex items-center gap-2.5 mt-4">
+          <div className="flex items-center gap-2.5 mt-5">
             <span className={`w-2.5 h-2.5 rounded-full ${info.bg} ring-4 ${info.ring}`} />
             <span className={`text-xs font-semibold ${info.color}`}>
               Intensidade {info.label.toLowerCase()}
@@ -131,14 +131,14 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         </motion.header>
 
         {/* ── Quick-read card ── */}
-        <motion.div {...fade} transition={{ delay: 0.12, duration: 0.45 }} className="mb-14">
-          <div className="rounded-2xl border border-border/40 overflow-hidden shadow-sm">
-            <div className="bg-secondary/50 px-5 py-3.5 border-b border-border/30">
+        <motion.div {...fade} transition={{ delay: 0.12, duration: 0.45 }} className="mb-16">
+          <div className="rounded-2xl border border-border/30 overflow-hidden shadow-md">
+            <div className="bg-secondary/50 px-6 py-4 border-b border-border/25">
               <p className="text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em] font-semibold">
                 Leitura rápida
               </p>
             </div>
-            <div className="grid grid-cols-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2">
               <QuickReadCell
                 icon={<Zap className="w-3.5 h-3.5 text-primary/50" />}
                 label="Padrão principal"
@@ -160,14 +160,14 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
               <QuickReadCell
                 icon={<Target className="w-3.5 h-3.5 text-primary/40" />}
                 label="Foco de mudança"
-                value={corrigirPrimeiro ? (corrigirPrimeiro.length > 70 ? corrigirPrimeiro.slice(0, 67) + '…' : corrigirPrimeiro) : 'Não identificado'}
+                value={corrigirPrimeiro || 'Não identificado'}
               />
             </div>
           </div>
         </motion.div>
 
         {/* ── Sections ── */}
-        <div className="space-y-14">
+        <div className="space-y-16">
 
           {/* 1. O que mais chama atenção */}
           <Section num={1} title={sectionTitles.chamaAtencao} delay={0.05} accent="destructive">
@@ -328,22 +328,22 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         </div>
 
         {/* ── Footer ── */}
-        <div className="mt-16 space-y-6">
-          <div className="w-10 h-px bg-border/50 mx-auto" />
+        <div className="mt-20 space-y-8">
+          <div className="w-12 h-px bg-border/40 mx-auto" />
           <p className="text-[10px] text-muted-foreground/30 text-center font-light leading-relaxed max-w-sm mx-auto">
             Leitura comportamental baseada em suas respostas. Não substitui avaliação profissional.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pb-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-12">
             <button
               onClick={handleDownloadPdf}
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-90 transition-all active:scale-[0.97] shadow-sm"
+              className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-90 transition-all active:scale-[0.97] shadow-md"
             >
               <Download className="w-4 h-4" />
               Baixar PDF
             </button>
             <button
               onClick={onRestart}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors px-5 py-2.5 rounded-lg hover:bg-secondary/50"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors px-6 py-3 rounded-lg hover:bg-secondary/50"
             >
               Ir para o Dashboard
             </button>
@@ -364,32 +364,34 @@ function Section({ num, title, delay = 0, accent, children }: { num: number; tit
 
   return (
     <motion.section {...fade} transition={{ delay, duration: 0.4 }}>
-      <div className="flex items-center gap-3 mb-4">
-        <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${accentBg}`}>
+      <div className="flex items-center gap-3.5 mb-5">
+        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold ${accentBg}`}>
           {num}
         </span>
-        <h2 className="text-base font-bold text-foreground tracking-tight">{title}</h2>
+        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">{title}</h2>
       </div>
-      {children}
+      <div className="pl-[42px]">
+        {children}
+      </div>
     </motion.section>
   );
 }
 
 function CardBlock({ variant = 'default', children }: { variant?: 'default' | 'alert' | 'primary' | 'success' | 'muted'; children: React.ReactNode }) {
   const styles = {
-    default: 'border-border/40 bg-card',
-    alert: 'border-destructive/15 bg-destructive/[0.03]',
-    primary: 'border-primary/15 bg-primary/[0.03]',
-    success: 'border-green-500/20 bg-green-500/[0.04]',
-    muted: 'border-border/30 bg-secondary/30',
+    default: 'border-border/40 bg-card shadow-sm',
+    alert: 'border-destructive/15 bg-destructive/[0.03] shadow-sm',
+    primary: 'border-primary/15 bg-primary/[0.03] shadow-sm',
+    success: 'border-green-500/20 bg-green-500/[0.04] shadow-sm',
+    muted: 'border-border/25 bg-secondary/20',
   };
-  return <div className={`border rounded-xl px-5 py-4 ${styles[variant]}`}>{children}</div>;
+  return <div className={`border rounded-2xl px-6 py-5 ${styles[variant]}`}>{children}</div>;
 }
 
 function QuickReadCell({ icon, label, value, bold, colorClass }: { icon: React.ReactNode; label: string; value: string; bold?: boolean; colorClass?: string }) {
   return (
-    <div className="bg-background px-4 py-4 border-b border-r border-border/15 last:border-r-0">
-      <div className="flex items-center gap-1.5 mb-1.5">
+    <div className="bg-background px-5 py-5 border-b border-r border-border/15 last:border-r-0 sm:[&:nth-child(odd):last-child]:col-span-2">
+      <div className="flex items-center gap-1.5 mb-2">
         {icon}
         <p className="text-[9px] text-muted-foreground/45 uppercase tracking-widest">{label}</p>
       </div>
