@@ -486,7 +486,80 @@ ${answersSummary}
 
 ---
 
-Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 frases por bloco. Linguagem simples, direta, sem rodeio. Nada de psicologuês. Cada seção traz informação NOVA — ZERO repetição:
+${buildJsonOutputSchema(ov, template, categoryCtx)}`;
+}
+
+/**
+ * Build the JSON output schema dynamically.
+ * If a report_template with sections exists, use those sections.
+ * Otherwise, fall back to the default 8-section structure.
+ */
+function buildJsonOutputSchema(
+  ov: Record<string, string>,
+  template?: ReportTemplate | null,
+  categoryCtx?: CategoryContext
+): string {
+  const maxSentences = template?.output_rules?.maxSentencesPerBlock || 2;
+
+  // If template has custom sections, build dynamic schema
+  if (template?.sections && Array.isArray(template.sections) && template.sections.length > 0) {
+    const sectionLines = template.sections.map((sec) => {
+      const instruction = ov[sec.key] || `Conteúdo para "${sec.name}" — máximo ${sec.maxSize || maxSentences} frases.`;
+      // Determine if it's a list or text field based on key patterns
+      const isListField = ['gatilhos', 'pararDeFazer', 'mentalTraps', 'selfSabotageCycle', 'whatNotToDo', 'oQueEvitar'].includes(sec.key);
+      if (isListField) {
+        return `  "${sec.key}": ["${instruction}"]`;
+      }
+      if (sec.key === 'impactoPorArea') {
+        return `  "impactoPorArea": [
+    {"area": "Rotina", "efeito": "1 frase"},
+    {"area": "Trabalho", "efeito": "1 frase"},
+    {"area": "Emocional", "efeito": "1 frase"},
+    {"area": "Relações", "efeito": "1 frase"},
+    {"area": "Autoconfiança", "efeito": "1 frase"}
+  ]`;
+      }
+      return `  "${sec.key}": "${instruction}"`;
+    });
+
+    return `Gere o diagnóstico em JSON com esta estrutura personalizada para este teste. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta, sem rodeio. Cada seção traz informação NOVA — ZERO repetição:
+{
+${sectionLines.join(',\n')},
+
+  "profileName": "Nome criativo do perfil (3-5 palavras)",
+  "combinedTitle": "Título curto e impactante do diagnóstico",
+  "blindSpot": {"perceivedProblem": "O que a pessoa acha que é o problema", "realProblem": "O que realmente acontece"},
+  "criticalDiagnosis": "Copie chamaAtencao ou resumoPrincipal",
+  "corePain": "Resuma o impacto em 1 frase",
+  "mentalState": "Estado mental atual em 1 frase",
+  "summary": "Copie chamaAtencao ou resumoPrincipal",
+  "mechanism": "Copie padraoRepetido ou padraoIdentificado",
+  "contradiction": "A contradição interna principal — 1 frase",
+  "impact": "Resuma o impacto em 1 frase",
+  "direction": "Copie corrigirPrimeiro ou direcaoAjuste",
+  "keyUnlockArea": "Copie corrigirPrimeiro ou direcaoAjuste",
+  "blockingPoint": "Onde a pessoa trava — 1 frase",
+  "triggers": ["mesmos gatilhos acima"],
+  "mentalTraps": ["2-3 pensamentos que mantêm o padrão — entre aspas"],
+  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem — frases curtas"],
+  "whatNotToDo": ["mesmos itens de pararDeFazer"],
+  "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
+  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
+  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
+  "firstAction": "Copie acaoInicial ou proximoPasso"
+}
+
+REGRAS FINAIS:
+- MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
+- NÃO repita a mesma ideia entre seções.
+- ZERO palavras rebuscadas.
+- actionPlan: só para áreas abaixo de 70%.
+- Se não houver áreas abaixo de 70%, retorne actionPlan como [].
+${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
+  }
+
+  // Default 8-section structure (fallback)
+  return `Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta, sem rodeio. Nada de psicologuês. Cada seção traz informação NOVA — ZERO repetição:
 {
   "chamaAtencao": "${ov.resumoPrincipal || 'O que mais salta aos olhos no resultado — 1-2 frases diretas, sem introdução.'}",
   "padraoRepetido": "${ov.padraoIdentificado || 'O padrão que mais se repete — nome curto + 1 frase explicando o mecanismo.'}",
@@ -499,9 +572,9 @@ Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 fr
     {"area": "Relações", "efeito": "1 frase sobre efeito nos relacionamentos"},
     {"area": "Autoconfiança", "efeito": "1 frase sobre impacto na autoimagem"}
   ],
-  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O QUE PRECISA MUDAR — a direção geral. Ex: parar de evitar conflitos, ou aprender a dizer não. NÃO é uma ação concreta. 1-2 frases.'}",
+  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O QUE PRECISA MUDAR — a direção geral. NÃO é uma ação concreta. 1-2 frases.'}",
   "pararDeFazer": ["2-3 coisas para PARAR imediatamente — escritas como conselho direto"],
-  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO CONCRETA para fazer HOJE ou nos próximos 3 dias. Deve ser específica e executável agora — tipo: na próxima vez que X acontecer, faça Y. DIFERENTE de corrigirPrimeiro — aqui é o PASSO PRÁTICO, não a direção.'}",
+  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO CONCRETA para fazer HOJE ou nos próximos 3 dias. DIFERENTE de corrigirPrimeiro.'}",
 
   "profileName": "Nome criativo do perfil (3-5 palavras)",
   "combinedTitle": "Título curto e impactante do diagnóstico",
@@ -527,13 +600,13 @@ Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo 2 fr
 }
 
 REGRAS FINAIS:
-- MÁXIMO 2 frases por bloco. Sem exceção.
+- MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
 - NÃO repita a mesma ideia entre seções.
 - corrigirPrimeiro = DIREÇÃO (o que mudar). acaoInicial = AÇÃO (o que fazer agora). São OBRIGATORIAMENTE diferentes.
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
-${categoryCtx.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
+${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
 }
 
 function detectContradictions(scores: ScoreEntry[]): string {
