@@ -26,6 +26,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
   const { profile } = useAuth();
 
+  // Category-specific section titles
+  const sectionTitles = getCategorySectionTitles(moduleSlug);
+
   // Extract new-format fields with fallbacks to old fields
   const ai = (result as any);
   const resumo = ai.resumoPrincipal || result.criticalDiagnosis;
