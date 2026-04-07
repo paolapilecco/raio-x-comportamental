@@ -429,7 +429,7 @@ const Diagnostic = () => {
           />
         )}
         {step === 'analyzing' && <AnalyzingScreen key="a" />}
-        {step === 'report' && result && <Report key="r" result={result} onRestart={handleGoToDashboard} />}
+        {step === 'report' && result && <Report key="r" result={result} onRestart={handleGoToDashboard} moduleSlug={slug} />}
       </AnimatePresence>
     </div>
   );

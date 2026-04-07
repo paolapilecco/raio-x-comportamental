@@ -2,11 +2,13 @@ import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { AlertTriangle, Brain, Target, ArrowRight, Eye, Compass, LifeBuoy, Download, XCircle, Flame, Key, EyeOff, MapPin } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ReportProps {
   result: DiagnosticResult;
   onRestart: () => void;
+  moduleSlug?: string;
 }
 
 const intensityConfig: Record<IntensityLevel, { label: string; class: string; bgClass: string }> = {
