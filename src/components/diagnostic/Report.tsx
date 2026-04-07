@@ -112,17 +112,17 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-xl mx-auto px-5 md:px-8 py-12 md:py-20">
+      <div className="max-w-xl mx-auto px-6 md:px-10 py-14 md:py-24">
 
         {/* ── Header ── */}
-        <motion.header {...fade} transition={{ duration: 0.5 }} className="mb-10">
-          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.3em] font-light mb-4">
+        <motion.header {...fade} transition={{ duration: 0.5 }} className="mb-12">
+          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.3em] font-light mb-5">
             {sectionTitles.header}
           </p>
-          <h1 className="text-[1.65rem] md:text-3xl font-bold tracking-tight text-foreground leading-[1.25]">
+          <h1 className="text-2xl md:text-[2rem] font-extrabold tracking-tight text-foreground leading-[1.2]">
             {result.combinedTitle}
           </h1>
-          <div className="flex items-center gap-2.5 mt-4">
+          <div className="flex items-center gap-2.5 mt-5">
             <span className={`w-2.5 h-2.5 rounded-full ${info.bg} ring-4 ${info.ring}`} />
             <span className={`text-xs font-semibold ${info.color}`}>
               Intensidade {info.label.toLowerCase()}
