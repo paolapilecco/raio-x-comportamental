@@ -30,6 +30,8 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [changing, setChanging] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState<'all' | 'standard' | 'pessoal' | 'profissional'>('all');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
