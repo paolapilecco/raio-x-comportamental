@@ -765,7 +765,7 @@ const CentralReport = () => {
                     <TrendingUp className="w-5 h-5 text-primary" />
                     <h3 className="text-xl font-serif">Tendência Futura</h3>
                   </div>
-                  <p className="text-sm text-foreground/80 leading-relaxed">{futureTendency}</p>
+                  <p className={`text-sm text-foreground/80 leading-relaxed ${!hasAccess ? 'filter blur-[5px]' : ''}`}>{futureTendency}</p>
                 </motion.div>
 
                 {/* Critical Life Areas */}
@@ -779,8 +779,8 @@ const CentralReport = () => {
                       <div key={i} className="flex items-center gap-4">
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm text-foreground">{area.area}</span>
-                            <span className={`text-xs font-medium ${area.score >= 60 ? 'text-destructive' : area.score >= 40 ? 'text-yellow-500' : 'text-green-500'}`}>
+                            <span className={`text-sm text-foreground ${!hasAccess ? 'filter blur-[3px]' : ''}`}>{area.area}</span>
+                            <span className={`text-xs font-medium ${area.score >= 60 ? 'text-destructive' : area.score >= 40 ? 'text-yellow-500' : 'text-green-500'} ${!hasAccess ? 'filter blur-[4px]' : ''}`}>
                               {area.score >= 60 ? 'Crítico' : area.score >= 40 ? 'Atenção' : 'OK'}
                             </span>
                           </div>
