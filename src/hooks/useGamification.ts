@@ -21,13 +21,13 @@ export interface GamificationData {
   loading: boolean;
 }
 
-const LEVELS = [
+const LEVELS: { name: string; minXP: number }[] = [
   { name: 'Iniciante', minXP: 0 },
   { name: 'Consciente', minXP: 100 },
   { name: 'Desperto', minXP: 300 },
   { name: 'Lúcido', minXP: 600 },
   { name: 'Mestre', minXP: 1000 },
-] as const;
+];
 
 const XP_PER_TEST = 25;
 const XP_PER_UNIQUE_MODULE = 40;
