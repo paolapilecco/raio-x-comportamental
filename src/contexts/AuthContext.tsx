@@ -3,6 +3,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
 export type AppRole = 'user' | 'premium' | 'super_admin';
+export type PlanType = 'standard' | 'pessoal' | 'profissional';
 
 interface Profile {
   id: string;
@@ -12,11 +13,26 @@ interface Profile {
   age: number | null;
 }
 
+interface SubscriptionInfo {
+  plan: string;
+  plan_type: PlanType;
+  status: string;
+}
+
+// Plan limits configuration
+export const PLAN_LIMITS = {
+  standard: { maxPersons: 1, testsPerMonth: 1, allTests: false, label: 'Padrão' },
+  pessoal: { maxPersons: 3, testsPerMonth: 2, allTests: true, label: 'Pessoal', guestTestsPerMonth: 1, guestAllTests: false },
+  profissional: { maxPersons: 15, testsPerMonth: 2, allTests: true, label: 'Profissional' },
+} as const;
+
 interface AuthContextType {
   session: Session | null;
   user: User | null;
   profile: Profile | null;
   role: AppRole;
+  planType: PlanType;
+  subscription: SubscriptionInfo | null;
   isAdmin: boolean;
   isPremium: boolean;
   isSuperAdmin: boolean;
@@ -43,12 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [role, setRole] = useState<AppRole>('user');
+  const [planType, setPlanType] = useState<PlanType>('standard');
+  const [subscription, setSubscription] = useState<SubscriptionInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [previewMode, setPreviewMode] = useState(false);
   const initializedRef = useRef(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
-    const [profileRes, roleRes] = await Promise.all([
+    const [profileRes, roleRes, subRes] = await Promise.all([
       supabase
         .from('profiles')
         .select('*')
@@ -58,6 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId),
+      supabase
+        .from('subscriptions')
+        .select('plan, plan_type, status')
+        .eq('user_id', userId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     if (profileRes.error) {
@@ -70,11 +96,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (roleRes.error) {
       console.error('Failed to load user roles', roleRes.error);
       setRole('user');
-      return;
+    } else {
+      const roles = (roleRes.data ?? []).map((r: { role: string }) => r.role);
+      setRole(resolveRole(roles));
     }
 
-    const roles = (roleRes.data ?? []).map((r: { role: string }) => r.role);
-    setRole(resolveRole(roles));
+    // Set plan type from active subscription
+    if (subRes.data && subRes.data.status === 'active') {
+      const pt = (subRes.data as any).plan_type as PlanType;
+      setPlanType(pt || 'pessoal');
+      setSubscription(subRes.data as any);
+    } else {
+      setPlanType('standard');
+      setSubscription(null);
+    }
   }, []);
 
   const applySession = useCallback(async (nextSession: Session | null) => {
@@ -86,11 +121,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } else {
       setProfile(null);
       setRole('user');
+      setPlanType('standard');
+      setSubscription(null);
     }
   }, [fetchProfile]);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!initializedRef.current) return;
       void applySession(nextSession);
     });
@@ -101,7 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => authSub.unsubscribe();
   }, [applySession]);
 
   const signUp = async (email: string, password: string) => {
@@ -122,6 +159,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setProfile(null);
     setRole('user');
+    setPlanType('standard');
+    setSubscription(null);
     setPreviewMode(false);
   };
 
@@ -141,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = isSuperAdmin; // backward compat
 
   return (
-    <AuthContext.Provider value={{ session, user, profile, role, isAdmin, isPremium, isSuperAdmin, loading, previewMode, togglePreviewMode, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ session, user, profile, role, planType, subscription, isAdmin, isPremium, isSuperAdmin, loading, previewMode, togglePreviewMode, signUp, signIn, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
