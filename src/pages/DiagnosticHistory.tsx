@@ -7,7 +7,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell,
 } from 'recharts';
-import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
@@ -27,6 +27,7 @@ interface HistoryEntry {
   all_scores: any;
   created_at: string;
   test_module_id: string | null;
+  person_id: string | null;
 }
 
 interface TestModule {
@@ -35,36 +36,55 @@ interface TestModule {
   name: string;
 }
 
+interface ManagedPerson {
+  id: string;
+  name: string;
+  is_active: boolean;
+}
+
 const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
 const intensityValue: Record<string, number> = { leve: 1, moderado: 2, alto: 3 };
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 const DiagnosticHistory = () => {
-  const { user } = useAuth();
+  const { user, planType, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [modules, setModules] = useState<TestModule[]>([]);
+  const [persons, setPersons] = useState<ManagedPerson[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<string>('all');
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const patternDefinitions = usePatternDefinitions();
   const axisLabels = useAxisLabels();
 
+  const hasMultiplePersons = planType !== 'standard' || isSuperAdmin;
+
   useEffect(() => {
     if (!user) return;
 
     const fetchHistory = async () => {
       try {
-        const [sessionsRes, modulesRes] = await Promise.all([
+        const promises: Promise<any>[] = [
           supabase
             .from('diagnostic_sessions')
-            .select('id, completed_at, test_module_id')
+            .select('id, completed_at, test_module_id, person_id')
             .eq('user_id', user.id)
             .not('completed_at', 'is', null)
             .order('completed_at', { ascending: false }),
           supabase.from('test_modules').select('id, slug, name').eq('is_active', true),
-        ]);
+        ];
+
+        if (hasMultiplePersons) {
+          promises.push(
+            supabase.from('managed_persons').select('id, name, is_active')
+              .eq('owner_id', user.id).order('name')
+          );
+        }
+
+        const [sessionsRes, modulesRes, personsRes] = await Promise.all(promises);
 
         if (sessionsRes.error) {
           console.error('Error fetching sessions:', sessionsRes.error);
@@ -76,6 +96,7 @@ const DiagnosticHistory = () => {
         }
 
         setModules((modulesRes.data as TestModule[]) || []);
+        if (personsRes?.data) setPersons(personsRes.data as ManagedPerson[]);
 
         const sessions = sessionsRes.data || [];
         if (sessions.length === 0) { setLoading(false); return; }
@@ -83,17 +104,17 @@ const DiagnosticHistory = () => {
         const { data: results, error: resErr } = await supabase
           .from('diagnostic_results')
           .select('*')
-          .in('session_id', sessions.map(s => s.id));
+          .in('session_id', sessions.map((s: any) => s.id));
 
         if (resErr) {
           console.error('Error fetching results:', resErr);
           toast.error('Erro ao carregar resultados.');
         }
 
-        // Merge test_module_id into results
+        // Merge test_module_id and person_id into results
         const enriched = (results || []).map(r => {
-          const session = sessions.find(s => s.id === r.session_id);
-          return { ...r, test_module_id: session?.test_module_id || null };
+          const session = sessions.find((s: any) => s.id === r.session_id);
+          return { ...r, test_module_id: session?.test_module_id || null, person_id: session?.person_id || null };
         });
 
         setHistory(enriched);
