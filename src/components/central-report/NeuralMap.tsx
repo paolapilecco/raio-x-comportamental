@@ -51,16 +51,14 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
 
     const clusters: typeof dataRef.current.clusters = [];
     const neurons: NeuronData[] = [];
-    const baseRadius = Math.min(w, h) * 0.32;
+    const baseRadius = Math.min(w, h) * 0.42;
 
     sorted.forEach(([key, score], i) => {
       const angle = (i / sorted.length) * Math.PI * 2 - Math.PI / 2;
-      // Top axes closer to center with bigger clusters, lower ones further out and smaller
-      const rank = i / Math.max(1, sorted.length - 1); // 0=top, 1=bottom
-      const dist = baseRadius * (0.35 + rank * 0.35);
+      const dist = baseRadius * 0.65;
       const cx = Math.cos(angle) * dist;
       const cy = Math.sin(angle) * dist;
-      const cz = (Math.random() - 0.5) * 50;
+      const cz = (Math.random() - 0.5) * 30;
 
       clusters.push({ key, label: axisLabels[key] || key, score, cx, cy, cz });
 
@@ -227,16 +225,19 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
       // Labels — scale font with zoom for readability
       const zm = zoomRef.current;
       clusters.forEach(c => {
-        const p = project(c.cx, c.cy - 35, c.cz, w, h, rotX, rotY);
-        const fontSize = Math.max(9, 11 * p.scale);
-        ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
+        const p = project(c.cx, c.cy - 42, c.cz, w, h, rotX, rotY);
+        const fontSize = Math.max(12, 14 * p.scale);
+        ctx.font = `700 ${fontSize}px system-ui, sans-serif`;
         ctx.textAlign = 'center';
+        // Text shadow for readability
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillText(c.label, p.x + 1, p.y + 1);
         ctx.fillStyle = labelColor(c.score);
         ctx.fillText(c.label, p.x, p.y);
 
-        const p2 = project(c.cx, c.cy - 22, c.cz, w, h, rotX, rotY);
-        ctx.font = `500 ${Math.max(8, 10 * p2.scale)}px system-ui, sans-serif`;
-        ctx.fillStyle = 'rgba(250,250,249,0.5)';
+        const p2 = project(c.cx, c.cy - 26, c.cz, w, h, rotX, rotY);
+        ctx.font = `600 ${Math.max(11, 12 * p2.scale)}px system-ui, sans-serif`;
+        ctx.fillStyle = 'rgba(250,250,249,0.6)';
         ctx.fillText(`${c.score}%`, p2.x, p2.y);
       });
 
