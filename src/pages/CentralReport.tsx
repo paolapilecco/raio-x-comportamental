@@ -665,13 +665,13 @@ const CentralReport = () => {
                     {centralProfile.core_pain && (
                       <div className="bg-background/50 rounded-lg p-4 border border-border">
                         <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Dor Central</p>
-                        <p className="text-sm text-foreground/80">{centralProfile.core_pain}</p>
+                        <p className={`text-sm text-foreground/80 ${!hasAccess ? 'filter blur-[5px]' : ''}`}>{centralProfile.core_pain}</p>
                       </div>
                     )}
                     {centralProfile.key_unlock_area && (
                       <div className="bg-background/50 rounded-lg p-4 border border-border">
                         <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Área de Destravamento</p>
-                        <p className="text-sm text-foreground/80">{centralProfile.key_unlock_area}</p>
+                        <p className={`text-sm text-foreground/80 ${!hasAccess ? 'filter blur-[5px]' : ''}`}>{centralProfile.key_unlock_area}</p>
                       </div>
                     )}
                   </div>
