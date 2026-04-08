@@ -180,9 +180,14 @@ export default function ProfessionalDashboard() {
             <p className="text-xs text-muted-foreground">Atenção crítica</p>
           </div>
           <div className="bg-card border rounded-xl p-4 text-center">
+            <RefreshCw className="w-5 h-5 text-primary mx-auto mb-1" />
+            <p className="text-2xl font-bold text-primary">{retestPersons.length}</p>
+            <p className="text-xs text-muted-foreground">Reteste disponível</p>
+          </div>
+          <div className="bg-card border rounded-xl p-4 text-center">
             <Bell className="w-5 h-5 text-amber-500 mx-auto mb-1" />
             <p className="text-2xl font-bold text-amber-600">{pendingReminders}</p>
-            <p className="text-xs text-muted-foreground">Retestes pendentes</p>
+            <p className="text-xs text-muted-foreground">Lembretes pendentes</p>
           </div>
         </motion.div>
 
@@ -190,7 +195,7 @@ export default function ProfessionalDashboard() {
         {criticalPersons.length > 0 && (
           <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="bg-red-500/5 border border-red-500/20 rounded-xl p-5">
             <h3 className="text-sm font-semibold text-red-600 flex items-center gap-2 mb-3">
-              <AlertTriangle className="w-4 h-4" /> Pacientes que precisam de atenção
+              <AlertTriangle className="w-4 h-4" /> Padrões em nível crítico (≥70%)
             </h3>
             <div className="space-y-2">
               {criticalPersons.map(p => (
@@ -199,6 +204,27 @@ export default function ProfessionalDashboard() {
                   <div>
                     <span className="text-sm font-medium text-foreground">{p.name}</span>
                     <span className="text-xs text-red-500 ml-2">{p.criticalCount} padrão(ões) ≥70%</span>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Retest available alerts */}
+        {retestPersons.length > 0 && (
+          <motion.div {...fadeUp} transition={{ delay: 0.12 }} className="bg-primary/5 border border-primary/20 rounded-xl p-5">
+            <h3 className="text-sm font-semibold text-primary flex items-center gap-2 mb-3">
+              <RefreshCw className="w-4 h-4" /> Reteste disponível ({RETEST_INTERVAL_DAYS}+ dias)
+            </h3>
+            <div className="space-y-2">
+              {retestPersons.map(p => (
+                <button key={p.id} onClick={() => navigate(`/paciente/${p.id}`)}
+                  className="w-full text-left flex items-center justify-between p-3 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors">
+                  <div>
+                    <span className="text-sm font-medium text-foreground">{p.name}</span>
+                    <span className="text-xs text-primary ml-2">{p.daysSinceLastTest} dias sem reteste</span>
                   </div>
                   <ArrowRight className="w-4 h-4 text-muted-foreground" />
                 </button>
