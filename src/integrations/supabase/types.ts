@@ -260,6 +260,39 @@ export type Database = {
         }
         Relationships: []
       }
+      invites: {
+        Row: {
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          inviter_id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          inviter_id: string
+          status?: string
+          token?: string
+        }
+        Update: {
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          inviter_id?: string
+          status?: string
+          token?: string
+        }
+        Relationships: []
+      }
       managed_persons: {
         Row: {
           age: number | null
@@ -267,6 +300,7 @@ export type Database = {
           cpf: string
           created_at: string
           id: string
+          invited_by: string | null
           name: string
           owner_id: string
           phone: string | null
@@ -278,6 +312,7 @@ export type Database = {
           cpf: string
           created_at?: string
           id?: string
+          invited_by?: string | null
           name: string
           owner_id: string
           phone?: string | null
@@ -289,6 +324,7 @@ export type Database = {
           cpf?: string
           created_at?: string
           id?: string
+          invited_by?: string | null
           name?: string
           owner_id?: string
           phone?: string | null
@@ -647,6 +683,7 @@ export type Database = {
           id: string
           next_due_date: string | null
           plan: Database["public"]["Enums"]["subscription_plan"]
+          plan_type: string
           status: Database["public"]["Enums"]["subscription_status"]
           updated_at: string
           user_id: string
@@ -663,6 +700,7 @@ export type Database = {
           id?: string
           next_due_date?: string | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
+          plan_type?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           updated_at?: string
           user_id: string
@@ -679,6 +717,7 @@ export type Database = {
           id?: string
           next_due_date?: string | null
           plan?: Database["public"]["Enums"]["subscription_plan"]
+          plan_type?: string
           status?: Database["public"]["Enums"]["subscription_status"]
           updated_at?: string
           user_id?: string
@@ -854,6 +893,47 @@ export type Database = {
           },
         ]
       }
+      test_usage: {
+        Row: {
+          created_at: string
+          id: string
+          month_year: string
+          person_id: string | null
+          test_module_id: string
+          updated_at: string
+          usage_count: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_year: string
+          person_id?: string | null
+          test_module_id: string
+          updated_at?: string
+          usage_count?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_year?: string
+          person_id?: string | null
+          test_module_id?: string
+          updated_at?: string
+          usage_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_usage_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "managed_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tests: {
         Row: {
           category: string
@@ -983,12 +1063,29 @@ export type Database = {
     }
     Functions: {
       count_managed_persons: { Args: { _user_id: string }; Returns: number }
+      get_test_usage_count: {
+        Args: {
+          _month_year: string
+          _person_id: string
+          _test_module_id: string
+        }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_test_usage: {
+        Args: {
+          _month_year: string
+          _person_id: string
+          _test_module_id: string
+          _user_id: string
+        }
+        Returns: number
       }
     }
     Enums: {
@@ -1002,7 +1099,7 @@ export type Database = {
         | "direction"
         | "restrictions"
       question_type: "likert" | "behavior_choice" | "frequency" | "intensity"
-      subscription_plan: "monthly" | "yearly"
+      subscription_plan: "monthly" | "yearly" | "profissional"
       subscription_status:
         | "pending"
         | "active"
@@ -1147,7 +1244,7 @@ export const Constants = {
         "restrictions",
       ],
       question_type: ["likert", "behavior_choice", "frequency", "intensity"],
-      subscription_plan: ["monthly", "yearly"],
+      subscription_plan: ["monthly", "yearly", "profissional"],
       subscription_status: [
         "pending",
         "active",
