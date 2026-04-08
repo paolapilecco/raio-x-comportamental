@@ -71,6 +71,21 @@ export default function AdminUsers() {
     setChanging(null);
   };
 
+  const deleteUser = async (userId: string) => {
+    setDeleting(userId);
+    setConfirmDelete(null);
+    const { data, error } = await supabase.functions.invoke('admin-users', {
+      body: { action: 'delete_user', user_id: userId },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || 'Erro ao excluir usuário');
+    } else {
+      toast.success('Usuário excluído com sucesso!');
+      await fetchUsers();
+    }
+    setDeleting(null);
+  };
+
   const isSuperAdminUser = (u: UserEntry) => u.roles.includes('super_admin');
 
   const getUserPlan = (u: UserEntry): string => {
