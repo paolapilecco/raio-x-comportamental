@@ -183,6 +183,49 @@ export function useGamification(userId: string | undefined): GamificationData {
       const levelInfo = getLevelInfo(totalXP);
       const lastSession = sessions[sessions.length - 1];
 
+      // Fetch aggregated scores for global score calculation
+      const { data: centralProfile } = await supabase
+        .from('user_central_profile')
+        .select('aggregated_scores')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      // Fetch total active modules for coverage
+      const { count: totalModulesCount } = await supabase
+        .from('test_modules')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Global Score calculation (0-100)
+      // 1. Awareness (40%): inverted avg of behavioral scores (lower patterns = better awareness)
+      let awareness = 50; // default neutral
+      if (centralProfile?.aggregated_scores) {
+        const scores = Object.values(centralProfile.aggregated_scores as Record<string, number>);
+        if (scores.length > 0) {
+          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+          // Invert: lower avg pattern score = higher awareness
+          awareness = Math.round(Math.max(0, Math.min(100, 100 - avg)));
+        }
+      }
+
+      // 2. Consistency (25%): based on streak (cap at 8 weeks = 100%)
+      const consistency = Math.min(Math.round((currentStreak / 8) * 100), 100);
+
+      // 3. Coverage (20%): modules completed / total modules
+      const totalMods = totalModulesCount || 1;
+      const coverage = Math.min(Math.round((uniqueModules / totalMods) * 100), 100);
+
+      // 4. Recency (15%): days since last activity (0 days = 100%, 30+ days = 0%)
+      let recency = 0;
+      if (lastSession.completed_at) {
+        const daysSince = Math.floor((Date.now() - new Date(lastSession.completed_at).getTime()) / 86400000);
+        recency = Math.max(0, Math.round(100 - (daysSince / 30) * 100));
+      }
+
+      const globalScore = Math.round(
+        awareness * 0.4 + consistency * 0.25 + coverage * 0.2 + recency * 0.15
+      );
+
       setData({
         currentStreak,
         longestStreak,
@@ -190,6 +233,8 @@ export function useGamification(userId: string | undefined): GamificationData {
         streakActive,
         totalXP,
         ...levelInfo,
+        globalScore: Math.max(0, Math.min(100, globalScore)),
+        scoreBreakdown: { awareness, consistency, coverage, recency },
         totalTests,
         uniqueModules,
         loading: false,
