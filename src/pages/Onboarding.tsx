@@ -5,15 +5,24 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { ScanLine, ArrowRight, Fingerprint, Shield, Brain } from 'lucide-react';
+import { ScanLine, ArrowRight, Fingerprint, Shield, Brain, Phone } from 'lucide-react';
 
 const nameSchema = z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100);
 const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido');
+const phoneSchema = z.string().trim().regex(/^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/, 'Telefone inválido');
+
+function formatPhone(value: string): string {
+  let v = value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 6) v = v.replace(/(\d{2})(\d{4,5})(\d{1,4})/, '($1) $2-$3');
+  else if (v.length > 2) v = v.replace(/(\d{2})(\d{1,5})/, '($1) $2');
+  return v;
+}
 
 const Onboarding = () => {
   const [name, setName] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [cpf, setCpf] = useState('');
+  const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
@@ -34,6 +43,13 @@ const Onboarding = () => {
     }
     const cleanCpf = cpf.replace(/\D/g, '');
 
+    const phoneResult = phoneSchema.safeParse(phone);
+    if (!phoneResult.success) {
+      toast.error(phoneResult.error.errors[0].message);
+      return;
+    }
+    const cleanPhone = phone.replace(/\D/g, '');
+
     if (!birthDate) {
       toast.error('Informe sua data de nascimento');
       return;
@@ -48,11 +64,13 @@ const Onboarding = () => {
 
     setSubmitting(true);
     try {
+      // 1. Create profile
       const { error } = await supabase.from('profiles').insert({
         user_id: user!.id,
         name: nameResult.data,
         birth_date: birthDate,
         cpf: cleanCpf,
+        phone: cleanPhone,
       });
 
       if (error) {
@@ -65,6 +83,15 @@ const Onboarding = () => {
         toast.error('Erro ao salvar perfil. Tente novamente.');
         return;
       }
+
+      // 2. Auto-create first managed_person (the user themselves)
+      await supabase.from('managed_persons').insert({
+        owner_id: user!.id,
+        name: nameResult.data,
+        cpf: cleanCpf,
+        phone: cleanPhone,
+        birth_date: birthDate,
+      });
 
       await refreshProfile();
       toast.success('Perfil criado!');
@@ -205,11 +232,28 @@ const Onboarding = () => {
               inputMode="numeric"
               className="flex h-13 w-full rounded-2xl border border-border/40 bg-background/60 px-5 py-3 text-[0.9rem] ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/20 transition-all duration-300"
             />
-            <p className="text-[0.7rem] text-muted-foreground/40 flex items-center gap-1.5 mt-1">
-              <Shield className="w-3 h-3" />
-              Necessário para processamento de pagamento
-            </p>
           </div>
+          <div className="space-y-2">
+            <label htmlFor="onboarding-phone" className="text-[0.78rem] font-semibold text-foreground/70 tracking-[0.04em] uppercase font-display">
+              Telefone / WhatsApp
+            </label>
+            <input
+              id="onboarding-phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              required
+              maxLength={15}
+              placeholder="(11) 99999-9999"
+              inputMode="tel"
+              className="flex h-13 w-full rounded-2xl border border-border/40 bg-background/60 px-5 py-3 text-[0.9rem] ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/20 transition-all duration-300"
+            />
+          </div>
+
+          <p className="text-[0.7rem] text-muted-foreground/40 flex items-center gap-1.5">
+            <Shield className="w-3 h-3" />
+            Seus dados são protegidos e nunca compartilhados
+          </p>
 
           <button
             type="submit"
@@ -221,15 +265,6 @@ const Onboarding = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/[0.08] to-white/[0.05] pointer-events-none" />
           </button>
         </motion.form>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5, duration: 0.4 }}
-          className="text-center text-[0.7rem] text-muted-foreground/35 font-display tracking-wide"
-        >
-          Seus dados são protegidos e nunca compartilhados
-        </motion.p>
       </motion.div>
     </div>
   );
