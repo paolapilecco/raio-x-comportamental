@@ -14,6 +14,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
+import { usePersonGamification } from '@/hooks/usePersonGamification';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
