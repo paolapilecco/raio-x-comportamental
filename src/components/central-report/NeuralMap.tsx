@@ -46,7 +46,7 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
 
   // Include ALL axes in neural view
   const init = useCallback((w: number, h: number) => {
-    const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
+    const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a).slice(0, 7);
     if (sorted.length === 0) return;
 
     const clusters: typeof dataRef.current.clusters = [];
