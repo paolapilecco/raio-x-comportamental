@@ -109,12 +109,14 @@ export default function PatientDetail() {
     }
 
     // Notes & reminders
-    const [notesRes, remindersRes] = await Promise.all([
+    const [notesRes, remindersRes, invitesRes] = await Promise.all([
       supabase.from('professional_notes').select('*').eq('person_id', personId!).eq('owner_id', user!.id).order('created_at', { ascending: false }),
       supabase.from('retest_reminders').select('*').eq('person_id', personId!).eq('owner_id', user!.id).order('remind_at', { ascending: true }),
+      supabase.from('test_invites' as any).select('id, token, test_module_id, status, expires_at').eq('person_id', personId!).eq('owner_id', user!.id).order('created_at', { ascending: false }),
     ]);
     setNotes((notesRes.data as Note[]) || []);
     setReminders((remindersRes.data as Reminder[]) || []);
+    setInvites((invitesRes.data as any[]) || []);
     setLoading(false);
   };
 
