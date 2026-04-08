@@ -32,10 +32,11 @@ import PublicTest from "./pages/PublicTest";
 
 const queryClient = new QueryClient();
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+function ProtectedRoute({ children, skipOnboardingCheck = false }: { children: React.ReactNode; skipOnboardingCheck?: boolean }) {
+  const { user, profile, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>;
   if (!user) return <Navigate to="/auth" replace />;
+  if (!skipOnboardingCheck && !profile) return <Navigate to="/onboarding" replace />;
   return <>{children}</>;
 }
 
@@ -52,7 +53,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/t/:token" element={<PublicTest />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
             <Route path="/pessoas" element={<ProtectedRoute><ManagedPersons /></ProtectedRoute>} />
             <Route path="/tests" element={<ProtectedRoute><TestCatalog /></ProtectedRoute>} />
             <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
