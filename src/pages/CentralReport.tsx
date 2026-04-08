@@ -30,6 +30,7 @@ import { ConflictsSection } from '@/components/central-report/ConflictsSection';
 import { CriticalAreasSection } from '@/components/central-report/CriticalAreasSection';
 import { AIInsightsSection } from '@/components/central-report/AIInsightsSection';
 import { StickyPremiumCTA } from '@/components/central-report/StickyPremiumCTA';
+import { ScoreGlobalCard } from '@/components/central-report/ScoreGlobalCard';
 import {
   fadeUp,
   LIFE_MAP_MODULE_ID,
@@ -346,7 +347,32 @@ const CentralReport = () => {
             <StickyPremiumCTA hasAccess={hasAccess} patternsCount={sorted.length} conflictsCount={detectedConflicts.length} />
             <div className={`space-y-6 sm:space-y-8 ${!hasAccess ? 'pointer-events-none select-none' : ''}`}>
 
-              {/* NEW: Mini KPIs */}
+              {/* Score Global de Evolução */}
+              {(() => {
+                const scoresArr = Object.values(scores);
+                const avgScore = scoresArr.length > 0 ? scoresArr.reduce((a, b) => a + b, 0) / scoresArr.length : 50;
+                const awareness = Math.round(Math.max(0, Math.min(100, 100 - avgScore)));
+                const uniqueModules = new Set(history.map(h => h.test_module_id).filter(Boolean)).size;
+                const coverage = Math.min(Math.round((uniqueModules / Math.max(1, 6)) * 100), 100);
+                const consistency = Math.min(Math.round((centralProfile.tests_completed / 8) * 100), 100);
+                let recency = 0;
+                if (centralProfile.last_test_at) {
+                  const daysSince = Math.floor((Date.now() - new Date(centralProfile.last_test_at).getTime()) / 86400000);
+                  recency = Math.max(0, Math.round(100 - (daysSince / 30) * 100));
+                }
+                const globalScore = Math.max(0, Math.min(100, Math.round(
+                  awareness * 0.4 + consistency * 0.25 + coverage * 0.2 + recency * 0.15
+                )));
+                return (
+                  <ScoreGlobalCard
+                    globalScore={globalScore}
+                    breakdown={{ awareness, consistency, coverage, recency }}
+                    hasAccess={hasAccess}
+                  />
+                );
+              })()}
+
+              {/* Mini KPIs */}
               <ReportMiniKPIs
                 testsCompleted={centralProfile.tests_completed}
                 conflictsCount={detectedConflicts.length}
