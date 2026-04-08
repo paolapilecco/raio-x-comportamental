@@ -880,6 +880,7 @@ const CentralReport = () => {
 
           {/* ═══════════════════ TAB 2: MAPA DE VIDA ═══════════════════ */}
           <TabsContent value="lifemap" className="mt-6">
+            <StickyPremiumCTA />
             <div className="relative">
               <div className={`space-y-6 sm:space-y-8 ${!hasAccess ? 'pointer-events-none select-none' : ''}`} style={!hasAccess ? { filter: 'blur(5px)' } : undefined}>
                 {lifeMapHistory.length === 0 ? (
