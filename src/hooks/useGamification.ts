@@ -107,6 +107,8 @@ export function useGamification(userId: string | undefined): GamificationData {
     levelName: 'Iniciante',
     levelProgress: 0,
     xpToNextLevel: 100,
+    globalScore: 0,
+    scoreBreakdown: { awareness: 0, consistency: 0, coverage: 0, recency: 0 },
     totalTests: 0,
     uniqueModules: 0,
     loading: true,
