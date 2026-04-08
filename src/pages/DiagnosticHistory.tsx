@@ -122,9 +122,13 @@ const DiagnosticHistory = () => {
     fetchHistory();
   }, [user]);
 
-  const filtered = selectedModule === 'all'
+  const filteredByPerson = selectedPerson === 'all'
     ? history
-    : history.filter(h => h.test_module_id === selectedModule);
+    : history.filter(h => h.person_id === selectedPerson);
+
+  const filtered = selectedModule === 'all'
+    ? filteredByPerson
+    : filteredByPerson.filter(h => h.test_module_id === selectedModule);
 
   const latest = filtered[0];
   const previous = filtered.length > 1 ? filtered[1] : null;
