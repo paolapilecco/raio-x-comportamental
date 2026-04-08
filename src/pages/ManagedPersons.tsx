@@ -3,8 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth, PLAN_LIMITS } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
-import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar, Mail, Send, Pencil, ToggleLeft, ToggleRight, Check, X } from 'lucide-react';
+import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar, Mail, Send, Pencil, ToggleLeft, ToggleRight, Check, X, Eye } from 'lucide-react';
 import { z } from 'zod';
 import { getPersonLimit } from '@/lib/planLimits';
 
@@ -40,6 +41,7 @@ const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } }
 
 export default function ManagedPersons() {
   const { user, isPremium, isSuperAdmin, planType } = useAuth();
+  const navigate = useNavigate();
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -489,6 +491,15 @@ export default function ManagedPersons() {
                             ? <ToggleRight className="w-5 h-5" />
                             : <ToggleLeft className="w-5 h-5" />
                           }
+                        </button>
+
+                        {/* View detail */}
+                        <button
+                          onClick={() => navigate(`/paciente/${person.id}`)}
+                          className="text-muted-foreground hover:text-primary transition-colors p-2"
+                          title="Ver ficha completa"
+                        >
+                          <Eye className="w-4 h-4" />
                         </button>
 
                         {/* Edit */}
