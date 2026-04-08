@@ -184,6 +184,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          person_id: string | null
           test_module_id: string | null
           user_id: string
         }
@@ -191,6 +192,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          person_id?: string | null
           test_module_id?: string | null
           user_id: string
         }
@@ -198,10 +200,18 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          person_id?: string | null
           test_module_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "diagnostic_sessions_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "managed_persons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "diagnostic_sessions_test_module_id_fkey"
             columns: ["test_module_id"]
@@ -246,6 +256,42 @@ export type Database = {
           report_style?: string
           temperature?: number
           tone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      managed_persons: {
+        Row: {
+          age: number | null
+          birth_date: string
+          cpf: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          age?: number | null
+          birth_date: string
+          cpf: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          age?: number | null
+          birth_date?: string
+          cpf?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          phone?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -374,6 +420,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          phone: string | null
           updated_at: string
           user_id: string
         }
@@ -384,6 +431,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          phone?: string | null
           updated_at?: string
           user_id: string
         }
@@ -394,6 +442,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          phone?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -933,6 +982,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      count_managed_persons: { Args: { _user_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
