@@ -471,6 +471,11 @@ const Dashboard = () => {
           </motion.section>
         )}
 
+        {/* Retest Cycle - 15 days */}
+        {!retestCycle.loading && retestCycle.lastTestDate && (
+          <RetestCycleCard retest={retestCycle} />
+        )}
+
         {/* Super Admin tools */}
         {role === 'super_admin' && (
           <div className="flex items-center gap-3 flex-wrap">
