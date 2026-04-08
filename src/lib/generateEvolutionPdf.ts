@@ -51,7 +51,8 @@ function drawKPIRow(ctx: Ctx, items: { label: string; value: string; color?: RGB
     ctx.doc.roundedRect(x, ctx.y, w, 24, 3, 3, 'F');
     ctx.doc.setFont('helvetica', 'bold');
     ctx.doc.setFontSize(16);
-    ctx.doc.setTextColor(...(item.color || C.dark));
+    const c = item.color || C.dark;
+    ctx.doc.setTextColor(c[0], c[1], c[2]);
     ctx.doc.text(item.value, x + w / 2, ctx.y + 12, { align: 'center' });
     ctx.doc.setFont('helvetica', 'normal');
     ctx.doc.setFontSize(7);
