@@ -8,13 +8,13 @@ interface NeuralMapProps {
 function scoreColorRgb(score: number): [number, number, number] {
   if (score <= 40) return [34, 197, 94];   // green
   if (score <= 70) return [234, 179, 8];   // yellow
-  return [239, 68, 68];                     // red
+  return [100, 180, 255];                   // light blue
 }
 
 function scoreGlowColor(score: number): string {
   if (score <= 40) return 'rgba(34,197,94,';
   if (score <= 70) return 'rgba(234,179,8,';
-  return 'rgba(239,68,68,';
+  return 'rgba(100,180,255,';
 }
 
 interface Particle {
@@ -242,7 +242,8 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
 
   // HTML labels positioned around the tree
   const labelElements = useMemo(() => {
-    return sortedTop5.map(([key, score], i) => {
+    return sortedTop5.map(([key, rawScore], i) => {
+      const score = Math.min(100, rawScore);
       const spread = sortedTop5.length - 1 || 1;
       const left = 10 + (i / spread) * 80;
       const top = i % 2 === 0 ? 5 : 13;
@@ -281,7 +282,7 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
       <div className="absolute bottom-3 left-3 flex gap-3 text-[10px] text-white/50 z-10">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500/80 inline-block" style={{ boxShadow: '0 0 4px rgba(34,197,94,0.5)' }} />Baixo</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500/80 inline-block" style={{ boxShadow: '0 0 4px rgba(234,179,8,0.5)' }} />Moderado</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500/80 inline-block" style={{ boxShadow: '0 0 4px rgba(239,68,68,0.5)' }} />Alto</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: 'rgba(100,180,255,0.8)', boxShadow: '0 0 4px rgba(100,180,255,0.5)' }} />Alto</span>
       </div>
       <div className="absolute bottom-3 right-3 text-[10px] text-white/20 z-10">
         Mova o mouse para interagir
