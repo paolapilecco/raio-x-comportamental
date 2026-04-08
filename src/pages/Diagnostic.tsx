@@ -280,7 +280,7 @@ const Diagnostic = () => {
       console.error('Error saving diagnostic:', err);
       toast.error('Erro ao salvar diagnóstico, mas seu resultado está disponível.');
     }
-  }, [user, moduleId]);
+  }, [user, moduleId, selectedPersonId]);
 
   /**
    * Local fallback analysis (hardcoded patterns).
