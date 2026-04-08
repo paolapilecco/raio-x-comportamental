@@ -209,6 +209,34 @@ export default function PatientDetail() {
     await loadAll();
   };
 
+  const handleGenerateLink = async (testModuleId: string) => {
+    setGeneratingLink(testModuleId);
+    try {
+      const { data, error } = await supabase.from('test_invites' as any).insert({
+        owner_id: user!.id,
+        person_id: personId!,
+        test_module_id: testModuleId,
+      }).select('token').single();
+
+      if (error) { toast.error('Erro ao gerar link.'); return; }
+      const link = `${window.location.origin}/t/${(data as any).token}`;
+      await navigator.clipboard.writeText(link);
+      setCopiedToken(testModuleId);
+      toast.success('Link copiado para a área de transferência!');
+      setTimeout(() => setCopiedToken(null), 3000);
+      await loadAll();
+    } catch { toast.error('Erro ao gerar link.'); }
+    finally { setGeneratingLink(null); }
+  };
+
+  const handleCopyExistingLink = async (token: string, moduleId: string) => {
+    const link = `${window.location.origin}/t/${token}`;
+    await navigator.clipboard.writeText(link);
+    setCopiedToken(moduleId);
+    toast.success('Link copiado!');
+    setTimeout(() => setCopiedToken(null), 3000);
+  };
+
   const handleDownloadPdf = async (entry: TestEntry) => {
     try {
       const { data: fullResult } = await supabase.from('diagnostic_results').select('*').eq('id', entry.id).maybeSingle();
