@@ -294,6 +294,82 @@ const Dashboard = () => {
           </p>
         </motion.section>
 
+        {/* Score Global de Evolução */}
+        {!gamification.loading && gamification.totalTests > 0 && (
+          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.03 }}>
+            <div className="bg-card rounded-2xl border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+                {/* Circular score indicator */}
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 shrink-0">
+                  <svg viewBox="0 0 120 120" className="w-full h-full -rotate-90">
+                    <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--muted)/0.15)" strokeWidth="8" />
+                    <motion.circle
+                      cx="60" cy="60" r="52"
+                      fill="none"
+                      stroke={
+                        gamification.globalScore >= 70 ? 'hsl(152, 45%, 42%)' :
+                        gamification.globalScore >= 40 ? 'hsl(var(--gold))' :
+                        'hsl(0, 65%, 52%)'
+                      }
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeDasharray={`${2 * Math.PI * 52}`}
+                      initial={{ strokeDashoffset: 2 * Math.PI * 52 }}
+                      animate={{ strokeDashoffset: 2 * Math.PI * 52 * (1 - gamification.globalScore / 100) }}
+                      transition={{ delay: 0.5, duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <motion.span
+                      className="text-3xl sm:text-4xl font-bold tabular-nums text-foreground"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.8 }}
+                    >
+                      {gamification.globalScore}
+                    </motion.span>
+                    <span className="text-[0.55rem] uppercase tracking-[0.15em] text-muted-foreground font-semibold">de 100</span>
+                  </div>
+                </div>
+
+                {/* Score details */}
+                <div className="flex-1 w-full space-y-3">
+                  <div className="flex items-center gap-2.5 mb-1">
+                    <Gauge className="w-4 h-4 text-primary" />
+                    <h3 className="text-base font-semibold text-foreground">Score de Evolução</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                    Quanto maior, mais consciente e consistente é seu processo de autoconhecimento.
+                  </p>
+
+                  {/* Breakdown bars */}
+                  <div className="space-y-2">
+                    {[
+                      { label: 'Autoconsciência', value: gamification.scoreBreakdown.awareness, weight: '40%' },
+                      { label: 'Consistência', value: gamification.scoreBreakdown.consistency, weight: '25%' },
+                      { label: 'Cobertura', value: gamification.scoreBreakdown.coverage, weight: '20%' },
+                      { label: 'Atividade', value: gamification.scoreBreakdown.recency, weight: '15%' },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center gap-3">
+                        <span className="text-[0.65rem] text-muted-foreground w-28 shrink-0">{item.label}</span>
+                        <div className="flex-1 h-1.5 bg-muted/20 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full rounded-full bg-primary/70"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.value}%` }}
+                            transition={{ delay: 0.7, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                          />
+                        </div>
+                        <span className="text-[0.6rem] text-muted-foreground/50 w-8 text-right tabular-nums">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.section>
+        )}
+
         {/* Gamification: Streak + Level */}
         {!gamification.loading && gamification.totalTests > 0 && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.05 }}>
