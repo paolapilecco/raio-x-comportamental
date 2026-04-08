@@ -59,7 +59,6 @@ serve(async (req) => {
     const action = body.action || "list";
 
     if (action === "metrics") {
-      // Get counts for admin dashboard
       const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
       const totalUsers = allUsers?.length || 0;
 
@@ -83,11 +82,9 @@ serve(async (req) => {
         .select("*", { count: "exact", head: true })
         .eq("is_active", true);
 
-      // Users created in last 7 days
       const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
       const newUsersThisWeek = (allUsers || []).filter((u: any) => u.created_at >= weekAgo).length;
 
-      // Recent signups (last 10)
       const recentUsers = (allUsers || [])
         .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 10)
@@ -113,7 +110,7 @@ serve(async (req) => {
       const { data: { users: allUsers } } = await adminClient.auth.admin.listUsers({ perPage: 1000 });
       const { data: allRoles } = await adminClient.from("user_roles").select("user_id, role");
       const { data: allProfiles } = await adminClient.from("profiles").select("user_id, name, age, cpf");
-      const { data: allSubs } = await adminClient.from("subscriptions").select("user_id, plan, status, billing_type, value, created_at");
+      const { data: allSubs } = await adminClient.from("subscriptions").select("user_id, plan, plan_type, status, billing_type, value, created_at");
 
       const roleMap: Record<string, string[]> = {};
       (allRoles || []).forEach((r: any) => {
@@ -125,7 +122,7 @@ serve(async (req) => {
       const subMap: Record<string, any> = {};
       (allSubs || []).forEach((s: any) => { subMap[s.user_id] = s; });
 
-      const csvRows = [["Email","Nome","Idade","Roles","Plano Assinatura","Status","Valor","Cadastro","Último Acesso"]];
+      const csvRows = [["Email","Nome","Idade","Roles","Plano","Status","Valor","Cadastro","Último Acesso"]];
       (allUsers || []).forEach((u: any) => {
         const p = profileMap[u.id];
         const s = subMap[u.id];
@@ -134,7 +131,7 @@ serve(async (req) => {
           p?.name || "",
           p?.age?.toString() || "",
           (roleMap[u.id] || ["user"]).join(";"),
-          s?.plan || "free",
+          s?.plan_type || "standard",
           s?.status || "-",
           s?.value?.toString() || "0",
           u.created_at?.split("T")[0] || "",
@@ -149,7 +146,6 @@ serve(async (req) => {
     }
 
     if (action === "list") {
-      // List all users with their roles and profiles
       const { data: { users }, error: listError } = await adminClient.auth.admin.listUsers({
         perPage: 500,
       });
@@ -161,15 +157,19 @@ serve(async (req) => {
         });
       }
 
-      // Get all roles
       const { data: allRoles } = await adminClient
         .from("user_roles")
         .select("user_id, role");
 
-      // Get all profiles
       const { data: allProfiles } = await adminClient
         .from("profiles")
         .select("user_id, name, age");
+
+      // Also fetch subscriptions to show plan_type
+      const { data: allSubs } = await adminClient
+        .from("subscriptions")
+        .select("user_id, plan_type, status")
+        .eq("status", "active");
 
       const roleMap: Record<string, string[]> = {};
       (allRoles || []).forEach((r: any) => {
@@ -182,6 +182,11 @@ serve(async (req) => {
         profileMap[p.user_id] = p;
       });
 
+      const subMap: Record<string, string> = {};
+      (allSubs || []).forEach((s: any) => {
+        subMap[s.user_id] = s.plan_type || "pessoal";
+      });
+
       const result = (users || []).map((u: any) => ({
         id: u.id,
         email: u.email,
@@ -189,6 +194,7 @@ serve(async (req) => {
         last_sign_in_at: u.last_sign_in_at,
         roles: roleMap[u.id] || ["user"],
         profile: profileMap[u.id] || null,
+        plan_type: subMap[u.id] || "standard",
       }));
 
       return new Response(JSON.stringify({ users: result }), {
@@ -196,6 +202,94 @@ serve(async (req) => {
       });
     }
 
+    if (action === "set_plan") {
+      const targetUserId = body.user_id;
+      const newPlan = body.plan_type; // 'standard' | 'pessoal' | 'profissional'
+      if (!targetUserId || !newPlan) {
+        return new Response(JSON.stringify({ error: "user_id e plan_type obrigatórios" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const validPlans = ["standard", "pessoal", "profissional"];
+      if (!validPlans.includes(newPlan)) {
+        return new Response(JSON.stringify({ error: "Plano inválido" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get current plan info
+      const { data: currentSub } = await adminClient
+        .from("subscriptions")
+        .select("id, plan_type, status")
+        .eq("user_id", targetUserId)
+        .eq("status", "active")
+        .maybeSingle();
+
+      const previousPlan = currentSub?.plan_type || "standard";
+
+      if (newPlan === "standard") {
+        // Remove premium role
+        await adminClient.from("user_roles").delete()
+          .eq("user_id", targetUserId)
+          .eq("role", "premium");
+        // Cancel active subscription if exists
+        if (currentSub) {
+          await adminClient.from("subscriptions")
+            .update({ status: "canceled", canceled_at: new Date().toISOString() })
+            .eq("id", currentSub.id);
+        }
+      } else {
+        // Add premium role if not exists
+        const { data: existingPremium } = await adminClient
+          .from("user_roles")
+          .select("id")
+          .eq("user_id", targetUserId)
+          .eq("role", "premium")
+          .maybeSingle();
+
+        if (!existingPremium) {
+          await adminClient.from("user_roles").insert({ user_id: targetUserId, role: "premium" });
+        }
+
+        // Upsert subscription with the plan type
+        if (currentSub) {
+          await adminClient.from("subscriptions")
+            .update({ 
+              plan_type: newPlan, 
+              status: "active",
+              value: newPlan === "pessoal" ? 5.99 : 39.90,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", currentSub.id);
+        } else {
+          await adminClient.from("subscriptions").insert({
+            user_id: targetUserId,
+            plan: "monthly",
+            plan_type: newPlan,
+            status: "active",
+            value: newPlan === "pessoal" ? 5.99 : 39.90,
+            billing_type: "ADMIN",
+          });
+        }
+      }
+
+      // Log change
+      await adminClient.from("plan_change_history").insert({
+        user_id: targetUserId,
+        previous_plan: previousPlan,
+        new_plan: newPlan,
+        changed_by: user.id,
+      });
+
+      return new Response(JSON.stringify({ success: true, plan_type: newPlan }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Keep legacy toggle_premium for backward compat
     if (action === "toggle_premium") {
       const targetUserId = body.user_id;
       if (!targetUserId) {
@@ -205,7 +299,6 @@ serve(async (req) => {
         });
       }
 
-      // Check if user already has premium role
       const { data: existing } = await adminClient
         .from("user_roles")
         .select("id")
@@ -214,9 +307,7 @@ serve(async (req) => {
         .maybeSingle();
 
       if (existing) {
-        // Remove premium
         await adminClient.from("user_roles").delete().eq("id", existing.id);
-        // Log change
         await adminClient.from("plan_change_history").insert({
           user_id: targetUserId, previous_plan: "premium", new_plan: "standard", changed_by: user.id,
         });
@@ -224,9 +315,7 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        // Add premium
         await adminClient.from("user_roles").insert({ user_id: targetUserId, role: "premium" });
-        // Log change
         await adminClient.from("plan_change_history").insert({
           user_id: targetUserId, previous_plan: "standard", new_plan: "premium", changed_by: user.id,
         });

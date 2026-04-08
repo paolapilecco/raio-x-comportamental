@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Loader2, Users, Crown, User, Search, RefreshCw,
+  ArrowLeft, Loader2, Users, Crown, User, Search, RefreshCw, ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -15,16 +15,24 @@ interface UserEntry {
   last_sign_in_at: string | null;
   roles: string[];
   profile: { name: string; age: number | null } | null;
+  plan_type: string;
 }
+
+const PLAN_OPTIONS = [
+  { value: 'standard', label: 'Padrão', color: 'bg-muted text-muted-foreground border-border' },
+  { value: 'pessoal', label: 'Pessoal', color: 'bg-violet-500/10 text-violet-400 border-violet-500/20' },
+  { value: 'profissional', label: 'Profissional', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+] as const;
 
 export default function AdminUsers() {
   const { isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [toggling, setToggling] = useState<string | null>(null);
+  const [changing, setChanging] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [planFilter, setPlanFilter] = useState<'all' | 'standard' | 'premium'>('all');
+  const [planFilter, setPlanFilter] = useState<'all' | 'standard' | 'pessoal' | 'profissional'>('all');
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -39,35 +47,42 @@ export default function AdminUsers() {
     });
     if (error || data?.error) {
       toast.error('Erro ao carregar usuários');
-      console.error(error || data?.error);
     } else {
       setUsers(data.users || []);
     }
     setLoading(false);
   };
 
-  const togglePremium = async (userId: string) => {
-    setToggling(userId);
+  const changePlan = async (userId: string, newPlan: string) => {
+    setChanging(userId);
+    setOpenDropdown(null);
     const { data, error } = await supabase.functions.invoke('admin-users', {
-      body: { action: 'toggle_premium', user_id: userId },
+      body: { action: 'set_plan', user_id: userId, plan_type: newPlan },
     });
     if (error || data?.error) {
       toast.error('Erro ao alterar plano');
     } else {
-      toast.success(data.action === 'added' ? 'Plano Premium ativado!' : 'Plano rebaixado para Padrão');
+      const planLabel = PLAN_OPTIONS.find(p => p.value === newPlan)?.label || newPlan;
+      toast.success(`Plano alterado para ${planLabel}!`);
       await fetchUsers();
     }
-    setToggling(null);
+    setChanging(null);
   };
 
-  const isPremium = (u: UserEntry) => u.roles.includes('premium') || u.roles.includes('super_admin');
   const isSuperAdminUser = (u: UserEntry) => u.roles.includes('super_admin');
 
+  const getUserPlan = (u: UserEntry): string => {
+    if (isSuperAdminUser(u)) return 'admin';
+    return u.plan_type || 'standard';
+  };
+
   const filtered = users.filter(u => {
-    // Plan filter
-    if (planFilter === 'premium' && !isPremium(u)) return false;
-    if (planFilter === 'standard' && isPremium(u)) return false;
-    // Search
+    if (planFilter !== 'all') {
+      const plan = getUserPlan(u);
+      if (planFilter === 'standard' && plan !== 'standard') return false;
+      if (planFilter === 'pessoal' && plan !== 'pessoal') return false;
+      if (planFilter === 'profissional' && plan !== 'profissional') return false;
+    }
     if (!search) return true;
     const q = search.toLowerCase();
     return u.email?.toLowerCase().includes(q) || u.profile?.name?.toLowerCase().includes(q);
@@ -77,6 +92,37 @@ export default function AdminUsers() {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
+
+  const getPlanBadge = (plan: string) => {
+    if (plan === 'admin') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+          <Crown className="w-3 h-3" /> Admin
+        </span>
+      );
+    }
+    if (plan === 'profissional') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <Crown className="w-3 h-3" /> Profissional
+        </span>
+      );
+    }
+    if (plan === 'pessoal') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
+          <Crown className="w-3 h-3" /> Pessoal
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
+        <User className="w-3 h-3" /> Padrão
+      </span>
+    );
+  };
+
+  const countByPlan = (plan: string) => users.filter(u => getUserPlan(u) === plan).length;
 
   if (authLoading || loading) {
     return (
@@ -102,7 +148,6 @@ export default function AdminUsers() {
           </button>
         </div>
 
-        {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
@@ -113,12 +158,16 @@ export default function AdminUsers() {
           />
         </div>
 
-        {/* Plan filter */}
-        <div className="flex gap-2 mb-4">
-          {([['all', 'Todos'], ['standard', 'Padrão'], ['premium', 'Premium']] as const).map(([value, label]) => (
+        <div className="flex gap-2 mb-4 flex-wrap">
+          {([
+            ['all', 'Todos', users.length],
+            ['standard', 'Padrão', countByPlan('standard')],
+            ['pessoal', 'Pessoal', countByPlan('pessoal')],
+            ['profissional', 'Profissional', countByPlan('profissional')],
+          ] as const).map(([value, label, count]) => (
             <button
               key={value}
-              onClick={() => setPlanFilter(value)}
+              onClick={() => setPlanFilter(value as any)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border ${
                 planFilter === value
                   ? 'border-primary bg-primary/10 text-primary'
@@ -126,14 +175,11 @@ export default function AdminUsers() {
               }`}
             >
               {label}
-              <span className="ml-1.5 opacity-60">
-                {value === 'all' ? users.length : value === 'premium' ? users.filter(isPremium).length : users.filter(u => !isPremium(u)).length}
-              </span>
+              <span className="ml-1.5 opacity-60">{count}</span>
             </button>
           ))}
         </div>
 
-        {/* Table */}
         <div className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -147,59 +193,66 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((u, i) => (
-                  <motion.tr
-                    key={u.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.02 }}
-                    className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{u.profile?.name || '—'}</p>
-                        <p className="text-xs text-muted-foreground">{u.email}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      {isSuperAdminUser(u) ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                          <Crown className="w-3 h-3" />
-                          Admin
-                        </span>
-                      ) : isPremium(u) ? (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-violet-500/10 text-violet-400 border border-violet-500/20">
-                          <Crown className="w-3 h-3" />
-                          Premium
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-                          <User className="w-3 h-3" />
-                          Padrão
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{formatDate(u.created_at)}</td>
-                    <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{formatDate(u.last_sign_in_at)}</td>
-                    <td className="px-4 py-3 text-right">
-                      {!isSuperAdminUser(u) && (
-                        <button
-                          onClick={() => togglePremium(u.id)}
-                          disabled={toggling === u.id}
-                          className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 ${
-                            isPremium(u)
-                              ? 'bg-muted text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
-                              : 'bg-violet-500/10 text-violet-400 hover:bg-violet-500/20'
-                          }`}
-                        >
-                          {toggling === u.id ? (
-                            <Loader2 className="w-3 h-3 animate-spin inline" />
-                          ) : isPremium(u) ? 'Remover Premium' : 'Dar Premium'}
-                        </button>
-                      )}
-                    </td>
-                  </motion.tr>
-                ))}
+                {filtered.map((u, i) => {
+                  const plan = getUserPlan(u);
+                  return (
+                    <motion.tr
+                      key={u.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: i * 0.02 }}
+                      className="border-b border-border/50 last:border-0 hover:bg-muted/20 transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{u.profile?.name || '—'}</p>
+                          <p className="text-xs text-muted-foreground">{u.email}</p>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">{getPlanBadge(plan)}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{formatDate(u.created_at)}</td>
+                      <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{formatDate(u.last_sign_in_at)}</td>
+                      <td className="px-4 py-3 text-right">
+                        {!isSuperAdminUser(u) && (
+                          <div className="relative inline-block">
+                            {changing === u.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-primary inline" />
+                            ) : (
+                              <>
+                                <button
+                                  onClick={() => setOpenDropdown(openDropdown === u.id ? null : u.id)}
+                                  className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-muted text-foreground hover:bg-accent inline-flex items-center gap-1"
+                                >
+                                  Alterar Plano
+                                  <ChevronDown className="w-3 h-3" />
+                                </button>
+                                {openDropdown === u.id && (
+                                  <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
+                                    {PLAN_OPTIONS.map(opt => (
+                                      <button
+                                        key={opt.value}
+                                        onClick={() => changePlan(u.id, opt.value)}
+                                        disabled={plan === opt.value}
+                                        className={`w-full text-left px-3 py-2 text-xs font-medium transition-colors ${
+                                          plan === opt.value
+                                            ? 'text-muted-foreground/50 cursor-not-allowed bg-muted/30'
+                                            : 'text-foreground hover:bg-accent'
+                                        }`}
+                                      >
+                                        {opt.label}
+                                        {plan === opt.value && <span className="ml-1 opacity-50">(atual)</span>}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </td>
+                    </motion.tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -211,6 +264,11 @@ export default function AdminUsers() {
           )}
         </div>
       </div>
+
+      {/* Close dropdown on outside click */}
+      {openDropdown && (
+        <div className="fixed inset-0 z-40" onClick={() => setOpenDropdown(null)} />
+      )}
     </div>
   );
 }
