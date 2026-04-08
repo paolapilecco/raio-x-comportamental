@@ -325,6 +325,80 @@ serve(async (req) => {
       }
     }
 
+    if (action === "delete_user") {
+      const targetUserId = body.user_id;
+      if (!targetUserId) {
+        return new Response(JSON.stringify({ error: "user_id obrigatório" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent deleting yourself
+      if (targetUserId === user.id) {
+        return new Response(JSON.stringify({ error: "Não é possível excluir sua própria conta" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Prevent deleting other super_admins
+      const { data: targetRoles } = await adminClient
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", targetUserId)
+        .eq("role", "super_admin")
+        .maybeSingle();
+
+      if (targetRoles) {
+        return new Response(JSON.stringify({ error: "Não é possível excluir outro administrador" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Delete related data in order (cascading manually for safety)
+      await adminClient.from("professional_notes").delete().eq("owner_id", targetUserId);
+      await adminClient.from("retest_reminders").delete().eq("owner_id", targetUserId);
+      await adminClient.from("test_invites").delete().eq("owner_id", targetUserId);
+      await adminClient.from("test_usage").delete().eq("user_id", targetUserId);
+
+      // Delete diagnostic data
+      const { data: sessions } = await adminClient
+        .from("diagnostic_sessions")
+        .select("id")
+        .eq("user_id", targetUserId);
+      
+      if (sessions && sessions.length > 0) {
+        const sessionIds = sessions.map((s: any) => s.id);
+        await adminClient.from("diagnostic_answers").delete().in("session_id", sessionIds);
+        await adminClient.from("diagnostic_results").delete().in("session_id", sessionIds);
+        await adminClient.from("diagnostic_sessions").delete().eq("user_id", targetUserId);
+      }
+
+      await adminClient.from("managed_persons").delete().eq("owner_id", targetUserId);
+      await adminClient.from("user_central_profile").delete().eq("user_id", targetUserId);
+      await adminClient.from("user_profile").delete().eq("user_id", targetUserId);
+      await adminClient.from("subscriptions").delete().eq("user_id", targetUserId);
+      await adminClient.from("plan_change_history").delete().eq("user_id", targetUserId);
+      await adminClient.from("user_roles").delete().eq("user_id", targetUserId);
+      await adminClient.from("profiles").delete().eq("user_id", targetUserId);
+
+      // Finally delete the auth user
+      const { error: deleteError } = await adminClient.auth.admin.deleteUser(targetUserId);
+      if (deleteError) {
+        console.error("Error deleting auth user:", deleteError);
+        return new Response(JSON.stringify({ error: "Erro ao excluir usuário" }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Ação inválida" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

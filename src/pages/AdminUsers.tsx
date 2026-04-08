@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Loader2, Users, Crown, User, Search, RefreshCw, ChevronDown,
+  ArrowLeft, Loader2, Users, Crown, User, Search, RefreshCw, ChevronDown, Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -30,6 +30,8 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<UserEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [changing, setChanging] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [planFilter, setPlanFilter] = useState<'all' | 'standard' | 'pessoal' | 'profissional'>('all');
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -67,6 +69,21 @@ export default function AdminUsers() {
       await fetchUsers();
     }
     setChanging(null);
+  };
+
+  const deleteUser = async (userId: string) => {
+    setDeleting(userId);
+    setConfirmDelete(null);
+    const { data, error } = await supabase.functions.invoke('admin-users', {
+      body: { action: 'delete_user', user_id: userId },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || 'Erro ao excluir usuário');
+    } else {
+      toast.success('Usuário excluído com sucesso!');
+      await fetchUsers();
+    }
+    setDeleting(null);
   };
 
   const isSuperAdminUser = (u: UserEntry) => u.roles.includes('super_admin');
@@ -214,38 +231,66 @@ export default function AdminUsers() {
                       <td className="px-4 py-3 text-xs text-muted-foreground hidden md:table-cell">{formatDate(u.last_sign_in_at)}</td>
                       <td className="px-4 py-3 text-right">
                         {!isSuperAdminUser(u) && (
-                          <div className="relative inline-block">
-                            {changing === u.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin text-primary inline" />
-                            ) : (
-                              <>
+                          <div className="flex items-center justify-end gap-2">
+                            <div className="relative inline-block">
+                              {changing === u.id ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-primary inline" />
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => setOpenDropdown(openDropdown === u.id ? null : u.id)}
+                                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-muted text-foreground hover:bg-accent inline-flex items-center gap-1"
+                                  >
+                                    Alterar Plano
+                                    <ChevronDown className="w-3 h-3" />
+                                  </button>
+                                  {openDropdown === u.id && (
+                                    <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
+                                      {PLAN_OPTIONS.map(opt => (
+                                        <button
+                                          key={opt.value}
+                                          onClick={() => changePlan(u.id, opt.value)}
+                                          disabled={plan === opt.value}
+                                          className={`w-full text-left px-3 py-2 text-xs font-medium transition-colors ${
+                                            plan === opt.value
+                                              ? 'text-muted-foreground/50 cursor-not-allowed bg-muted/30'
+                                              : 'text-foreground hover:bg-accent'
+                                          }`}
+                                        >
+                                          {opt.label}
+                                          {plan === opt.value && <span className="ml-1 opacity-50">(atual)</span>}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                            {confirmDelete === u.id ? (
+                              <div className="flex items-center gap-1">
                                 <button
-                                  onClick={() => setOpenDropdown(openDropdown === u.id ? null : u.id)}
-                                  className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors bg-muted text-foreground hover:bg-accent inline-flex items-center gap-1"
+                                  onClick={() => deleteUser(u.id)}
+                                  className="text-xs px-2 py-1.5 rounded-lg font-medium bg-destructive text-destructive-foreground hover:opacity-90 transition-colors"
                                 >
-                                  Alterar Plano
-                                  <ChevronDown className="w-3 h-3" />
+                                  Confirmar
                                 </button>
-                                {openDropdown === u.id && (
-                                  <div className="absolute right-0 top-full mt-1 z-50 bg-card border border-border rounded-lg shadow-lg py-1 min-w-[140px]">
-                                    {PLAN_OPTIONS.map(opt => (
-                                      <button
-                                        key={opt.value}
-                                        onClick={() => changePlan(u.id, opt.value)}
-                                        disabled={plan === opt.value}
-                                        className={`w-full text-left px-3 py-2 text-xs font-medium transition-colors ${
-                                          plan === opt.value
-                                            ? 'text-muted-foreground/50 cursor-not-allowed bg-muted/30'
-                                            : 'text-foreground hover:bg-accent'
-                                        }`}
-                                      >
-                                        {opt.label}
-                                        {plan === opt.value && <span className="ml-1 opacity-50">(atual)</span>}
-                                      </button>
-                                    ))}
-                                  </div>
-                                )}
-                              </>
+                                <button
+                                  onClick={() => setConfirmDelete(null)}
+                                  className="text-xs px-2 py-1.5 rounded-lg font-medium bg-muted text-muted-foreground hover:bg-accent transition-colors"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            ) : deleting === u.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-destructive" />
+                            ) : (
+                              <button
+                                onClick={() => setConfirmDelete(u.id)}
+                                className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                title="Excluir usuário"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
                             )}
                           </div>
                         )}
