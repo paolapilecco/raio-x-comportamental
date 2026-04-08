@@ -191,12 +191,6 @@ export default function ManagedPersons() {
               Adicionar
             </button>
           )}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Adicionar
-            </button>
-          )}
 
           {!canAdd && !isSuperAdmin && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 px-3 py-2 rounded-lg">
@@ -204,6 +198,7 @@ export default function ManagedPersons() {
               Limite atingido
             </div>
           )}
+          </div>
         </motion.div>
 
         {/* Add Form */}
