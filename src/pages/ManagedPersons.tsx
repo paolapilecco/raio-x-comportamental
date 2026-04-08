@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth, PLAN_LIMITS } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
-import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar } from 'lucide-react';
+import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar, Mail, Send } from 'lucide-react';
 import { z } from 'zod';
+import { getPersonLimit } from '@/lib/planLimits';
 
 const nameSchema = z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100);
 const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido');
@@ -34,16 +35,16 @@ function formatCpfDisplay(cpf: string): string {
   return cpf;
 }
 
-const FREE_LIMIT = 1;
-const PREMIUM_LIMIT = 3;
-
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 export default function ManagedPersons() {
-  const { user, isPremium, isSuperAdmin } = useAuth();
+  const { user, isPremium, isSuperAdmin, planType } = useAuth();
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showInviteForm, setShowInviteForm] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -52,9 +53,9 @@ export default function ManagedPersons() {
   const [formBirthDate, setFormBirthDate] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const hasAccess = isPremium || isSuperAdmin;
-  const limit = hasAccess ? PREMIUM_LIMIT : FREE_LIMIT;
+  const limit = getPersonLimit(planType, isSuperAdmin);
   const canAdd = isSuperAdmin || persons.length < limit;
+  const canInvite = planType === 'pessoal' || planType === 'profissional' || isSuperAdmin;
 
   useEffect(() => {
     if (!user) return;
