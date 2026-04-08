@@ -205,7 +205,22 @@ const CentralReport = () => {
     setInsightsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-insights');
-      if (error) throw error;
+      if (error) {
+        console.error('Insights invoke error:', error);
+        const msg = error?.message || '';
+        if (msg.includes('429') || msg.includes('rate')) {
+          toast.error('Limite de requisições excedido. Aguarde alguns minutos.');
+        } else if (msg.includes('402')) {
+          toast.error('Créditos de IA esgotados.');
+        } else {
+          toast.error('Erro ao gerar insights. Tente novamente.');
+        }
+        return;
+      }
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
       setAiInsights(data as AIInsights);
     } catch (e: any) {
       console.error('Insights error:', e);
