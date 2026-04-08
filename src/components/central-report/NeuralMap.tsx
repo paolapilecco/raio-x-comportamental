@@ -242,7 +242,8 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
 
   // HTML labels positioned around the tree
   const labelElements = useMemo(() => {
-    return sortedTop5.map(([key, score], i) => {
+    return sortedTop5.map(([key, rawScore], i) => {
+      const score = Math.min(100, rawScore);
       const spread = sortedTop5.length - 1 || 1;
       const left = 10 + (i / spread) * 80;
       const top = i % 2 === 0 ? 5 : 13;
