@@ -4,7 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown } from 'lucide-react';
+import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy } from 'lucide-react';
+import { useGamification } from '@/hooks/useGamification';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
@@ -88,7 +89,7 @@ const Dashboard = () => {
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [latestModuleId, setLatestModuleId] = useState<string | null>(null);
-
+  const gamification = useGamification(user?.id);
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
     setGenerating(true);
@@ -292,6 +293,104 @@ const Dashboard = () => {
             Avalie perfis comportamentais detalhados com base em suas respostas, {displayName}.
           </p>
         </motion.section>
+
+        {/* Gamification: Streak + Level */}
+        {!gamification.loading && gamification.totalTests > 0 && (
+          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.05 }}>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Streak */}
+              <div className="bg-card rounded-2xl p-5 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] relative overflow-hidden">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                    gamification.streakActive ? 'bg-orange-500/10' : 'bg-muted/50'
+                  }`}>
+                    <Flame className={`w-[18px] h-[18px] ${gamification.streakActive ? 'text-orange-500' : 'text-muted-foreground/40'}`} />
+                  </div>
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground font-semibold">Streak</p>
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className={`text-2xl font-bold tabular-nums ${gamification.streakActive ? 'text-orange-500' : 'text-muted-foreground'}`}>
+                    {gamification.currentStreak}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {gamification.currentStreak === 1 ? 'semana' : 'semanas'}
+                  </span>
+                </div>
+                {gamification.streakActive && gamification.currentStreak > 0 && (
+                  <div className="flex gap-0.5 mt-2">
+                    {Array.from({ length: Math.min(gamification.currentStreak, 8) }).map((_, i) => (
+                      <div key={i} className="w-2 h-2 rounded-full bg-orange-500/80" />
+                    ))}
+                  </div>
+                )}
+                {!gamification.streakActive && gamification.totalTests > 0 && (
+                  <p className="text-[0.65rem] text-muted-foreground/60 mt-2">Faça uma leitura esta semana!</p>
+                )}
+              </div>
+
+              {/* Level */}
+              <div className="bg-card rounded-2xl p-5 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)]">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Star className="w-[18px] h-[18px] text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground font-semibold">Nível</p>
+                  </div>
+                </div>
+                <p className="text-lg font-bold text-foreground">{gamification.levelName}</p>
+                <div className="mt-2 space-y-1">
+                  <div className="w-full h-1.5 rounded-full bg-secondary/60">
+                    <div
+                      className="h-full rounded-full bg-primary transition-all duration-700"
+                      style={{ width: `${gamification.levelProgress}%` }}
+                    />
+                  </div>
+                  <p className="text-[0.6rem] text-muted-foreground/60">
+                    {gamification.xpToNextLevel > 0 ? `${gamification.xpToNextLevel} XP para próximo nível` : 'Nível máximo!'}
+                  </p>
+                </div>
+              </div>
+
+              {/* XP Total */}
+              <div className="bg-card rounded-2xl p-5 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)]">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-accent/10 flex items-center justify-center">
+                    <Zap className="w-[18px] h-[18px] text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground font-semibold">XP Total</p>
+                  </div>
+                </div>
+                <span className="text-2xl font-bold text-foreground tabular-nums">{gamification.totalXP}</span>
+                <p className="text-[0.6rem] text-muted-foreground/60 mt-1">
+                  {gamification.totalTests} {gamification.totalTests === 1 ? 'leitura' : 'leituras'} · {gamification.uniqueModules} {gamification.uniqueModules === 1 ? 'módulo' : 'módulos'}
+                </p>
+              </div>
+
+              {/* Best Streak */}
+              <div className="bg-card rounded-2xl p-5 border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)]">
+                <div className="flex items-center gap-2.5 mb-3">
+                  <div className="w-9 h-9 rounded-xl bg-gold/10 flex items-center justify-center">
+                    <Trophy className="w-[18px] h-[18px] text-gold" />
+                  </div>
+                  <div>
+                    <p className="text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground font-semibold">Recorde</p>
+                  </div>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold text-foreground tabular-nums">{gamification.longestStreak}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {gamification.longestStreak === 1 ? 'semana' : 'semanas'}
+                  </span>
+                </div>
+                <p className="text-[0.6rem] text-muted-foreground/60 mt-1">Melhor sequência</p>
+              </div>
+            </div>
+          </motion.section>
+        )}
 
         {/* Super Admin tools */}
         {role === 'super_admin' && (
