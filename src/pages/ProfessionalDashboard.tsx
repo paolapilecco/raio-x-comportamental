@@ -7,7 +7,7 @@ import { AppLayout } from '@/components/AppLayout';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import {
   Users, Activity, AlertTriangle, Bell, TrendingUp, TrendingDown, Minus,
-  FileText, ArrowRight, Download, UserCheck, UserX, Calendar,
+  FileText, ArrowRight, Download, UserCheck, UserX, Calendar, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
