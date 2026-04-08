@@ -249,17 +249,49 @@ export default function ManagedPersons() {
           </motion.form>
         )}
 
-        {/* Premium upsell */}
-        {!hasAccess && persons.length >= FREE_LIMIT && (
-          <motion.div {...fadeUp} className="bg-gradient-to-r from-amber-500/5 to-amber-600/10 border border-amber-500/20 rounded-xl p-5 flex items-center gap-4">
-            <Crown className="w-8 h-8 text-amber-500 shrink-0" />
+        {/* Upsell */}
+        {planType === 'standard' && persons.length >= PLAN_LIMITS.standard.maxPersons && (
+          <motion.div {...fadeUp} className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex items-center gap-4">
+            <Crown className="w-8 h-8 text-primary shrink-0" />
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Desbloqueie até 3 pessoas</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Com o plano Premium, analise o perfil comportamental de familiares, amigos ou clientes.</p>
+              <p className="text-sm font-medium text-foreground">Desbloqueie mais perfis</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Com o plano Pessoal, analise até 3 perfis. Com o Profissional, até 15.</p>
             </div>
-            <a href="/checkout" className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-sm font-medium hover:opacity-90 shrink-0">
+            <a href="/checkout" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 shrink-0">
               Upgrade
             </a>
+          </motion.div>
+        )}
+
+        {/* Invite form */}
+        {showInviteForm && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl border border-border p-6 space-y-4">
+            <h3 className="text-lg font-serif mb-2 flex items-center gap-2"><Send className="w-4 h-4 text-primary" /> Convidar por email</h3>
+            <p className="text-xs text-muted-foreground">O convidado receberá um email para se cadastrar na plataforma e será vinculado à sua conta.</p>
+            <div className="flex gap-3">
+              <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@exemplo.com" className={inputClass} />
+              <button
+                onClick={async () => {
+                  if (!inviteEmail || !inviteEmail.includes('@')) { toast.error('Email inválido'); return; }
+                  setSendingInvite(true);
+                  const { error } = await supabase.from('invites').insert({ inviter_id: user!.id, email: inviteEmail });
+                  if (error) {
+                    if (error.code === '23505') toast.error('Convite já enviado para este email.');
+                    else toast.error('Erro ao enviar convite.');
+                  } else {
+                    toast.success('Convite registrado!');
+                    setInviteEmail('');
+                    setShowInviteForm(false);
+                  }
+                  setSendingInvite(false);
+                }}
+                disabled={sendingInvite}
+                className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+              >
+                {sendingInvite ? 'Enviando...' : 'Enviar'}
+              </button>
+            </div>
+            <button onClick={() => setShowInviteForm(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
           </motion.div>
         )}
 
