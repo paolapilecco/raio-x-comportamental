@@ -109,14 +109,6 @@ const Onboarding = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-12 sm:py-16 relative overflow-hidden" role="main" aria-label="Configuração de perfil">
-      {/* Back to dashboard button */}
-      <button
-        onClick={() => navigate('/dashboard')}
-        className="fixed top-4 right-4 z-50 p-2.5 rounded-xl bg-card/80 backdrop-blur-sm border border-border/40 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200 shadow-sm"
-        title="Voltar ao Dashboard"
-      >
-        <Home className="w-5 h-5" />
-      </button>
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[-15%] right-[-5%] w-[500px] h-[500px] rounded-full bg-primary/[0.04] blur-[120px]" />
