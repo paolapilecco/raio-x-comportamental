@@ -7,19 +7,20 @@ const PH = 297;
 const CW = PW - M * 2;
 const LH = 5.8;
 
-const C = {
-  dark: [25, 25, 30] as const,
-  accent: [90, 70, 180] as const,
-  accentSoft: [240, 237, 255] as const,
-  red: [195, 55, 55] as const,
-  yellow: [200, 160, 40] as const,
-  green: [50, 150, 80] as const,
-  text: [40, 40, 45] as const,
-  muted: [120, 120, 130] as const,
-  light: [160, 160, 170] as const,
-  border: [215, 215, 220] as const,
-  bg: [248, 248, 250] as const,
-  white: [255, 255, 255] as const,
+type RGB = [number, number, number];
+const C: Record<string, RGB> = {
+  dark: [25, 25, 30],
+  accent: [90, 70, 180],
+  accentSoft: [240, 237, 255],
+  red: [195, 55, 55],
+  yellow: [200, 160, 40],
+  green: [50, 150, 80],
+  text: [40, 40, 45],
+  muted: [120, 120, 130],
+  light: [160, 160, 170],
+  border: [215, 215, 220],
+  bg: [248, 248, 250],
+  white: [255, 255, 255],
 };
 
 interface Ctx { doc: jsPDF; y: number; }
