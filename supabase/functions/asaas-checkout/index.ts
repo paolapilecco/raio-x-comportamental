@@ -9,9 +9,15 @@ const corsHeaders = {
 
 const ASAAS_API_URL = "https://api.asaas.com/v3";
 
-const PLANS = {
-  monthly: { value: 5.99, cycle: "MONTHLY", description: "Plano Premium Mensal" },
-  yearly: { value: 59.90, cycle: "YEARLY", description: "Plano Premium Anual" },
+const PLANS: Record<string, Record<string, { value: number; cycle: string; description: string }>> = {
+  pessoal: {
+    monthly: { value: 5.99, cycle: "MONTHLY", description: "Plano Pessoal Mensal" },
+    yearly: { value: 59.90, cycle: "YEARLY", description: "Plano Pessoal Anual" },
+  },
+  profissional: {
+    monthly: { value: 39.90, cycle: "MONTHLY", description: "Plano Profissional Mensal" },
+    yearly: { value: 399.90, cycle: "YEARLY", description: "Plano Profissional Anual" },
+  },
 };
 
 serve(async (req) => {
@@ -41,7 +47,6 @@ serve(async (req) => {
       );
     }
 
-    // Verify user
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
     });
@@ -54,12 +59,19 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { plan, billingType } = body;
+    const { plan, billingType, planType } = body;
 
     // Validate inputs
     if (!plan || !["monthly", "yearly"].includes(plan)) {
       return new Response(
-        JSON.stringify({ error: "Plano inválido. Use 'monthly' ou 'yearly'." }),
+        JSON.stringify({ error: "Plano inválido." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!planType || !["pessoal", "profissional"].includes(planType)) {
+      return new Response(
+        JSON.stringify({ error: "Tipo de plano inválido." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -72,9 +84,9 @@ serve(async (req) => {
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
-    const selectedPlan = PLANS[plan as keyof typeof PLANS];
+    const selectedPlan = PLANS[planType][plan];
 
-    // Check if user already has an active subscription
+    // Check existing active subscription
     const { data: existingSub } = await adminClient
       .from("subscriptions")
       .select("id, status, asaas_subscription_id")
@@ -103,10 +115,9 @@ serve(async (req) => {
       );
     }
 
-    // Step 1: Create or find customer in Asaas
+    // Create or find Asaas customer
     let asaasCustomerId: string;
 
-    // Check if user already has a customer ID from a previous subscription
     const { data: prevSub } = await adminClient
       .from("subscriptions")
       .select("asaas_customer_id")
@@ -119,7 +130,6 @@ serve(async (req) => {
     if (prevSub?.asaas_customer_id) {
       asaasCustomerId = prevSub.asaas_customer_id;
     } else {
-      // Create new customer
       const customerRes = await fetch(`${ASAAS_API_URL}/customers`, {
         method: "POST",
         headers: {
@@ -145,9 +155,9 @@ serve(async (req) => {
       asaasCustomerId = customerData.id;
     }
 
-    // Step 2: Create subscription in Asaas
+    // Create subscription in Asaas
     const nextDueDate = new Date();
-    nextDueDate.setDate(nextDueDate.getDate() + 1); // Tomorrow
+    nextDueDate.setDate(nextDueDate.getDate() + 1);
     const dueDateStr = nextDueDate.toISOString().split("T")[0];
 
     const subscriptionPayload: Record<string, unknown> = {
@@ -178,7 +188,7 @@ serve(async (req) => {
       );
     }
 
-    // Step 3: Save subscription locally
+    // Save subscription locally with plan_type
     const { error: insertError } = await adminClient
       .from("subscriptions")
       .insert({
@@ -186,6 +196,7 @@ serve(async (req) => {
         asaas_customer_id: asaasCustomerId,
         asaas_subscription_id: subData.id,
         plan,
+        plan_type: planType,
         status: "pending",
         billing_type: billingType,
         value: selectedPlan.value,
@@ -196,15 +207,12 @@ serve(async (req) => {
       console.error("Failed to save subscription:", insertError);
     }
 
-    // Step 4: Get the first payment to return payment link/QR code
-    // Wait a moment for Asaas to generate the payment
+    // Get the first payment
     await new Promise(resolve => setTimeout(resolve, 2000));
 
     const paymentsRes = await fetch(
       `${ASAAS_API_URL}/payments?subscription=${subData.id}`,
-      {
-        headers: { "access_token": asaasApiKey },
-      }
+      { headers: { "access_token": asaasApiKey } }
     );
     const paymentsData = await paymentsRes.json();
 
@@ -214,12 +222,9 @@ serve(async (req) => {
       const firstPayment = paymentsData.data[0];
 
       if (billingType === "PIX") {
-        // Get PIX QR Code
         const pixRes = await fetch(
           `${ASAAS_API_URL}/payments/${firstPayment.id}/pixQrCode`,
-          {
-            headers: { "access_token": asaasApiKey },
-          }
+          { headers: { "access_token": asaasApiKey } }
         );
         const pixData = await pixRes.json();
         if (pixRes.ok) {
@@ -232,7 +237,6 @@ serve(async (req) => {
           };
         }
       } else {
-        // For credit card, return the payment link
         paymentInfo = {
           type: "CREDIT_CARD",
           paymentId: firstPayment.id,
@@ -247,6 +251,7 @@ serve(async (req) => {
         success: true,
         subscriptionId: subData.id,
         plan,
+        planType,
         value: selectedPlan.value,
         cycle: selectedPlan.cycle,
         payment: paymentInfo,
