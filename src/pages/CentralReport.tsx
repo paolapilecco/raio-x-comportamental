@@ -418,7 +418,7 @@ const CentralReport = () => {
           </motion.div>
 
           {/* Blurred Preview Section — only for non-premium */}
-          {!hasAccess && totalTests > 0 && (
+          {!hasAccess && (
             <div className="relative">
               {/* Blurred fake content */}
               <div className="pointer-events-none select-none space-y-6" style={{ filter: 'blur(5px)' }}>
