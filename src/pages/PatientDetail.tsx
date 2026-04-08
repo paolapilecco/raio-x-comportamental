@@ -66,6 +66,9 @@ export default function PatientDetail() {
   const [savingNote, setSavingNote] = useState(false);
   const [newReminderDate, setNewReminderDate] = useState('');
   const [newReminderModule, setNewReminderModule] = useState('');
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState<string | null>(null);
+  const [invites, setInvites] = useState<{ id: string; token: string; test_module_id: string; status: string; expires_at: string }[]>([]);
 
   useEffect(() => {
     if (!user || !personId) return;
