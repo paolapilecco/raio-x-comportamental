@@ -868,6 +868,64 @@ export type Database = {
           },
         ]
       }
+      test_invites: {
+        Row: {
+          completed_session_id: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          owner_id: string
+          person_id: string
+          status: string
+          test_module_id: string
+          token: string
+        }
+        Insert: {
+          completed_session_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id: string
+          person_id: string
+          status?: string
+          test_module_id: string
+          token?: string
+        }
+        Update: {
+          completed_session_id?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          person_id?: string
+          status?: string
+          test_module_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_invites_completed_session_id_fkey"
+            columns: ["completed_session_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_invites_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "managed_persons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_invites_test_module_id_fkey"
+            columns: ["test_module_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       test_modules: {
         Row: {
           category: string

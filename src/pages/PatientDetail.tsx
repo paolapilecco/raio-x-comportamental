@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/AppLayout';
 import {
   ArrowLeft, User, Calendar, Phone, FileText, TrendingUp, TrendingDown, Minus,
   Plus, Trash2, Save, Clock, AlertTriangle, Download, StickyNote, Bell, Activity,
+  Link2, Copy, Check, Send,
 } from 'lucide-react';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
@@ -65,6 +66,9 @@ export default function PatientDetail() {
   const [savingNote, setSavingNote] = useState(false);
   const [newReminderDate, setNewReminderDate] = useState('');
   const [newReminderModule, setNewReminderModule] = useState('');
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [generatingLink, setGeneratingLink] = useState<string | null>(null);
+  const [invites, setInvites] = useState<{ id: string; token: string; test_module_id: string; status: string; expires_at: string }[]>([]);
 
   useEffect(() => {
     if (!user || !personId) return;
@@ -105,12 +109,14 @@ export default function PatientDetail() {
     }
 
     // Notes & reminders
-    const [notesRes, remindersRes] = await Promise.all([
+    const [notesRes, remindersRes, invitesRes] = await Promise.all([
       supabase.from('professional_notes').select('*').eq('person_id', personId!).eq('owner_id', user!.id).order('created_at', { ascending: false }),
       supabase.from('retest_reminders').select('*').eq('person_id', personId!).eq('owner_id', user!.id).order('remind_at', { ascending: true }),
+      supabase.from('test_invites' as any).select('id, token, test_module_id, status, expires_at').eq('person_id', personId!).eq('owner_id', user!.id).order('created_at', { ascending: false }),
     ]);
     setNotes((notesRes.data as Note[]) || []);
     setReminders((remindersRes.data as Reminder[]) || []);
+    setInvites((invitesRes.data as any[]) || []);
     setLoading(false);
   };
 
@@ -201,6 +207,34 @@ export default function PatientDetail() {
     await supabase.from('retest_reminders').delete().eq('id', id);
     toast.success('Lembrete removido.');
     await loadAll();
+  };
+
+  const handleGenerateLink = async (testModuleId: string) => {
+    setGeneratingLink(testModuleId);
+    try {
+      const { data, error } = await supabase.from('test_invites' as any).insert({
+        owner_id: user!.id,
+        person_id: personId!,
+        test_module_id: testModuleId,
+      }).select('token').single();
+
+      if (error) { toast.error('Erro ao gerar link.'); return; }
+      const link = `${window.location.origin}/t/${(data as any).token}`;
+      await navigator.clipboard.writeText(link);
+      setCopiedToken(testModuleId);
+      toast.success('Link copiado para a área de transferência!');
+      setTimeout(() => setCopiedToken(null), 3000);
+      await loadAll();
+    } catch { toast.error('Erro ao gerar link.'); }
+    finally { setGeneratingLink(null); }
+  };
+
+  const handleCopyExistingLink = async (token: string, moduleId: string) => {
+    const link = `${window.location.origin}/t/${token}`;
+    await navigator.clipboard.writeText(link);
+    setCopiedToken(moduleId);
+    toast.success('Link copiado!');
+    setTimeout(() => setCopiedToken(null), 3000);
   };
 
   const handleDownloadPdf = async (entry: TestEntry) => {
@@ -565,13 +599,61 @@ export default function PatientDetail() {
                 </div>
               )}
 
+              {/* Test Catalog - Send Link */}
+              <div className="bg-card border rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Send className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Enviar Teste para Paciente</h3>
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Gere um link único para a paciente responder sem precisar de cadastro. O link expira em 7 dias e só pode ser usado uma vez.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {modules.map(mod => {
+                    const pendingInvite = invites.find(inv => inv.test_module_id === mod.id && inv.status === 'pending' && new Date(inv.expires_at) > new Date());
+                    const isGenerating = generatingLink === mod.id;
+                    const isCopied = copiedToken === mod.id;
+
+                    return (
+                      <div key={mod.id} className="flex items-center justify-between gap-2 p-3 border rounded-lg bg-background">
+                        <span className="text-xs font-medium text-foreground truncate flex-1">{mod.name}</span>
+                        {pendingInvite ? (
+                          <button
+                            onClick={() => handleCopyExistingLink(pendingInvite.token, mod.id)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 ${
+                              isCopied
+                                ? 'bg-emerald-500/10 text-emerald-600'
+                                : 'bg-primary/10 text-primary hover:bg-primary/20'
+                            }`}
+                          >
+                            {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                            {isCopied ? 'Copiado!' : 'Copiar Link'}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleGenerateLink(mod.id)}
+                            disabled={isGenerating}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-all shrink-0 disabled:opacity-50"
+                          >
+                            {isGenerating ? (
+                              <div className="w-3 h-3 border border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Link2 className="w-3 h-3" />
+                            )}
+                            Gerar Link
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {history.length === 0 && (
                 <div className="text-center py-12 bg-card border rounded-xl">
                   <Activity className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
                   <p className="text-muted-foreground text-sm">Nenhum teste realizado ainda.</p>
-                  <button onClick={() => navigate('/tests')} className="mt-3 px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90">
-                    Iniciar primeiro teste
-                  </button>
+                  <p className="text-xs text-muted-foreground mt-1">Use os links acima para enviar testes à paciente.</p>
                 </div>
               )}
             </motion.div>
