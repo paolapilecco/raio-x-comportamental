@@ -10,7 +10,8 @@ import {
 import {
   ArrowLeft, Layers, Brain, AlertTriangle, TrendingUp, Shield,
   Crosshair, Compass, Activity, Zap, Sparkles, Eye, Target, Lightbulb,
-  Lock, Crown, ArrowUpRight, ArrowDownRight, Minus,
+  Lock, Crown, ArrowUpRight, ArrowDownRight, Minus, Users, User,
+  ClipboardList, CheckCircle2, ChevronRight,
 } from 'lucide-react';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
@@ -19,6 +20,7 @@ import { detectConflictPairs, CONFLICT_PAIR_DESCRIPTIONS } from '@/lib/conflictD
 import { toast } from 'sonner';
 import { CentralReportSkeleton } from '@/components/skeletons/CentralReportSkeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface AIInsights {
   interpretacao_personalizada: string;
@@ -52,13 +54,24 @@ interface LifeMapEntry {
   created_at: string;
 }
 
-const LIFE_MAP_MODULE_ID = 'a17d95eb-fa4b-4fbc-802c-29f7d97d9d22';
+interface ManagedPerson {
+  id: string;
+  name: string;
+  cpf: string;
+  phone: string | null;
+  birth_date: string;
+  age: number | null;
+}
 
-const LIFE_MAP_AREAS = [
-  'Saúde Física', 'Saúde Mental', 'Relacionamento Amoroso', 'Família',
-  'Amizades', 'Carreira', 'Finanças', 'Crescimento Pessoal',
-  'Diversão & Lazer', 'Espiritualidade', 'Contribuição Social',
-];
+interface PersonSummary {
+  person: ManagedPerson;
+  testsCount: number;
+  lastTestDate: string | null;
+  dominantPattern: string | null;
+  keyActions: string[];
+}
+
+const LIFE_MAP_MODULE_ID = 'a17d95eb-fa4b-4fbc-802c-29f7d97d9d22';
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
@@ -67,112 +80,196 @@ const CentralReport = () => {
   const navigate = useNavigate();
   const { data: patternDefinitions } = usePatternDefinitions();
   const radarAxisLabels = useAxisLabels();
+
+  const [managedPersons, setManagedPersons] = useState<ManagedPerson[]>([]);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [personSummaries, setPersonSummaries] = useState<PersonSummary[]>([]);
+
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [lifeMapHistory, setLifeMapHistory] = useState<LifeMapEntry[]>([]);
   const [aiInsights, setAiInsights] = useState<AIInsights | null>(null);
   const [insightsLoading, setInsightsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingReport, setLoadingReport] = useState(false);
 
   const hasAccess = isPremium || isSuperAdmin;
 
+  // 1. Load managed persons and build summaries
   useEffect(() => {
     if (!user) return;
-
-    const fetchData = async () => {
+    const load = async () => {
       try {
-        const { data: cp, error: cpErr } = await supabase
-          .from('user_central_profile')
+        const { data: persons } = await supabase
+          .from('managed_persons')
           .select('*')
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('owner_id', user.id)
+          .order('created_at', { ascending: true });
 
-        if (cpErr) {
-          console.error('Error fetching central profile:', cpErr);
-          toast.error('Erro ao carregar perfil central.');
+        if (!persons || persons.length === 0) {
+          setLoading(false);
+          return;
         }
+        setManagedPersons(persons);
 
-        if (cp) {
-          setCentralProfile({
-            dominant_patterns: (cp.dominant_patterns as unknown as { key: string; score: number }[]) || [],
-            aggregated_scores: (cp.aggregated_scores as unknown as Record<string, number>) || {},
-            tests_completed: cp.tests_completed,
-            mental_state: cp.mental_state,
-            core_pain: cp.core_pain,
-            key_unlock_area: cp.key_unlock_area,
-            profile_name: cp.profile_name,
-            last_test_at: cp.last_test_at,
-          });
-        }
-
-        // Fetch all sessions with test_module_id
-        const { data: sessions, error: sessErr } = await supabase
+        // Get all sessions for this user
+        const { data: sessions } = await supabase
           .from('diagnostic_sessions')
-          .select('id, completed_at, test_module_id')
+          .select('id, completed_at, test_module_id, person_id')
           .eq('user_id', user.id)
           .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: true });
+          .order('completed_at', { ascending: false });
 
-        if (sessErr) {
-          console.error('Error fetching sessions:', sessErr);
-          toast.error('Erro ao carregar sessões.');
-        }
-
+        // Get results for all sessions
+        let allResults: any[] = [];
         if (sessions && sessions.length > 0) {
-          const { data: results, error: resErr } = await supabase
+          const { data: results } = await supabase
             .from('diagnostic_results')
-            .select('all_scores, created_at, dominant_pattern, intensity, session_id')
+            .select('session_id, dominant_pattern, all_scores, key_unlock_area, core_pain, direction')
             .in('session_id', sessions.map(s => s.id));
-
-          if (resErr) {
-            console.error('Error fetching results:', resErr);
-            toast.error('Erro ao carregar resultados.');
-          }
-
-          if (results) {
-            const sessionMap = new Map(sessions.map(s => [s.id, s]));
-            
-            const allEntries = results.map(r => {
-              const sess = sessionMap.get(r.session_id);
-              return {
-                all_scores: (r.all_scores as unknown as { key: string; percentage: number; label: string }[]) || [],
-                created_at: r.created_at,
-                dominant_pattern: r.dominant_pattern,
-                intensity: r.intensity,
-                test_module_id: sess?.test_module_id || null,
-              };
-            });
-            
-            setHistory(allEntries);
-
-            // Extract life map entries
-            const lifeMapEntries: LifeMapEntry[] = allEntries
-              .filter(e => e.test_module_id === LIFE_MAP_MODULE_ID)
-              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-              .map(e => {
-                const scores: Record<string, number> = {};
-                e.all_scores.forEach(s => {
-                  scores[s.label || s.key] = s.percentage;
-                });
-                return {
-                  date: new Date(e.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
-                  scores,
-                  created_at: e.created_at,
-                };
-              });
-            setLifeMapHistory(lifeMapEntries);
-          }
+          allResults = results || [];
         }
+
+        // Build per-person summaries
+        const summaries: PersonSummary[] = persons.map(person => {
+          const personSessions = (sessions || []).filter(s => s.person_id === person.id);
+          const personSessionIds = new Set(personSessions.map(s => s.id));
+          const personResults = allResults.filter(r => personSessionIds.has(r.session_id));
+
+          const lastSession = personSessions[0];
+          const latestResult = personResults[0];
+
+          const keyActions: string[] = [];
+          if (latestResult?.key_unlock_area) keyActions.push(latestResult.key_unlock_area);
+          if (latestResult?.direction) keyActions.push(latestResult.direction.substring(0, 100));
+
+          return {
+            person,
+            testsCount: personSessions.length,
+            lastTestDate: lastSession?.completed_at || null,
+            dominantPattern: latestResult?.dominant_pattern || null,
+            keyActions: keyActions.slice(0, 2),
+          };
+        });
+
+        setPersonSummaries(summaries);
       } catch (err) {
-        console.error('Error loading central report:', err);
-        toast.error('Erro ao carregar relatório. Tente novamente.');
+        console.error('Error loading persons:', err);
+        toast.error('Erro ao carregar dados.');
       } finally {
         setLoading(false);
       }
     };
-
-    fetchData();
+    load();
   }, [user]);
+
+  // 2. Load report data when a person is selected
+  useEffect(() => {
+    if (!user || !selectedPersonId) return;
+    setLoadingReport(true);
+    setCentralProfile(null);
+    setHistory([]);
+    setLifeMapHistory([]);
+    setAiInsights(null);
+
+    const fetchPersonData = async () => {
+      try {
+        // Sessions for this person
+        const { data: sessions } = await supabase
+          .from('diagnostic_sessions')
+          .select('id, completed_at, test_module_id, person_id')
+          .eq('user_id', user.id)
+          .eq('person_id', selectedPersonId)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: true });
+
+        if (!sessions || sessions.length === 0) {
+          setLoadingReport(false);
+          return;
+        }
+
+        const { data: results } = await supabase
+          .from('diagnostic_results')
+          .select('*')
+          .in('session_id', sessions.map(s => s.id));
+
+        if (!results || results.length === 0) {
+          setLoadingReport(false);
+          return;
+        }
+
+        // Build aggregated profile from results
+        const axisData: Record<string, { totalWeighted: number; totalWeight: number; count: number }> = {};
+        results.forEach((result, index) => {
+          const recencyWeight = Math.pow(0.85, results.length - 1 - index);
+          const scores = (result.all_scores as unknown as { key: string; percentage: number; label: string }[]) || [];
+          scores.forEach(s => {
+            if (!axisData[s.key]) axisData[s.key] = { totalWeighted: 0, totalWeight: 0, count: 0 };
+            axisData[s.key].totalWeighted += s.percentage * recencyWeight;
+            axisData[s.key].totalWeight += recencyWeight;
+            axisData[s.key].count += 1;
+          });
+        });
+
+        const aggregatedScores: Record<string, number> = {};
+        Object.entries(axisData).forEach(([key, val]) => {
+          aggregatedScores[key] = Math.round(val.totalWeighted / val.totalWeight);
+        });
+
+        const sortedPatterns = Object.entries(aggregatedScores)
+          .sort(([, a], [, b]) => b - a)
+          .map(([key, score]) => ({ key, score }));
+
+        const latestResult = results[results.length - 1];
+
+        setCentralProfile({
+          dominant_patterns: sortedPatterns.slice(0, 3),
+          aggregated_scores: aggregatedScores,
+          tests_completed: sessions.length,
+          mental_state: latestResult.mental_state,
+          core_pain: latestResult.core_pain || null,
+          key_unlock_area: latestResult.key_unlock_area || null,
+          profile_name: latestResult.profile_name,
+          last_test_at: sessions[sessions.length - 1].completed_at,
+        });
+
+        // Build history entries
+        const sessionMap = new Map(sessions.map(s => [s.id, s]));
+        const allEntries: HistoryEntry[] = results.map(r => {
+          const sess = sessionMap.get(r.session_id);
+          return {
+            all_scores: (r.all_scores as unknown as { key: string; percentage: number; label: string }[]) || [],
+            created_at: r.created_at,
+            dominant_pattern: r.dominant_pattern,
+            intensity: r.intensity,
+            test_module_id: sess?.test_module_id || null,
+          };
+        });
+        setHistory(allEntries);
+
+        // Life map entries
+        const lifeMapEntries: LifeMapEntry[] = allEntries
+          .filter(e => e.test_module_id === LIFE_MAP_MODULE_ID)
+          .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          .map(e => {
+            const scores: Record<string, number> = {};
+            e.all_scores.forEach(s => { scores[s.label || s.key] = s.percentage; });
+            return {
+              date: new Date(e.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }),
+              scores,
+              created_at: e.created_at,
+            };
+          });
+        setLifeMapHistory(lifeMapEntries);
+      } catch (err) {
+        console.error('Error loading person report:', err);
+        toast.error('Erro ao carregar relatório.');
+      } finally {
+        setLoadingReport(false);
+      }
+    };
+    fetchPersonData();
+  }, [user, selectedPersonId]);
 
   const generateInsights = async () => {
     setInsightsLoading(true);
@@ -188,20 +285,174 @@ const CentralReport = () => {
     }
   };
 
-  if (loading) {
-    return <CentralReportSkeleton />;
+  if (loading) return <CentralReportSkeleton />;
+
+  if (managedPersons.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-4">
+        <motion.div {...fadeUp} className="text-center space-y-6 max-w-md">
+          <Users className="w-12 h-12 text-muted-foreground mx-auto" />
+          <h1 className="text-2xl font-serif">Relatório Central</h1>
+          <p className="text-muted-foreground">Nenhum perfil cadastrado. Complete o onboarding para começar.</p>
+          <button onClick={() => navigate('/onboarding')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+            Ir para Onboarding
+          </button>
+        </motion.div>
+      </div>
+    );
   }
+
+  const totalTests = personSummaries.reduce((s, p) => s + p.testsCount, 0);
+  const totalActions = personSummaries.reduce((s, p) => s + p.keyActions.length, 0);
+  const selectedPerson = managedPersons.find(p => p.id === selectedPersonId);
+
+  // ══════════════════════ SUMMARY SCREEN ══════════════════════
+  if (!selectedPersonId) {
+    return (
+      <div className="min-h-screen px-4 py-8 md:py-12">
+        <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
+          {/* Header */}
+          <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center gap-4">
+            <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-serif">Relatório Central</h1>
+              <p className="text-sm text-muted-foreground">Visão geral de todos os perfis e diagnósticos</p>
+            </div>
+          </motion.div>
+
+          {/* Premium gate */}
+          <div className="relative">
+            {!hasAccess && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl">
+                <div className="absolute inset-0 bg-background/60 backdrop-blur-md rounded-xl" />
+                <div className="relative z-10 text-center space-y-4 px-6">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto shadow-lg">
+                    <Lock className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-serif text-foreground">Conteúdo Premium</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs">Desbloqueie o relatório central completo.</p>
+                  <button onClick={() => navigate('/checkout')} className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto">
+                    <Crown className="w-4 h-4" /> Desbloquear Premium
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className={`space-y-6 ${!hasAccess ? 'filter blur-sm pointer-events-none select-none' : ''}`}>
+              {/* KPI Cards */}
+              <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+                  <Users className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <p className="text-3xl font-serif font-bold text-foreground">{managedPersons.length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Perfis Cadastrados</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+                  <ClipboardList className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <p className="text-3xl font-serif font-bold text-foreground">{totalTests}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Testes Realizados</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+                  <CheckCircle2 className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <p className="text-3xl font-serif font-bold text-foreground">{totalActions}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Ações Propostas</p>
+                </div>
+                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+                  <Brain className="w-6 h-6 text-primary mx-auto mb-2" />
+                  <p className="text-3xl font-serif font-bold text-foreground">{personSummaries.filter(s => s.dominantPattern).length}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Perfis Analisados</p>
+                </div>
+              </motion.div>
+
+              {/* Person Cards */}
+              <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
+                <h2 className="text-lg font-serif mb-4 flex items-center gap-2">
+                  <User className="w-5 h-5 text-primary" />
+                  Selecione um perfil para visualizar
+                </h2>
+                <div className="space-y-3">
+                  {personSummaries.map((summary, i) => {
+                    const def = summary.dominantPattern ? patternDefinitions?.[summary.dominantPattern as PatternKey] : null;
+                    return (
+                      <motion.button
+                        key={summary.person.id}
+                        {...fadeUp}
+                        transition={{ delay: 0.12 + i * 0.05 }}
+                        onClick={() => setSelectedPersonId(summary.person.id)}
+                        className="w-full bg-card rounded-xl border border-border p-5 shadow-sm hover:border-primary/40 hover:shadow-md transition-all text-left group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                              <User className="w-5 h-5 text-primary" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground truncate">{summary.person.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {summary.person.age ? `${summary.person.age} anos` : ''} · CPF: ***{summary.person.cpf.slice(-4)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right hidden sm:block">
+                              <p className="text-xs text-muted-foreground">{summary.testsCount} {summary.testsCount === 1 ? 'teste' : 'testes'}</p>
+                              {summary.lastTestDate && (
+                                <p className="text-xs text-muted-foreground">
+                                  Último: {new Date(summary.lastTestDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                                </p>
+                              )}
+                            </div>
+                            {def && (
+                              <span className="hidden md:inline-flex text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium truncate max-w-[160px]">
+                                {def.label}
+                              </span>
+                            )}
+                            {summary.testsCount === 0 && (
+                              <span className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground font-medium">Sem testes</span>
+                            )}
+                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                          </div>
+                        </div>
+                        {summary.keyActions.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {summary.keyActions.map((action, j) => (
+                              <span key={j} className="text-xs bg-muted/50 text-muted-foreground rounded-md px-2 py-1 truncate max-w-[250px]">
+                                {action.substring(0, 60)}{action.length > 60 ? '...' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ══════════════════════ REPORT VIEW (person selected) ══════════════════════
+  if (loadingReport) return <CentralReportSkeleton />;
 
   if (!centralProfile || centralProfile.tests_completed === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <motion.div {...fadeUp} className="text-center space-y-6 max-w-md">
           <Layers className="w-12 h-12 text-muted-foreground mx-auto" />
-          <h1 className="text-2xl font-serif">Relatório Central</h1>
-          <p className="text-muted-foreground">Complete pelo menos uma leitura para gerar seu relatório central unificado.</p>
-          <button onClick={() => navigate('/tests')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-            Iniciar leitura
-          </button>
+          <h1 className="text-2xl font-serif">Relatório de {selectedPerson?.name}</h1>
+          <p className="text-muted-foreground">Nenhuma leitura concluída para este perfil. Realize um teste primeiro.</p>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => setSelectedPersonId(null)} className="px-6 py-3 border border-border rounded-lg text-sm font-medium hover:bg-muted/50 transition-colors">
+              Voltar
+            </button>
+            <button onClick={() => navigate('/tests')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
+              Iniciar leitura
+            </button>
+          </div>
         </motion.div>
       </div>
     );
@@ -211,59 +462,37 @@ const CentralReport = () => {
   const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
   const dominantKey = sorted[0]?.[0] as PatternKey;
   const dominantDef = patternDefinitions?.[dominantKey];
-
-  // Detect conflicts
   const detectedConflicts = detectConflictPairs(scores);
 
-  // Sabotage risk
   const sabotageKeys: PatternKey[] = ['emotional_self_sabotage', 'discomfort_escape', 'unstable_execution', 'low_routine_sustenance'];
   const sabotageAvg = sabotageKeys.reduce((sum, k) => sum + (scores[k] || 0), 0) / sabotageKeys.length;
   const riskScore = sabotageAvg + detectedConflicts.length * 5;
   const riskLevel = riskScore >= 75 ? 'Crítico' : riskScore >= 60 ? 'Alto' : riskScore >= 40 ? 'Moderado' : 'Baixo';
   const riskColor = riskScore >= 75 ? 'text-red-500' : riskScore >= 60 ? 'text-orange-500' : riskScore >= 40 ? 'text-yellow-500' : 'text-green-500';
-
-  // Dominant trigger from dominant pattern
   const dominantTrigger = dominantDef?.triggers?.[0] || 'Não identificado';
 
-  // Future tendency
   const futureTendency = riskScore >= 60
-    ? `Com risco ${riskLevel.toLowerCase()}, há tendência de intensificação dos padrões de ${dominantDef?.label?.toLowerCase() || 'autossabotagem'} se não houver intervenção. Os conflitos internos detectados podem amplificar o ciclo destrutivo.`
-    : `Os padrões atuais estão em nível gerenciável. Com ação consistente na área de ${centralProfile.key_unlock_area?.substring(0, 60) || 'foco identificado'}, há potencial de melhoria significativa nos próximos ciclos.`;
+    ? `Com risco ${riskLevel.toLowerCase()}, há tendência de intensificação dos padrões de ${dominantDef?.label?.toLowerCase() || 'autossabotagem'} se não houver intervenção.`
+    : `Os padrões atuais estão em nível gerenciável. Com ação consistente na área de ${centralProfile.key_unlock_area?.substring(0, 60) || 'foco identificado'}, há potencial de melhoria significativa.`;
 
-  // Life areas affected
   const lifeAreas = [
-    { area: 'Trabalho & Produtividade', affected: (scores.unstable_execution || 0) >= 50 || (scores.functional_overload || 0) >= 50, score: Math.max(scores.unstable_execution || 0, scores.functional_overload || 0) },
-    { area: 'Rotina & Consistência', affected: (scores.low_routine_sustenance || 0) >= 50, score: scores.low_routine_sustenance || 0 },
-    { area: 'Regulação Emocional', affected: (scores.emotional_self_sabotage || 0) >= 50, score: scores.emotional_self_sabotage || 0 },
-    { area: 'Relacionamentos', affected: (scores.validation_dependency || 0) >= 50, score: scores.validation_dependency || 0 },
-    { area: 'Autoestima & Identidade', affected: (scores.excessive_self_criticism || 0) >= 50 || (scores.paralyzing_perfectionism || 0) >= 50, score: Math.max(scores.excessive_self_criticism || 0, scores.paralyzing_perfectionism || 0) },
+    { area: 'Trabalho & Produtividade', score: Math.max(scores.unstable_execution || 0, scores.functional_overload || 0) },
+    { area: 'Rotina & Consistência', score: scores.low_routine_sustenance || 0 },
+    { area: 'Regulação Emocional', score: scores.emotional_self_sabotage || 0 },
+    { area: 'Relacionamentos', score: scores.validation_dependency || 0 },
+    { area: 'Autoestima & Identidade', score: Math.max(scores.excessive_self_criticism || 0, scores.paralyzing_perfectionism || 0) },
   ].sort((a, b) => b.score - a.score);
 
-  // Radar data
-  const radarData = Object.entries(scores).map(([key, value]) => ({
-    axis: radarAxisLabels[key] || key,
-    value,
-  }));
+  const radarData = Object.entries(scores).map(([key, value]) => ({ axis: radarAxisLabels[key] || key, value }));
 
-  // Timeline data
   const timelineData = history.map((entry, i) => {
-    const point: Record<string, any> = {
-      date: new Date(entry.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-      index: i + 1,
-    };
-    entry.all_scores.forEach(s => {
-      point[radarAxisLabels[s.key] || s.key] = s.percentage;
-    });
+    const point: Record<string, any> = { date: new Date(entry.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }), index: i + 1 };
+    entry.all_scores.forEach(s => { point[radarAxisLabels[s.key] || s.key] = s.percentage; });
     return point;
   });
-
   const timelineKeys = Object.keys(radarAxisLabels);
-  const timelineColors = [
-    'hsl(var(--primary))', 'hsl(0, 65%, 52%)', 'hsl(38, 72%, 50%)', 'hsl(152, 45%, 45%)',
-    'hsl(270, 50%, 55%)', 'hsl(200, 60%, 50%)', 'hsl(330, 50%, 50%)', 'hsl(60, 60%, 45%)',
-  ];
+  const timelineColors = ['hsl(var(--primary))', 'hsl(0, 65%, 52%)', 'hsl(38, 72%, 50%)', 'hsl(152, 45%, 45%)', 'hsl(270, 50%, 55%)', 'hsl(200, 60%, 50%)', 'hsl(330, 50%, 50%)', 'hsl(60, 60%, 45%)'];
 
-  // Premium overlay component
   const PremiumOverlay = () => (
     <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl">
       <div className="absolute inset-0 bg-background/60 backdrop-blur-md rounded-xl" />
@@ -272,15 +501,9 @@ const CentralReport = () => {
           <Lock className="w-6 h-6 text-white" />
         </div>
         <h3 className="text-lg font-serif text-foreground">Conteúdo Premium</h3>
-        <p className="text-sm text-muted-foreground max-w-xs">
-          Desbloqueie o relatório central completo com análise unificada e evolução do Mapa de Vida.
-        </p>
-        <button
-          onClick={() => navigate('/checkout')}
-          className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto"
-        >
-          <Crown className="w-4 h-4" />
-          Desbloquear Premium
+        <p className="text-sm text-muted-foreground max-w-xs">Desbloqueie o relatório central completo.</p>
+        <button onClick={() => navigate('/checkout')} className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto">
+          <Crown className="w-4 h-4" /> Desbloquear Premium
         </button>
       </div>
     </div>
@@ -289,31 +512,44 @@ const CentralReport = () => {
   return (
     <div className="min-h-screen px-4 py-8 md:py-12">
       <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8">
-        {/* Header */}
-        <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-serif">Relatório Central</h1>
-            <p className="text-sm text-muted-foreground">Análise unificada de {centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'}</p>
+        {/* Header with person selector */}
+        <motion.div {...fadeUp} transition={{ duration: 0.5 }} className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-center gap-4 flex-1">
+            <button onClick={() => setSelectedPersonId(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-serif">Relatório Central</h1>
+              <p className="text-sm text-muted-foreground">{centralProfile.tests_completed} {centralProfile.tests_completed === 1 ? 'leitura' : 'leituras'} de {selectedPerson?.name}</p>
+            </div>
           </div>
+          {managedPersons.length > 1 && (
+            <Select value={selectedPersonId || ''} onValueChange={setSelectedPersonId}>
+              <SelectTrigger className="w-full sm:w-[220px]">
+                <User className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="Selecionar pessoa" />
+              </SelectTrigger>
+              <SelectContent>
+                {managedPersons.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </motion.div>
 
         {/* Tabs */}
         <Tabs defaultValue="central" className="w-full">
           <TabsList className="w-full grid grid-cols-2 bg-muted/50 rounded-xl p-1">
             <TabsTrigger value="central" className="rounded-lg text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Layers className="w-4 h-4 mr-2" />
-              Relatório Central
+              <Layers className="w-4 h-4 mr-2" /> Relatório Central
             </TabsTrigger>
             <TabsTrigger value="lifemap" className="rounded-lg text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm">
-              <Compass className="w-4 h-4 mr-2" />
-              Mapa de Vida
+              <Compass className="w-4 h-4 mr-2" /> Mapa de Vida
             </TabsTrigger>
           </TabsList>
 
-          {/* ═══════════════════════════ TAB 1: RELATÓRIO CENTRAL ═══════════════════════════ */}
+          {/* ═══════════════════ TAB 1: RELATÓRIO CENTRAL ═══════════════════ */}
           <TabsContent value="central" className="mt-6">
             <div className="relative">
               {!hasAccess && <PremiumOverlay />}
@@ -414,16 +650,13 @@ const CentralReport = () => {
                       </div>
                     )}
                   </motion.div>
-
                   <motion.div {...fadeUp} transition={{ delay: 0.25 }} className="bg-card rounded-xl border border-border p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                       <Shield className="w-5 h-5 text-primary" />
                       <h3 className="text-lg font-serif">Risco de Autossabotagem</h3>
                     </div>
                     <p className={`text-3xl font-serif font-bold ${riskColor}`}>{riskLevel}</p>
-                    <p className="text-xs text-muted-foreground mt-2">
-                      Score: {Math.round(riskScore)} | {detectedConflicts.length} conflito(s) detectado(s)
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">Score: {Math.round(riskScore)} | {detectedConflicts.length} conflito(s)</p>
                   </motion.div>
                 </div>
 
@@ -453,10 +686,7 @@ const CentralReport = () => {
                             </span>
                           </div>
                           <div className="w-full bg-muted/50 rounded-full h-1.5">
-                            <div
-                              className={`rounded-full h-1.5 transition-all duration-500 ${area.score >= 60 ? 'bg-destructive' : area.score >= 40 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                              style={{ width: `${area.score}%` }}
-                            />
+                            <div className={`rounded-full h-1.5 transition-all duration-500 ${area.score >= 60 ? 'bg-destructive' : area.score >= 40 ? 'bg-yellow-500' : 'bg-green-500'}`} style={{ width: `${area.score}%` }} />
                           </div>
                         </div>
                       </div>
@@ -479,7 +709,7 @@ const CentralReport = () => {
                   </ResponsiveContainer>
                 </motion.div>
 
-                {/* Timeline Evolution */}
+                {/* Timeline */}
                 {history.length > 1 && (
                   <motion.div {...fadeUp} transition={{ delay: 0.45 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
@@ -495,22 +725,14 @@ const CentralReport = () => {
                         <Tooltip />
                         <Legend />
                         {timelineKeys.map((key, i) => (
-                          <Line
-                            key={key}
-                            type="monotone"
-                            dataKey={radarAxisLabels[key]}
-                            stroke={timelineColors[i % timelineColors.length]}
-                            strokeWidth={2}
-                            dot={{ r: 3 }}
-                            connectNulls
-                          />
+                          <Line key={key} type="monotone" dataKey={radarAxisLabels[key]} stroke={timelineColors[i % timelineColors.length]} strokeWidth={2} dot={{ r: 3 }} connectNulls />
                         ))}
                       </LineChart>
                     </ResponsiveContainer>
                   </motion.div>
                 )}
 
-                {/* AI Insights Section */}
+                {/* AI Insights */}
                 <motion.div {...fadeUp} transition={{ delay: 0.5 }} className="bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 rounded-xl border border-primary/20 p-6 md:p-8 shadow-sm">
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -518,112 +740,38 @@ const CentralReport = () => {
                       <h3 className="text-xl font-serif">Insights com IA</h3>
                     </div>
                     {!aiInsights && (
-                      <button
-                        onClick={generateInsights}
-                        disabled={insightsLoading}
-                        className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
-                      >
-                        {insightsLoading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                            Analisando...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4" />
-                            Gerar Análise
-                          </>
-                        )}
+                      <button onClick={generateInsights} disabled={insightsLoading} className="px-5 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2">
+                        {insightsLoading ? (<><div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />Analisando...</>) : (<><Sparkles className="w-4 h-4" />Gerar Análise</>)}
                       </button>
                     )}
                   </div>
-
-                  {!aiInsights && !insightsLoading && (
-                    <p className="text-sm text-muted-foreground">
-                      A IA analisará todo o seu histórico de leituras para gerar interpretações personalizadas, padrões invisíveis e recomendações práticas.
-                    </p>
-                  )}
-
-                  {insightsLoading && (
-                    <div className="space-y-4 animate-pulse">
-                      <div className="h-4 bg-muted/50 rounded w-full" />
-                      <div className="h-4 bg-muted/50 rounded w-5/6" />
-                      <div className="h-4 bg-muted/50 rounded w-4/6" />
-                      <div className="h-4 bg-muted/50 rounded w-full" />
-                    </div>
-                  )}
-
+                  {!aiInsights && !insightsLoading && <p className="text-sm text-muted-foreground">A IA analisará o histórico para gerar interpretações e recomendações.</p>}
+                  {insightsLoading && <div className="space-y-4 animate-pulse"><div className="h-4 bg-muted/50 rounded w-full" /><div className="h-4 bg-muted/50 rounded w-5/6" /><div className="h-4 bg-muted/50 rounded w-4/6" /></div>}
                   {aiInsights && (
                     <div className="space-y-6">
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Brain className="w-4 h-4 text-primary" />
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Interpretação Personalizada</p>
-                        </div>
-                        <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
-                          {aiInsights.interpretacao_personalizada}
-                        </div>
+                        <div className="flex items-center gap-2 mb-3"><Brain className="w-4 h-4 text-primary" /><p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Interpretação Personalizada</p></div>
+                        <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">{aiInsights.interpretacao_personalizada}</div>
                       </div>
-
                       {aiInsights.padroes_invisiveis.length > 0 && (
                         <div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <Eye className="w-4 h-4 text-primary" />
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Padrões Invisíveis</p>
-                          </div>
-                          <div className="space-y-2">
-                            {aiInsights.padroes_invisiveis.map((p, i) => (
-                              <div key={i} className="flex items-start gap-3 bg-background/50 border border-border rounded-lg p-3">
-                                <span className="mt-0.5 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary font-medium shrink-0">{i + 1}</span>
-                                <p className="text-sm text-foreground/80">{p}</p>
-                              </div>
-                            ))}
-                          </div>
+                          <div className="flex items-center gap-2 mb-3"><Eye className="w-4 h-4 text-primary" /><p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Padrões Invisíveis</p></div>
+                          <div className="space-y-2">{aiInsights.padroes_invisiveis.map((p, i) => (<div key={i} className="flex items-start gap-3 bg-background/50 border border-border rounded-lg p-3"><span className="mt-0.5 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs text-primary font-medium shrink-0">{i + 1}</span><p className="text-sm text-foreground/80">{p}</p></div>))}</div>
                         </div>
                       )}
-
                       {aiInsights.contradicoes_profundas.length > 0 && (
                         <div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <Target className="w-4 h-4 text-destructive" />
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Contradições Profundas</p>
-                          </div>
-                          <div className="space-y-2">
-                            {aiInsights.contradicoes_profundas.map((c, i) => (
-                              <div key={i} className="flex items-start gap-3 bg-destructive/5 border border-destructive/10 rounded-lg p-3">
-                                <Zap className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
-                                <p className="text-sm text-foreground/80">{c}</p>
-                              </div>
-                            ))}
-                          </div>
+                          <div className="flex items-center gap-2 mb-3"><Target className="w-4 h-4 text-destructive" /><p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Contradições Profundas</p></div>
+                          <div className="space-y-2">{aiInsights.contradicoes_profundas.map((c, i) => (<div key={i} className="flex items-start gap-3 bg-destructive/5 border border-destructive/10 rounded-lg p-3"><Zap className="w-4 h-4 text-destructive mt-0.5 shrink-0" /><p className="text-sm text-foreground/80">{c}</p></div>))}</div>
                         </div>
                       )}
-
                       {aiInsights.recomendacoes_praticas.length > 0 && (
                         <div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <Lightbulb className="w-4 h-4 text-primary" />
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Recomendações Práticas</p>
-                          </div>
-                          <div className="space-y-2">
-                            {aiInsights.recomendacoes_praticas.map((r, i) => (
-                              <div key={i} className="flex items-start gap-3 bg-primary/5 border border-primary/10 rounded-lg p-3">
-                                <span className="mt-0.5 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-medium shrink-0">✓</span>
-                                <p className="text-sm text-foreground/80">{r}</p>
-                              </div>
-                            ))}
-                          </div>
+                          <div className="flex items-center gap-2 mb-3"><Lightbulb className="w-4 h-4 text-primary" /><p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Recomendações Práticas</p></div>
+                          <div className="space-y-2">{aiInsights.recomendacoes_praticas.map((r, i) => (<div key={i} className="flex items-start gap-3 bg-primary/5 border border-primary/10 rounded-lg p-3"><span className="mt-0.5 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs text-primary font-medium shrink-0">✓</span><p className="text-sm text-foreground/80">{r}</p></div>))}</div>
                         </div>
                       )}
-
-                      <button
-                        onClick={generateInsights}
-                        disabled={insightsLoading}
-                        className="text-sm text-primary hover:underline flex items-center gap-1"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        Gerar nova análise
-                      </button>
+                      <button onClick={generateInsights} disabled={insightsLoading} className="text-sm text-primary hover:underline flex items-center gap-1"><Sparkles className="w-3 h-3" />Gerar nova análise</button>
                     </div>
                   )}
                 </motion.div>
@@ -631,7 +779,7 @@ const CentralReport = () => {
             </div>
           </TabsContent>
 
-          {/* ═══════════════════════════ TAB 2: MAPA DE VIDA ═══════════════════════════ */}
+          {/* ═══════════════════ TAB 2: MAPA DE VIDA ═══════════════════ */}
           <TabsContent value="lifemap" className="mt-6">
             <div className="relative">
               {!hasAccess && <PremiumOverlay />}
@@ -640,12 +788,8 @@ const CentralReport = () => {
                   <motion.div {...fadeUp} className="bg-card rounded-xl border border-border p-8 text-center space-y-4">
                     <Compass className="w-10 h-10 text-muted-foreground mx-auto" />
                     <h3 className="text-lg font-serif">Nenhum Mapa de Vida realizado</h3>
-                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                      Complete o teste "Mapa de Vida & Evolução" para visualizar sua evolução aqui. Refaça-o mensalmente para acompanhar seu progresso.
-                    </p>
-                    <button onClick={() => navigate('/tests')} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-                      Ir para Catálogo
-                    </button>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">Complete o teste "Mapa de Vida & Evolução" para visualizar a evolução aqui.</p>
+                    <button onClick={() => navigate('/tests')} className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">Ir para Catálogo</button>
                   </motion.div>
                 ) : (
                   <>
@@ -655,15 +799,10 @@ const CentralReport = () => {
                         <Activity className="w-5 h-5 text-primary" />
                         <h3 className="text-xl font-serif">Mapa de Vida Atual</h3>
                       </div>
-                      <p className="text-xs text-muted-foreground mb-4">
-                        Última avaliação: {lifeMapHistory[lifeMapHistory.length - 1].date}
-                      </p>
+                      <p className="text-xs text-muted-foreground mb-4">Última avaliação: {lifeMapHistory[lifeMapHistory.length - 1].date}</p>
                       {(() => {
                         const latest = lifeMapHistory[lifeMapHistory.length - 1];
-                        const radarEntries = Object.entries(latest.scores).map(([key, val]) => ({
-                          area: key,
-                          nota: Math.round(val / 10), // percentage to 0-10 scale
-                        }));
+                        const radarEntries = Object.entries(latest.scores).map(([key, val]) => ({ area: key, nota: Math.round(val / 10) }));
                         return (
                           <ResponsiveContainer width="100%" height={320}>
                             <RadarChart data={radarEntries}>
@@ -683,26 +822,18 @@ const CentralReport = () => {
                           <TrendingUp className="w-5 h-5 text-primary" />
                           <h3 className="text-xl font-serif">Comparativo de Evolução</h3>
                         </div>
-                        <p className="text-xs text-muted-foreground mb-6">
-                          {lifeMapHistory.length} avaliações realizadas — comparando a mais recente com a anterior
-                        </p>
-
+                        <p className="text-xs text-muted-foreground mb-6">{lifeMapHistory.length} avaliações — comparando a mais recente com a anterior</p>
                         {(() => {
                           const latest = lifeMapHistory[lifeMapHistory.length - 1];
                           const previous = lifeMapHistory[lifeMapHistory.length - 2];
-
                           const allKeys = Array.from(new Set([...Object.keys(latest.scores), ...Object.keys(previous.scores)]));
-                          
                           const comparisons = allKeys.map(key => {
                             const curr = Math.round((latest.scores[key] || 0) / 10);
                             const prev = Math.round((previous.scores[key] || 0) / 10);
-                            const diff = curr - prev;
-                            return { area: key, current: curr, previous: prev, diff };
+                            return { area: key, current: curr, previous: prev, diff: curr - prev };
                           }).sort((a, b) => b.diff - a.diff);
-
                           return (
                             <div className="space-y-3">
-                              {/* Header labels */}
                               <div className="grid grid-cols-12 gap-2 text-xs text-muted-foreground uppercase tracking-wide px-1 mb-2">
                                 <span className="col-span-4">Área</span>
                                 <span className="col-span-2 text-center">Anterior</span>
@@ -710,29 +841,22 @@ const CentralReport = () => {
                                 <span className="col-span-2 text-center">Variação</span>
                                 <span className="col-span-2 text-center">Status</span>
                               </div>
-
                               {comparisons.map((c, i) => (
                                 <div key={i} className="grid grid-cols-12 gap-2 items-center bg-muted/20 rounded-lg p-3 border border-border/30">
                                   <span className="col-span-4 text-sm font-medium text-foreground truncate">{c.area}</span>
                                   <span className="col-span-2 text-center text-sm text-muted-foreground">{c.previous}</span>
                                   <span className="col-span-2 text-center text-sm font-medium text-foreground">{c.current}</span>
-                                  <span className={`col-span-2 text-center text-sm font-semibold flex items-center justify-center gap-1 ${
-                                    c.diff > 0 ? 'text-green-500' : c.diff < 0 ? 'text-red-500' : 'text-muted-foreground'
-                                  }`}>
+                                  <span className={`col-span-2 text-center text-sm font-semibold flex items-center justify-center gap-1 ${c.diff > 0 ? 'text-green-500' : c.diff < 0 ? 'text-red-500' : 'text-muted-foreground'}`}>
                                     {c.diff > 0 ? <ArrowUpRight className="w-3.5 h-3.5" /> : c.diff < 0 ? <ArrowDownRight className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
                                     {c.diff > 0 ? `+${c.diff}` : c.diff}
                                   </span>
                                   <span className="col-span-2 text-center">
-                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                      c.diff > 0 ? 'bg-green-500/10 text-green-600' : c.diff < 0 ? 'bg-red-500/10 text-red-600' : 'bg-muted text-muted-foreground'
-                                    }`}>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${c.diff > 0 ? 'bg-green-500/10 text-green-600' : c.diff < 0 ? 'bg-red-500/10 text-red-600' : 'bg-muted text-muted-foreground'}`}>
                                       {c.diff > 0 ? 'Melhorou' : c.diff < 0 ? 'Caiu' : 'Estável'}
                                     </span>
                                   </span>
                                 </div>
                               ))}
-
-                              {/* Summary */}
                               {(() => {
                                 const improved = comparisons.filter(c => c.diff > 0).length;
                                 const declined = comparisons.filter(c => c.diff < 0).length;
@@ -760,7 +884,7 @@ const CentralReport = () => {
                       </motion.div>
                     )}
 
-                    {/* Full Timeline Chart */}
+                    {/* Full Timeline */}
                     {lifeMapHistory.length >= 2 && (
                       <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
@@ -771,16 +895,11 @@ const CentralReport = () => {
                         {(() => {
                           const chartData = lifeMapHistory.map(entry => {
                             const point: Record<string, any> = { date: entry.date };
-                            Object.entries(entry.scores).forEach(([key, val]) => {
-                              point[key] = Math.round(val / 10);
-                            });
+                            Object.entries(entry.scores).forEach(([key, val]) => { point[key] = Math.round(val / 10); });
                             return point;
                           });
                           const areaKeys = Object.keys(lifeMapHistory[0].scores);
-                          const areaColors = [
-                            '#22c55e', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6',
-                            '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16',
-                          ];
+                          const areaColors = ['#22c55e', '#3b82f6', '#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#f97316', '#6366f1', '#84cc16'];
                           return (
                             <ResponsiveContainer width="100%" height={350}>
                               <LineChart data={chartData}>
@@ -789,17 +908,7 @@ const CentralReport = () => {
                                 <YAxis domain={[0, 10]} tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} width={25} />
                                 <Tooltip />
                                 <Legend wrapperStyle={{ fontSize: 10 }} />
-                                {areaKeys.map((key, i) => (
-                                  <Line
-                                    key={key}
-                                    type="monotone"
-                                    dataKey={key}
-                                    stroke={areaColors[i % areaColors.length]}
-                                    strokeWidth={2}
-                                    dot={{ r: 3 }}
-                                    connectNulls
-                                  />
-                                ))}
+                                {areaKeys.map((key, i) => (<Line key={key} type="monotone" dataKey={key} stroke={areaColors[i % areaColors.length]} strokeWidth={2} dot={{ r: 3 }} connectNulls />))}
                               </LineChart>
                             </ResponsiveContainer>
                           );
@@ -807,7 +916,7 @@ const CentralReport = () => {
                       </motion.div>
                     )}
 
-                    {/* All evaluations list */}
+                    {/* History list */}
                     <motion.div {...fadeUp} transition={{ delay: 0.2 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
                       <div className="flex items-center gap-3 mb-4">
                         <Layers className="w-5 h-5 text-primary" />
@@ -818,14 +927,8 @@ const CentralReport = () => {
                           const avg = Object.values(entry.scores).reduce((a, b) => a + b, 0) / Math.max(Object.values(entry.scores).length, 1);
                           return (
                             <div key={i} className="flex items-center justify-between bg-muted/20 rounded-lg p-4 border border-border/30">
-                              <div>
-                                <p className="text-sm font-medium text-foreground">{entry.date}</p>
-                                <p className="text-xs text-muted-foreground">{Object.keys(entry.scores).length} áreas avaliadas</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-lg font-serif font-bold text-primary">{(avg / 10).toFixed(1)}</p>
-                                <p className="text-xs text-muted-foreground">Média geral</p>
-                              </div>
+                              <div><p className="text-sm font-medium text-foreground">{entry.date}</p><p className="text-xs text-muted-foreground">{Object.keys(entry.scores).length} áreas avaliadas</p></div>
+                              <div className="text-right"><p className="text-lg font-serif font-bold text-primary">{(avg / 10).toFixed(1)}</p><p className="text-xs text-muted-foreground">Média geral</p></div>
                             </div>
                           );
                         })}
@@ -840,10 +943,10 @@ const CentralReport = () => {
 
         {/* Actions */}
         <motion.div {...fadeUp} transition={{ delay: 0.5 }} className="flex flex-col sm:flex-row gap-4 justify-center pb-12">
-          <button onClick={() => navigate('/dashboard')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
-            Voltar ao Dashboard
+          <button onClick={() => setSelectedPersonId(null)} className="px-8 py-3 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
+            Voltar ao Resumo
           </button>
-          <button onClick={() => navigate('/tests')} className="px-8 py-3 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-muted/50 transition-colors">
+          <button onClick={() => navigate('/tests')} className="px-8 py-3 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity">
             Nova leitura
           </button>
         </motion.div>
