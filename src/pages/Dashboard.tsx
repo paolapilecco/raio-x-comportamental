@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
+import { useRetestCycle } from '@/hooks/useRetestCycle';
+import { RetestCycleCard } from '@/components/dashboard/RetestCycleCard';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
