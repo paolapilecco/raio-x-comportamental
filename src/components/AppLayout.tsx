@@ -2,7 +2,8 @@ import { ReactNode } from 'react';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/AppSidebar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Menu, Search, Bell } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Menu, Search, Bell, Home } from 'lucide-react';
 
 interface AppLayoutProps {
   children: ReactNode;
