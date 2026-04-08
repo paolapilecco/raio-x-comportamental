@@ -67,24 +67,18 @@ const DiagnosticHistory = () => {
 
     const fetchHistory = async () => {
       try {
-        const promises: Promise<any>[] = [
-          supabase
+        const sessionsPromise = supabase
             .from('diagnostic_sessions')
             .select('id, completed_at, test_module_id, person_id')
             .eq('user_id', user.id)
             .not('completed_at', 'is', null)
-            .order('completed_at', { ascending: false }),
-          supabase.from('test_modules').select('id, slug, name').eq('is_active', true),
-        ];
+            .order('completed_at', { ascending: false });
+        const modulesPromise = supabase.from('test_modules').select('id, slug, name').eq('is_active', true);
+        const personsPromise = hasMultiplePersons
+          ? supabase.from('managed_persons').select('id, name, is_active').eq('owner_id', user.id).order('name')
+          : Promise.resolve({ data: null, error: null });
 
-        if (hasMultiplePersons) {
-          promises.push(
-            supabase.from('managed_persons').select('id, name, is_active')
-              .eq('owner_id', user.id).order('name')
-          );
-        }
-
-        const [sessionsRes, modulesRes, personsRes] = await Promise.all(promises);
+        const [sessionsRes, modulesRes, personsRes] = await Promise.all([sessionsPromise, modulesPromise, personsPromise]);
 
         if (sessionsRes.error) {
           console.error('Error fetching sessions:', sessionsRes.error);
