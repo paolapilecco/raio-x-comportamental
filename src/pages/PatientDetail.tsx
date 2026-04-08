@@ -339,7 +339,135 @@ export default function PatientDetail() {
         {/* Tab Content */}
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
-            <motion.div key="overview" {...fadeUp} className="space-y-6">
+             <motion.div key="overview" {...fadeUp} className="space-y-6">
+              {/* Gamification Section */}
+              {!gamification.loading && gamification.totalTests > 0 && (
+                <div className="space-y-4">
+                  {/* Score Global + Retest Cycle */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Score Global */}
+                    <div className="bg-card border rounded-xl p-5 flex items-center gap-5">
+                      <div className="relative w-20 h-20 flex-shrink-0">
+                        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                          <circle cx="40" cy="40" r="34" fill="none" stroke="hsl(var(--border))" strokeWidth="6" />
+                          <circle cx="40" cy="40" r="34" fill="none" stroke="hsl(var(--primary))" strokeWidth="6"
+                            strokeDasharray={`${2 * Math.PI * 34}`}
+                            strokeDashoffset={`${2 * Math.PI * 34 * (1 - gamification.globalScore / 100)}`}
+                            strokeLinecap="round" className="transition-all duration-700"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-foreground">
+                          {gamification.globalScore}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Score Global</p>
+                        <p className="text-xs text-muted-foreground mt-1">Autoconsciência × Consistência</p>
+                        <div className="flex gap-2 mt-2 flex-wrap">
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">🧠 {gamification.scoreBreakdown.awareness}%</span>
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">🔥 {gamification.scoreBreakdown.consistency}%</span>
+                          <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">📊 {gamification.scoreBreakdown.coverage}%</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Retest Cycle */}
+                    <div className="bg-card border rounded-xl p-5 flex items-center gap-5">
+                      <div className="relative w-20 h-20 flex-shrink-0">
+                        <svg className="w-20 h-20 -rotate-90" viewBox="0 0 80 80">
+                          <circle cx="40" cy="40" r="34" fill="none" stroke="hsl(var(--border))" strokeWidth="6" />
+                          <circle cx="40" cy="40" r="34" fill="none"
+                            stroke={gamification.retestAvailable ? 'hsl(152,45%,42%)' : 'hsl(var(--primary))'}
+                            strokeWidth="6"
+                            strokeDasharray={`${2 * Math.PI * 34}`}
+                            strokeDashoffset={`${2 * Math.PI * 34 * (1 - gamification.retestProgressPercent / 100)}`}
+                            strokeLinecap="round" className="transition-all duration-700"
+                          />
+                        </svg>
+                        <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-foreground">
+                          {gamification.retestAvailable ? '✓' : `${gamification.daysUntilRetest}d`}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-foreground">Ciclo de Reteste</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {gamification.retestAvailable
+                            ? 'Reteste disponível!'
+                            : `${gamification.daysUntilRetest} dias restantes`}
+                        </p>
+                        {gamification.lastTestDate && (
+                          <p className="text-[10px] text-muted-foreground/60 mt-1">
+                            Último: {gamification.lastTestDate.toLocaleDateString('pt-BR')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Streak, Nível, XP, Badges */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="bg-card border rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-foreground">{gamification.currentStreak}</p>
+                      <p className="text-xs text-muted-foreground mt-1">🔥 Streak (semanas)</p>
+                    </div>
+                    <div className="bg-card border rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-foreground">{gamification.level}</p>
+                      <p className="text-xs text-muted-foreground mt-1">📊 {gamification.levelName}</p>
+                    </div>
+                    <div className="bg-card border rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-foreground">{gamification.totalXP}</p>
+                      <p className="text-xs text-muted-foreground mt-1">⚡ XP Total</p>
+                    </div>
+                    <div className="bg-card border rounded-xl p-4 text-center">
+                      <p className="text-2xl font-bold text-foreground">{gamification.unlockedBadges}/{gamification.badges.length}</p>
+                      <p className="text-xs text-muted-foreground mt-1">🏆 Conquistas</p>
+                    </div>
+                  </div>
+
+                  {/* Badges list */}
+                  {gamification.badges.length > 0 && (
+                    <div className="bg-card border rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Conquistas do Paciente</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {gamification.badges.map(badge => (
+                          <span key={badge.id} className={`text-xs px-3 py-1.5 rounded-full flex items-center gap-1.5 ${
+                            badge.unlocked ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground opacity-50'
+                          }`}>
+                            {badge.emoji} {badge.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Score Comparisons */}
+                  {gamification.scoreComparisons.length > 0 && (
+                    <div className="bg-card border rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-foreground mb-3">Comparação entre Últimos Testes</h3>
+                      <div className="space-y-2">
+                        {gamification.scoreComparisons.slice(0, 6).map(sc => (
+                          <div key={sc.key} className="flex items-center gap-3">
+                            <span className="text-xs text-muted-foreground w-28 truncate text-right">{sc.label}</span>
+                            <div className="flex-1 h-2 rounded-full bg-secondary/50 overflow-hidden">
+                              <div className="h-full rounded-full transition-all" style={{
+                                width: `${sc.current}%`,
+                                backgroundColor: sc.current >= 70 ? 'hsl(0,65%,52%)' : sc.current >= 40 ? 'hsl(38,72%,50%)' : 'hsl(152,45%,42%)',
+                              }} />
+                            </div>
+                            <div className="flex items-center gap-1 w-14 justify-end">
+                              {sc.delta > 0 ? <TrendingUp className="w-3 h-3 text-red-500" /> : sc.delta < 0 ? <TrendingDown className="w-3 h-3 text-emerald-600" /> : <Minus className="w-3 h-3 text-muted-foreground" />}
+                              <span className={`text-xs font-semibold ${sc.delta > 0 ? 'text-red-500' : sc.delta < 0 ? 'text-emerald-600' : 'text-muted-foreground'}`}>
+                                {sc.delta > 0 ? '+' : ''}{sc.delta}%
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* KPIs */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-card border rounded-xl p-4 text-center">
