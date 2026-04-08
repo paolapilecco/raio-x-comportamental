@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, FileText, Activity, LogOut, Settings, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Activity, LogOut, Settings, Shield, Stethoscope } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,7 +27,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const location = useLocation();
   const navigate = useNavigate();
-  const { profile, isSuperAdmin, signOut } = useAuth();
+  const { profile, isSuperAdmin, planType, signOut } = useAuth();
 
   const displayName = profile?.name || 'Usuário';
 
@@ -71,6 +71,27 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {(planType === 'profissional' || isSuperAdmin) && (
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/painel-profissional"
+                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200 text-sm"
+                      activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                    >
+                      <Stethoscope className="w-[18px] h-[18px] shrink-0" />
+                      {!collapsed && <span>Profissional</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {isSuperAdmin && (
           <SidebarGroup>

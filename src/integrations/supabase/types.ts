@@ -451,6 +451,51 @@ export type Database = {
         }
         Relationships: []
       }
+      professional_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          owner_id: string
+          person_id: string
+          session_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          owner_id: string
+          person_id: string
+          session_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          owner_id?: string
+          person_id?: string
+          session_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_notes_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "managed_persons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_notes_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
@@ -645,6 +690,51 @@ export type Database = {
             foreignKeyName: "report_templates_test_id_fkey"
             columns: ["test_id"]
             isOneToOne: true
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retest_reminders: {
+        Row: {
+          created_at: string
+          id: string
+          owner_id: string
+          person_id: string
+          remind_at: string
+          status: string
+          test_module_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          owner_id: string
+          person_id: string
+          remind_at: string
+          status?: string
+          test_module_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          owner_id?: string
+          person_id?: string
+          remind_at?: string
+          status?: string
+          test_module_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retest_reminders_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "managed_persons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retest_reminders_test_module_id_fkey"
+            columns: ["test_module_id"]
+            isOneToOne: false
             referencedRelation: "test_modules"
             referencedColumns: ["id"]
           },

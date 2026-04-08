@@ -25,6 +25,9 @@ import AdminRoadmap from "./pages/AdminRoadmap";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminSubscriptions from "./pages/AdminSubscriptions";
 import NotFound from "./pages/NotFound";
+import PatientDetail from "./pages/PatientDetail";
+import ProfessionalDashboard from "./pages/ProfessionalDashboard";
+import PatientComparison from "./pages/PatientComparison";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +55,9 @@ const App = () => (
             <Route path="/tests" element={<ProtectedRoute><TestCatalog /></ProtectedRoute>} />
             <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
             <Route path="/diagnostic" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
+            <Route path="/paciente/:personId" element={<ProtectedRoute><PatientDetail /></ProtectedRoute>} />
+            <Route path="/painel-profissional" element={<ProtectedRoute><ProfessionalDashboard /></ProtectedRoute>} />
+            <Route path="/comparar-pacientes" element={<ProtectedRoute><PatientComparison /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><DiagnosticHistory /></ProtectedRoute>} />
             <Route path="/central-report" element={<ProtectedRoute><CentralReport /></ProtectedRoute>} />
