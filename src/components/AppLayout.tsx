@@ -11,6 +11,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children }: AppLayoutProps) {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const displayName = profile?.name || 'Usuário';
   const initials = displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
 
