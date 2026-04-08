@@ -57,46 +57,47 @@ export function RadarSection({ scores, axisLabels, hasAccess }: RadarSectionProp
       {view === 'neural' ? (
         <NeuralMap scores={scores} axisLabels={axisLabels} />
       ) : (
-        <ResponsiveContainer width="100%" height={350}>
-          <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="72%">
-            <PolarGrid stroke="hsl(var(--border))" />
-            <PolarAngleAxis
-              dataKey="axis"
-              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
-            />
-            <Tooltip
-              contentStyle={{
-                backgroundColor: 'hsl(var(--card))',
-                border: '1px solid hsl(var(--border))',
-                borderRadius: '8px',
-                fontSize: '12px',
-              }}
-              formatter={(value: number) => [`${value}%`, 'Intensidade']}
-            />
-            <Radar
-              name="Score Global"
-              dataKey="value"
-              stroke="hsl(var(--primary))"
-              fill="hsl(var(--primary))"
-              fillOpacity={0.2}
-              strokeWidth={2.5}
-              dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 0 }}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
-      )}
-
-      {sorted.length > 5 && (
-        <div className="mt-4 pt-4 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-2">Demais eixos:</p>
-          <div className="flex flex-wrap gap-2">
-            {sorted.slice(5).map(([key, value]) => (
-              <span key={key} className={`text-xs px-2.5 py-1 rounded-full border border-border bg-muted/30 text-muted-foreground ${!hasAccess ? 'filter blur-[3px]' : ''}`}>
-                {axisLabels[key] || key}: {value}%
-              </span>
-            ))}
-          </div>
-        </div>
+        <>
+          <ResponsiveContainer width="100%" height={350}>
+            <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="72%">
+              <PolarGrid stroke="hsl(var(--border))" />
+              <PolarAngleAxis
+                dataKey="axis"
+                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', fontWeight: 500 }}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                }}
+                formatter={(value: number) => [`${value}%`, 'Intensidade']}
+              />
+              <Radar
+                name="Score Global"
+                dataKey="value"
+                stroke="hsl(var(--primary))"
+                fill="hsl(var(--primary))"
+                fillOpacity={0.2}
+                strokeWidth={2.5}
+                dot={{ r: 4, fill: 'hsl(var(--primary))', strokeWidth: 0 }}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+          {sorted.length > 5 && (
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-xs text-muted-foreground mb-2">Demais eixos:</p>
+              <div className="flex flex-wrap gap-2">
+                {sorted.slice(5).map(([key, value]) => (
+                  <span key={key} className={`text-xs px-2.5 py-1 rounded-full border border-border bg-muted/30 text-muted-foreground ${!hasAccess ? 'filter blur-[3px]' : ''}`}>
+                    {axisLabels[key] || key}: {value}%
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </motion.div>
   );
