@@ -198,11 +198,28 @@ const Diagnostic = () => {
         option_scores: q.option_scores,
         context: q.context || null,
       })));
-      setStep('questionnaire');
+
+      // Fetch managed persons for person selection
+      const { data: personData } = await supabase
+        .from('managed_persons')
+        .select('id, name, cpf')
+        .eq('owner_id', user!.id)
+        .order('created_at', { ascending: true });
+
+      const fetchedPersons = (personData || []) as ManagedPerson[];
+      setPersons(fetchedPersons);
+
+      if (fetchedPersons.length <= 1) {
+        // Auto-select if only one person
+        setSelectedPersonId(fetchedPersons[0]?.id || null);
+        setStep('questionnaire');
+      } else {
+        setStep('select-person');
+      }
     };
 
     fetchModuleAndQuestions();
-  }, [slug, navigate, isSuperAdmin]);
+  }, [slug, navigate, isSuperAdmin, user]);
 
   const saveToDatabase = useCallback(async (answers: Answer[], analysisResult: DiagnosticResult) => {
     if (!user) return;
