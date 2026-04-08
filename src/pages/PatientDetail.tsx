@@ -8,6 +8,7 @@ import { AppLayout } from '@/components/AppLayout';
 import {
   ArrowLeft, User, Calendar, Phone, FileText, TrendingUp, TrendingDown, Minus,
   Plus, Trash2, Save, Clock, AlertTriangle, Download, StickyNote, Bell, Activity,
+  Link2, Copy, Check, Send,
 } from 'lucide-react';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
