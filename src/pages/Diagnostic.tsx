@@ -226,6 +226,7 @@ const Diagnostic = () => {
     try {
       const sessionInsert: any = { user_id: user.id };
       if (moduleId) sessionInsert.test_module_id = moduleId;
+      if (selectedPersonId) sessionInsert.person_id = selectedPersonId;
 
       const { data: session, error: sessionError } = await supabase
         .from('diagnostic_sessions')
