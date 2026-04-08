@@ -201,13 +201,40 @@ const Diagnostic = () => {
       })));
 
       // Fetch managed persons for person selection
-      const { data: personData } = await supabase
+      let { data: personData } = await supabase
         .from('managed_persons')
         .select('id, name, cpf')
         .eq('owner_id', user!.id)
         .order('created_at', { ascending: true });
 
-      const fetchedPersons = (personData || []) as ManagedPerson[];
+      let fetchedPersons = (personData || []) as ManagedPerson[];
+
+      // If no managed person exists, auto-create one from the user's profile
+      if (fetchedPersons.length === 0) {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('name, cpf, birth_date')
+          .eq('user_id', user!.id)
+          .maybeSingle();
+
+        if (profileData?.name) {
+          const { data: newPerson } = await supabase
+            .from('managed_persons')
+            .insert({
+              owner_id: user!.id,
+              name: profileData.name,
+              cpf: profileData.cpf || '00000000000',
+              birth_date: profileData.birth_date || '2000-01-01',
+            })
+            .select('id, name, cpf')
+            .single();
+
+          if (newPerson) {
+            fetchedPersons = [newPerson as ManagedPerson];
+          }
+        }
+      }
+
       setPersons(fetchedPersons);
 
       if (fetchedPersons.length <= 1) {
