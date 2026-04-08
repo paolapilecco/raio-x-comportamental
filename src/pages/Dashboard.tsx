@@ -6,6 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
+import { useRetestCycle } from '@/hooks/useRetestCycle';
+import { RetestCycleCard } from '@/components/dashboard/RetestCycleCard';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
@@ -90,6 +92,7 @@ const Dashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [latestModuleId, setLatestModuleId] = useState<string | null>(null);
   const gamification = useGamification(user?.id);
+  const retestCycle = useRetestCycle(user?.id);
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
     setGenerating(true);
@@ -466,6 +469,11 @@ const Dashboard = () => {
               </div>
             </div>
           </motion.section>
+        )}
+
+        {/* Retest Cycle - 15 days */}
+        {!retestCycle.loading && retestCycle.lastTestDate && (
+          <RetestCycleCard retest={retestCycle} />
         )}
 
         {/* Super Admin tools */}
