@@ -25,6 +25,9 @@ import AdminRoadmap from "./pages/AdminRoadmap";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminSubscriptions from "./pages/AdminSubscriptions";
 import NotFound from "./pages/NotFound";
+import PatientDetail from "./pages/PatientDetail";
+import ProfessionalDashboard from "./pages/ProfessionalDashboard";
+import PatientComparison from "./pages/PatientComparison";
 
 const queryClient = new QueryClient();
 
