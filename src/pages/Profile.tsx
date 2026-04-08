@@ -32,6 +32,8 @@ const Profile = () => {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalModules, setTotalModules] = useState(0);
   const [loading, setLoading] = useState(true);
+  const badgesData = useBadges(user?.id);
+  const gamification = useGamification(user?.id);
 
   useEffect(() => {
     if (!user) return;
