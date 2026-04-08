@@ -881,8 +881,7 @@ const CentralReport = () => {
           {/* ═══════════════════ TAB 2: MAPA DE VIDA ═══════════════════ */}
           <TabsContent value="lifemap" className="mt-6">
             <div className="relative">
-              {!hasAccess && <PremiumOverlay />}
-              <div className={`space-y-6 sm:space-y-8 ${!hasAccess ? 'filter blur-sm pointer-events-none select-none' : ''}`}>
+              <div className={`space-y-6 sm:space-y-8 ${!hasAccess ? 'pointer-events-none select-none' : ''}`} style={!hasAccess ? { filter: 'blur(5px)' } : undefined}>
                 {lifeMapHistory.length === 0 ? (
                   <motion.div {...fadeUp} className="bg-card rounded-xl border border-border p-8 text-center space-y-4">
                     <Compass className="w-10 h-10 text-muted-foreground mx-auto" />
