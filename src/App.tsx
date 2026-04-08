@@ -53,7 +53,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/t/:token" element={<PublicTest />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute skipOnboardingCheck><Onboarding /></ProtectedRoute>} />
             <Route path="/pessoas" element={<ProtectedRoute><ManagedPersons /></ProtectedRoute>} />
             <Route path="/tests" element={<ProtectedRoute><TestCatalog /></ProtectedRoute>} />
             <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
