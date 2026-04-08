@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
-import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy } from 'lucide-react';
+import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
