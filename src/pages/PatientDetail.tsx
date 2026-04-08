@@ -302,6 +302,14 @@ export default function PatientDetail() {
               <span className="flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> {history.length} teste(s)</span>
             </div>
           </div>
+          {!gamification.loading && gamification.totalTests > 0 && (
+            <button
+              onClick={() => { generateEvolutionPdf(gamification, person.name); toast.success('PDF de evolução gerado!'); }}
+              className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted/30 shrink-0"
+            >
+              <Download className="w-4 h-4" /> Evolução PDF
+            </button>
+          )}
         </motion.div>
 
         {/* Critical Alerts */}
