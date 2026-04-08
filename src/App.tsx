@@ -28,6 +28,7 @@ import NotFound from "./pages/NotFound";
 import PatientDetail from "./pages/PatientDetail";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import PatientComparison from "./pages/PatientComparison";
+import PublicTest from "./pages/PublicTest";
 
 const queryClient = new QueryClient();
 
