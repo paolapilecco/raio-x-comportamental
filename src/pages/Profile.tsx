@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity } from 'lucide-react';
+import { ArrowLeft, User, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity, Award } from 'lucide-react';
+import { useBadges } from '@/hooks/useBadges';
+import { useGamification } from '@/hooks/useGamification';
 import { toast } from 'sonner';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { ProfileSkeleton } from '@/components/skeletons/ProfileSkeleton';
@@ -30,6 +32,8 @@ const Profile = () => {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalModules, setTotalModules] = useState(0);
   const [loading, setLoading] = useState(true);
+  const badgesData = useBadges(user?.id);
+  const gamification = useGamification(user?.id);
 
   useEffect(() => {
     if (!user) return;
@@ -179,6 +183,80 @@ const Profile = () => {
           })}
         </motion.div>
 
+        {/* Gamification Level */}
+        {!gamification.loading && gamification.totalTests > 0 && (
+          <motion.div {...fadeUp} transition={{ delay: 0.12 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2.5">
+                <Award className="w-4 h-4 text-primary/50" />
+                <span className="text-[0.82rem] font-medium text-foreground/75">Nível de Autoconsciência</span>
+              </div>
+              <span className="text-xs font-bold text-primary">{gamification.levelName}</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="w-full bg-muted/20 rounded-full h-2">
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${gamification.levelProgress}%` }}
+                    transition={{ delay: 0.6, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                    className="bg-gradient-to-r from-primary/60 to-primary rounded-full h-2"
+                  />
+                </div>
+              </div>
+              <span className="text-sm font-bold text-foreground/80 tabular-nums">{gamification.totalXP} XP</span>
+            </div>
+            <p className="text-[0.6rem] text-muted-foreground/50 mt-2">
+              {gamification.xpToNextLevel > 0
+                ? `${gamification.xpToNextLevel} XP para alcançar o próximo nível`
+                : 'Nível máximo alcançado!'}
+            </p>
+          </motion.div>
+        )}
+
+        {/* Conquistas / Badges */}
+        {!badgesData.loading && (
+          <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2.5">
+                <Award className="w-4 h-4 text-gold/60" />
+                <span className="text-[0.82rem] font-medium text-foreground/75">Conquistas</span>
+              </div>
+              <span className="text-[0.72rem] text-muted-foreground/40 font-display font-medium">
+                {badgesData.unlockedCount}/{badgesData.totalCount}
+              </span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+              {badgesData.badges.map((badge) => (
+                <div
+                  key={badge.id}
+                  className={`rounded-xl border p-3.5 text-center transition-all duration-300 ${
+                    badge.unlocked
+                      ? 'bg-primary/[0.04] border-primary/15 shadow-[0_2px_8px_-2px_hsl(var(--primary)/0.1)]'
+                      : 'bg-muted/10 border-border/20 opacity-45 grayscale'
+                  }`}
+                >
+                  <span className="text-2xl block mb-2">{badge.emoji}</span>
+                  <p className={`text-[0.72rem] font-semibold leading-tight ${
+                    badge.unlocked ? 'text-foreground/80' : 'text-muted-foreground/50'
+                  }`}>
+                    {badge.name}
+                  </p>
+                  <p className={`text-[0.58rem] mt-1 leading-snug ${
+                    badge.unlocked ? 'text-muted-foreground/60' : 'text-muted-foreground/30'
+                  }`}>
+                    {badge.description}
+                  </p>
+                  {badge.unlocked && badge.unlockedAt && (
+                    <p className="text-[0.52rem] text-primary/50 mt-1.5 font-display">
+                      {new Date(badge.unlockedAt).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
         {/* Progress */}
         <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6">
           <div className="flex items-center justify-between mb-3">
