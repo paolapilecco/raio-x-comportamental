@@ -390,7 +390,7 @@ const Dashboard = () => {
               </div>
             </div>
           </motion.section>
-        )
+        )}
 
         {/* Super Admin tools */}
         {role === 'super_admin' && (
