@@ -277,6 +277,32 @@ const DiagnosticHistory = () => {
           </div>
         </motion.div>
 
+        {/* Person filter */}
+        {hasMultiplePersons && persons.length > 0 && (
+          <motion.div {...fadeUp} transition={{ delay: 0.03 }} className="flex items-center gap-2 flex-wrap">
+            <Users className="w-4 h-4 text-muted-foreground" />
+            <button
+              onClick={() => setSelectedPerson('all')}
+              className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
+                selectedPerson === 'all' ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+              }`}
+            >
+              Todos
+            </button>
+            {persons.map(p => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPerson(p.id)}
+                className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-all ${
+                  selectedPerson === p.id ? 'bg-primary text-primary-foreground' : 'bg-secondary/50 text-muted-foreground hover:bg-secondary'
+                } ${!p.is_active ? 'opacity-50' : ''}`}
+              >
+                {p.name}
+              </button>
+            ))}
+          </motion.div>
+        )}
+
         {/* Module filter */}
         {modulesWithResults.length > 0 && (
           <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="flex items-center gap-2 flex-wrap">
