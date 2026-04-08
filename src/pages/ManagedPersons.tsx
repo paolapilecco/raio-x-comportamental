@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth, PLAN_LIMITS } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
-import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar, Mail, Send } from 'lucide-react';
+import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar, Mail, Send, Pencil, ToggleLeft, ToggleRight, Check, X } from 'lucide-react';
 import { z } from 'zod';
 import { getPersonLimit } from '@/lib/planLimits';
 
@@ -20,6 +20,7 @@ interface ManagedPerson {
   birth_date: string;
   age: number | null;
   created_at: string;
+  is_active: boolean;
 }
 
 function formatPhone(value: string): string {
@@ -45,6 +46,7 @@ export default function ManagedPersons() {
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [sendingInvite, setSendingInvite] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -53,8 +55,14 @@ export default function ManagedPersons() {
   const [formBirthDate, setFormBirthDate] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Edit form state
+  const [editName, setEditName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editBirthDate, setEditBirthDate] = useState('');
+
   const limit = getPersonLimit(planType, isSuperAdmin);
-  const canAdd = isSuperAdmin || persons.length < limit;
+  const activeCount = persons.filter(p => p.is_active).length;
+  const canAdd = isSuperAdmin || activeCount < limit;
   const canInvite = planType === 'pessoal' || planType === 'profissional' || isSuperAdmin;
 
   useEffect(() => {
@@ -67,6 +75,7 @@ export default function ManagedPersons() {
       .from('managed_persons')
       .select('*')
       .eq('owner_id', user!.id)
+      .order('is_active', { ascending: false })
       .order('created_at', { ascending: true });
 
     if (error) {
@@ -97,7 +106,7 @@ export default function ManagedPersons() {
     if (birth >= new Date()) { toast.error('Data de nascimento inválida'); return; }
 
     if (!canAdd) {
-      toast.error(`Limite de ${limit} pessoa(s) atingido. Faça upgrade para Premium.`);
+      toast.error(`Limite de ${limit} perfil(is) ativo(s) atingido.`);
       return;
     }
 
@@ -111,6 +120,7 @@ export default function ManagedPersons() {
       cpf: cleanCpf,
       phone: cleanPhone,
       birth_date: formBirthDate,
+      is_active: true,
     });
 
     if (error) {
@@ -127,6 +137,66 @@ export default function ManagedPersons() {
       await fetchPersons();
     }
     setSaving(false);
+  };
+
+  const handleToggleActive = async (person: ManagedPerson) => {
+    // If reactivating, check the limit
+    if (!person.is_active && !isSuperAdmin && activeCount >= limit) {
+      toast.error(`Limite de ${limit} perfil(is) ativo(s) atingido. Desative outro perfil primeiro.`);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('managed_persons')
+      .update({ is_active: !person.is_active })
+      .eq('id', person.id);
+
+    if (error) {
+      console.error('Toggle error:', error);
+      toast.error('Erro ao alterar status.');
+    } else {
+      toast.success(person.is_active ? 'Perfil desativado.' : 'Perfil reativado!');
+      await fetchPersons();
+    }
+  };
+
+  const startEditing = (person: ManagedPerson) => {
+    setEditingId(person.id);
+    setEditName(person.name);
+    setEditPhone(person.phone ? formatPhone(person.phone) : '');
+    setEditBirthDate(person.birth_date);
+  };
+
+  const handleSaveEdit = async (personId: string) => {
+    const nameResult = nameSchema.safeParse(editName);
+    if (!nameResult.success) { toast.error(nameResult.error.errors[0].message); return; }
+
+    if (editPhone) {
+      const phoneResult = phoneSchema.safeParse(editPhone);
+      if (!phoneResult.success) { toast.error('Telefone inválido'); return; }
+    }
+
+    if (!editBirthDate) { toast.error('Informe a data de nascimento'); return; }
+
+    const cleanPhone = editPhone.replace(/\D/g, '') || null;
+
+    const { error } = await supabase
+      .from('managed_persons')
+      .update({
+        name: nameResult.data,
+        phone: cleanPhone,
+        birth_date: editBirthDate,
+      })
+      .eq('id', personId);
+
+    if (error) {
+      console.error('Update error:', error);
+      toast.error('Erro ao atualizar cadastro.');
+    } else {
+      toast.success('Cadastro atualizado!');
+      setEditingId(null);
+      await fetchPersons();
+    }
   };
 
   const handleDelete = async (person: ManagedPerson) => {
@@ -161,7 +231,10 @@ export default function ManagedPersons() {
               Pessoas Cadastradas
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {persons.length}/{limit} {persons.length === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}
+              <span className="font-medium text-foreground">{activeCount}</span>/{limit} ativos
+              {persons.length > activeCount && (
+                <span className="ml-2 text-muted-foreground/60">· {persons.length - activeCount} inativo(s)</span>
+              )}
               {planType === 'standard' && ` — Upgrade libera até ${PLAN_LIMITS.pessoal.maxPersons}`}
             </p>
           </div>
@@ -179,7 +252,7 @@ export default function ManagedPersons() {
           {canAdd && !showForm && (
             <button
               onClick={() => {
-                if (planType === 'standard' && persons.length >= PLAN_LIMITS.standard.maxPersons) {
+                if (planType === 'standard' && activeCount >= PLAN_LIMITS.standard.maxPersons) {
                   toast.error('Faça upgrade para cadastrar mais pessoas.');
                   return;
                 }
@@ -202,6 +275,7 @@ export default function ManagedPersons() {
         </motion.div>
 
         {/* Add Form */}
+        <AnimatePresence>
         {showForm && (
           <motion.form
             initial={{ opacity: 0, height: 0 }}
@@ -248,9 +322,10 @@ export default function ManagedPersons() {
             </div>
           </motion.form>
         )}
+        </AnimatePresence>
 
         {/* Upsell */}
-        {planType === 'standard' && persons.length >= PLAN_LIMITS.standard.maxPersons && (
+        {planType === 'standard' && activeCount >= PLAN_LIMITS.standard.maxPersons && (
           <motion.div {...fadeUp} className="bg-primary/5 border border-primary/20 rounded-xl p-5 flex items-center gap-4">
             <Crown className="w-8 h-8 text-primary shrink-0" />
             <div className="flex-1">
@@ -264,8 +339,9 @@ export default function ManagedPersons() {
         )}
 
         {/* Invite form */}
+        <AnimatePresence>
         {showInviteForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-card rounded-xl border border-border p-6 space-y-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-card rounded-xl border border-border p-6 space-y-4">
             <h3 className="text-lg font-serif mb-2 flex items-center gap-2"><Send className="w-4 h-4 text-primary" /> Convidar por email</h3>
             <p className="text-xs text-muted-foreground">O convidado receberá um email para se cadastrar na plataforma e será vinculado à sua conta.</p>
             <div className="flex gap-3">
@@ -294,6 +370,7 @@ export default function ManagedPersons() {
             <button onClick={() => setShowInviteForm(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
           </motion.div>
         )}
+        </AnimatePresence>
 
         {/* Persons List */}
         {loading ? (
@@ -315,48 +392,130 @@ export default function ManagedPersons() {
           </div>
         ) : (
           <div className="space-y-3">
-            {persons.map((person, i) => (
-              <motion.div
-                key={person.id}
-                {...fadeUp}
-                transition={{ delay: i * 0.05 }}
-                className="bg-card rounded-xl border border-border p-5 flex items-center justify-between gap-4"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                    <UserCircle className="w-5 h-5 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{person.name}</p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-muted-foreground">{formatCpfDisplay(person.cpf)}</span>
-                      {person.phone && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Phone className="w-3 h-3" />
-                          {person.phone}
-                        </span>
-                      )}
-                      {person.age !== null && (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {person.age} anos
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            {persons.map((person, i) => {
+              const isEditing = editingId === person.id;
 
-                {persons.length > 1 && (
-                  <button
-                    onClick={() => handleDelete(person)}
-                    className="text-muted-foreground hover:text-destructive transition-colors p-2"
-                    title="Remover pessoa"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                )}
-              </motion.div>
-            ))}
+              return (
+                <motion.div
+                  key={person.id}
+                  {...fadeUp}
+                  transition={{ delay: i * 0.05 }}
+                  className={`bg-card rounded-xl border p-5 transition-all ${
+                    person.is_active
+                      ? 'border-border'
+                      : 'border-border/40 opacity-60'
+                  }`}
+                >
+                  {isEditing ? (
+                    /* Edit Mode */
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nome</label>
+                          <input type="text" value={editName} onChange={e => setEditName(e.target.value)} maxLength={100} className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">CPF (não editável)</label>
+                          <input type="text" value={formatCpfDisplay(person.cpf)} disabled className={`${inputClass} opacity-50 cursor-not-allowed`} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Telefone</label>
+                          <input type="tel" value={editPhone} onChange={e => setEditPhone(formatPhone(e.target.value))} maxLength={15} placeholder="(11) 99999-9999" className={inputClass} />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Data de nascimento</label>
+                          <input type="date" value={editBirthDate} onChange={e => setEditBirthDate(e.target.value)} max={new Date().toISOString().split('T')[0]} className={inputClass} />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button onClick={() => handleSaveEdit(person.id)} className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5" /> Salvar
+                        </button>
+                        <button onClick={() => setEditingId(null)} className="px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted/30 flex items-center gap-1.5">
+                          <X className="w-3.5 h-3.5" /> Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* View Mode */
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                          person.is_active ? 'bg-primary/10' : 'bg-muted/30'
+                        }`}>
+                          <UserCircle className={`w-5 h-5 ${person.is_active ? 'text-primary' : 'text-muted-foreground'}`} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-foreground truncate">{person.name}</p>
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.65rem] font-semibold uppercase tracking-wider ${
+                              person.is_active
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                : 'bg-muted/50 text-muted-foreground'
+                            }`}>
+                              {person.is_active ? 'Ativo' : 'Inativo'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                            <span className="text-xs text-muted-foreground">{formatCpfDisplay(person.cpf)}</span>
+                            {person.phone && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Phone className="w-3 h-3" />
+                                {person.phone}
+                              </span>
+                            )}
+                            {person.age !== null && (
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {person.age} anos
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {/* Toggle active/inactive */}
+                        <button
+                          onClick={() => handleToggleActive(person)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            person.is_active
+                              ? 'text-emerald-600 hover:bg-emerald-500/10'
+                              : 'text-muted-foreground hover:bg-muted/30'
+                          }`}
+                          title={person.is_active ? 'Desativar perfil' : 'Reativar perfil'}
+                        >
+                          {person.is_active
+                            ? <ToggleRight className="w-5 h-5" />
+                            : <ToggleLeft className="w-5 h-5" />
+                          }
+                        </button>
+
+                        {/* Edit */}
+                        <button
+                          onClick={() => startEditing(person)}
+                          className="text-muted-foreground hover:text-foreground transition-colors p-2"
+                          title="Editar cadastro"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+
+                        {/* Delete */}
+                        {persons.length > 1 && (
+                          <button
+                            onClick={() => handleDelete(person)}
+                            className="text-muted-foreground hover:text-destructive transition-colors p-2"
+                            title="Remover pessoa"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </div>
