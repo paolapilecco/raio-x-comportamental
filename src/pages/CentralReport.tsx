@@ -418,7 +418,7 @@ const CentralReport = () => {
           </motion.div>
 
           {/* Blurred Preview Section — only for non-premium */}
-          {!hasAccess && totalTests > 0 && (
+          {!hasAccess && (
             <div className="relative">
               {/* Blurred fake content */}
               <div className="pointer-events-none select-none space-y-6" style={{ filter: 'blur(5px)' }}>
@@ -500,8 +500,12 @@ const CentralReport = () => {
                   </div>
                   <h3 className="text-lg font-serif text-foreground">Análise completa disponível</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Identificamos <span className="font-semibold text-foreground">{personSummaries.filter(s => s.dominantPattern).length} padrões</span> em{' '}
-                    <span className="font-semibold text-foreground">{totalTests} testes</span> realizados.
+                    {totalTests > 0 ? (
+                      <>Identificamos <span className="font-semibold text-foreground">{personSummaries.filter(s => s.dominantPattern).length} padrões</span> em{' '}
+                      <span className="font-semibold text-foreground">{totalTests} testes</span> realizados. </>
+                    ) : (
+                      <>Seus <span className="font-semibold text-foreground">{managedPersons.length} perfis</span> estão prontos para análise. </>
+                    )}
                     Desbloqueie para ver radar, conflitos e recomendações.
                   </p>
                   <button
