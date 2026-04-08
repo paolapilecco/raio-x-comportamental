@@ -13,10 +13,13 @@ import { toast } from 'sonner';
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
+const RETEST_INTERVAL_DAYS = 15;
+
 interface PersonSummary {
   id: string; name: string; is_active: boolean; age: number | null;
   testCount: number; latestIntensity: string | null; latestDate: string | null;
   criticalCount: number; hasPendingReminder: boolean;
+  daysSinceLastTest: number | null; retestAvailable: boolean;
 }
 
 export default function ProfessionalDashboard() {
