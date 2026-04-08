@@ -16,6 +16,7 @@ import Profile from "./pages/Profile";
 import Premium from "./pages/Premium";
 import Checkout from "./pages/Checkout";
 import ResetPassword from "./pages/ResetPassword";
+import ManagedPersons from "./pages/ManagedPersons";
 import AdminPrompts from "./pages/AdminPrompts";
 import AdminTestModules from "./pages/AdminTestModules";
 import AdminQuestions from "./pages/AdminQuestions";
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+            <Route path="/pessoas" element={<ProtectedRoute><ManagedPersons /></ProtectedRoute>} />
             <Route path="/tests" element={<ProtectedRoute><TestCatalog /></ProtectedRoute>} />
             <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
             <Route path="/diagnostic" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />

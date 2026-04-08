@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Questionnaire from '@/components/diagnostic/Questionnaire';
 import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
 import Report from '@/components/diagnostic/Report';
@@ -14,8 +14,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { UserCircle, ChevronRight } from 'lucide-react';
 
-type Step = 'loading' | 'questionnaire' | 'analyzing' | 'report';
+type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
 const PURPOSE_SLUG = 'proposito-sentido';
 const BEHAVIORAL_SLUG = 'padrao-comportamental';
@@ -28,6 +29,12 @@ interface DbQuestion {
   options?: string[] | null;
   option_scores?: number[] | null;
   context?: string | null;
+}
+
+interface ManagedPerson {
+  id: string;
+  name: string;
+  cpf: string;
 }
 
 /**
@@ -90,6 +97,8 @@ const Diagnostic = () => {
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
   const [dbQuestions, setDbQuestions] = useState<DbQuestion[]>([]);
+  const [persons, setPersons] = useState<ManagedPerson[]>([]);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const { user, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
@@ -189,17 +198,35 @@ const Diagnostic = () => {
         option_scores: q.option_scores,
         context: q.context || null,
       })));
-      setStep('questionnaire');
+
+      // Fetch managed persons for person selection
+      const { data: personData } = await supabase
+        .from('managed_persons')
+        .select('id, name, cpf')
+        .eq('owner_id', user!.id)
+        .order('created_at', { ascending: true });
+
+      const fetchedPersons = (personData || []) as ManagedPerson[];
+      setPersons(fetchedPersons);
+
+      if (fetchedPersons.length <= 1) {
+        // Auto-select if only one person
+        setSelectedPersonId(fetchedPersons[0]?.id || null);
+        setStep('questionnaire');
+      } else {
+        setStep('select-person');
+      }
     };
 
     fetchModuleAndQuestions();
-  }, [slug, navigate, isSuperAdmin]);
+  }, [slug, navigate, isSuperAdmin, user]);
 
   const saveToDatabase = useCallback(async (answers: Answer[], analysisResult: DiagnosticResult) => {
     if (!user) return;
     try {
       const sessionInsert: any = { user_id: user.id };
       if (moduleId) sessionInsert.test_module_id = moduleId;
+      if (selectedPersonId) sessionInsert.person_id = selectedPersonId;
 
       const { data: session, error: sessionError } = await supabase
         .from('diagnostic_sessions')
@@ -253,7 +280,7 @@ const Diagnostic = () => {
       console.error('Error saving diagnostic:', err);
       toast.error('Erro ao salvar diagnóstico, mas seu resultado está disponível.');
     }
-  }, [user, moduleId]);
+  }, [user, moduleId, selectedPersonId]);
 
   /**
    * Local fallback analysis (hardcoded patterns).
@@ -506,6 +533,43 @@ const Diagnostic = () => {
           <div key="loading" className="min-h-screen flex items-center justify-center">
             <div className="animate-pulse text-muted-foreground text-sm tracking-wide">Carregando perguntas...</div>
           </div>
+        )}
+        {step === 'select-person' && (
+          <motion.div
+            key="select-person"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="min-h-screen flex items-center justify-center px-4"
+          >
+            <div className="w-full max-w-md space-y-6">
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-serif">Para quem é esta leitura?</h2>
+                <p className="text-sm text-muted-foreground">Selecione a pessoa que fará o teste</p>
+              </div>
+              <div className="space-y-3">
+                {persons.map(person => (
+                  <button
+                    key={person.id}
+                    onClick={() => {
+                      setSelectedPersonId(person.id);
+                      setStep('questionnaire');
+                    }}
+                    className="w-full flex items-center gap-4 bg-card rounded-xl border border-border p-4 hover:border-primary/30 hover:bg-primary/5 transition-all text-left group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <UserCircle className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">{person.name}</p>
+                      <p className="text-xs text-muted-foreground">CPF: {person.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
         {step === 'questionnaire' && dbQuestions.length > 0 && (
           <Questionnaire

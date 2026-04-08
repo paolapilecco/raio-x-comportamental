@@ -10,8 +10,8 @@ import {
 import { toast } from 'sonner';
 
 const PLANS = {
-  monthly: { label: 'Mensal', price: 5.00, priceLabel: 'R$ 5,00', period: '/mês' },
-  yearly: { label: 'Anual', price: 49.90, priceLabel: 'R$ 49,90', period: '/ano', savings: 'Economize R$ 9,98' },
+  monthly: { label: 'Mensal', price: 5.99, priceLabel: 'R$ 5,99', period: '/mês' },
+  yearly: { label: 'Anual', price: 59.90, priceLabel: 'R$ 59,90', period: '/ano', savings: 'Economize R$ 11,98' },
 };
 
 type PlanType = 'monthly' | 'yearly';

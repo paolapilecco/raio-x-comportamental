@@ -1,4 +1,4 @@
-import { LayoutDashboard, User, FileText, Activity, LogOut, Settings, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Activity, LogOut, Settings, Shield } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +16,8 @@ import {
 
 const navItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Seus Perfis', url: '/tests', icon: User },
+  { title: 'Pessoas', url: '/pessoas', icon: Users },
+  { title: 'Catálogo', url: '/tests', icon: Activity },
   { title: 'Relatórios', url: '/central-report', icon: FileText },
   { title: 'Acompanhamento', url: '/history', icon: Activity },
 ];
