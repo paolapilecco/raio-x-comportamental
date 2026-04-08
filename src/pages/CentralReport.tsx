@@ -832,7 +832,7 @@ const CentralReport = () => {
                 )}
 
                 {/* AI Insights */}
-                <motion.div {...fadeUp} transition={{ delay: 0.5 }} className="bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 rounded-xl border border-primary/20 p-6 md:p-8 shadow-sm">
+                <motion.div {...fadeUp} transition={{ delay: 0.5 }} className={`bg-gradient-to-br from-primary/5 via-primary/10 to-accent/5 rounded-xl border border-primary/20 p-6 md:p-8 shadow-sm ${!hasAccess ? 'filter blur-[6px]' : ''}`}>
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                       <Sparkles className="w-5 h-5 text-primary" />
