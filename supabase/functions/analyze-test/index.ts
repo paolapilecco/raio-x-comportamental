@@ -981,8 +981,11 @@ serve(async (req) => {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    // Build analysis data
-    const sortedScores = [...scores].sort((a, b) => b.percentage - a.percentage);
+    // Build analysis data — cap all percentages at 100% as safety net
+    const sortedScores = [...scores].map(s => ({
+      ...s,
+      percentage: Math.min(100, Math.max(0, s.percentage)),
+    })).sort((a, b) => b.percentage - a.percentage);
     const dominant = sortedScores[0];
     const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
     const intensity = dominant.percentage >= 75 ? "alto" : dominant.percentage >= 50 ? "moderado" : "leve";
