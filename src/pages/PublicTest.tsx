@@ -33,46 +33,39 @@ export default function PublicTest() {
   }, [token]);
 
   const loadInvite = async () => {
-    // Fetch invite info (anon can read pending invites)
-    const { data: invite, error } = await supabase
-      .from('test_invites')
-      .select('id, test_module_id, person_id, status, expires_at')
-      .eq('token', token!)
-      .maybeSingle();
+    // Validate token via edge function (no direct DB access for anon)
+    const { data: inviteData, error: inviteErr } = await supabase.functions.invoke('validate-invite', {
+      body: null,
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
 
-    if (error || !invite) {
-      setErrorMsg('Este link é inválido ou já foi utilizado.');
+    // Use fetch directly since supabase.functions.invoke doesn't support query params well for GET
+    const baseUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
+    let inviteInfo: any = null;
+    try {
+      const resp = await fetch(`${baseUrl}/validate-invite?token=${token}`, {
+        headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+      });
+      inviteInfo = await resp.json();
+      if (!resp.ok || inviteInfo.error) {
+        setErrorMsg(inviteInfo.error || 'Link inválido.');
+        setStep('error');
+        return;
+      }
+    } catch {
+      setErrorMsg('Erro ao validar link.');
       setStep('error');
       return;
     }
 
-    if (invite.status !== 'pending') {
-      setErrorMsg('Este teste já foi respondido.');
-      setStep('error');
-      return;
-    }
+    setTestName(inviteInfo.testName || 'Diagnóstico');
 
-    if (new Date(invite.expires_at) < new Date()) {
-      setErrorMsg('Este link expirou. Solicite um novo à sua profissional.');
-      setStep('error');
-      return;
-    }
-
-    // Fetch test module name (public select on active modules)
-    const { data: mod } = await supabase
-      .from('test_modules')
-      .select('name')
-      .eq('id', invite.test_module_id)
-      .maybeSingle();
-
-    setTestName(mod?.name || 'Diagnóstico');
-
-    // Fetch questions (authenticated users can view, but anon needs them too)
-    // Questions are public for authenticated. For anon we use anon key which has SELECT on questions table.
+    // Fetch questions (anon can read questions table)
     const { data: qs, error: qErr } = await supabase
       .from('questions')
       .select('sort_order, text, axes, type, options, option_scores, context')
-      .eq('test_id', invite.test_module_id)
+      .eq('test_id', inviteInfo.testModuleId)
       .order('sort_order', { ascending: true });
 
     if (qErr || !qs || qs.length === 0) {
