@@ -534,6 +534,43 @@ const Diagnostic = () => {
             <div className="animate-pulse text-muted-foreground text-sm tracking-wide">Carregando perguntas...</div>
           </div>
         )}
+        {step === 'select-person' && (
+          <motion.div
+            key="select-person"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="min-h-screen flex items-center justify-center px-4"
+          >
+            <div className="w-full max-w-md space-y-6">
+              <div className="text-center space-y-2">
+                <h2 className="text-2xl font-serif">Para quem é esta leitura?</h2>
+                <p className="text-sm text-muted-foreground">Selecione a pessoa que fará o teste</p>
+              </div>
+              <div className="space-y-3">
+                {persons.map(person => (
+                  <button
+                    key={person.id}
+                    onClick={() => {
+                      setSelectedPersonId(person.id);
+                      setStep('questionnaire');
+                    }}
+                    className="w-full flex items-center gap-4 bg-card rounded-xl border border-border p-4 hover:border-primary/30 hover:bg-primary/5 transition-all text-left group"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <UserCircle className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-foreground">{person.name}</p>
+                      <p className="text-xs text-muted-foreground">CPF: {person.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4')}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+        )}
         {step === 'questionnaire' && dbQuestions.length > 0 && (
           <Questionnaire
             key="q"
