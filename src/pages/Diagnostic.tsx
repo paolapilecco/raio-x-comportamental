@@ -205,6 +205,7 @@ const Diagnostic = () => {
         .from('managed_persons')
         .select('id, name, cpf')
         .eq('owner_id', user!.id)
+        .eq('is_active', true)
         .order('created_at', { ascending: true });
 
       let fetchedPersons = (personData || []) as ManagedPerson[];
