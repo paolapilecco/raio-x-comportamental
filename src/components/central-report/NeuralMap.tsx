@@ -8,13 +8,13 @@ interface NeuralMapProps {
 function scoreColorRgb(score: number): [number, number, number] {
   if (score <= 40) return [34, 197, 94];   // green
   if (score <= 70) return [234, 179, 8];   // yellow
-  return [239, 68, 68];                     // red
+  return [100, 180, 255];                   // light blue
 }
 
 function scoreGlowColor(score: number): string {
   if (score <= 40) return 'rgba(34,197,94,';
   if (score <= 70) return 'rgba(234,179,8,';
-  return 'rgba(239,68,68,';
+  return 'rgba(100,180,255,';
 }
 
 interface Particle {

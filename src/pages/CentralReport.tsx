@@ -154,7 +154,7 @@ const CentralReport = () => {
 
         const aggregatedScores: Record<string, number> = {};
         Object.entries(axisData).forEach(([key, val]) => {
-          aggregatedScores[key] = Math.round(val.totalWeighted / val.totalWeight);
+          aggregatedScores[key] = Math.min(100, Math.round(val.totalWeighted / val.totalWeight));
         });
 
         const sortedPatterns = Object.entries(aggregatedScores)
