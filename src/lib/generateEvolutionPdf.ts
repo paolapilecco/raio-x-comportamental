@@ -41,7 +41,7 @@ function drawSection(ctx: Ctx, title: string) {
   ctx.y += 16;
 }
 
-function drawKPIRow(ctx: Ctx, items: { label: string; value: string; color?: readonly number[] }[]) {
+function drawKPIRow(ctx: Ctx, items: { label: string; value: string; color?: RGB }[]) {
   pb(ctx, 28);
   const gap = 4;
   const w = (CW - gap * (items.length - 1)) / items.length;
