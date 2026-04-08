@@ -116,7 +116,6 @@ export default function ProfessionalDashboard() {
   const criticalPersons = persons.filter(p => p.criticalCount > 0 && p.is_active);
   const retestPersons = persons.filter(p => p.retestAvailable && p.is_active);
   const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
-  const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
 
   const handleExportCSV = () => {
     const header = 'Nome,Status,Idade,Testes,Intensidade Atual,Última Data,Padrões Críticos\n';
