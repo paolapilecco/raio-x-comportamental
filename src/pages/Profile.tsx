@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, User, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity, Award } from 'lucide-react';
 import { useBadges } from '@/hooks/useBadges';
 import { useGamification } from '@/hooks/useGamification';
+import { BadgeUnlockCelebration } from '@/components/gamification/BadgeUnlockCelebration';
 import { toast } from 'sonner';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { ProfileSkeleton } from '@/components/skeletons/ProfileSkeleton';
@@ -110,6 +111,7 @@ const Profile = () => {
 
   return (
     <div className="min-h-screen px-4 py-8 md:py-12 relative overflow-hidden">
+      <BadgeUnlockCelebration badges={badgesData.badges} loading={badgesData.loading} />
       {/* Ambient background */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-[5%] right-[0%] w-[500px] h-[500px] rounded-full bg-primary/[0.03] blur-[120px]" />
