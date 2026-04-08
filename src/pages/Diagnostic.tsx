@@ -14,7 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { UserCircle, ChevronRight } from 'lucide-react';
+import { UserCircle, ChevronRight, AlertTriangle } from 'lucide-react';
+import { canAccessModule, getMonthlyTestLimit, getCurrentMonthYear } from '@/lib/planLimits';
 
 type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
@@ -99,7 +100,7 @@ const Diagnostic = () => {
   const [dbQuestions, setDbQuestions] = useState<DbQuestion[]>([]);
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
-  const { user, isPremium, isSuperAdmin } = useAuth();
+  const { user, isPremium, isSuperAdmin, planType } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
 
@@ -109,7 +110,7 @@ const Diagnostic = () => {
 
   useEffect(() => {
     if (!canAccessTest) {
-      toast.error('Este teste requer o plano Premium');
+      toast.error('Este teste requer um plano pago');
       navigate('/tests');
     }
   }, [canAccessTest, navigate]);
