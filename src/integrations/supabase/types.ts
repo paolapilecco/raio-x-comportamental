@@ -301,6 +301,7 @@ export type Database = {
           created_at: string
           id: string
           invited_by: string | null
+          is_active: boolean
           name: string
           owner_id: string
           phone: string | null
@@ -313,6 +314,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_by?: string | null
+          is_active?: boolean
           name: string
           owner_id: string
           phone?: string | null
@@ -325,6 +327,7 @@ export type Database = {
           created_at?: string
           id?: string
           invited_by?: string | null
+          is_active?: boolean
           name?: string
           owner_id?: string
           phone?: string | null
