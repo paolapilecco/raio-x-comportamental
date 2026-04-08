@@ -97,6 +97,8 @@ const Diagnostic = () => {
   const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [moduleId, setModuleId] = useState<string | null>(null);
   const [dbQuestions, setDbQuestions] = useState<DbQuestion[]>([]);
+  const [persons, setPersons] = useState<ManagedPerson[]>([]);
+  const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
   const { user, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
