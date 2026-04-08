@@ -659,8 +659,8 @@ const CentralReport = () => {
                     <Brain className="w-5 h-5 text-primary" />
                     <h3 className="text-xl font-serif">Padrão Dominante Global</h3>
                   </div>
-                  <p className="text-2xl font-serif text-foreground mb-2">{dominantDef?.label || dominantKey}</p>
-                  <p className="text-sm text-foreground/70 leading-relaxed mb-4">{dominantDef?.description}</p>
+                  <p className={`text-2xl font-serif text-foreground mb-2 ${!hasAccess ? 'filter blur-[3px]' : ''}`}>{dominantDef?.label || dominantKey}</p>
+                  <p className={`text-sm text-foreground/70 leading-relaxed mb-4 ${!hasAccess ? 'filter blur-[5px]' : ''}`}>{dominantDef?.description}</p>
                   <div className="grid sm:grid-cols-2 gap-4 mt-4">
                     {centralProfile.core_pain && (
                       <div className="bg-background/50 rounded-lg p-4 border border-border">
