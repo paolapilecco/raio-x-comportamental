@@ -31,6 +31,12 @@ interface DbQuestion {
   context?: string | null;
 }
 
+interface ManagedPerson {
+  id: string;
+  name: string;
+  cpf: string;
+}
+
 /**
  * Calculate raw scores from answers using question axes.
  * This is pure math — no interpretation.
