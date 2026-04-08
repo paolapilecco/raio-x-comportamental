@@ -306,6 +306,21 @@ const CentralReport = () => {
   const totalActions = personSummaries.reduce((s, p) => s + p.keyActions.length, 0);
   const selectedPerson = managedPersons.find(p => p.id === selectedPersonId);
 
+  // Helper: fake preview data for non-premium summary
+  const fakeRadarPreview = [
+    { axis: 'Execução', value: 72 }, { axis: 'Emocional', value: 58 },
+    { axis: 'Sobrecarga', value: 65 }, { axis: 'Fuga', value: 44 },
+    { axis: 'Perfeccionismo', value: 81 }, { axis: 'Validação', value: 37 },
+    { axis: 'Autocrítica', value: 69 }, { axis: 'Rotina', value: 53 },
+  ];
+  const fakePatternBars = [
+    { label: 'Perfeccionismo Paralisante', score: 81 },
+    { label: 'Execução Instável', score: 72 },
+    { label: 'Autocrítica Excessiva', score: 69 },
+    { label: 'Sobrecarga Funcional', score: 65 },
+    { label: 'Autossabotagem Emocional', score: 58 },
+  ];
+
   // ══════════════════════ SUMMARY SCREEN ══════════════════════
   if (!selectedPersonId) {
     return (
@@ -322,131 +337,184 @@ const CentralReport = () => {
             </div>
           </motion.div>
 
-          {/* Premium gate - teaser preview */}
-          <div className="relative">
-            {!hasAccess && (
-              <>
-                {/* Gradient fade overlay - lets user see content partially */}
-                <div className="absolute inset-0 z-20 pointer-events-none rounded-xl" style={{
-                  background: 'linear-gradient(to bottom, transparent 0%, transparent 25%, hsl(var(--background) / 0.3) 40%, hsl(var(--background) / 0.7) 55%, hsl(var(--background) / 0.95) 70%, hsl(var(--background)) 85%)',
-                }} />
-                {/* CTA floating at bottom of visible area */}
-                <div className="absolute bottom-0 left-0 right-0 z-30 flex flex-col items-center pb-8 pt-16">
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4, duration: 0.6 }}
-                    className="bg-card/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 sm:p-8 text-center space-y-4 max-w-sm mx-4 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.15)]"
-                  >
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto shadow-lg">
-                      <Lock className="w-6 h-6 text-white" />
-                    </div>
-                    <h3 className="text-lg font-serif text-foreground">Seu relatório está pronto</h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Veja seus padrões, conflitos internos e ações de transformação. Desbloqueie agora.
-                    </p>
-                    <button
-                      onClick={() => navigate('/checkout')}
-                      className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all duration-300 flex items-center gap-2 mx-auto shadow-[0_8px_25px_-6px_rgba(217,160,32,0.4)] hover:shadow-[0_12px_35px_-4px_rgba(217,160,32,0.5)] hover:translate-y-[-1px]"
-                    >
-                      <Crown className="w-4 h-4" /> Desbloquear Premium
-                    </button>
-                    <p className="text-[0.65rem] text-muted-foreground/50">A partir de R$ 5,99/mês</p>
-                  </motion.div>
-                </div>
-              </>
-            )}
-
-            <div className={`space-y-6 ${!hasAccess ? 'pointer-events-none select-none' : ''}`}>
-              {/* KPI Cards */}
-              <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
-                  <Users className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-3xl font-serif font-bold text-foreground">{managedPersons.length}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Perfis Cadastrados</p>
-                </div>
-                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
-                  <ClipboardList className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-3xl font-serif font-bold text-foreground">{totalTests}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Testes Realizados</p>
-                </div>
-                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
-                  <CheckCircle2 className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-3xl font-serif font-bold text-foreground">{totalActions}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Ações Propostas</p>
-                </div>
-                <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
-                  <Brain className="w-6 h-6 text-primary mx-auto mb-2" />
-                  <p className="text-3xl font-serif font-bold text-foreground">{personSummaries.filter(s => s.dominantPattern).length}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Perfis Analisados</p>
-                </div>
-              </motion.div>
-
-              {/* Person Cards */}
-              <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
-                <h2 className="text-lg font-serif mb-4 flex items-center gap-2">
-                  <User className="w-5 h-5 text-primary" />
-                  Selecione um perfil para visualizar
-                </h2>
-                <div className="space-y-3">
-                  {personSummaries.map((summary, i) => {
-                    const def = summary.dominantPattern ? patternDefinitions?.[summary.dominantPattern as PatternKey] : null;
-                    return (
-                      <motion.button
-                        key={summary.person.id}
-                        {...fadeUp}
-                        transition={{ delay: 0.12 + i * 0.05 }}
-                        onClick={() => setSelectedPersonId(summary.person.id)}
-                        className="w-full bg-card rounded-xl border border-border p-5 shadow-sm hover:border-primary/40 hover:shadow-md transition-all text-left group"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4 flex-1 min-w-0">
-                            <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                              <User className="w-5 h-5 text-primary" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-foreground truncate">{summary.person.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {summary.person.age ? `${summary.person.age} anos` : ''} · CPF: ***{summary.person.cpf.slice(-4)}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <div className="text-right hidden sm:block">
-                              <p className="text-xs text-muted-foreground">{summary.testsCount} {summary.testsCount === 1 ? 'teste' : 'testes'}</p>
-                              {summary.lastTestDate && (
-                                <p className="text-xs text-muted-foreground">
-                                  Último: {new Date(summary.lastTestDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
-                                </p>
-                              )}
-                            </div>
-                            {def && (
-                              <span className="hidden md:inline-flex text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium truncate max-w-[160px]">
-                                {def.label}
-                              </span>
-                            )}
-                            {summary.testsCount === 0 && (
-                              <span className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground font-medium">Sem testes</span>
-                            )}
-                            <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                          </div>
-                        </div>
-                        {summary.keyActions.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {summary.keyActions.map((action, j) => (
-                              <span key={j} className="text-xs bg-muted/50 text-muted-foreground rounded-md px-2 py-1 truncate max-w-[250px]">
-                                {action.substring(0, 60)}{action.length > 60 ? '...' : ''}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </motion.button>
-                    );
-                  })}
-                </div>
-              </motion.div>
+          {/* KPI Cards — always visible */}
+          <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+              <Users className="w-6 h-6 text-primary mx-auto mb-2" />
+              <p className="text-3xl font-serif font-bold text-foreground">{managedPersons.length}</p>
+              <p className="text-xs text-muted-foreground mt-1">Perfis Cadastrados</p>
             </div>
-          </div>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+              <ClipboardList className="w-6 h-6 text-primary mx-auto mb-2" />
+              <p className="text-3xl font-serif font-bold text-foreground">{totalTests}</p>
+              <p className="text-xs text-muted-foreground mt-1">Testes Realizados</p>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+              <CheckCircle2 className="w-6 h-6 text-primary mx-auto mb-2" />
+              <p className="text-3xl font-serif font-bold text-foreground">{totalActions}</p>
+              <p className="text-xs text-muted-foreground mt-1">Ações Propostas</p>
+            </div>
+            <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
+              <Brain className="w-6 h-6 text-primary mx-auto mb-2" />
+              <p className="text-3xl font-serif font-bold text-foreground">{personSummaries.filter(s => s.dominantPattern).length}</p>
+              <p className="text-xs text-muted-foreground mt-1">Perfis Analisados</p>
+            </div>
+          </motion.div>
+
+          {/* Person Cards — always visible & clickable */}
+          <motion.div {...fadeUp} transition={{ delay: 0.1 }}>
+            <h2 className="text-lg font-serif mb-4 flex items-center gap-2">
+              <User className="w-5 h-5 text-primary" />
+              Selecione um perfil para visualizar
+            </h2>
+            <div className="space-y-3">
+              {personSummaries.map((summary, i) => {
+                const def = summary.dominantPattern ? patternDefinitions?.[summary.dominantPattern as PatternKey] : null;
+                return (
+                  <motion.button
+                    key={summary.person.id}
+                    {...fadeUp}
+                    transition={{ delay: 0.12 + i * 0.05 }}
+                    onClick={() => hasAccess ? setSelectedPersonId(summary.person.id) : navigate('/checkout')}
+                    className="w-full bg-card rounded-xl border border-border p-5 shadow-sm hover:border-primary/40 hover:shadow-md transition-all text-left group"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                        <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <User className="w-5 h-5 text-primary" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">{summary.person.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {summary.person.age ? `${summary.person.age} anos` : ''} · CPF: ***{summary.person.cpf.slice(-4)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right hidden sm:block">
+                          <p className="text-xs text-muted-foreground">{summary.testsCount} {summary.testsCount === 1 ? 'teste' : 'testes'}</p>
+                          {summary.lastTestDate && (
+                            <p className="text-xs text-muted-foreground">
+                              Último: {new Date(summary.lastTestDate).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                            </p>
+                          )}
+                        </div>
+                        {def && (
+                          <span className="hidden md:inline-flex text-xs px-3 py-1 rounded-full bg-primary/10 text-primary font-medium truncate max-w-[160px]">
+                            {def.label}
+                          </span>
+                        )}
+                        {summary.testsCount === 0 && (
+                          <span className="text-xs px-3 py-1 rounded-full bg-muted text-muted-foreground font-medium">Sem testes</span>
+                        )}
+                        {!hasAccess && <Lock className="w-4 h-4 text-amber-500 shrink-0" />}
+                        <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </motion.div>
+
+          {/* Blurred Preview Section — only for non-premium */}
+          {!hasAccess && totalTests > 0 && (
+            <div className="relative">
+              {/* Blurred fake content */}
+              <div className="pointer-events-none select-none space-y-6" style={{ filter: 'blur(5px)' }}>
+                {/* Fake pattern card */}
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Brain className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-serif">Padrão Dominante Global</h3>
+                  </div>
+                  <p className="text-xl font-serif mb-2">Perfeccionismo Paralisante</p>
+                  <p className="text-sm text-foreground/70">Tendência a bloquear ação por medo de errar, gerando ciclos de procrastinação e autocrítica.</p>
+                </div>
+
+                {/* Fake pattern bars */}
+                <div className="bg-card rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Layers className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-serif">Combinação de Padrões</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {fakePatternBars.map((bar, i) => (
+                      <div key={i}>
+                        <div className="flex justify-between mb-1">
+                          <span className="text-sm font-medium">{bar.label}</span>
+                          <span className="text-xs text-muted-foreground">{bar.score}%</span>
+                        </div>
+                        <div className="w-full bg-muted/50 rounded-full h-2">
+                          <div className="bg-primary rounded-full h-2" style={{ width: `${bar.score}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Fake radar */}
+                <div className="bg-card rounded-xl border border-border p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Activity className="w-5 h-5 text-primary" />
+                    <h3 className="text-lg font-serif">Mapa de Funcionamento</h3>
+                  </div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <RadarChart data={fakeRadarPreview}>
+                      <PolarGrid stroke="hsl(var(--border))" />
+                      <PolarAngleAxis dataKey="axis" tick={{ fontSize: 9, fill: 'hsl(var(--muted-foreground))' }} />
+                      <Radar dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.15} strokeWidth={2} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Fake conflicts */}
+                <div className="bg-card rounded-xl border border-destructive/20 p-6">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Zap className="w-5 h-5 text-destructive" />
+                    <h3 className="text-lg font-serif">Contradições Internas</h3>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="bg-destructive/5 border border-destructive/10 rounded-lg p-3">
+                      <p className="text-sm font-medium">Perfeccionismo × Execução Instável</p>
+                      <p className="text-xs text-foreground/60 mt-1">Conflito entre padrões opostos detectado no perfil.</p>
+                    </div>
+                    <div className="bg-destructive/5 border border-destructive/10 rounded-lg p-3">
+                      <p className="text-sm font-medium">Autocrítica × Validação Externa</p>
+                      <p className="text-xs text-foreground/60 mt-1">Conflito entre padrões opostos detectado no perfil.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating CTA over blurred content */}
+              <div className="absolute inset-0 z-30 flex items-center justify-center">
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className="bg-card/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 sm:p-8 text-center space-y-4 max-w-sm mx-4 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.2)]"
+                >
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto shadow-lg">
+                    <Eye className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-serif text-foreground">Análise completa disponível</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Identificamos <span className="font-semibold text-foreground">{personSummaries.filter(s => s.dominantPattern).length} padrões</span> em{' '}
+                    <span className="font-semibold text-foreground">{totalTests} testes</span> realizados.
+                    Desbloqueie para ver radar, conflitos e recomendações.
+                  </p>
+                  <button
+                    onClick={() => navigate('/checkout')}
+                    className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all duration-300 flex items-center gap-2 mx-auto shadow-[0_8px_25px_-6px_rgba(217,160,32,0.4)] hover:shadow-[0_12px_35px_-4px_rgba(217,160,32,0.5)] hover:translate-y-[-1px]"
+                  >
+                    <Crown className="w-4 h-4" /> Desbloquear Relatório
+                  </button>
+                  <p className="text-[0.65rem] text-muted-foreground/50">A partir de R$ 5,99/mês</p>
+                </motion.div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
