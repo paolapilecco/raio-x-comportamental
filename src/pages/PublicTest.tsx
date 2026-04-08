@@ -34,13 +34,6 @@ export default function PublicTest() {
 
   const loadInvite = async () => {
     // Validate token via edge function (no direct DB access for anon)
-    const { data: inviteData, error: inviteErr } = await supabase.functions.invoke('validate-invite', {
-      body: null,
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    // Use fetch directly since supabase.functions.invoke doesn't support query params well for GET
     const baseUrl = `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1`;
     let inviteInfo: any = null;
     try {
