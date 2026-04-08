@@ -422,7 +422,8 @@ const CentralReport = () => {
                   <h3 className="text-xl font-serif">Combinação de Padrões</h3>
                 </div>
                 <div className="space-y-3">
-                  {sorted.slice(0, 5).map(([key, score]) => {
+                  {sorted.slice(0, 5).map(([key, rawScore]) => {
+                    const score = Math.min(100, rawScore);
                     const def = patternDefinitions?.[key as PatternKey];
                     return (
                       <div key={key}>
