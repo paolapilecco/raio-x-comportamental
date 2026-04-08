@@ -55,6 +55,9 @@ const App = () => (
             <Route path="/tests" element={<ProtectedRoute><TestCatalog /></ProtectedRoute>} />
             <Route path="/diagnostic/:moduleSlug" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
             <Route path="/diagnostic" element={<ProtectedRoute><Diagnostic /></ProtectedRoute>} />
+            <Route path="/paciente/:personId" element={<ProtectedRoute><PatientDetail /></ProtectedRoute>} />
+            <Route path="/painel-profissional" element={<ProtectedRoute><ProfessionalDashboard /></ProtectedRoute>} />
+            <Route path="/comparar-pacientes" element={<ProtectedRoute><PatientComparison /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/history" element={<ProtectedRoute><DiagnosticHistory /></ProtectedRoute>} />
             <Route path="/central-report" element={<ProtectedRoute><CentralReport /></ProtectedRoute>} />
