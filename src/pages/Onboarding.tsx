@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { ScanLine, ArrowRight, Fingerprint, Shield, Brain, Phone } from 'lucide-react';
+import { ScanLine, ArrowRight, Fingerprint, Shield, Brain, Phone, Home } from 'lucide-react';
 
 const nameSchema = z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100);
 const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido');
