@@ -3,17 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface GamificationData {
   // Streak
-  currentStreak: number; // weeks in a row
+  currentStreak: number;
   longestStreak: number;
   lastActivityDate: string | null;
-  streakActive: boolean; // did something this week?
+  streakActive: boolean;
 
   // XP & Level
   totalXP: number;
   level: number;
   levelName: string;
-  levelProgress: number; // 0-100 within current level
+  levelProgress: number;
   xpToNextLevel: number;
+
+  // Global Score (0-100)
+  globalScore: number;
+  scoreBreakdown: {
+    awareness: number;    // from aggregated behavioral scores (inverted)
+    consistency: number;  // from streak
+    coverage: number;     // from module diversity
+    recency: number;      // from activity recency
+  };
 
   // Stats
   totalTests: number;
@@ -98,6 +107,8 @@ export function useGamification(userId: string | undefined): GamificationData {
     levelName: 'Iniciante',
     levelProgress: 0,
     xpToNextLevel: 100,
+    globalScore: 0,
+    scoreBreakdown: { awareness: 0, consistency: 0, coverage: 0, recency: 0 },
     totalTests: 0,
     uniqueModules: 0,
     loading: true,
@@ -172,6 +183,49 @@ export function useGamification(userId: string | undefined): GamificationData {
       const levelInfo = getLevelInfo(totalXP);
       const lastSession = sessions[sessions.length - 1];
 
+      // Fetch aggregated scores for global score calculation
+      const { data: centralProfile } = await supabase
+        .from('user_central_profile')
+        .select('aggregated_scores')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      // Fetch total active modules for coverage
+      const { count: totalModulesCount } = await supabase
+        .from('test_modules')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Global Score calculation (0-100)
+      // 1. Awareness (40%): inverted avg of behavioral scores (lower patterns = better awareness)
+      let awareness = 50; // default neutral
+      if (centralProfile?.aggregated_scores) {
+        const scores = Object.values(centralProfile.aggregated_scores as Record<string, number>);
+        if (scores.length > 0) {
+          const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+          // Invert: lower avg pattern score = higher awareness
+          awareness = Math.round(Math.max(0, Math.min(100, 100 - avg)));
+        }
+      }
+
+      // 2. Consistency (25%): based on streak (cap at 8 weeks = 100%)
+      const consistency = Math.min(Math.round((currentStreak / 8) * 100), 100);
+
+      // 3. Coverage (20%): modules completed / total modules
+      const totalMods = totalModulesCount || 1;
+      const coverage = Math.min(Math.round((uniqueModules / totalMods) * 100), 100);
+
+      // 4. Recency (15%): days since last activity (0 days = 100%, 30+ days = 0%)
+      let recency = 0;
+      if (lastSession.completed_at) {
+        const daysSince = Math.floor((Date.now() - new Date(lastSession.completed_at).getTime()) / 86400000);
+        recency = Math.max(0, Math.round(100 - (daysSince / 30) * 100));
+      }
+
+      const globalScore = Math.round(
+        awareness * 0.4 + consistency * 0.25 + coverage * 0.2 + recency * 0.15
+      );
+
       setData({
         currentStreak,
         longestStreak,
@@ -179,6 +233,8 @@ export function useGamification(userId: string | undefined): GamificationData {
         streakActive,
         totalXP,
         ...levelInfo,
+        globalScore: Math.max(0, Math.min(100, globalScore)),
+        scoreBreakdown: { awareness, consistency, coverage, recency },
         totalTests,
         uniqueModules,
         loading: false,
