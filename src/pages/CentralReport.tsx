@@ -650,9 +650,9 @@ const CentralReport = () => {
 
           {/* ═══════════════════ TAB 1: RELATÓRIO CENTRAL ═══════════════════ */}
           <TabsContent value="central" className="mt-6">
+            <StickyPremiumCTA />
             <div className="relative">
-              {!hasAccess && <PremiumOverlay />}
-              <div className={`space-y-6 sm:space-y-8 ${!hasAccess ? 'filter blur-sm pointer-events-none select-none' : ''}`}>
+              <div className={`space-y-6 sm:space-y-8 ${!hasAccess ? 'pointer-events-none select-none' : ''}`}>
                 {/* Global Dominant Pattern */}
                 <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl border border-primary/20 p-6 md:p-8 shadow-sm">
                   <div className="flex items-center gap-3 mb-4">
