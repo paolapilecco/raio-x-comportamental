@@ -51,6 +51,7 @@ export default function PatientDetail() {
   const navigate = useNavigate();
   const axisLabels = useAxisLabels();
   const patternDefinitions = usePatternDefinitions();
+  const gamification = usePersonGamification(user?.id, personId);
 
   const [person, setPerson] = useState<PersonData | null>(null);
   const [history, setHistory] = useState<TestEntry[]>([]);
