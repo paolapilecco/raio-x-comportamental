@@ -162,19 +162,35 @@ export default function ManagedPersons() {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {persons.length}/{limit} {persons.length === 1 ? 'pessoa cadastrada' : 'pessoas cadastradas'}
-              {!hasAccess && ' — Premium libera até 3'}
+              {planType === 'standard' && ` — Upgrade libera até ${PLAN_LIMITS.pessoal.maxPersons}`}
             </p>
           </div>
+
+          <div className="flex items-center gap-2">
+            {canInvite && !showInviteForm && (
+              <button
+                onClick={() => setShowInviteForm(true)}
+                className="px-3 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted/30 flex items-center gap-1.5"
+              >
+                <Mail className="w-3.5 h-3.5" /> Convidar
+              </button>
+            )}
 
           {canAdd && !showForm && (
             <button
               onClick={() => {
-                if (!hasAccess && persons.length >= FREE_LIMIT) {
-                  toast.error('Faça upgrade para Premium para cadastrar mais pessoas.');
+                if (planType === 'standard' && persons.length >= PLAN_LIMITS.standard.maxPersons) {
+                  toast.error('Faça upgrade para cadastrar mais pessoas.');
                   return;
                 }
                 setShowForm(true);
               }}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Adicionar
+            </button>
+          )}
               className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
