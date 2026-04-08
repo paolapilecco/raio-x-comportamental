@@ -176,20 +176,49 @@ Responda em JSON com exatamente esta estrutura:
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || "";
+    console.log("AI raw content length:", content.length);
 
-    // Parse JSON from response (handle markdown code blocks)
+    // Robust JSON extraction
     let insights;
     try {
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
-      insights = JSON.parse(jsonMatch[1]!.trim());
-    } catch {
+      let cleaned = content
+        .replace(/```json\s*/gi, "")
+        .replace(/```\s*/g, "")
+        .trim();
+
+      const jsonStart = cleaned.search(/[\{\[]/);
+      const jsonEnd = cleaned.lastIndexOf(jsonStart !== -1 && cleaned[jsonStart] === '[' ? ']' : '}');
+
+      if (jsonStart === -1 || jsonEnd === -1) {
+        throw new Error("No JSON found in response");
+      }
+
+      cleaned = cleaned.substring(jsonStart, jsonEnd + 1);
+
+      try {
+        insights = JSON.parse(cleaned);
+      } catch {
+        cleaned = cleaned
+          .replace(/,\s*}/g, "}")
+          .replace(/,\s*]/g, "]")
+          .replace(/[\x00-\x1F\x7F]/g, "");
+        insights = JSON.parse(cleaned);
+      }
+    } catch (parseErr) {
+      console.error("JSON parse error:", parseErr, "Raw content:", content.substring(0, 500));
       insights = {
-        interpretacao_personalizada: content,
+        interpretacao_personalizada: content.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim(),
         padroes_invisiveis: [],
         contradicoes_profundas: [],
         recomendacoes_praticas: [],
       };
     }
+
+    // Validate structure
+    if (!insights.interpretacao_personalizada) insights.interpretacao_personalizada = "";
+    if (!Array.isArray(insights.padroes_invisiveis)) insights.padroes_invisiveis = [];
+    if (!Array.isArray(insights.contradicoes_profundas)) insights.contradicoes_profundas = [];
+    if (!Array.isArray(insights.recomendacoes_praticas)) insights.recomendacoes_praticas = [];
 
     return new Response(JSON.stringify(insights), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
