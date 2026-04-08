@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip,
 } from 'recharts';
-import { Activity, BarChart3, Sparkles } from 'lucide-react';
+import { Activity, BarChart3, Sparkles, ChevronDown } from 'lucide-react';
 import { fadeUp } from './types';
 import { NeuralMap } from './NeuralMap';
 
@@ -13,16 +13,47 @@ interface RadarSectionProps {
   hasAccess: boolean;
 }
 
+function groupByIntensity(items: [string, number][], axisLabels: Record<string, string>) {
+  const alto = items.filter(([, v]) => v > 70);
+  const moderado = items.filter(([, v]) => v >= 40 && v <= 70);
+  const baixo = items.filter(([, v]) => v < 40);
+  return { alto, moderado, baixo };
+}
+
+function IntensityGroup({ label, emoji, items, axisLabels, colorClass, hasAccess }: {
+  label: string; emoji: string; items: [string, number][]; axisLabels: Record<string, string>; colorClass: string; hasAccess: boolean;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <div>
+      <p className={`text-xs font-semibold mb-1.5 flex items-center gap-1.5 ${colorClass}`}>
+        {emoji} {label} <span className="text-muted-foreground font-normal">({items.length})</span>
+      </p>
+      <div className="flex flex-wrap gap-1.5">
+        {items.map(([key, value]) => (
+          <span key={key} className={`text-[11px] px-2 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground ${!hasAccess ? 'filter blur-[3px]' : ''}`}>
+            {axisLabels[key] || key}: {value}%
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function RadarSection({ scores, axisLabels, hasAccess }: RadarSectionProps) {
   const [view, setView] = useState<'neural' | 'radar'>('neural');
+  const [showAll, setShowAll] = useState(false);
 
   const sorted = Object.entries(scores).sort(([, a], [, b]) => b - a);
   const top5 = sorted.slice(0, 5);
+  const remaining = sorted.slice(5);
   const radarData = top5.map(([key, value]) => ({
     axis: axisLabels[key] || key,
     value,
     fullMark: 100,
   }));
+
+  const { alto, moderado, baixo } = groupByIntensity(remaining, axisLabels);
 
   return (
     <motion.div {...fadeUp} transition={{ delay: 0.15 }} className="bg-card rounded-xl border border-border p-6 md:p-8 shadow-sm">
@@ -86,16 +117,28 @@ export function RadarSection({ scores, axisLabels, hasAccess }: RadarSectionProp
         </ResponsiveContainer>
       )}
 
-      {sorted.length > 5 && (
+      {remaining.length > 0 && (
         <div className="mt-4 pt-4 border-t border-border">
-          <p className="text-xs text-muted-foreground mb-2">Demais eixos:</p>
-          <div className="flex flex-wrap gap-2">
-            {sorted.slice(5).map(([key, value]) => (
-              <span key={key} className={`text-xs px-2.5 py-1 rounded-full border border-border bg-muted/30 text-muted-foreground ${!hasAccess ? 'filter blur-[3px]' : ''}`}>
-                {axisLabels[key] || key}: {value}%
-              </span>
-            ))}
-          </div>
+          <button
+            onClick={() => setShowAll(!showAll)}
+            className="w-full flex items-center justify-between text-sm text-muted-foreground hover:text-foreground transition-colors py-1"
+          >
+            <span>Ver todos os eixos ({remaining.length})</span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showAll ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showAll && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              transition={{ duration: 0.25 }}
+              className="mt-3 space-y-3"
+            >
+              <IntensityGroup label="Alto" emoji="🔴" items={alto} axisLabels={axisLabels} colorClass="text-red-400" hasAccess={hasAccess} />
+              <IntensityGroup label="Moderado" emoji="🟡" items={moderado} axisLabels={axisLabels} colorClass="text-yellow-400" hasAccess={hasAccess} />
+              <IntensityGroup label="Baixo" emoji="🟢" items={baixo} axisLabels={axisLabels} colorClass="text-green-400" hasAccess={hasAccess} />
+            </motion.div>
+          )}
         </div>
       )}
     </motion.div>
