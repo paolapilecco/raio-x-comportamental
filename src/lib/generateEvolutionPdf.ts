@@ -215,7 +215,8 @@ export function generateEvolutionPdf(
   data.badges.forEach(badge => {
     doc.setFont('helvetica', badge.unlocked ? 'bold' : 'normal');
     doc.setFontSize(8);
-    doc.setTextColor(badge.unlocked ? ...C.text : ...C.light);
+    const txtColor = badge.unlocked ? C.text : C.light;
+    doc.setTextColor(txtColor[0], txtColor[1], txtColor[2]);
     doc.text(`${badge.emoji}  ${badge.name} — ${badge.description}`, M + 4, ctx.y);
     if (badge.unlocked) {
       doc.setFillColor(...C.green);
