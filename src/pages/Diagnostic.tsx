@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import Questionnaire from '@/components/diagnostic/Questionnaire';
 import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
 import Report from '@/components/diagnostic/Report';
@@ -14,8 +14,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { UserCircle, ChevronRight } from 'lucide-react';
 
-type Step = 'loading' | 'questionnaire' | 'analyzing' | 'report';
+type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
 const PURPOSE_SLUG = 'proposito-sentido';
 const BEHAVIORAL_SLUG = 'padrao-comportamental';
