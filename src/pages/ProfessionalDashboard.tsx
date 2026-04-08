@@ -90,6 +90,10 @@ export default function ProfessionalDashboard() {
         ? ((latest.all_scores as any[]) || []).filter((s: any) => s.percentage >= 70).length
         : 0;
 
+      const daysSinceLastTest = latest
+        ? Math.floor((Date.now() - new Date(latest.created_at).getTime()) / 86400000)
+        : null;
+
       return {
         id: p.id, name: p.name, is_active: p.is_active, age: p.age,
         testCount: personResults.length,
@@ -97,6 +101,8 @@ export default function ProfessionalDashboard() {
         latestDate: latest?.created_at || null,
         criticalCount,
         hasPendingReminder: pendingByPerson.has(p.id),
+        daysSinceLastTest,
+        retestAvailable: daysSinceLastTest !== null && daysSinceLastTest >= RETEST_INTERVAL_DAYS,
       };
     });
 
