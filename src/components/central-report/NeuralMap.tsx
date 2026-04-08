@@ -281,7 +281,7 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
       <div className="absolute bottom-3 left-3 flex gap-3 text-[10px] text-white/50 z-10">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500/80 inline-block" style={{ boxShadow: '0 0 4px rgba(34,197,94,0.5)' }} />Baixo</span>
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500/80 inline-block" style={{ boxShadow: '0 0 4px rgba(234,179,8,0.5)' }} />Moderado</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500/80 inline-block" style={{ boxShadow: '0 0 4px rgba(239,68,68,0.5)' }} />Alto</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: 'rgba(100,180,255,0.8)', boxShadow: '0 0 4px rgba(100,180,255,0.5)' }} />Alto</span>
       </div>
       <div className="absolute bottom-3 right-3 text-[10px] text-white/20 z-10">
         Mova o mouse para interagir
