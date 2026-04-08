@@ -142,9 +142,14 @@ export default function ProfessionalDashboard() {
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Visão geral dos seus pacientes</p>
           </div>
-          <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted/30">
-            <Download className="w-4 h-4" /> Exportar CSV
-          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button onClick={() => navigate('/comparar-pacientes')} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted/30">
+              <Users className="w-4 h-4" /> Comparar
+            </button>
+            <button onClick={handleExportCSV} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted/30">
+              <Download className="w-4 h-4" /> Exportar CSV
+            </button>
+          </div>
         </motion.div>
 
         {/* KPIs */}
