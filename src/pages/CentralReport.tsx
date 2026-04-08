@@ -690,8 +690,8 @@ const CentralReport = () => {
                         <div key={key} className="flex items-center gap-4">
                           <div className="flex-1">
                             <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium text-foreground">{def?.label || key}</span>
-                              <span className="text-xs text-muted-foreground">{score}%</span>
+                              <span className={`text-sm font-medium text-foreground ${!hasAccess ? 'filter blur-[3px]' : ''}`}>{def?.label || key}</span>
+                              <span className={`text-xs text-muted-foreground ${!hasAccess ? 'filter blur-[4px]' : ''}`}>{score}%</span>
                             </div>
                             <div className="w-full bg-muted/50 rounded-full h-2">
                               <div className="bg-primary rounded-full h-2 transition-all duration-500" style={{ width: `${score}%` }} />
@@ -717,11 +717,11 @@ const CentralReport = () => {
                         return (
                           <div key={i} className="bg-destructive/5 border border-destructive/10 rounded-lg p-4">
                             <div className="flex items-center gap-2 mb-2">
-                              <span className="text-sm font-medium text-foreground">
+                              <span className={`text-sm font-medium text-foreground ${!hasAccess ? 'filter blur-[3px]' : ''}`}>
                                 {patternDefinitions?.[a]?.label} × {patternDefinitions?.[b]?.label}
                               </span>
                             </div>
-                            <p className="text-sm text-foreground/70">{desc}</p>
+                            <p className={`text-sm text-foreground/70 ${!hasAccess ? 'filter blur-[5px]' : ''}`}>{desc}</p>
                           </div>
                         );
                       })}
@@ -736,14 +736,14 @@ const CentralReport = () => {
                       <Crosshair className="w-5 h-5 text-primary" />
                       <h3 className="text-lg font-serif">Gatilho Dominante</h3>
                     </div>
-                    <p className="text-sm text-foreground/80 leading-relaxed">{dominantTrigger}</p>
+                    <p className={`text-sm text-foreground/80 leading-relaxed ${!hasAccess ? 'filter blur-[5px]' : ''}`}>{dominantTrigger}</p>
                     {dominantDef?.triggers && dominantDef.triggers.length > 1 && (
                       <div className="mt-4 space-y-2">
                         <p className="text-xs text-muted-foreground uppercase tracking-wide">Outros gatilhos</p>
                         {dominantDef.triggers.slice(1, 4).map((t, i) => (
                           <div key={i} className="flex items-start gap-2">
                             <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-muted-foreground/40 shrink-0" />
-                            <p className="text-xs text-foreground/60">{t}</p>
+                            <p className={`text-xs text-foreground/60 ${!hasAccess ? 'filter blur-[5px]' : ''}`}>{t}</p>
                           </div>
                         ))}
                       </div>
@@ -754,8 +754,8 @@ const CentralReport = () => {
                       <Shield className="w-5 h-5 text-primary" />
                       <h3 className="text-lg font-serif">Risco de Autossabotagem</h3>
                     </div>
-                    <p className={`text-3xl font-serif font-bold ${riskColor}`}>{riskLevel}</p>
-                    <p className="text-xs text-muted-foreground mt-2">Score: {Math.round(riskScore)} | {detectedConflicts.length} conflito(s)</p>
+                    <p className={`text-3xl font-serif font-bold ${riskColor} ${!hasAccess ? 'filter blur-[4px]' : ''}`}>{riskLevel}</p>
+                    <p className={`text-xs text-muted-foreground mt-2 ${!hasAccess ? 'filter blur-[4px]' : ''}`}>Score: {Math.round(riskScore)} | {detectedConflicts.length} conflito(s)</p>
                   </motion.div>
                 </div>
 
