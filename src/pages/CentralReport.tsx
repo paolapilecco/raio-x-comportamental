@@ -322,25 +322,42 @@ const CentralReport = () => {
             </div>
           </motion.div>
 
-          {/* Premium gate */}
+          {/* Premium gate - teaser preview */}
           <div className="relative">
             {!hasAccess && (
-              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl">
-                <div className="absolute inset-0 bg-background/60 backdrop-blur-md rounded-xl" />
-                <div className="relative z-10 text-center space-y-4 px-6">
-                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto shadow-lg">
-                    <Lock className="w-6 h-6 text-white" />
-                  </div>
-                  <h3 className="text-lg font-serif text-foreground">Conteúdo Premium</h3>
-                  <p className="text-sm text-muted-foreground max-w-xs">Desbloqueie o relatório central completo.</p>
-                  <button onClick={() => navigate('/checkout')} className="px-6 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 mx-auto">
-                    <Crown className="w-4 h-4" /> Desbloquear Premium
-                  </button>
+              <>
+                {/* Gradient fade overlay - lets user see content partially */}
+                <div className="absolute inset-0 z-20 pointer-events-none rounded-xl" style={{
+                  background: 'linear-gradient(to bottom, transparent 0%, transparent 25%, hsl(var(--background) / 0.3) 40%, hsl(var(--background) / 0.7) 55%, hsl(var(--background) / 0.95) 70%, hsl(var(--background)) 85%)',
+                }} />
+                {/* CTA floating at bottom of visible area */}
+                <div className="absolute bottom-0 left-0 right-0 z-30 flex flex-col items-center pb-8 pt-16">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4, duration: 0.6 }}
+                    className="bg-card/95 backdrop-blur-xl border border-amber-500/30 rounded-2xl p-6 sm:p-8 text-center space-y-4 max-w-sm mx-4 shadow-[0_20px_60px_-15px_hsl(var(--primary)/0.15)]"
+                  >
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center mx-auto shadow-lg">
+                      <Lock className="w-6 h-6 text-white" />
+                    </div>
+                    <h3 className="text-lg font-serif text-foreground">Seu relatório está pronto</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Veja seus padrões, conflitos internos e ações de transformação. Desbloqueie agora.
+                    </p>
+                    <button
+                      onClick={() => navigate('/checkout')}
+                      className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all duration-300 flex items-center gap-2 mx-auto shadow-[0_8px_25px_-6px_rgba(217,160,32,0.4)] hover:shadow-[0_12px_35px_-4px_rgba(217,160,32,0.5)] hover:translate-y-[-1px]"
+                    >
+                      <Crown className="w-4 h-4" /> Desbloquear Premium
+                    </button>
+                    <p className="text-[0.65rem] text-muted-foreground/50">A partir de R$ 5,99/mês</p>
+                  </motion.div>
                 </div>
-              </div>
+              </>
             )}
 
-            <div className={`space-y-6 ${!hasAccess ? 'filter blur-sm pointer-events-none select-none' : ''}`}>
+            <div className={`space-y-6 ${!hasAccess ? 'pointer-events-none select-none' : ''}`}>
               {/* KPI Cards */}
               <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-card rounded-xl border border-border p-5 shadow-sm text-center">
