@@ -14,7 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { UserCircle, ChevronRight } from 'lucide-react';
+import { UserCircle, ChevronRight, AlertTriangle } from 'lucide-react';
+import { canAccessModule, getMonthlyTestLimit, getCurrentMonthYear } from '@/lib/planLimits';
 
 type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
