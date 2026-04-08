@@ -3,17 +3,26 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface GamificationData {
   // Streak
-  currentStreak: number; // weeks in a row
+  currentStreak: number;
   longestStreak: number;
   lastActivityDate: string | null;
-  streakActive: boolean; // did something this week?
+  streakActive: boolean;
 
   // XP & Level
   totalXP: number;
   level: number;
   levelName: string;
-  levelProgress: number; // 0-100 within current level
+  levelProgress: number;
   xpToNextLevel: number;
+
+  // Global Score (0-100)
+  globalScore: number;
+  scoreBreakdown: {
+    awareness: number;    // from aggregated behavioral scores (inverted)
+    consistency: number;  // from streak
+    coverage: number;     // from module diversity
+    recency: number;      // from activity recency
+  };
 
   // Stats
   totalTests: number;
