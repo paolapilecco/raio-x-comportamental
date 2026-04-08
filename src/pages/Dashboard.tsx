@@ -92,6 +92,7 @@ const Dashboard = () => {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [latestModuleId, setLatestModuleId] = useState<string | null>(null);
   const gamification = useGamification(user?.id);
+  const retestCycle = useRetestCycle(user?.id);
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
     setGenerating(true);
