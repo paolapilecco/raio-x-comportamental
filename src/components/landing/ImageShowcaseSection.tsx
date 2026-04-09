@@ -13,14 +13,14 @@ const ImageShowcaseSection = () => {
           className="text-center mb-14"
         >
           <p className="text-[11px] font-medium text-accent uppercase tracking-[0.2em] mb-3">
-            Tecnologia de precisão
+            Profundidade e precisão
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            IA de nível clínico. Resultados em minutos.
+            O que a observação comum não alcança.
           </h2>
           <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto">
-            Cruzamos 8 eixos neurológicos simultaneamente para identificar padrões
-            que a observação comum não alcança.
+            Uma metodologia estruturada que cruza 8 eixos simultaneamente 
+            para revelar o que está por trás das suas decisões.
           </p>
         </motion.div>
 
@@ -34,7 +34,7 @@ const ImageShowcaseSection = () => {
           >
             <img
               src={professionalImg}
-              alt="Profissional analisando padrões comportamentais"
+              alt="Ambiente de trabalho de um profissional de saúde mental"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
               width={1024}
@@ -43,10 +43,11 @@ const ImageShowcaseSection = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
               <p className="text-[10px] font-semibold text-accent uppercase tracking-[0.15em] mb-1">
-                Para profissionais
+                Profundidade clínica
               </p>
               <p className="text-sm text-white/80 leading-relaxed">
-                Relatórios prontos para sessão terapêutica com precisão que surpreende até profissionais experientes.
+                Construído com a mesma lógica que profissionais usam em sessão — 
+                mas acessível em 5 minutos.
               </p>
             </div>
           </motion.div>
@@ -60,7 +61,7 @@ const ImageShowcaseSection = () => {
           >
             <img
               src={neuralImg}
-              alt="Rede neural de padrões comportamentais"
+              alt="Relatório comportamental detalhado"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
               width={1024}
@@ -69,10 +70,11 @@ const ImageShowcaseSection = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
               <p className="text-[10px] font-semibold text-accent uppercase tracking-[0.15em] mb-1">
-                Análise multieixo
+                Relatório completo
               </p>
               <p className="text-sm text-white/80 leading-relaxed">
-                Cada padrão é um nó. Cada conexão revela como seus comportamentos se alimentam mutuamente.
+                Padrão dominante, gatilhos, contradições e direção de saída — 
+                tudo documentado com clareza cirúrgica.
               </p>
             </div>
           </motion.div>
