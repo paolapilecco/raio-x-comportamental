@@ -8,6 +8,7 @@ import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import LifeMapReport from './LifeMapReport';
+import { ReportGamification } from './ReportGamification';
 
 interface ReportProps {
   result: DiagnosticResult;
@@ -387,6 +388,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </div>
           </motion.section>
         </div>
+
+        {/* ── Gamification ── */}
+        <ReportGamification />
 
         {/* ── Footer ── */}
         <div className="mt-20 space-y-8">
