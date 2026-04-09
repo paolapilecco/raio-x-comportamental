@@ -147,6 +147,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: { emailRedirectTo: window.location.origin },
     });
+    
+    // Send welcome email on successful signup
+    if (!error) {
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            templateName: 'welcome',
+            to: email,
+            data: {
+              name: email.split('@')[0],
+              appUrl: window.location.origin + '/dashboard',
+            },
+          },
+        });
+      } catch (e) {
+        console.error('Welcome email failed (non-blocking):', e);
+      }
+    }
+    
     return { error };
   };
 

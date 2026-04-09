@@ -305,6 +305,32 @@ const Diagnostic = () => {
         .eq('id', session.id);
 
       await updateCentralProfile(user.id);
+
+      // Send report-ready email (non-blocking)
+      try {
+        const userEmail = user.email;
+        if (userEmail) {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('name')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          await supabase.functions.invoke('send-email', {
+            body: {
+              templateName: 'report-ready',
+              to: userEmail,
+              data: {
+                name: profileData?.name || userEmail.split('@')[0],
+                reportName: 'Perfil Central',
+                reportUrl: `${window.location.origin}/central-report`,
+              },
+            },
+          });
+        }
+      } catch (e) {
+        console.error('Report-ready email failed (non-blocking):', e);
+      }
     } catch (err) {
       console.error('Error saving diagnostic:', err);
       toast.error('Erro ao salvar diagnóstico, mas seu resultado está disponível.');
