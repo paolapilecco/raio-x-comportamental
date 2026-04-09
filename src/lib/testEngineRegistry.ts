@@ -5,6 +5,7 @@ import { RELATIONSHIP_AXES, relationshipPatterns } from '@/data/relationshipPatt
 import { SELF_IMAGE_AXES, selfImagePatterns } from '@/data/selfImagePatterns';
 import { MONEY_AXES, moneyPatterns } from '@/data/moneyPatterns';
 import { HIDDEN_AXES, hiddenPatterns } from '@/data/hiddenPatterns';
+import { BEHAVIORAL_AXES, behavioralPatterns } from '@/data/behavioralPatterns';
 
 export interface TestEngine {
   axes: string[];
@@ -12,6 +13,10 @@ export interface TestEngine {
 }
 
 const engineRegistry: Record<string, TestEngine> = {
+  'padrao-comportamental': {
+    axes: BEHAVIORAL_AXES,
+    definitions: behavioralPatterns,
+  },
   'execucao-produtividade': {
     axes: EXECUTION_AXES,
     definitions: executionPatterns,
