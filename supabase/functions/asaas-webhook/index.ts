@@ -76,9 +76,9 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // Optional: Validate webhook token from query params or headers
+    // Validate webhook token from query params OR Asaas header
     const url = new URL(req.url);
-    const token = url.searchParams.get("token");
+    const token = url.searchParams.get("token") || req.headers.get("asaas-access-token");
     if (asaasWebhookToken && token !== asaasWebhookToken) {
       console.warn("Invalid webhook token received");
       return new Response(
