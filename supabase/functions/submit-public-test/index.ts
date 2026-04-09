@@ -241,6 +241,11 @@ serve(async (req) => {
 
           await supabase.from("diagnostic_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
 
+          // Notify professional
+          if (ownerEmail) {
+            notifyProfessional(ownerEmail, patientName, testName, dominant.key, intensity, invite.person_id).catch(() => {});
+          }
+
           return new Response(JSON.stringify({ success: true, sessionId: session.id, analyzed: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
