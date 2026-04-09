@@ -49,7 +49,7 @@ interface TestModule { id: string; slug: string; name: string; }
 
 export default function PatientDetail() {
   const { personId } = useParams<{ personId: string }>();
-  const { user, planType, isSuperAdmin } = useAuth();
+  const { user, planType, isSuperAdmin, profile } = useAuth();
   const navigate = useNavigate();
   const axisLabels = useAxisLabels();
   const patternDefinitions = usePatternDefinitions();
