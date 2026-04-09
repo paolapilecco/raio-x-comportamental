@@ -1,6 +1,6 @@
 import { GenericPatternDefinition } from '@/lib/genericAnalysis';
 
-export const MONEY_AXES = ['relacao_dinheiro', 'tomada_decisao', 'mentalidade_escassez', 'autoconfianca_financeira', 'impulsividade_financeira'];
+export const MONEY_AXES = ['autossabotagem_economica', 'impulsividade_decisao', 'padrao_evitar', 'medo_crescer', 'medo_perder', 'indecisao', 'fuga_responsabilidade', 'tomada_decisao'];
 
 export const moneyPatterns: Record<string, GenericPatternDefinition> = {
   relacao_dinheiro: {

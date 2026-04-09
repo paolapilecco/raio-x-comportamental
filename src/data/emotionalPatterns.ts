@@ -1,6 +1,6 @@
 import { GenericPatternDefinition } from '@/lib/genericAnalysis';
 
-export const EMOTIONAL_AXES = ['impulsividade', 'regulacao_emocional', 'tolerancia_frustracao', 'reatividade', 'autoconsciencia_emocional', 'supressao_emocional'];
+export const EMOTIONAL_AXES = ['regulacao_emocional', 'reatividade', 'autossabotagem_emocional', 'fuga_desconforto', 'tolerancia_frustracao', 'autocritica', 'impulsividade', 'supressao_emocional'];
 
 export const emotionalPatterns: Record<string, GenericPatternDefinition> = {
   impulsividade: {
