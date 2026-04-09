@@ -67,6 +67,16 @@ serve(async (req) => {
       });
     }
 
+    // Fetch professional email, patient name, and test name for notification
+    const [ownerRes, personRes, testModuleRes] = await Promise.all([
+      supabase.auth.admin.getUserById(invite.owner_id),
+      supabase.from("managed_persons").select("name").eq("id", invite.person_id).maybeSingle(),
+      supabase.from("test_modules").select("name").eq("id", invite.test_module_id).maybeSingle(),
+    ]);
+    const ownerEmail = ownerRes.data?.user?.email || "";
+    const patientName = personRes.data?.name || "Paciente";
+    const testName = testModuleRes.data?.name || "Diagnóstico";
+
     // 2. Create session under the professional's user_id
     const { data: session, error: sessionErr } = await supabase
       .from("diagnostic_sessions")
