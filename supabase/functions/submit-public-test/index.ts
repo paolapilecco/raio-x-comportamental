@@ -282,6 +282,13 @@ serve(async (req) => {
 
     await supabase.from("diagnostic_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
 
+    // Notify professional (fallback path)
+    const fallbackDominant = scores[0];
+    const fallbackIntensity = fallbackDominant.percentage >= 75 ? "alto" : fallbackDominant.percentage >= 50 ? "moderado" : "leve";
+    if (ownerEmail) {
+      notifyProfessional(ownerEmail, patientName, testName, fallbackDominant.key, fallbackIntensity, invite.person_id).catch(() => {});
+    }
+
     return new Response(JSON.stringify({ success: true, sessionId: session.id, analyzed: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
