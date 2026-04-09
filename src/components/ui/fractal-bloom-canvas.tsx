@@ -11,13 +11,23 @@ const FractalBloomCanvas = () => {
     if (!ctx) return;
 
     let animationFrameId: number;
-    const mouse = { x: window.innerWidth / 2, y: window.innerHeight };
+    const mouse = { x: 0, y: 0 };
     let currentDepth = 0;
     const maxDepth = 9;
+    let w = 0;
+    let h = 0;
 
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      mouse.x = w / 2;
+      mouse.y = h;
     };
 
     const drawBranch = (x: number, y: number, angle: number, length: number, depth: number) => {
@@ -32,7 +42,6 @@ const FractalBloomCanvas = () => {
       ctx.lineTo(endX, endY);
 
       const opacity = 1 - (depth / maxDepth);
-      // Brand gold (#C6A969) = rgb(198, 169, 105)
       const r = Math.round(198 + (255 - 198) * (depth / maxDepth));
       const g = Math.round(169 + (245 - 169) * (depth / maxDepth));
       const b = Math.round(105 + (220 - 105) * (depth / maxDepth));
@@ -41,7 +50,7 @@ const FractalBloomCanvas = () => {
       ctx.stroke();
 
       const distToMouse = Math.hypot(endX - mouse.x, endY - mouse.y);
-      const mouseEffect = Math.max(0, 1 - distToMouse / (canvas.height / 2));
+      const mouseEffect = Math.max(0, 1 - distToMouse / (h / 2));
       const angleOffset = (Math.PI / 8) * mouseEffect;
 
       drawBranch(endX, endY, angle - (Math.PI / 10) - angleOffset, length * 0.8, depth + 1);
@@ -49,13 +58,13 @@ const FractalBloomCanvas = () => {
     };
 
     const animate = () => {
-      // Deep green-black fade: hsl(174, 33%, 8%)
       ctx.fillStyle = 'rgba(10, 27, 25, 0.2)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillRect(0, 0, w, h);
 
-      const startX = canvas.width / 2;
-      const startY = canvas.height;
-      const startLength = canvas.height / 5;
+      const startX = w / 2;
+      const startY = h;
+      // Smaller tree on mobile so it fits the viewport
+      const startLength = Math.min(h / 4.5, w / 3);
 
       drawBranch(startX, startY, -Math.PI / 2, startLength, 0);
 
@@ -71,8 +80,16 @@ const FractalBloomCanvas = () => {
       mouse.y = event.clientY;
     };
 
+    const handleTouchMove = (event: TouchEvent) => {
+      if (event.touches.length > 0) {
+        mouse.x = event.touches[0].clientX;
+        mouse.y = event.touches[0].clientY;
+      }
+    };
+
     window.addEventListener('resize', resizeCanvas);
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
 
     resizeCanvas();
     animate();
@@ -81,13 +98,14 @@ const FractalBloomCanvas = () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', resizeCanvas);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
     };
   }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
+      className="absolute inset-0"
       style={{ background: 'linear-gradient(180deg, hsl(174, 33%, 6%) 0%, hsl(174, 33%, 12%) 50%, hsl(174, 33%, 6%) 100%)' }}
     />
   );
