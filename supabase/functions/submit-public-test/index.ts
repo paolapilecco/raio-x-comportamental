@@ -37,6 +37,21 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Helper: notify professional via email (non-blocking)
+    const notifyProfessional = async (ownerEmail: string, patientName: string, testName: string, dominantPattern: string, intensity: string, personId: string) => {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseKey}` },
+          body: JSON.stringify({
+            templateName: "test-completed",
+            to: ownerEmail,
+            data: { patientName, testName, dominantPattern, intensity, detailUrl: `https://raio-x-comportamental.lovable.app/patient/${personId}` },
+          }),
+        });
+      } catch (e) { console.error("Email notification error:", e); }
+    };
+
     // 1. Validate token
     const { data: invite, error: inviteErr } = await supabase
       .from("test_invites")
@@ -51,6 +66,16 @@ serve(async (req) => {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Fetch professional email, patient name, and test name for notification
+    const [ownerRes, personRes, testModuleRes] = await Promise.all([
+      supabase.auth.admin.getUserById(invite.owner_id),
+      supabase.from("managed_persons").select("name").eq("id", invite.person_id).maybeSingle(),
+      supabase.from("test_modules").select("name").eq("id", invite.test_module_id).maybeSingle(),
+    ]);
+    const ownerEmail = ownerRes.data?.user?.email || "";
+    const patientName = personRes.data?.name || "Paciente";
+    const testName = testModuleRes.data?.name || "Diagnóstico";
 
     // 2. Create session under the professional's user_id
     const { data: session, error: sessionErr } = await supabase
@@ -216,6 +241,11 @@ serve(async (req) => {
 
           await supabase.from("diagnostic_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
 
+          // Notify professional
+          if (ownerEmail) {
+            notifyProfessional(ownerEmail, patientName, testName, dominant.key, intensity, invite.person_id).catch(() => {});
+          }
+
           return new Response(JSON.stringify({ success: true, sessionId: session.id, analyzed: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
@@ -251,6 +281,13 @@ serve(async (req) => {
     });
 
     await supabase.from("diagnostic_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
+
+    // Notify professional (fallback path)
+    const fallbackDominant = scores[0];
+    const fallbackIntensity = fallbackDominant.percentage >= 75 ? "alto" : fallbackDominant.percentage >= 50 ? "moderado" : "leve";
+    if (ownerEmail) {
+      notifyProfessional(ownerEmail, patientName, testName, fallbackDominant.key, fallbackIntensity, invite.person_id).catch(() => {});
+    }
 
     return new Response(JSON.stringify({ success: true, sessionId: session.id, analyzed: false }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -40,7 +40,7 @@ function formatCpfDisplay(cpf: string): string {
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 export default function ManagedPersons() {
-  const { user, isPremium, isSuperAdmin, planType } = useAuth();
+  const { user, isPremium, isSuperAdmin, planType, profile } = useAuth();
   const navigate = useNavigate();
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [loading, setLoading] = useState(true);
@@ -352,12 +352,24 @@ export default function ManagedPersons() {
                 onClick={async () => {
                   if (!inviteEmail || !inviteEmail.includes('@')) { toast.error('Email inválido'); return; }
                   setSendingInvite(true);
-                  const { error } = await supabase.from('invites').insert({ inviter_id: user!.id, email: inviteEmail });
+                  const { data: inviteData, error } = await supabase.from('invites').insert({ inviter_id: user!.id, email: inviteEmail }).select('token').single();
                   if (error) {
                     if (error.code === '23505') toast.error('Convite já enviado para este email.');
                     else toast.error('Erro ao enviar convite.');
                   } else {
-                    toast.success('Convite registrado!');
+                    // Send invite email via Resend
+                    const inviteLink = `${window.location.origin}/auth?invite=${inviteData?.token || ''}`;
+                    supabase.functions.invoke('send-email', {
+                      body: {
+                        templateName: 'platform-invite',
+                        to: inviteEmail,
+                        data: {
+                          inviterName: profile?.name || 'Um profissional',
+                          inviteLink,
+                        },
+                      },
+                    }).catch(() => {});
+                    toast.success('Convite enviado por email!');
                     setInviteEmail('');
                     setShowInviteForm(false);
                   }

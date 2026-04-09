@@ -49,7 +49,7 @@ interface TestModule { id: string; slug: string; name: string; }
 
 export default function PatientDetail() {
   const { personId } = useParams<{ personId: string }>();
-  const { user, planType, isSuperAdmin } = useAuth();
+  const { user, planType, isSuperAdmin, profile } = useAuth();
   const navigate = useNavigate();
   const axisLabels = useAxisLabels();
   const patternDefinitions = usePatternDefinitions();
@@ -224,6 +224,24 @@ export default function PatientDetail() {
       setCopiedToken(testModuleId);
       toast.success('Link copiado para a área de transferência!');
       setTimeout(() => setCopiedToken(null), 3000);
+
+      // Send test invite email to patient if they have a phone (used as contact)
+      if (person?.phone) {
+        const testModule = modules.find(m => m.id === testModuleId);
+        supabase.functions.invoke('send-email', {
+          body: {
+            templateName: 'test-invite',
+            to: person.phone, // phone field may store email for contact
+            data: {
+              patientName: person.name,
+              professionalName: profile?.name || '',
+              testName: testModule?.name || 'Diagnóstico',
+              testLink: link,
+            },
+          },
+        }).catch(() => {}); // non-blocking
+      }
+
       await loadAll();
     } catch { toast.error('Erro ao gerar link.'); }
     finally { setGeneratingLink(null); }
