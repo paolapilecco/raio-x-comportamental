@@ -110,6 +110,82 @@ const templates: Record<string, (data: Record<string, string>) => { subject: str
       </div>
     `),
   }),
+
+  "password-reset": (data) => ({
+    subject: "Redefinição de senha — Raio-X Mental 🔐",
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;color:#1f3d37;font-size:20px;">Redefinir senha 🔐</h2>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Recebemos uma solicitação para redefinir a senha da sua conta.</p>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Clique no botão abaixo para criar uma nova senha. Se você não solicitou esta alteração, ignore este email.</p>
+      <div style="text-align:center;margin:28px 0;">
+        ${btn(data.resetLink || "#", "Redefinir Minha Senha")}
+      </div>
+      <p style="color:#999;font-size:12px;text-align:center;">⏰ Este link expira em 1 hora.</p>
+    `),
+  }),
+
+  "subscription-confirmed": (data) => ({
+    subject: "Assinatura confirmada! Bem-vindo(a) ao Premium 🎉",
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;color:#1f3d37;font-size:20px;">Assinatura confirmada! 🎉</h2>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Parabéns, <strong>${data.name || ""}</strong>! Sua assinatura <strong>${data.planName || "Premium"}</strong> foi ativada com sucesso.</p>
+      <div style="background:#f0f7f5;border-radius:8px;padding:20px;margin:20px 0;">
+        <p style="margin:0;font-size:14px;color:#2a5248;"><strong>Plano:</strong> ${data.planName || "Premium"}</p>
+        <p style="margin:8px 0 0;font-size:14px;color:#2a5248;"><strong>Valor:</strong> R$ ${data.value || "—"}</p>
+        <p style="margin:8px 0 0;font-size:14px;color:#2a5248;"><strong>Próxima cobrança:</strong> ${data.nextDueDate || "—"}</p>
+      </div>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Agora você tem acesso a todos os recursos premium da plataforma:</p>
+      <ul style="color:#3d3d3d;font-size:14px;line-height:1.8;padding-left:20px;">
+        <li>Testes ilimitados</li>
+        <li>Relatórios com IA avançada</li>
+        <li>Perfil central completo</li>
+      </ul>
+      <div style="text-align:center;margin:28px 0;">
+        ${btn(data.appUrl || "https://raio-x-comportamental.lovable.app", "Explorar Recursos Premium")}
+      </div>
+    `),
+  }),
+
+  "subscription-canceled": (data) => ({
+    subject: "Sua assinatura foi cancelada — Raio-X Mental",
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;color:#1f3d37;font-size:20px;">Assinatura cancelada 😔</h2>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Olá, <strong>${data.name || ""}</strong>. Sua assinatura <strong>${data.planName || "Premium"}</strong> foi cancelada.</p>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Você ainda terá acesso aos recursos premium até <strong>${data.accessUntil || "o fim do período atual"}</strong>.</p>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Sentiremos sua falta! Se mudar de ideia, você pode reativar a qualquer momento.</p>
+      <div style="text-align:center;margin:28px 0;">
+        ${btn(data.appUrl || "https://raio-x-comportamental.lovable.app/premium", "Reativar Assinatura")}
+      </div>
+    `),
+  }),
+
+  "payment-overdue": (data) => ({
+    subject: "⚠️ Pagamento pendente — Raio-X Mental",
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;color:#1f3d37;font-size:20px;">Pagamento pendente ⚠️</h2>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Olá, <strong>${data.name || ""}</strong>. Identificamos que o pagamento da sua assinatura <strong>${data.planName || "Premium"}</strong> está em atraso.</p>
+      <div style="background:#fef3cd;border-radius:8px;padding:20px;margin:20px 0;border-left:4px solid #f59e0b;">
+        <p style="margin:0;font-size:14px;color:#92400e;"><strong>Valor:</strong> R$ ${data.value || "—"}</p>
+        <p style="margin:8px 0 0;font-size:14px;color:#92400e;"><strong>Vencimento:</strong> ${data.dueDate || "—"}</p>
+      </div>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Para manter seu acesso premium ativo, regularize o pagamento o mais breve possível.</p>
+      <div style="text-align:center;margin:28px 0;">
+        ${btn(data.paymentUrl || "https://raio-x-comportamental.lovable.app/premium", "Regularizar Pagamento")}
+      </div>
+    `),
+  }),
+
+  "report-ready": (data) => ({
+    subject: "📄 Seu relatório está pronto! — Raio-X Mental",
+    html: baseLayout(`
+      <h2 style="margin:0 0 16px;color:#1f3d37;font-size:20px;">Relatório pronto! 📄</h2>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Olá, <strong>${data.name || ""}</strong>! Seu relatório <strong>"${data.reportName || "Perfil Central"}"</strong> foi gerado com sucesso.</p>
+      <p style="color:#3d3d3d;font-size:15px;line-height:1.6;">Acesse agora para ver seus padrões comportamentais, pontos de atenção e direcionamentos personalizados gerados pela nossa IA.</p>
+      <div style="text-align:center;margin:28px 0;">
+        ${btn(data.reportUrl || "https://raio-x-comportamental.lovable.app/central-report", "Ver Meu Relatório")}
+      </div>
+    `),
+  }),
 };
 
 // ─── Handler ──────────────────────────────────────────────
