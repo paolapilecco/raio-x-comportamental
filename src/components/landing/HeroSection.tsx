@@ -37,7 +37,8 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/40 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 pointer-events-none" />
 
-      <div className="relative z-10 max-w-3xl w-full text-center px-6 py-32">
+      <div className="relative z-10 max-w-3xl w-full text-center px-6 py-32 mx-auto">
+        <div className="absolute inset-0 -inset-x-4 rounded-3xl bg-black/30 backdrop-blur-[2px] pointer-events-none" />
         <motion.div
           custom={0}
           variants={fadeUp}
@@ -70,7 +71,7 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="text-base md:text-lg text-white/60 leading-relaxed max-w-xl mx-auto mb-10"
+          className="text-[15px] md:text-lg text-white/70 leading-relaxed max-w-xl mx-auto mb-10"
         >
           Em 5 minutos você vai entender por que trava, repete os mesmos erros
           e não consegue sair do lugar — mesmo sabendo exatamente o que precisa fazer.

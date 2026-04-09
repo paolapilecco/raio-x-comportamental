@@ -68,6 +68,13 @@ const FractalBloomCanvas = () => {
 
       drawBranch(startX, startY, -Math.PI / 2, startLength, 0);
 
+      // Radial fade-out no centro para não competir com o texto
+      const gradient = ctx.createRadialGradient(w / 2, h * 0.45, 0, w / 2, h * 0.45, h * 0.4);
+      gradient.addColorStop(0, 'rgba(10, 27, 25, 0.7)');
+      gradient.addColorStop(1, 'rgba(10, 27, 25, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+
       if (currentDepth < maxDepth) {
         currentDepth += 0.03;
       }
