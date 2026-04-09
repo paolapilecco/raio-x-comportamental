@@ -30,11 +30,11 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
     >
       <FractalBloomCanvas />
 
-      <div className="absolute inset-0 pointer-events-none opacity-15 mix-blend-screen">
+      <div className="absolute inset-0 pointer-events-none opacity-[0.08] mix-blend-screen">
         <img src={heroBrainImg} alt="" aria-hidden="true" className="w-full h-full object-cover" width={1920} height={1080} />
       </div>
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/40 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 pointer-events-none" />
 
       <div className="relative z-10 max-w-3xl w-full text-center px-6 py-32">
