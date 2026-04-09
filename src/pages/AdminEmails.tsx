@@ -44,6 +44,11 @@ const TEMPLATE_LABELS: Record<string, string> = {
   'test-completed': '📊 Teste Concluído',
   'platform-invite': '🎉 Convite Plataforma',
   'retest-reminder': '⏰ Lembrete Reteste',
+  'password-reset': '🔐 Redefinir Senha',
+  'subscription-confirmed': '🎉 Assinatura Confirmada',
+  'subscription-canceled': '😔 Assinatura Cancelada',
+  'payment-overdue': '⚠️ Pagamento Pendente',
+  'report-ready': '📄 Relatório Pronto',
 };
 
 const TEMPLATE_FIELDS: Record<string, { key: string; label: string; placeholder: string }[]> = {
@@ -71,6 +76,34 @@ const TEMPLATE_FIELDS: Record<string, { key: string; label: string; placeholder:
   'retest-reminder': [
     { key: 'patientName', label: 'Nome do Paciente', placeholder: 'Maria Silva' },
     { key: 'detailUrl', label: 'URL do Paciente', placeholder: 'https://...' },
+  ],
+  'password-reset': [
+    { key: 'resetLink', label: 'Link de Redefinição', placeholder: 'https://...' },
+  ],
+  'subscription-confirmed': [
+    { key: 'name', label: 'Nome', placeholder: 'Maria Silva' },
+    { key: 'planName', label: 'Nome do Plano', placeholder: 'Premium Mensal' },
+    { key: 'value', label: 'Valor (R$)', placeholder: '49,90' },
+    { key: 'nextDueDate', label: 'Próxima Cobrança', placeholder: '10/05/2026' },
+    { key: 'appUrl', label: 'URL da App', placeholder: 'https://raio-x-comportamental.lovable.app' },
+  ],
+  'subscription-canceled': [
+    { key: 'name', label: 'Nome', placeholder: 'Maria Silva' },
+    { key: 'planName', label: 'Nome do Plano', placeholder: 'Premium Mensal' },
+    { key: 'accessUntil', label: 'Acesso até', placeholder: '10/05/2026' },
+    { key: 'appUrl', label: 'URL da App', placeholder: 'https://raio-x-comportamental.lovable.app/premium' },
+  ],
+  'payment-overdue': [
+    { key: 'name', label: 'Nome', placeholder: 'Maria Silva' },
+    { key: 'planName', label: 'Nome do Plano', placeholder: 'Premium Mensal' },
+    { key: 'value', label: 'Valor (R$)', placeholder: '49,90' },
+    { key: 'dueDate', label: 'Vencimento', placeholder: '10/04/2026' },
+    { key: 'paymentUrl', label: 'URL de Pagamento', placeholder: 'https://...' },
+  ],
+  'report-ready': [
+    { key: 'name', label: 'Nome', placeholder: 'Maria Silva' },
+    { key: 'reportName', label: 'Nome do Relatório', placeholder: 'Perfil Central' },
+    { key: 'reportUrl', label: 'URL do Relatório', placeholder: 'https://...' },
   ],
 };
 
