@@ -2,10 +2,10 @@ import { motion } from 'framer-motion';
 
 const SocialProofBar = () => {
   const stats = [
-    { value: '2.847', label: 'Padrões já mapeados' },
-    { value: '8', label: 'Eixos neurológicos' },
-    { value: '97%', label: 'Taxa de precisão' },
-    { value: '< 5min', label: 'Para resultado completo' },
+    { value: '2.847', label: 'Mulheres já descobriram' },
+    { value: '97%', label: 'Se identificaram com o resultado' },
+    { value: '5 min', label: 'Para ter clareza total' },
+    { value: '8', label: 'Áreas da vida analisadas' },
   ];
 
   return (

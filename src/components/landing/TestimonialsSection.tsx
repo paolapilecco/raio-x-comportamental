@@ -6,24 +6,24 @@ const TestimonialsSection = () => {
 
   const testimonials = [
     {
-      text: 'Pela primeira vez entendi o que estava me travando. Não era falta de esforço — era um padrão que eu repetia sem perceber há 15 anos.',
-      name: 'M.C.',
-      role: 'Psicóloga Clínica · CRP 06/xxxxx',
+      text: 'Pela primeira vez entendi por que eu trava sempre no mesmo ponto. Li o resultado e chorei — era exatamente o que eu sentia mas nunca consegui explicar.',
+      name: 'Mariana C.',
+      role: '32 anos · São Paulo',
     },
     {
-      text: 'Usei com meus pacientes e o nível de precisão me surpreendeu. Em 5 minutos tive mais clareza do que em 3 sessões de anamnese.',
-      name: 'R.A.',
-      role: 'Terapeuta Holístico · 12 anos de prática',
+      text: 'Fiz achando que seria mais um teste genérico. Quando li "Paralisia por hipercontrole" eu congelei. Era eu. Inteira. Nunca me senti tão vista.',
+      name: 'Renata A.',
+      role: '28 anos · Belo Horizonte',
     },
     {
-      text: 'É como ter um mapa do que eu não conseguia ver sozinha. O relatório foi tão preciso que minha terapeuta pediu para usar também.',
-      name: 'L.P.',
-      role: 'Coach Executiva · ICF ACC',
+      text: 'Mandei pra minha melhor amiga e ela respondeu "como eles sabem disso?". Fizemos juntas e não paramos de conversar sobre o resultado.',
+      name: 'Letícia P.',
+      role: '35 anos · Curitiba',
     },
     {
-      text: 'Finalmente uma ferramenta que não simplifica o ser humano. A análise multieixo é o que faltava no mercado.',
-      name: 'D.S.',
-      role: 'Psicanalista · SBPSP',
+      text: 'Já fiz terapia por 3 anos. Em 5 minutos o Raio-X nomeou algo que eu levei meses pra entender em sessão. Impressionante.',
+      name: 'Daniela S.',
+      role: '41 anos · Rio de Janeiro',
     },
   ];
 
@@ -43,14 +43,14 @@ const TestimonialsSection = () => {
           viewport={{ once: true }}
         >
           <p className="text-[11px] font-medium text-accent uppercase tracking-[0.2em] mb-3">
-            Validado por quem entende
+            O que elas disseram
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-12">
-            A precisão que profissionais reconhecem
+            "Nunca me senti tão vista."
           </h2>
         </motion.div>
 
-        <div className="relative h-[140px] flex items-center justify-center">
+        <div className="relative h-[160px] flex items-center justify-center">
           {testimonials.map((t, i) => (
             <motion.div
               key={i}
