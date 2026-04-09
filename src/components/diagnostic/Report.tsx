@@ -389,6 +389,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           </motion.section>
         </div>
 
+        {/* ── Gamification ── */}
+        <ReportGamification />
+
         {/* ── Footer ── */}
         <div className="mt-20 space-y-8">
           <div className="w-12 h-px bg-border/40 mx-auto" />
