@@ -1,6 +1,6 @@
 import { GenericPatternDefinition } from '@/lib/genericAnalysis';
 
-export const RELATIONSHIP_AXES = ['dependencia_emocional', 'validacao_externa', 'medo_abandono', 'fronteiras', 'confianca_relacional'];
+export const RELATIONSHIP_AXES = ['dependencia_emocional', 'validacao_externa', 'medo_abandono', 'fronteiras', 'confianca_relacional', 'evitacao_intimidade'];
 
 export const relationshipPatterns: Record<string, GenericPatternDefinition> = {
   dependencia_emocional: {

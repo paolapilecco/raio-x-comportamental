@@ -1,6 +1,6 @@
 import { GenericPatternDefinition } from '@/lib/genericAnalysis';
 
-export const SELF_IMAGE_AXES = ['autoestima', 'autenticidade', 'comparacao_social', 'autoaceitacao', 'identidade_flutuante'];
+export const SELF_IMAGE_AXES = ['autoestima', 'autenticidade', 'comparacao_social', 'autoaceitacao', 'identidade_flutuante', 'sindrome_impostor'];
 
 export const selfImagePatterns: Record<string, GenericPatternDefinition> = {
   autoestima: {
