@@ -127,9 +127,9 @@ export const emotionalPatterns: Record<string, GenericPatternDefinition> = {
       { step: 4, title: 'Reduzir escaneamento', action: 'Pratique estar em grupos focando em conteúdo, não em dinâmica social. Ouça o que é dito, não como é dito.' },
     ],
   },
-  autoconsciencia_emocional: {
-    key: 'autoconsciencia_emocional',
-    label: 'Autoconsciência Emocional Limitada',
+  supressao_emocional: {
+    key: 'supressao_emocional',
+    label: 'Supressão Emocional',
     profileName: 'O Estranho dos Próprios Sentimentos',
     description: 'Você sente coisas intensas mas não sabe nomeá-las. Há uma desconexão entre o que acontece no corpo e o que é processado pela mente. Suas emoções te influenciam sem que você perceba.',
     mechanism: 'A falta de vocabulário emocional cria um ponto cego. Você é impactado por emoções que não consegue identificar, o que impede a regulação consciente.',
