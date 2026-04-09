@@ -37,8 +37,7 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-black/40 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 pointer-events-none" />
 
-      <div className="relative z-10 max-w-3xl w-full text-center px-6 py-32 mx-auto">
-        <div className="absolute inset-0 -inset-x-4 rounded-3xl bg-black/30 backdrop-blur-[2px] pointer-events-none" />
+      <div className="relative z-10 max-w-3xl w-full text-center px-6 py-32 mx-auto" style={{ textShadow: '0 0 20px rgba(0,0,0,0.8), 0 0 40px rgba(0,0,0,0.5)' }}>
         <motion.div
           custom={0}
           variants={fadeUp}
