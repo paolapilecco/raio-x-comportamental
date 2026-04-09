@@ -94,6 +94,16 @@ const Onboarding = () => {
       });
 
       await refreshProfile();
+
+      // Send welcome email (fire-and-forget)
+      supabase.functions.invoke('send-email', {
+        body: {
+          templateName: 'welcome',
+          to: user!.email,
+          data: { name: nameResult.data, appUrl: window.location.origin },
+        },
+      }).catch(() => {});
+
       toast.success('Perfil criado!');
       navigate('/dashboard');
     } finally {
