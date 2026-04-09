@@ -37,6 +37,21 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
+    // Helper: notify professional via email (non-blocking)
+    const notifyProfessional = async (ownerEmail: string, patientName: string, testName: string, dominantPattern: string, intensity: string, personId: string) => {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${supabaseKey}` },
+          body: JSON.stringify({
+            templateName: "test-completed",
+            to: ownerEmail,
+            data: { patientName, testName, dominantPattern, intensity, detailUrl: `https://raio-x-comportamental.lovable.app/patient/${personId}` },
+          }),
+        });
+      } catch (e) { console.error("Email notification error:", e); }
+    };
+
     // 1. Validate token
     const { data: invite, error: inviteErr } = await supabase
       .from("test_invites")
