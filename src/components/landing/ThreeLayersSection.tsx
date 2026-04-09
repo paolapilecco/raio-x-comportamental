@@ -1,28 +1,28 @@
 import { motion } from 'framer-motion';
-import { Brain, Target, Compass } from 'lucide-react';
+import { Eye, Fingerprint, Compass } from 'lucide-react';
 
 const ThreeLayersSection = () => {
   const layers = [
     {
-      icon: Brain,
+      icon: Eye,
       number: '01',
-      title: 'Leitura Neural',
-      subtitle: 'Como sua mente está operando agora',
-      text: 'Mapeamos o estado mental real — não quem você deveria ser, mas como seu cérebro está funcionando neste momento. Sem achismo. Sem generalização.',
+      title: 'Sua mente agora',
+      subtitle: 'Como você está funcionando de verdade',
+      text: 'Não é quem você gostaria de ser. É como sua mente está operando hoje — os filtros, as travas, os atalhos mentais que você nem percebe.',
     },
     {
-      icon: Target,
+      icon: Fingerprint,
       number: '02',
-      title: 'Padrão Dominante',
-      subtitle: 'O mecanismo invisível que dirige seus bloqueios',
-      text: 'Identificamos o ciclo exato de autossabotagem: o gatilho que ativa, a armadilha mental que prende, e a repetição que perpetua. Tudo com nome e sobrenome.',
+      title: 'Seu padrão oculto',
+      subtitle: 'O ciclo que você repete sem saber',
+      text: 'Aquele comportamento que sempre volta. O gatilho que ativa. A armadilha que prende. O ciclo completo — finalmente visível, com nome e explicação.',
     },
     {
       icon: Compass,
       number: '03',
-      title: 'Direção de Desbloqueio',
-      subtitle: 'A primeira ação que gera efeito cascata',
-      text: 'Não é uma lista de conselhos. É a indicação precisa de qual área destravar primeiro para que todas as outras comecem a se mover.',
+      title: 'Sua saída',
+      subtitle: 'A primeira ação que muda tudo',
+      text: 'Não é uma lista de conselhos. É a indicação exata de onde começar — o primeiro movimento que desbloqueia todo o resto.',
     },
   ];
 
@@ -36,10 +36,10 @@ const ThreeLayersSection = () => {
           className="text-center mb-16"
         >
           <p className="text-[11px] font-medium text-accent uppercase tracking-[0.2em] mb-3">
-            O que você descobre
+            O que você vai descobrir
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            Três camadas de decodificação
+            Três revelações em 5 minutos.
           </h2>
         </motion.div>
 

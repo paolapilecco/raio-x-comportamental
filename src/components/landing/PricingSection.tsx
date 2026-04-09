@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowRight, Check, Zap, Crown, Building2 } from 'lucide-react';
+import { ArrowRight, Check, Zap, Crown, Sparkles } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const PricingSection = () => {
@@ -16,56 +16,56 @@ const PricingSection = () => {
       cta: 'Começar agora',
       ctaAction: () => navigate('/auth'),
       features: [
-        '1 leitura comportamental completa',
-        'Relatório com padrão dominante',
+        'Seu primeiro Raio-X completo',
+        'Padrão dominante revelado',
         'Ciclo de autossabotagem mapeado',
-        'Exportação em PDF',
-        '1 perfil ativo',
+        'Gatilhos identificados',
+        'Relatório em PDF',
       ],
-      limit: 'Perfeito para sua primeira descoberta',
+      limit: 'Descubra o que te trava — sem pagar nada.',
     },
     {
       icon: Crown,
-      name: 'Pessoal',
-      tagline: 'Mais popular',
+      name: 'Desbloqueio Total',
+      tagline: 'Mais escolhido',
       price: 'R$ 5,99',
       period: '/mês',
       highlight: true,
-      cta: 'Desbloquear acesso',
+      cta: 'Desbloquear tudo',
       ctaAction: () => navigate('/checkout'),
       features: [
-        'Todos os módulos de análise',
-        'Até 18 leituras/mês',
-        'Perfil Central com evolução',
-        'Comparação entre leituras',
-        'Até 3 perfis ativos',
-        'Estratégia de saída por IA',
+        'Leituras ilimitadas por mês',
+        'Módulos: Propósito, Dinheiro, Amor, Autoimagem',
+        'Perfil Central — seu mapa completo',
+        'Acompanhe sua evolução real',
+        'Estratégia de saída personalizada',
+        'Até 3 perfis (faça com amigas!)',
       ],
-      limit: 'ou R$ 59,90/ano (economize 17%)',
+      limit: 'ou R$ 59,90/ano — economize 17%',
     },
     {
-      icon: Building2,
+      icon: Sparkles,
       name: 'Profissional',
-      tagline: 'Para clínicas',
+      tagline: 'Para quem atende',
       price: 'R$ 39,90',
       period: '/mês',
       highlight: false,
-      cta: 'Começar agora',
+      cta: 'Conhecer plano',
       ctaAction: () => navigate('/checkout'),
       features: [
-        'Tudo do plano Pessoal',
-        'Até 15 pacientes/clientes',
-        '18 leituras/mês por perfil',
-        'Convite por link (sem cadastro)',
-        'Notas clínicas por sessão',
+        'Tudo do Desbloqueio Total',
+        'Até 15 pessoas gerenciadas',
+        'Convite por link — sem cadastro',
+        'Notas por sessão',
+        'Comparação evolutiva',
         'Relatórios prontos para sessão',
       ],
-      limit: 'Ideal para psicólogos e terapeutas',
+      limit: 'Ideal para terapeutas e coaches.',
     },
   ];
 
   return (
-    <section className="px-6 py-24 md:py-32 bg-background" id="planos">
+    <section className="px-6 py-24 md:py-32 bg-secondary/30" id="planos">
       <div className="max-w-5xl mx-auto">
         <motion.div
           initial={{ opacity: 0 }}
@@ -77,11 +77,11 @@ const PricingSection = () => {
             Planos
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            Comece grátis. Evolua quando quiser.
+            Comece grátis. Vá fundo quando quiser.
           </h2>
           <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto">
-            Sua primeira leitura é gratuita e completa — sem cartão, sem compromisso.
-            Desbloqueie todo o potencial quando estiver pronta.
+            Seu primeiro Raio-X é 100% gratuito e completo. Depois que você vê o resultado,
+            você decide se quer ir mais fundo.
           </p>
         </motion.div>
 

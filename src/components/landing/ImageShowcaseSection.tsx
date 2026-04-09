@@ -13,14 +13,14 @@ const ImageShowcaseSection = () => {
           className="text-center mb-14"
         >
           <p className="text-[11px] font-medium text-accent uppercase tracking-[0.2em] mb-3">
-            Profundidade e precisão
+            Clareza que transforma
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            O que a observação comum não alcança.
+            Quem vê o padrão, nunca mais é refém dele.
           </h2>
           <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto">
-            Uma metodologia estruturada que cruza 8 eixos simultaneamente 
-            para revelar o que está por trás das suas decisões.
+            É como acender a luz num quarto escuro. Depois que você enxerga, 
+            não tem como "des-ver".
           </p>
         </motion.div>
 
@@ -34,7 +34,7 @@ const ImageShowcaseSection = () => {
           >
             <img
               src={professionalImg}
-              alt="Ambiente de trabalho de um profissional de saúde mental"
+              alt="Momento de reflexão e autoconhecimento"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
               width={1024}
@@ -43,11 +43,10 @@ const ImageShowcaseSection = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
               <p className="text-[10px] font-semibold text-accent uppercase tracking-[0.15em] mb-1">
-                Profundidade clínica
+                Antes do Raio-X
               </p>
               <p className="text-sm text-white/80 leading-relaxed">
-                Construído com a mesma lógica que profissionais usam em sessão — 
-                mas acessível em 5 minutos.
+                "Eu sabia que algo me travava. Só não sabia nomear."
               </p>
             </div>
           </motion.div>
@@ -61,7 +60,7 @@ const ImageShowcaseSection = () => {
           >
             <img
               src={neuralImg}
-              alt="Relatório comportamental detalhado"
+              alt="Relatório de autoconhecimento detalhado"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               loading="lazy"
               width={1024}
@@ -70,11 +69,10 @@ const ImageShowcaseSection = () => {
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-6">
               <p className="text-[10px] font-semibold text-accent uppercase tracking-[0.15em] mb-1">
-                Relatório completo
+                Depois do Raio-X
               </p>
               <p className="text-sm text-white/80 leading-relaxed">
-                Padrão dominante, gatilhos, contradições e direção de saída — 
-                tudo documentado com clareza cirúrgica.
+                "Agora eu sei exatamente o que me prende — e por onde sair."
               </p>
             </div>
           </motion.div>

@@ -9,21 +9,21 @@ const MethodologySection = ({ onStart }: MethodologySectionProps) => {
   const steps = [
     {
       step: '01',
-      title: 'Leitura Comportamental',
-      desc: 'Responda a uma análise estruturada que mapeia como sua mente opera — sem perguntas genéricas, sem horóscopo comportamental.',
-      detail: '~5 minutos · 8 eixos neurológicos · Análise profunda',
+      title: 'Responda com honestidade',
+      desc: 'São perguntas sobre como você realmente funciona — não o que você gostaria de ser. Sem certo ou errado. Sem julgamento.',
+      detail: '~5 minutos · 100% sigiloso',
     },
     {
       step: '02',
-      title: 'Raio-X do Padrão',
-      desc: 'O sistema cruza 8 eixos simultaneamente e identifica seu padrão dominante, contradições internas, gatilhos e o ciclo completo de autossabotagem.',
-      detail: 'IA de precisão clínica · Cruzamento multieixo',
+      title: 'Seu padrão é revelado',
+      desc: 'O sistema cruza suas respostas em 8 áreas da vida e identifica o padrão invisível que está dirigindo tudo — com nome, mecanismo e gatilhos.',
+      detail: 'Resultado imediato · Análise personalizada',
     },
     {
       step: '03',
-      title: 'Mapa de Desbloqueio',
-      desc: 'Você recebe um relatório com nome, mecanismo e direção de saída do padrão — não um genérico "seja mais positivo", mas a ação exata que move todas as peças.',
-      detail: 'Relatório em PDF · Perfil Central com evolução',
+      title: 'Você sabe por onde começar',
+      desc: 'Receba a direção exata: qual área destravar primeiro, o que evitar e o primeiro passo que gera efeito cascata na sua vida.',
+      detail: 'Relatório completo · Exportável em PDF',
     },
   ];
 
@@ -37,15 +37,11 @@ const MethodologySection = ({ onStart }: MethodologySectionProps) => {
           className="text-center mb-16"
         >
           <p className="text-[11px] font-medium text-accent uppercase tracking-[0.2em] mb-3">
-            Metodologia
+            Como funciona
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            Processo de leitura em 3 etapas
+            3 passos. 5 minutos. Clareza total.
           </h2>
-          <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto">
-            Um sistema estruturado para revelar o que você não consegue ver sozinha —
-            baseado em Níveis Neurológicos e análise de padrões.
-          </p>
         </motion.div>
 
         <div className="space-y-8">
@@ -81,10 +77,10 @@ const MethodologySection = ({ onStart }: MethodologySectionProps) => {
         >
           <button
             onClick={onStart}
-            className="inline-flex items-center gap-2 px-7 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="group inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-[hsl(41,50%,45%)] via-[hsl(41,55%,55%)] to-[hsl(41,50%,45%)] text-white rounded-xl text-sm font-semibold shadow-[0_0_30px_rgba(198,169,105,0.15)] hover:shadow-[0_0_50px_rgba(198,169,105,0.25)] transition-all duration-500 hover:scale-[1.02]"
           >
-            Começar minha leitura
-            <ArrowRight className="w-4 h-4" />
+            Quero descobrir meu padrão
+            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </button>
         </motion.div>
       </div>

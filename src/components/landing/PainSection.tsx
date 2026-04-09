@@ -2,11 +2,12 @@ import { motion } from 'framer-motion';
 
 const PainSection = () => {
   const pains = [
-    'Você sabe o que precisa fazer, mas não consegue executar.',
-    'Começa com tudo e depois abandona — sem saber o porquê.',
-    'Se cobra em excesso, mas não sai do lugar.',
-    'Sente que algo te trava, mas não consegue nomear.',
-    'Repete os mesmos ciclos nos relacionamentos, nas finanças, na carreira.',
+    'Você sabe o que precisa fazer, mas simplesmente não consegue.',
+    'Começa motivada e depois abandona — sempre.',
+    'Se cobra demais, mas continua no mesmo lugar.',
+    'Sente que tem algo te prendendo, mas não sabe o quê.',
+    'Repete os mesmos padrões no amor, no trabalho, no dinheiro.',
+    'Já tentou terapia, livros, cursos... e ainda se sente travada.',
   ];
 
   return (
@@ -19,14 +20,14 @@ const PainSection = () => {
           className="text-center mb-14"
         >
           <p className="text-[11px] font-medium text-accent uppercase tracking-[0.2em] mb-3">
-            Você se reconhece?
+            Isso te parece familiar?
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
             O problema nunca foi falta de esforço.
           </h2>
           <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto">
-            O que te trava não está na superfície. Está nos padrões que você
-            repete sem perceber — e que nenhum conselho genérico resolve.
+            Existe um padrão invisível controlando suas escolhas. Enquanto você 
+            não vê ele, vai continuar repetindo — não importa o quanto tente.
           </p>
         </motion.div>
 
@@ -50,9 +51,9 @@ const PainSection = () => {
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center text-sm text-muted-foreground mt-10 max-w-md mx-auto"
+          className="text-center text-sm text-accent/80 font-medium mt-10 max-w-md mx-auto"
         >
-          Se você marcou 2 ou mais, o Raio-X Mental foi feito pra você.
+          Se você se identificou com pelo menos 2... o Raio-X vai mudar a forma como você se enxerga.
         </motion.p>
       </div>
     </section>

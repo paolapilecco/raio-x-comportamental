@@ -30,19 +30,10 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
     >
       <FractalBloomCanvas />
 
-      {/* Subtle brain image overlay */}
       <div className="absolute inset-0 pointer-events-none opacity-15 mix-blend-screen">
-        <img
-          src={heroBrainImg}
-          alt=""
-          aria-hidden="true"
-          className="w-full h-full object-cover"
-          width={1920}
-          height={1080}
-        />
+        <img src={heroBrainImg} alt="" aria-hidden="true" className="w-full h-full object-cover" width={1920} height={1080} />
       </div>
 
-      {/* Gradient overlays */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 pointer-events-none" />
 
@@ -56,7 +47,7 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
         >
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           <span className="text-[11px] font-medium text-white/70 uppercase tracking-[0.2em]">
-            Diagnóstico Comportamental de Precisão
+            +2.800 mulheres já fizeram o seu
           </span>
         </motion.div>
 
@@ -67,13 +58,11 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
           animate="visible"
           className="text-[2.75rem] md:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.05] text-white mb-6"
         >
-          Você não está travada.{' '}
-          <span className="block mt-1">
-            Você está{' '}
-            <span className="bg-gradient-to-r from-[hsl(41,45%,59%)] to-[hsl(41,55%,72%)] bg-clip-text text-transparent">
-              repetindo um padrão.
-            </span>
-          </span>
+          Descubra o que está{' '}
+          <span className="bg-gradient-to-r from-[hsl(41,45%,59%)] to-[hsl(41,55%,72%)] bg-clip-text text-transparent">
+            te sabotando
+          </span>{' '}
+          sem você perceber.
         </motion.h1>
 
         <motion.p
@@ -83,8 +72,8 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
           animate="visible"
           className="text-base md:text-lg text-white/60 leading-relaxed max-w-xl mx-auto mb-10"
         >
-          O Raio-X Mental decodifica os mecanismos invisíveis que dirigem suas decisões,
-          bloqueios e repetições — em 5 minutos, com precisão clínica.
+          Em 5 minutos você vai entender por que trava, repete os mesmos erros
+          e não consegue sair do lugar — mesmo sabendo exatamente o que precisa fazer.
         </motion.p>
 
         <motion.div
@@ -98,7 +87,7 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
             onClick={onStart}
             className="group inline-flex items-center gap-2.5 px-8 py-4 bg-gradient-to-r from-[hsl(41,50%,45%)] via-[hsl(41,55%,55%)] to-[hsl(41,50%,45%)] text-white rounded-xl text-sm font-semibold shadow-[0_0_40px_rgba(198,169,105,0.2)] hover:shadow-[0_0_60px_rgba(198,169,105,0.35)] transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
           >
-            Iniciar minha leitura gratuita
+            Fazer meu Raio-X gratuito
             <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
           </button>
           <button
@@ -116,11 +105,8 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
           animate="visible"
           className="space-y-2"
         >
-          <p className="text-[11px] text-white/25 tracking-wide">
-            Gratuito para sempre · Sem cartão · Resultado imediato
-          </p>
-          <p className="text-[10px] text-white/15">
-            +2.800 padrões já mapeados por profissionais de saúde mental
+          <p className="text-[11px] text-white/30 tracking-wide">
+            100% gratuito · Sem cartão · Resultado na hora
           </p>
         </motion.div>
       </div>

@@ -1,37 +1,24 @@
 import { motion } from 'framer-motion';
-import { User, Briefcase } from 'lucide-react';
 
 const DualPersonaSection = () => {
-  const personas = [
+  const transformations = [
     {
-      icon: User,
-      label: 'Para você',
-      title: 'Autoconhecimento de verdade',
-      points: [
-        'Descubra por que você trava sempre no mesmo ponto',
-        'Entenda os gatilhos que ativam sua autossabotagem',
-        'Receba a direção exata de onde começar a mudar',
-        'Acompanhe sua evolução com retestes periódicos',
-      ],
-      cta: 'Pessoas que querem sair do piloto automático e entender o que realmente as impede de avançar.',
+      before: '"Eu sempre estrago tudo quando as coisas começam a dar certo."',
+      after: 'Padrão identificado: Autossabotagem por medo de visibilidade. Gatilho: sucesso iminente.',
     },
     {
-      icon: Briefcase,
-      label: 'Para profissionais',
-      title: 'Ferramenta clínica de precisão',
-      points: [
-        'Mapeie padrões dos seus pacientes em 5 minutos',
-        'Relatórios prontos para sessão terapêutica',
-        'Comparação evolutiva entre sessões',
-        'Convide pacientes por link — sem cadastro necessário',
-      ],
-      cta: 'Psicólogos, terapeutas, coaches e profissionais de saúde mental que querem elevar o nível das suas sessões.',
+      before: '"Eu sei o que preciso fazer, mas fico paralisada."',
+      after: 'Padrão identificado: Paralisia por hipercontrole. Gatilho: medo de errar.',
+    },
+    {
+      before: '"Sempre atraio o mesmo tipo de pessoa nos relacionamentos."',
+      after: 'Padrão identificado: Repetição compensatória. Gatilho: necessidade de validação.',
     },
   ];
 
   return (
     <section className="px-6 py-24 md:py-32 bg-secondary/30">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -39,47 +26,47 @@ const DualPersonaSection = () => {
           className="text-center mb-14"
         >
           <p className="text-[11px] font-medium text-accent uppercase tracking-[0.2em] mb-3">
-            Para quem é
+            Exemplos reais
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
-            Duas personas. Uma ferramenta.
+            De "não sei o que tenho" para clareza total.
           </h2>
+          <p className="text-sm text-muted-foreground mt-4 max-w-lg mx-auto">
+            Veja como o Raio-X transforma sensações vagas em diagnósticos precisos.
+          </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          {personas.map((persona, i) => (
+        <div className="space-y-5">
+          {transformations.map((item, i) => (
             <motion.div
               key={i}
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.15, duration: 0.5 }}
-              className="p-7 rounded-2xl border border-border/40 bg-card/60 space-y-5"
+              transition={{ delay: i * 0.12, duration: 0.5 }}
+              className="p-6 rounded-2xl border border-border/40 bg-card/60 space-y-4"
             >
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-accent/10 flex items-center justify-center">
-                  <persona.icon className="w-4 h-4 text-accent" />
-                </div>
-                <span className="text-[10px] font-semibold text-accent uppercase tracking-[0.15em]">{persona.label}</span>
+              <div className="flex items-start gap-3">
+                <span className="text-[10px] font-bold text-destructive/60 uppercase tracking-wider mt-0.5 shrink-0">Antes</span>
+                <p className="text-sm text-foreground/60 italic leading-relaxed">{item.before}</p>
               </div>
-
-              <h3 className="text-xl font-bold tracking-tight text-foreground">{persona.title}</h3>
-
-              <ul className="space-y-2.5">
-                {persona.points.map((point, j) => (
-                  <li key={j} className="flex items-start gap-3">
-                    <span className="w-1 h-1 rounded-full bg-accent/50 mt-2 shrink-0" />
-                    <span className="text-sm text-muted-foreground leading-relaxed">{point}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <p className="text-xs text-muted-foreground/60 leading-relaxed pt-2 border-t border-border/30">
-                {persona.cta}
-              </p>
+              <div className="w-full h-px bg-border/30" />
+              <div className="flex items-start gap-3">
+                <span className="text-[10px] font-bold text-accent uppercase tracking-wider mt-0.5 shrink-0">Depois</span>
+                <p className="text-sm text-foreground font-medium leading-relaxed">{item.after}</p>
+              </div>
             </motion.div>
           ))}
         </div>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          className="text-center text-xs text-muted-foreground/50 mt-8"
+        >
+          Cada pessoa recebe um diagnóstico único — baseado nas suas respostas reais.
+        </motion.p>
       </div>
     </section>
   );
