@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -123,8 +124,78 @@ serve(async (req) => {
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY not configured");
 
-    const { templateName, to, data } = await req.json();
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
+    const { templateName, to, data, action } = await req.json();
+
+    // Action: list templates (for admin)
+    if (action === "list-templates") {
+      const templateList = Object.entries(templates).map(([key, fn]) => {
+        const sample = fn({});
+        return { key, subject: sample.subject, preview: sample.html.substring(0, 200) + "..." };
+      });
+      return new Response(JSON.stringify({ templates: templateList }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Action: preview template (for admin)
+    if (action === "preview") {
+      if (!templateName || !templates[templateName]) {
+        return new Response(JSON.stringify({ error: "Template não encontrado" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { subject, html } = templates[templateName](data || {});
+      return new Response(JSON.stringify({ subject, html }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Action: get logs (for admin)
+    if (action === "get-logs") {
+      const limit = data?.limit || 50;
+      const offset = data?.offset || 0;
+      const statusFilter = data?.statusFilter;
+      const templateFilter = data?.templateFilter;
+
+      let query = supabase
+        .from("email_logs")
+        .select("*", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (statusFilter && statusFilter !== "all") query = query.eq("status", statusFilter);
+      if (templateFilter && templateFilter !== "all") query = query.eq("template_name", templateFilter);
+
+      const { data: logs, count, error } = await query;
+      if (error) {
+        console.error("Logs query error:", error);
+        return new Response(JSON.stringify({ error: "Erro ao buscar logs" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Stats
+      const { data: stats } = await supabase
+        .from("email_logs")
+        .select("status");
+
+      const statCounts = { total: stats?.length || 0, sent: 0, failed: 0, pending: 0 };
+      stats?.forEach((s: any) => {
+        if (s.status === "sent") statCounts.sent++;
+        else if (s.status === "failed") statCounts.failed++;
+        else statCounts.pending++;
+      });
+
+      return new Response(JSON.stringify({ logs, count, stats: statCounts }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Default: send email
     if (!templateName || typeof templateName !== "string") {
       return new Response(JSON.stringify({ error: "templateName obrigatório" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -146,6 +217,15 @@ serve(async (req) => {
 
     const { subject, html } = templateFn(data || {});
 
+    // Log as pending
+    const { data: logEntry } = await supabase.from("email_logs").insert({
+      template_name: templateName,
+      recipient_email: to,
+      status: "pending",
+      template_data: data || {},
+      sent_by: data?._sentBy || null,
+    }).select("id").single();
+
     const response = await fetch(`${GATEWAY_URL}/emails`, {
       method: "POST",
       headers: {
@@ -162,6 +242,15 @@ serve(async (req) => {
     });
 
     const result = await response.json();
+
+    // Update log status
+    if (logEntry?.id) {
+      if (response.ok) {
+        await supabase.from("email_logs").update({ status: "sent", resend_id: result.id }).eq("id", logEntry.id);
+      } else {
+        await supabase.from("email_logs").update({ status: "failed", error_message: JSON.stringify(result) }).eq("id", logEntry.id);
+      }
+    }
 
     if (!response.ok) {
       console.error("Resend API error:", JSON.stringify(result));
