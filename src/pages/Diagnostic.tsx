@@ -349,6 +349,8 @@ const Diagnostic = () => {
       return analyzeGenericTest(answers, dbQuestions, engine.axes, engine.definitions);
     }
 
+    // Fallback — should not happen since all modules are registered
+    console.warn(`No engine found for slug "${slug}", falling back to legacy analysis`);
     return analyzeAnswers(answers);
   }, [slug, dbQuestions]);
 
