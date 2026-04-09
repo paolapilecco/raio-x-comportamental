@@ -10,6 +10,36 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
+  const [liveCount, setLiveCount] = useState(() => {
+    const stored = localStorage.getItem('rxm_live_count');
+    const lastVisit = localStorage.getItem('rxm_last_visit');
+    const now = Date.now();
+    const base = stored ? parseInt(stored, 10) : 2800;
+    // Incrementa entre 1-4 a cada visita, com intervalo mínimo de 30s
+    if (!lastVisit || now - parseInt(lastVisit, 10) > 30000) {
+      const increment = Math.floor(Math.random() * 4) + 1;
+      const newCount = base + increment;
+      localStorage.setItem('rxm_live_count', String(newCount));
+      localStorage.setItem('rxm_last_visit', String(now));
+      return newCount;
+    }
+    return base;
+  });
+
+  useEffect(() => {
+    // Incremento sutil a cada 15-45s enquanto a página está aberta
+    const interval = setInterval(() => {
+      setLiveCount(prev => {
+        const next = prev + 1;
+        localStorage.setItem('rxm_live_count', String(next));
+        return next;
+      });
+    }, (Math.random() * 30000) + 15000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formattedCount = liveCount.toLocaleString('pt-BR');
+
   const fadeUp = {
     hidden: { opacity: 0, y: 24 },
     visible: (i: number) => ({
