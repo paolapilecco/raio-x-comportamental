@@ -1,6 +1,6 @@
 import { GenericPatternDefinition } from '@/lib/genericAnalysis';
 
-export const EMOTIONAL_AXES = ['impulsividade', 'regulacao_emocional', 'tolerancia_frustracao', 'reatividade', 'autoconsciencia_emocional'];
+export const EMOTIONAL_AXES = ['impulsividade', 'regulacao_emocional', 'tolerancia_frustracao', 'reatividade', 'autoconsciencia_emocional', 'supressao_emocional'];
 
 export const emotionalPatterns: Record<string, GenericPatternDefinition> = {
   impulsividade: {
@@ -156,6 +156,37 @@ export const emotionalPatterns: Record<string, GenericPatternDefinition> = {
       { step: 2, title: 'Ampliar vocabulário', action: 'Substitua "bem/mal" por emoções específicas: ansioso, aliviado, frustrado, grato, inseguro, esperançoso.' },
       { step: 3, title: 'Ouvir o corpo', action: 'Quando não souber o que sente, pergunte ao corpo: "onde estou tenso? Leve? Pesado?" O corpo sabe antes da mente.' },
       { step: 4, title: 'Comunicar imperfeito', action: 'Diga "não sei exatamente o que estou sentindo, mas parece [X]". Comunicação imperfeita é melhor que silêncio.' },
+    ],
+  },
+  supressao_emocional: {
+    key: 'supressao_emocional',
+    label: 'Supressão Emocional',
+    profileName: 'O Vulcão Adormecido',
+    description: 'Você não explode — você implode. As emoções estão lá, mas são sistematicamente empurradas para baixo. Por fora, tudo parece sob controle; por dentro, a pressão acumula até que o corpo ou a mente cobram a conta.',
+    mechanism: 'Em algum momento, expressar emoções foi associado a fraqueza, perigo ou rejeição. Você aprendeu a engolir o que sente — e agora isso acontece automaticamente, sem perceber que está fazendo.',
+    mentalState: 'Aparente calma que mascara tensão crônica. Você funciona no modo "piloto automático emocional" — presente no mundo externo, ausente do mundo interno.',
+    corePain: 'A solidão de sentir sem poder expressar. O peso de carregar emoções que ninguém vê porque você aprendeu a escondê-las bem demais.',
+    keyUnlockArea: 'Criar canais seguros de expressão emocional antes que a pressão encontre uma saída destrutiva.',
+    criticalDiagnosis: 'Você não é forte por não sentir — você está sobrecarregado por sentir sem processar. A repressão não elimina a emoção, apenas muda onde ela explode: no corpo (dores, insônia, tensão), nos vínculos (afastamento, frieza) ou em episódios de colapso.',
+    whatNotToDo: ['Não confunda reprimir com controlar — são coisas opostas', 'Não use trabalho, exercício ou ocupação como substituto de processamento emocional', 'Não diga "estou bem" quando não está — isso reforça o padrão', 'Não espere um colapso para permitir-se sentir'],
+    triggers: ['Situações que exigem vulnerabilidade', 'Perguntas diretas sobre sentimentos', 'Conflitos onde a expressão emocional seria necessária', 'Momentos de intimidade ou proximidade afetiva', 'Acúmulo de pressão sem válvula de escape'],
+    mentalTraps: ['"Não preciso falar sobre isso"', '"Sentir é perder o controle"', '"Se eu começar a sentir, não vou parar"', '"Emoções atrapalham, razão resolve"'],
+    selfSabotageCycle: ['Emoção surge e é automaticamente reprimida', 'Tensão interna se acumula sem ser percebida', 'Corpo sinaliza (dores, insônia, irritabilidade de fundo)', 'Sinais ignorados → mais repressão', 'Colapso eventual (explosão, burnout, doença) ou afastamento progressivo das pessoas'],
+    blockingPoint: 'O momento em que precisaria dizer "estou sofrendo" ou "preciso de ajuda". A barreira entre sentir e expressar é onde tudo trava.',
+    contradiction: 'Quer conexões profundas e saúde emocional mas opera como se emoções fossem um defeito a ser corrigido.',
+    impact: 'Somatização crônica. Relações superficiais por incapacidade de mostrar vulnerabilidade. Episódios de colapso inesperado que surpreendem a todos — menos quem estava acumulando.',
+    direction: 'Não precisa explodir para processar. Comece nomeando internamente o que sente — sem ação, sem julgamento, apenas reconhecimento.',
+    lifeImpact: [
+      { pillar: 'Saúde', impact: 'Tensão muscular crônica, dores de cabeça, problemas digestivos, insônia. O corpo expressa o que a mente reprime.' },
+      { pillar: 'Relacionamentos', impact: 'Parceiros e amigos sentem uma parede invisível. Você está presente mas emocionalmente inacessível.' },
+      { pillar: 'Saúde mental', impact: 'Risco de burnout, episódios depressivos ou crises de ansiedade por acúmulo não processado.' },
+      { pillar: 'Autoconhecimento', impact: 'Desconexão progressiva de si mesmo. Você sabe o que pensa, mas não sabe o que sente.' },
+    ],
+    exitStrategy: [
+      { step: 1, title: 'Check-in corporal', action: 'Duas vezes ao dia, escaneie seu corpo: onde há tensão? Aperto no peito? Nó na garganta? O corpo fala antes da mente.' },
+      { step: 2, title: 'Diário privado', action: 'Escreva o que sentiu durante o dia — sem filtro, sem público. A página é o espaço seguro que seu sistema precisa.' },
+      { step: 3, title: 'Micro-expressões', action: 'Pratique dizer "isso me incomodou" ou "estou cansado emocionalmente" em situações de baixo risco. Treine o músculo.' },
+      { step: 4, title: 'Válvula antes do colapso', action: 'Identifique 1 pessoa segura para quem possa ser honesto. Não precisa ser terapia — precisa ser verdade.' },
     ],
   },
 };

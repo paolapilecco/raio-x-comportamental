@@ -1,6 +1,6 @@
 import { GenericPatternDefinition } from '@/lib/genericAnalysis';
 
-export const SELF_IMAGE_AXES = ['autoestima', 'autenticidade', 'comparacao_social', 'autoaceitacao', 'identidade_flutuante'];
+export const SELF_IMAGE_AXES = ['autoestima', 'autenticidade', 'comparacao_social', 'autoaceitacao', 'identidade_flutuante', 'sindrome_impostor'];
 
 export const selfImagePatterns: Record<string, GenericPatternDefinition> = {
   autoestima: {
@@ -156,6 +156,37 @@ export const selfImagePatterns: Record<string, GenericPatternDefinition> = {
       { step: 2, title: 'Diário de preferências', action: 'Todo dia anote 1 escolha genuinamente sua (comida, música, atividade). Sem justificativa. Apenas o que você quer.' },
       { step: 3, title: 'Teste de contexto', action: 'Quando mudar de opinião, pergunte: "mudei porque pensei diferente ou porque o grupo pensa diferente?"' },
       { step: 4, title: 'Compromisso com algo', action: 'Escolha 1 atividade ou projeto e se comprometa por 90 dias. Identidade se constrói com consistência.' },
+    ],
+  },
+  sindrome_impostor: {
+    key: 'sindrome_impostor',
+    label: 'Síndrome do Impostor',
+    profileName: 'O Fraudador Invisível',
+    description: 'Você está convicto de que seu sucesso é acidental, imerecido ou temporário. Apesar de evidências concretas de competência, há uma certeza interna de que você é uma fraude — e que é apenas questão de tempo até "descobrirem".',
+    mechanism: 'Seu sistema atribui conquistas a fatores externos (sorte, timing, ajuda) e fracassos a fatores internos (incompetência, fraude). Essa distorção atributiva cria uma realidade paralela onde nada do que você conquista é genuinamente seu.',
+    mentalState: 'Hipervigilância sobre a própria competência. Medo constante de ser "desmascarado". Cada reunião, entrega ou exposição é vivida como um teste que pode revelar a farsa.',
+    corePain: 'A solidão de viver com um segredo que ninguém vê: "eu não sou tão bom quanto pensam". Cada elogio reforça o medo em vez de aliviar — porque quanto mais elogiam, mais alto é o pedestal de onde pode cair.',
+    keyUnlockArea: 'Internalizar conquistas como resultado de competência real, não de sorte. Mudar a atribuição de "aconteceu apesar de mim" para "aconteceu por causa de mim".',
+    criticalDiagnosis: 'Você não é uma fraude — você é alguém com um sistema de atribuição defeituoso. Quando algo dá certo, você credita a sorte. Quando dá errado, credita a si mesmo. Essa assimetria cria uma realidade onde o sucesso nunca é seu mas o fracasso sempre é.',
+    whatNotToDo: ['Não minimize conquistas com "foi sorte" ou "qualquer um faria"', 'Não se prepare excessivamente para compensar a "incompetência" que não existe', 'Não compare seu processo interno com o resultado externo dos outros', 'Não espere sentir-se competente para agir como competente — a ordem é inversa'],
+    triggers: ['Promoções ou reconhecimento público', 'Estar em ambientes com pessoas que você considera superiores', 'Iniciar projetos novos onde ainda não tem domínio', 'Receber elogios específicos sobre competência', 'Ser colocado em posição de liderança ou autoridade'],
+    mentalTraps: ['"Se soubessem a verdade, não me respeitariam"', '"Eu só consegui porque tive ajuda"', '"Na próxima vez não vou ter tanta sorte"', '"Sou bom em enganar as pessoas sobre minha capacidade"'],
+    selfSabotageCycle: ['Conquista objetiva acontece', 'Atribuição externa: "foi sorte, timing, ajuda"', 'Medo de que a próxima vez vai expor a fraude', 'Overworking para "compensar" a incompetência percebida', 'Burnout ou paralisia → performance cai → "eu sabia que não era capaz"'],
+    blockingPoint: 'O momento de aceitar o próprio mérito. Internalizar "eu fiz isso e foi bom" é insuportavelmente desconfortável.',
+    contradiction: 'Quer reconhecimento e sucesso mas cada conquista aumenta o medo de ser desmascarado em vez de construir confiança.',
+    impact: 'Overworking crônico. Recusa de oportunidades por medo de não dar conta. Incapacidade de celebrar ou descansar após conquistas.',
+    direction: 'Faça uma lista de tudo que conquistou e, ao lado, escreva exatamente o que VOCÊ fez para que acontecesse. Sorte não faz tudo isso.',
+    lifeImpact: [
+      { pillar: 'Carreira', impact: 'Recusa promoções ou oportunidades por medo de "não dar conta". Trabalha 2x mais que os colegas para "compensar" a incompetência imaginária.' },
+      { pillar: 'Saúde mental', impact: 'Ansiedade crônica vinculada a performance. Medo constante de ser descoberto gera estresse tóxico.' },
+      { pillar: 'Autoconfiança', impact: 'Nenhuma conquista se sedimenta como evidência de capacidade. O currículo cresce mas a confiança não.' },
+      { pillar: 'Relacionamentos', impact: 'Dificuldade em aceitar admiração genuína. Parceiros e colegas não entendem a insegurança por trás do sucesso visível.' },
+    ],
+    exitStrategy: [
+      { step: 1, title: 'Inventário de mérito', action: 'Liste 5 conquistas profissionais. Ao lado de cada uma, escreva 3 coisas que VOCÊ fez para que acontecesse. Force a atribuição interna.' },
+      { step: 2, title: 'Diário de competência', action: 'Toda semana, anote 1 situação onde sua capacidade fez diferença. Construa evidências contra a narrativa de fraude.' },
+      { step: 3, title: 'Normalizar falha', action: 'Quando errar, observe: "eu errei nessa tarefa" — não "eu sou uma fraude". Erro é dado; fraude é narrativa.' },
+      { step: 4, title: 'Compartilhar o medo', action: 'Conte para alguém de confiança: "às vezes sinto que não mereço estar onde estou". A maioria das pessoas de alto desempenho sente o mesmo. O segredo perde poder quando é dito em voz alta.' },
     ],
   },
 };
