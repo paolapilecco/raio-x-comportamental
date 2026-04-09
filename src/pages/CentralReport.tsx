@@ -223,6 +223,22 @@ const CentralReport = () => {
         return;
       }
       setAiInsights(data as AIInsights);
+
+      // 📧 Send report-ready email (fire-and-forget)
+      if (user?.email) {
+        const selectedPerson = managedPersons.find(p => p.id === selectedPersonId);
+        supabase.functions.invoke('send-email', {
+          body: {
+            templateName: 'report-ready',
+            to: user.email,
+            data: {
+              name: selectedPerson?.name || '',
+              reportName: 'Perfil Central com IA',
+              reportUrl: `${window.location.origin}/central-report`,
+            },
+          },
+        }).catch(() => {});
+      }
     } catch (e: any) {
       console.error('Insights error:', e);
       toast.error('Erro ao gerar insights. Tente novamente.');
