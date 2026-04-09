@@ -78,7 +78,7 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
         >
           <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
           <span className="text-[11px] font-medium text-white/70 uppercase tracking-[0.2em]">
-            +2.800 mulheres já fizeram o seu
+            +{formattedCount} reprogramações emocionais realizadas
           </span>
         </motion.div>
 
