@@ -30,6 +30,7 @@ import PatientDetail from "./pages/PatientDetail";
 import ProfessionalDashboard from "./pages/ProfessionalDashboard";
 import PatientComparison from "./pages/PatientComparison";
 import PublicTest from "./pages/PublicTest";
+import AdminEmails from "./pages/AdminEmails";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,7 @@ const App = () => (
             <Route path="/admin/questions" element={<ProtectedRoute><AdminQuestions /></ProtectedRoute>} />
             <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
             <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
+            <Route path="/admin/emails" element={<ProtectedRoute><AdminEmails /></ProtectedRoute>} />
             <Route path="/admin/ai-config" element={<Navigate to="/admin/prompts" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
