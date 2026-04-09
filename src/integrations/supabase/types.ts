@@ -221,6 +221,42 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          resend_id: string | null
+          sent_by: string | null
+          status: string
+          template_data: Json | null
+          template_name: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          resend_id?: string | null
+          sent_by?: string | null
+          status?: string
+          template_data?: Json | null
+          template_name: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          resend_id?: string | null
+          sent_by?: string | null
+          status?: string
+          template_data?: Json | null
+          template_name?: string
+        }
+        Relationships: []
+      }
       global_ai_config: {
         Row: {
           ai_enabled: boolean
