@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import FractalBloomCanvas from '@/components/ui/fractal-bloom-canvas';
+import heroBrainImg from '@/assets/hero-brain.jpg';
 
 interface HeroSectionProps {
   onStart: () => void;
@@ -29,9 +30,21 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
     >
       <FractalBloomCanvas />
 
-      {/* Gradient overlays for readability */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20 pointer-events-none" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60 pointer-events-none" />
+      {/* Subtle brain image overlay */}
+      <div className="absolute inset-0 pointer-events-none opacity-15 mix-blend-screen">
+        <img
+          src={heroBrainImg}
+          alt=""
+          aria-hidden="true"
+          className="w-full h-full object-cover"
+          width={1920}
+          height={1080}
+        />
+      </div>
+
+      {/* Gradient overlays */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/70 pointer-events-none" />
 
       <div className="relative z-10 max-w-3xl w-full text-center px-6 py-32">
         <motion.div
@@ -96,15 +109,20 @@ const HeroSection = ({ onStart, onScrollToHow }: HeroSectionProps) => {
           </button>
         </motion.div>
 
-        <motion.p
+        <motion.div
           custom={4}
           variants={fadeUp}
           initial="hidden"
           animate="visible"
-          className="text-[11px] text-white/25 tracking-wide"
+          className="space-y-2"
         >
-          Gratuito · Sem cartão · Resultado imediato
-        </motion.p>
+          <p className="text-[11px] text-white/25 tracking-wide">
+            Gratuito para sempre · Sem cartão · Resultado imediato
+          </p>
+          <p className="text-[10px] text-white/15">
+            +2.800 padrões já mapeados por profissionais de saúde mental
+          </p>
+        </motion.div>
       </div>
     </section>
   );
