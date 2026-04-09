@@ -7,6 +7,63 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const PLAN_LABELS: Record<string, string> = {
+  monthly: "Pessoal Mensal",
+  yearly: "Pessoal Anual",
+  profissional: "Profissional",
+};
+
+async function sendEmail(
+  supabase: any,
+  templateName: string,
+  to: string,
+  data: Record<string, string>,
+) {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+
+    if (!LOVABLE_API_KEY) return;
+
+    await fetch(`${supabaseUrl}/functions/v1/send-email`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${anonKey}`,
+      },
+      body: JSON.stringify({ templateName, to, data }),
+    });
+  } catch (e) {
+    console.error(`Failed to send ${templateName} email:`, e);
+  }
+}
+
+async function getUserEmail(adminClient: any, userId: string): Promise<string | null> {
+  try {
+    const { data } = await adminClient
+      .from("profiles")
+      .select("name")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    // Get email from auth
+    const { data: authData } = await adminClient.auth.admin.getUserById(userId);
+    return authData?.user?.email || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getUserName(adminClient: any, userId: string): Promise<string> {
+  const { data } = await adminClient
+    .from("profiles")
+    .select("name")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data?.name || "";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -43,24 +100,25 @@ serve(async (req) => {
 
     // Handle payment events
     if (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") {
-      // Payment confirmed - activate subscription
       if (payment?.subscription) {
         const { data: sub } = await adminClient
           .from("subscriptions")
-          .select("id, user_id, status")
+          .select("id, user_id, status, plan")
           .eq("asaas_subscription_id", payment.subscription)
           .maybeSingle();
 
         if (sub) {
+          const nextDueDate = payment.dueDate
+            ? new Date(new Date(payment.dueDate).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            : null;
+
           // Update subscription status
           await adminClient
             .from("subscriptions")
             .update({
               status: "active",
               current_period_start: new Date().toISOString(),
-              current_period_end: payment.dueDate
-                ? new Date(new Date(payment.dueDate).getTime() + 30 * 24 * 60 * 60 * 1000).toISOString()
-                : null,
+              current_period_end: nextDueDate,
             })
             .eq("id", sub.id);
 
@@ -83,21 +141,58 @@ serve(async (req) => {
             user_id: sub.user_id,
             previous_plan: "standard",
             new_plan: "premium",
-            changed_by: sub.user_id, // self via payment
+            changed_by: sub.user_id,
           });
 
           console.log(`User ${sub.user_id} upgraded to premium via payment`);
+
+          // 📧 Send subscription-confirmed email
+          const email = await getUserEmail(adminClient, sub.user_id);
+          const name = await getUserName(adminClient, sub.user_id);
+          if (email) {
+            await sendEmail(adminClient, "subscription-confirmed", email, {
+              name,
+              planName: PLAN_LABELS[sub.plan] || "Premium",
+              value: payment.value?.toFixed(2)?.replace(".", ",") || "—",
+              nextDueDate: nextDueDate
+                ? new Date(nextDueDate).toLocaleDateString("pt-BR")
+                : "—",
+            });
+          }
         }
       }
     }
 
     if (event === "PAYMENT_OVERDUE") {
       if (payment?.subscription) {
+        const { data: sub } = await adminClient
+          .from("subscriptions")
+          .select("id, user_id, plan")
+          .eq("asaas_subscription_id", payment.subscription)
+          .maybeSingle();
+
         await adminClient
           .from("subscriptions")
           .update({ status: "overdue" })
           .eq("asaas_subscription_id", payment.subscription);
+
         console.log(`Subscription ${payment.subscription} marked as overdue`);
+
+        // 📧 Send payment-overdue email
+        if (sub) {
+          const email = await getUserEmail(adminClient, sub.user_id);
+          const name = await getUserName(adminClient, sub.user_id);
+          if (email) {
+            await sendEmail(adminClient, "payment-overdue", email, {
+              name,
+              planName: PLAN_LABELS[sub.plan] || "Premium",
+              value: payment.value?.toFixed(2)?.replace(".", ",") || "—",
+              dueDate: payment.dueDate
+                ? new Date(payment.dueDate).toLocaleDateString("pt-BR")
+                : "—",
+            });
+          }
+        }
       }
     }
 
@@ -107,7 +202,7 @@ serve(async (req) => {
       if (subId) {
         const { data: sub } = await adminClient
           .from("subscriptions")
-          .select("id, user_id")
+          .select("id, user_id, plan, current_period_end")
           .eq("asaas_subscription_id", subId)
           .maybeSingle();
 
@@ -136,6 +231,19 @@ serve(async (req) => {
           });
 
           console.log(`User ${sub.user_id} downgraded - subscription canceled`);
+
+          // 📧 Send subscription-canceled email
+          const email = await getUserEmail(adminClient, sub.user_id);
+          const name = await getUserName(adminClient, sub.user_id);
+          if (email) {
+            await sendEmail(adminClient, "subscription-canceled", email, {
+              name,
+              planName: PLAN_LABELS[sub.plan] || "Premium",
+              accessUntil: sub.current_period_end
+                ? new Date(sub.current_period_end).toLocaleDateString("pt-BR")
+                : "fim do período atual",
+            });
+          }
         }
       }
     }
