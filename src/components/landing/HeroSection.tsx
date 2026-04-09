@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import FractalBloomCanvas from '@/components/ui/fractal-bloom-canvas';
