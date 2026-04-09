@@ -8,6 +8,7 @@ import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect } from 'react';
 import LifeMapReport from './LifeMapReport';
+import { ReportGamification } from './ReportGamification';
 
 interface ReportProps {
   result: DiagnosticResult;
