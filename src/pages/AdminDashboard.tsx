@@ -98,6 +98,7 @@ export default function AdminDashboard() {
     { label: 'Prompts IA', icon: Settings, path: '/admin/prompts', desc: 'Configurar prompts de IA' },
     { label: 'Prompts & IA', icon: Settings, path: '/admin/prompts', desc: 'Prompts e configuração de IA' },
     { label: 'Roadmap', icon: LayoutGrid, path: '/admin/roadmap', desc: 'Tarefas do projeto' },
+    { label: 'Emails', icon: Activity, path: '/admin/emails', desc: 'Logs e templates de email' },
   ];
 
   return (
