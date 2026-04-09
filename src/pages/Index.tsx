@@ -5,9 +5,11 @@ import HeroSection from '@/components/landing/HeroSection';
 import SocialProofBar from '@/components/landing/SocialProofBar';
 import PainSection from '@/components/landing/PainSection';
 import ThreeLayersSection from '@/components/landing/ThreeLayersSection';
+import ImageShowcaseSection from '@/components/landing/ImageShowcaseSection';
 import DualPersonaSection from '@/components/landing/DualPersonaSection';
 import MethodologySection from '@/components/landing/MethodologySection';
 import TestimonialsSection from '@/components/landing/TestimonialsSection';
+import PricingSection from '@/components/landing/PricingSection';
 import ChecklistSection from '@/components/landing/ChecklistSection';
 import FinalCTASection from '@/components/landing/FinalCTASection';
 import LandingFooter from '@/components/landing/LandingFooter';
@@ -41,12 +43,20 @@ const Index = () => {
           <span className="text-sm font-bold tracking-tight text-white/90">
             Raio-X Mental
           </span>
-          <button
-            onClick={handleStart}
-            className="text-sm font-medium text-white/50 hover:text-white/80 transition-colors"
-          >
-            Entrar
-          </button>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => document.getElementById('planos')?.scrollIntoView({ behavior: 'smooth' })}
+              className="text-sm font-medium text-white/40 hover:text-white/70 transition-colors hidden sm:block"
+            >
+              Planos
+            </button>
+            <button
+              onClick={handleStart}
+              className="text-sm font-medium text-white/50 hover:text-white/80 transition-colors"
+            >
+              Entrar
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -54,9 +64,11 @@ const Index = () => {
       <SocialProofBar />
       <PainSection />
       <ThreeLayersSection />
+      <ImageShowcaseSection />
       <DualPersonaSection />
       <MethodologySection onStart={handleStart} />
       <TestimonialsSection />
+      <PricingSection />
       <ChecklistSection />
       <FinalCTASection onStart={handleStart} />
       <LandingFooter />
