@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, Brain } from 'lucide-react';
+import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3 } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -342,12 +342,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 </motion.div>
               )}
 
-              {/* Mecanismo Neural */}
-              {ai.mecanismoNeural && (ai.mecanismoNeural.neurotransmissor || ai.mecanismoNeural.cicloNeural || ai.mecanismoNeural.neuroplasticidade) && (
-                <Section num={templateSections.length + 1} title="Mecanismo Neural" delay={0.38} accent="primary">
-                  <NeuralMechanism data={ai.mecanismoNeural} />
-                </Section>
-              )}
             </>
           ) : (
             /* ── Legacy 8-section fallback ── */
@@ -418,34 +412,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   );
 };
 
-/* ── Neural Mechanism sub-component ── */
-function NeuralMechanism({ data }: { data: { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } }) {
-  return (
-    <div className="space-y-4">
-      {data.neurotransmissor && (
-        <div className="rounded-xl border border-primary/15 bg-primary/[0.03] px-5 py-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Brain className="w-3.5 h-3.5 text-primary/50" />
-            <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold">Neurotransmissor envolvido</p>
-          </div>
-          <p className="text-sm text-foreground leading-[1.8]">{data.neurotransmissor}</p>
-        </div>
-      )}
-      {data.cicloNeural && (
-        <div className="rounded-xl border border-border/40 bg-card px-5 py-4">
-          <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.2em] font-semibold mb-2">Como o circuito se formou</p>
-          <p className="text-sm text-muted-foreground leading-[1.8]">{data.cicloNeural}</p>
-        </div>
-      )}
-      {data.neuroplasticidade && (
-        <div className="rounded-xl border border-green-500/20 bg-green-500/[0.04] px-5 py-4">
-          <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-[0.2em] font-semibold mb-2">Neuroplasticidade — a boa notícia</p>
-          <p className="text-sm text-foreground leading-[1.8]">{data.neuroplasticidade}</p>
-        </div>
-      )}
-    </div>
-  );
-}
 
 /* ── Legacy sections fallback ── */
 function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
@@ -460,7 +426,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
   const acaoInicialRaw = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
   const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
   const acaoInicial = typeof acaoInicialRaw === 'string' ? acaoInicialRaw : '';
-  const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
+  
 
   const sectionTitles = getLegacySectionTitles(moduleSlug);
 
@@ -583,10 +549,6 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
                 </div>
               </div>
             ))}
-            <div className="mt-4 rounded-xl border border-border/30 bg-secondary/30 px-5 py-4">
-              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.2em] font-semibold mb-2">Regra de ouro</p>
-              <p className="text-sm text-foreground/80 leading-[1.8]">Só comece novas tarefas quando essas estiverem feitas. Sem exceção.</p>
-            </div>
           </div>
         ) : (
           <CardBlock variant="success">
@@ -601,11 +563,6 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         )}
       </Section>
 
-      {mecanismoNeural && (mecanismoNeural.neurotransmissor || mecanismoNeural.cicloNeural || mecanismoNeural.neuroplasticidade) && (
-        <Section num={9} title="Mecanismo Neural" delay={0.38} accent="primary">
-          <NeuralMechanism data={mecanismoNeural} />
-        </Section>
-      )}
     </>
   );
 }
