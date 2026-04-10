@@ -80,13 +80,13 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
       if (error) toast.error('Erro ao salvar template');
       else toast.success('Template salvo');
     } else {
-      const { data, error: _fetchError } = await supabase
-        .from('report_templates')
-        .insert({ test_id: currentModule.id, sections: ordered as any })
-        .select()
-        .single();
-      if (error) toast.error('Erro ao criar template');
-      else { setTemplateId(data.id); toast.success('Template criado'); }
+    const { data: insertData, error: insertError } = await supabase
+      .from('report_templates')
+      .insert({ test_id: currentModule.id, sections: ordered as any })
+      .select()
+      .single();
+      if (insertError) toast.error('Erro ao criar template');
+      else if (insertData) { setTemplateId(insertData.id); toast.success('Template criado'); }
     }
     setSaving(false);
   };

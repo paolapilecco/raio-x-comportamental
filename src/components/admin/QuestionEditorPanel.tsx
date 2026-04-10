@@ -6,7 +6,7 @@ import {
   typeDescriptions,
   defaultOptionsForType,
   defaultScoresForType,
-  validate} from './questionConstants';
+  validateQuestion} from './questionConstants';
 
 interface FormData {
   text: string;

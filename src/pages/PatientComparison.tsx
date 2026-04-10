@@ -22,7 +22,7 @@ export default function PatientComparison() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [comparisonData, setComparisonData] = useState<any[]>([]);
-  const [_loading, _setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;

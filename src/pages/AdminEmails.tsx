@@ -129,7 +129,7 @@ export default function AdminEmails() {
   const [templateFilter, setTemplateFilter] = useState('all');
 
   // Templates state
-  const [_templates, _setTemplates] = useState<TemplateInfo[]>([]);
+  const [, setTemplates] = useState<TemplateInfo[]>([]);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewSubject, setPreviewSubject] = useState('');
   const [previewTemplate, setPreviewTemplate] = useState('');
