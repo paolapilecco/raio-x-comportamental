@@ -589,7 +589,7 @@ function buildAnswersSummary(answers: StructuredAnswer[]): string {
     return score <= 20 || score >= 80;
   });
   if (extremes.length > 0) {
-    lines.push("### RESPOSTAS EXTREMAS (sinais fortes):");
+    lines.push("### EVIDÊNCIAS COMPORTAMENTAIS (respostas extremas — sinais fortes):");
     extremes.forEach((a) => {
       const score = a.mappedScore ?? 0;
       const label = score >= 80 ? "CONCORDÂNCIA FORTE" : "DISCORDÂNCIA FORTE";
@@ -635,6 +635,12 @@ function buildAnswersSummary(answers: StructuredAnswer[]): string {
   return lines.join("\n");
 }
 
+function classifyIntensity(pct: number): string {
+  if (pct >= 75) return "ALTO";
+  if (pct >= 50) return "MODERADO";
+  return "LEVE";
+}
+
 function detectContradictions(scores: ScoreEntry[]): string {
   const scoreMap: Record<string, number> = {};
   scores.forEach((s) => { scoreMap[s.key] = s.percentage; });
@@ -642,13 +648,14 @@ function detectContradictions(scores: ScoreEntry[]): string {
   const contradictions: string[] = [];
   const sortedScores = [...scores].sort((a, b) => b.percentage - a.percentage);
 
+  // Detect explicit conflicts: two axes both ≥ 50%
   const highScores = sortedScores.filter((s) => s.percentage >= 50);
   for (let i = 0; i < highScores.length; i++) {
     for (let j = i + 1; j < highScores.length; j++) {
       const a = highScores[i];
       const b = highScores[j];
-      if (a.percentage >= 55 && b.percentage >= 55) {
-        contradictions.push(`- Eixos "${a.label}" (${a.percentage}%) e "${b.label}" (${b.percentage}%) ambos altos — investigar se há tensão ou conflito entre esses dois comportamentos`);
+      if (a.percentage >= 50 && b.percentage >= 50) {
+        contradictions.push(`- CONFLITO DETECTADO: ${a.key} (${a.percentage}%) × ${b.key} (${b.percentage}%) — ambos eixos ativos simultaneamente, investigar tensão entre "${a.label}" e "${b.label}"`);
       }
     }
   }
@@ -657,7 +664,7 @@ function detectContradictions(scores: ScoreEntry[]): string {
     const top = sortedScores[0];
     const bottom = sortedScores[sortedScores.length - 1];
     if (top.percentage - bottom.percentage >= 40) {
-      contradictions.push(`- Grande disparidade: "${top.label}" (${top.percentage}%) é muito mais intenso que "${bottom.label}" (${bottom.percentage}%) — padrão concentrado em poucos eixos`);
+      contradictions.push(`- Grande disparidade: ${top.key}: ${top.percentage}% (${classifyIntensity(top.percentage)}) vs ${bottom.key}: ${bottom.percentage}% (${classifyIntensity(bottom.percentage)}) — padrão concentrado em poucos eixos`);
     }
   }
 
@@ -669,14 +676,14 @@ function detectContradictions(scores: ScoreEntry[]): string {
     ["emotional_self_sabotage", "validation_dependency", "Autossabotagem emocional com dependência de validação"],
   ];
   for (const [keyA, keyB, desc] of knownPairs) {
-    if ((scoreMap[keyA] ?? 0) >= 55 && (scoreMap[keyB] ?? 0) >= 55) {
-      const alreadyCovered = contradictions.some((c) => c.includes(keyA) || c.includes(keyB));
-      if (!alreadyCovered) contradictions.push(`- ${desc}`);
+    if ((scoreMap[keyA] ?? 0) >= 50 && (scoreMap[keyB] ?? 0) >= 50) {
+      const alreadyCovered = contradictions.some((c) => c.includes(keyA) && c.includes(keyB));
+      if (!alreadyCovered) contradictions.push(`- CONFLITO CONHECIDO: ${desc} — ${keyA}: ${scoreMap[keyA]}% × ${keyB}: ${scoreMap[keyB]}%`);
     }
   }
 
   if (contradictions.length === 0) {
-    contradictions.push("- Sem contradições extremas detectadas. Analisar nuances entre os eixos com scores intermediários.");
+    contradictions.push("- Sem conflitos extremos detectados. Analisar nuances entre os eixos com scores intermediários.");
   }
 
   return contradictions.join("\n");
@@ -815,12 +822,12 @@ Intensidade geral: ${intensity}
 ## DADOS DOS EIXOS (base obrigatória para toda interpretação):
 ${scoresSummary}
 
-## PADRÃO DOMINANTE: ${dominant.label} (intensidade: ${dominant.percentage > 75 ? "alta" : dominant.percentage > 50 ? "moderada" : "leve"})
+## PADRÃO DOMINANTE: ${dominant.key}: ${dominant.percentage}% (${classifyIntensity(dominant.percentage)}) — "${dominant.label}"
 ${secondary.length > 0
-    ? `## PADRÕES SECUNDÁRIOS: ${secondary.map((s) => `${s.label} (${s.percentage > 75 ? "alta" : s.percentage > 50 ? "moderada" : "leve"})`).join(", ")}`
+    ? `## PADRÕES SECUNDÁRIOS ATIVOS (≥40%):\n${secondary.map((s) => `- ${s.key}: ${s.percentage}% (${classifyIntensity(s.percentage)}) — "${s.label}"`).join("\n")}`
     : "Sem padrões secundários significativos."}
 
-## CRUZAMENTOS E CONTRADIÇÕES DETECTADOS:
+## CONFLITOS E CRUZAMENTOS DETECTADOS:
 ${contradictions}
 
 ## EVIDÊNCIAS DAS RESPOSTAS DO USUÁRIO:
@@ -970,8 +977,9 @@ serve(async (req) => {
     const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
     const intensity = dominant.percentage >= 75 ? "alto" : dominant.percentage >= 50 ? "moderado" : "leve";
 
+    // Format: key: percentage% (CLASSIFICAÇÃO) — all axes
     const scoresSummary = sortedScores
-      .map((s) => `- ${s.label}: intensidade ${s.percentage >= 75 ? "ALTA" : s.percentage >= 50 ? "MODERADA" : "LEVE"} (${s.percentage}%)`)
+      .map((s) => `- ${s.key}: ${s.percentage}% (${classifyIntensity(s.percentage)}) — "${s.label}"`)
       .join("\n");
 
     const contradictions = detectContradictions(sortedScores);
@@ -1016,7 +1024,9 @@ serve(async (req) => {
       }
     } catch { /* use defaults */ }
 
-    const clampedTemp = aiTemperature !== undefined ? Math.min(0.6, Math.max(0.5, aiTemperature)) : 0.55;
+    const clampedTemp = 0.55;
+
+    const effectiveMaxTokens = aiMaxTokens !== undefined ? aiMaxTokens : 6000;
 
     const aiBody: Record<string, unknown> = {
       model: aiModel,
@@ -1025,8 +1035,8 @@ serve(async (req) => {
         { role: "user", content: userPrompt },
       ],
       temperature: clampedTemp,
+      max_tokens: effectiveMaxTokens,
     };
-    if (aiMaxTokens !== undefined) aiBody.max_tokens = aiMaxTokens;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
