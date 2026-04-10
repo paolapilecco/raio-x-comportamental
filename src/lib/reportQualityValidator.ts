@@ -192,22 +192,14 @@ function simplifyLanguage(text: string): string {
 }
 
 /** Rewrite a block that is redundant with another, making it unique */
-function makeUnique(text: string, referenceText: string, context: string): string {
+function makeUnique(text: string, referenceText: string, _context: string): string {
   if (!text || !isRedundant(text, referenceText)) return text;
   // Keep only sentences NOT present in reference
   const sentences = splitSentences(text);
   const unique = sentences.filter(s => !isRedundant(s, referenceText, 0.5));
   if (unique.length > 0) return unique.join(' ');
-  // Fallback: generic differentiation based on context
-  const fallbacks: Record<string, string> = {
-    corePain: 'O que mantém esse padrão vivo é uma necessidade que você nem percebe — ela age antes de qualquer decisão consciente.',
-    direction: 'A mudança começa com uma pausa: perceber o impulso, esperar, e escolher diferente mesmo sentindo desconforto.',
-    impact: 'O efeito concreto aparece nas decisões adiadas, nos ciclos que se repetem e na sensação de estar sempre no mesmo lugar.',
-    summary: 'Seu resultado revela um padrão que opera de forma automática e consistente, influenciando áreas que você talvez não associe a ele.',
-    acaoInicial: 'Nos próximos 3 dias, observe quando o padrão aparece — apenas observe, sem tentar mudar. Anotar já é agir.',
-    corrigirPrimeiro: 'O primeiro ajuste é criar um intervalo entre perceber o impulso e agir. Isso desmonta o automático.',
-  };
-  return fallbacks[context] || unique.length > 0 ? unique.join(' ') : text;
+  // No fallback content — return original if can't deduplicate
+  return text;
 }
 
 /**
