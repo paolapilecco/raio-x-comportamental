@@ -1,4 +1,4 @@
-import { useAuth, PlanType, PLAN_LIMITS } from '@/contexts/AuthContext';
+import { useAuth, PLAN_LIMITS } from '@/contexts/AuthContext';
 
 /**
  * Centralized subscription helper hook.
