@@ -36,6 +36,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const [spreading, setSpreading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [emotionalArchitecture, setEmotionalArchitecture] = useState('');
 
   useEffect(() => {
     fetchTemplate();
@@ -51,6 +52,8 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
 
     if (data) {
       setTemplateId(data.id);
+      const rules = (data.output_rules as any) || {};
+      setEmotionalArchitecture(rules.emotionalArchitecture || '');
       const parsed = (data.sections as any[]) || [];
       if (parsed.length > 0) {
         setSections(parsed.map((s: any, i: number) => ({
@@ -68,6 +71,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     } else {
       setSections([...DEFAULT_SECTIONS]);
       setTemplateId(null);
+      setEmotionalArchitecture('');
     }
     setLoading(false);
   };
@@ -75,18 +79,19 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const handleSave = async () => {
     setSaving(true);
     const ordered = sections.map((s, i) => ({ ...s, order: i + 1 }));
+    const outputRules = { emotionalArchitecture };
 
     if (templateId) {
       const { error } = await supabase
         .from('report_templates')
-        .update({ sections: ordered as any, updated_at: new Date().toISOString() })
+        .update({ sections: ordered as any, output_rules: outputRules as any, updated_at: new Date().toISOString() })
         .eq('id', templateId);
       if (error) toast.error('Erro ao salvar template');
       else toast.success('Template salvo');
     } else {
     const { data: insertData, error: insertError } = await supabase
       .from('report_templates')
-      .insert({ test_id: currentModule.id, sections: ordered as any })
+      .insert({ test_id: currentModule.id, sections: ordered as any, output_rules: outputRules as any })
       .select()
       .single();
       if (insertError) toast.error('Erro ao criar template');
@@ -260,6 +265,23 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
+      </div>
+
+      {/* Emotional Architecture */}
+      <div className="border border-border/30 rounded-xl bg-card/60 px-4 py-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">🧠 Arquitetura Emocional do Relatório</span>
+        </div>
+        <p className="text-[0.7rem] text-muted-foreground/60">
+          Descreva a jornada emocional que o relatório deve provocar no leitor — do impacto inicial à motivação para agir.
+        </p>
+        <textarea
+          value={emotionalArchitecture}
+          onChange={(e) => setEmotionalArchitecture(e.target.value)}
+          rows={4}
+          className="w-full text-[0.8rem] bg-secondary/20 border border-border/20 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/30 resize-none focus:outline-none focus:border-primary/40 transition-colors"
+          placeholder="Ex: O relatório deve começar com um impacto direto (diagnóstico que surpreende), seguido de validação (o leitor se reconhece), depois gerar desconforto produtivo (mostrar consequências) e finalizar com esperança concreta (ação prática e acessível)."
+        />
       </div>
 
       {/* Sections list */}
