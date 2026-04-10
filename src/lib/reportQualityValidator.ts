@@ -161,16 +161,6 @@ interface ValidationIssue {
 }
 
 
-
-  }
-  for (const phrase of [...FORBIDDEN_PHRASES, ...VAGUE_ACTION_PHRASES]) {
-    if (lower.includes(phrase)) {
-      issues.push({ field, type: 'forbidden_phrase', detail: `Frase genérica/vaga: "${phrase}"` });
-    }
-  }
-  return issues;
-}
-
 // ── Auto-Refiners ──
 
 /** Simplify complex language in text */

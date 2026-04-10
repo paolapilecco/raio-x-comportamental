@@ -178,7 +178,6 @@ function labelAbove(ctx: Ctx, label: string, color: RGB = C.light) {
   ctx.y += 4;
 }
 
-}
 
 function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) {
   // Render as 2-column cards
