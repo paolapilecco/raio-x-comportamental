@@ -1,6 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 1: Constants & Types
+// ═══════════════════════════════════════════════════════════
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -43,8 +47,6 @@ interface OutputRules {
   forbiddenLanguage?: string[];
 }
 
-// ── Category-specific prompt contexts ──
-
 interface CategoryContext {
   role: string;
   emphasis: string;
@@ -52,9 +54,65 @@ interface CategoryContext {
   extraInstructions: string;
 }
 
-function getCategoryContext(slug: string): CategoryContext {
-  // ── Neuroscience vocabulary shared across all categories ──
-  const neuroBase = `
+interface StructuredAnswer {
+  questionId: number;
+  questionText: string;
+  questionType: string;
+  axes: string[];
+  value: number;
+  mappedScore?: number;
+  chosenOption: string | null;
+}
+
+interface RequestBody {
+  test_module_id: string;
+  scores: ScoreEntry[];
+  slug: string;
+  refine_level?: number;
+  answers?: StructuredAnswer[];
+}
+
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 2: Helpers — Error & Rate Limiting
+// ═══════════════════════════════════════════════════════════
+
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function errorResponse(message: string, status: number): Response {
+  return jsonResponse({ error: message }, status);
+}
+
+function fallbackResponse(): Response {
+  return jsonResponse({ useFallback: true });
+}
+
+/** Simple in-memory rate limiter per user (resets on cold start) */
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 10; // max 10 analyses per minute per user
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 3: Category Context (data-driven)
+// ═══════════════════════════════════════════════════════════
+
+const NEURO_BASE = `
 VOCABULÁRIO NEUROCIENTÍFICO (use naturalmente, sem jargão pesado):
 - TÉTRADE EMOCIONAL: Todo estado emocional é formado por 4 pilares — CRENÇAS (o que a pessoa acredita ser verdade), LINGUAGEM INTERNA (o que ela diz para si mesma), FOCO (para onde direciona a atenção) e FISIOLOGIA (como o corpo responde). Identifique qual pilar da Tétrade está mais desregulado.
 - METAPROGRAMAS: Filtros mentais automáticos que determinam como a pessoa processa informação — Proativo vs Reativo (age ou espera?), Referência Interna vs Externa (decide por si ou precisa de aprovação?), Associador vs Desassociador (se conecta ou se distancia emocionalmente?). Identifique os metaprogramas dominantes nas respostas.
@@ -62,257 +120,195 @@ VOCABULÁRIO NEUROCIENTÍFICO (use naturalmente, sem jargão pesado):
 - ANCORAGEM: Estímulos (situações, pessoas, lugares) que ativam automaticamente um estado emocional ou comportamento. Identifique as ÂNCORAS NEGATIVAS (o que dispara o padrão ruim) e sugira ÂNCORAS DE RECURSO (o que pode disparar um estado melhor).
 - ESTADOS COM/SEM RECURSOS: A pessoa alterna entre estados "com recursos" (calma, clareza, energia) e "sem recursos" (ansiedade, confusão, paralisia). O padrão se ativa quando ela entra em estado sem recursos. Identifique o que a tira do estado de recursos.`;
 
-  // Mapa de Vida has its own PDF/report, skip here
-  if (slug === 'mapa-de-vida') {
-    return {
-      role: 'Você analisa a satisfação do usuário em cada área da vida e identifica onde ele precisa agir primeiro, usando princípios de neurociência comportamental.',
-      emphasis: 'Foco em EQUILÍBRIO entre as áreas, PRIORIZAÇÃO de ação e identificação de ÂNCORAS de desequilíbrio.',
-      sectionOverrides: {
-        resumoPrincipal: 'Qual área da vida está mais desequilibrada e o que isso causa nas outras. Identifique o metaprograma dominante (proativo/reativo) em cada área.',
-        significadoPratico: 'Como esse desequilíbrio aparece na rotina real — use o conceito de Tétrade para explicar: qual crença, linguagem interna, foco ou fisiologia mantém o desequilíbrio.',
-        padraoIdentificado: 'Qual padrão de negligência ou compensação entre áreas. A psicoadaptação fez esse desequilíbrio parecer "normal"?',
-        direcaoAjuste: 'Qual área priorizar primeiro e por quê — crie uma ÂNCORA DE RECURSO para essa área.',
-        proximoPasso: 'Uma ação para esta semana na área mais crítica que quebre a psicoadaptação.',
-      },
-      extraInstructions: `- Mencione as ÁREAS DA VIDA específicas (saúde, finanças, relacionamento, etc.)
+interface CategoryDef {
+  match: (slug: string) => boolean;
+  role: string;
+  emphasis: string;
+  overrides: Record<string, string>;
+  extra: string;
+}
+
+const CATEGORY_DEFS: CategoryDef[] = [
+  {
+    match: (s) => s === "mapa-de-vida",
+    role: "Você analisa a satisfação do usuário em cada área da vida e identifica onde ele precisa agir primeiro, usando princípios de neurociência comportamental.",
+    emphasis: "Foco em EQUILÍBRIO entre as áreas, PRIORIZAÇÃO de ação e identificação de ÂNCORAS de desequilíbrio.",
+    overrides: {
+      resumoPrincipal: "Qual área da vida está mais desequilibrada e o que isso causa nas outras. Identifique o metaprograma dominante (proativo/reativo) em cada área.",
+      significadoPratico: "Como esse desequilíbrio aparece na rotina real — use o conceito de Tétrade para explicar: qual crença, linguagem interna, foco ou fisiologia mantém o desequilíbrio.",
+      padraoIdentificado: "Qual padrão de negligência ou compensação entre áreas. A psicoadaptação fez esse desequilíbrio parecer \"normal\"?",
+      direcaoAjuste: "Qual área priorizar primeiro e por quê — crie uma ÂNCORA DE RECURSO para essa área.",
+      proximoPasso: "Uma ação para esta semana na área mais crítica que quebre a psicoadaptação.",
+    },
+    extra: `- Mencione as ÁREAS DA VIDA específicas (saúde, finanças, relacionamento, etc.)
 - Compare áreas fortes vs fracas — o que uma compensa na outra?
 - O plano de ação deve ser POR ÁREA, não genérico
 - Identifique onde a PSICOADAPTAÇÃO fez o desequilíbrio parecer aceitável
-- Sugira uma ÂNCORA DE RECURSO prática para a área mais crítica
-${neuroBase}`,
-    };
-  }
-
-  if (slug === 'padrao-comportamental') {
-    return {
-      role: 'Você identifica os padrões invisíveis de comportamento (circuitos neurais automatizados) que travam a pessoa sem ela perceber.',
-      emphasis: 'Foco em PADRÕES REPETITIVOS, MECANISMOS AUTOMÁTICOS e METAPROGRAMAS dominantes.',
-      sectionOverrides: {
-        resumoPrincipal: 'Qual padrão domina e como ele funciona por baixo das decisões conscientes. Identifique o metaprograma dominante (proativo/reativo, interno/externo).',
-        significadoPratico: 'Em quais decisões do dia a dia esse padrão aparece — quais ÂNCORAS NEGATIVAS ativam o ciclo.',
-        comoAparece: 'Situações concretas onde o padrão se ativa sem a pessoa perceber. Use a Tétrade: qual pilar (crença, linguagem, foco ou fisiologia) está disparando?',
-        direcaoAjuste: 'Qual comportamento automático interromper primeiro — crie uma ÂNCORA DE RECURSO substituta.',
-      },
-      extraInstructions: `- Foque em MECANISMOS AUTOMÁTICOS — coisas que a pessoa faz no piloto automático
+- Sugira uma ÂNCORA DE RECURSO prática para a área mais crítica`,
+  },
+  {
+    match: (s) => s === "padrao-comportamental",
+    role: "Você identifica os padrões invisíveis de comportamento (circuitos neurais automatizados) que travam a pessoa sem ela perceber.",
+    emphasis: "Foco em PADRÕES REPETITIVOS, MECANISMOS AUTOMÁTICOS e METAPROGRAMAS dominantes.",
+    overrides: {
+      resumoPrincipal: "Qual padrão domina e como ele funciona por baixo das decisões conscientes. Identifique o metaprograma dominante (proativo/reativo, interno/externo).",
+      significadoPratico: "Em quais decisões do dia a dia esse padrão aparece — quais ÂNCORAS NEGATIVAS ativam o ciclo.",
+      comoAparece: "Situações concretas onde o padrão se ativa sem a pessoa perceber. Use a Tétrade: qual pilar (crença, linguagem, foco ou fisiologia) está disparando?",
+      direcaoAjuste: "Qual comportamento automático interromper primeiro — crie uma ÂNCORA DE RECURSO substituta.",
+    },
+    extra: `- Foque em MECANISMOS AUTOMÁTICOS — coisas que a pessoa faz no piloto automático
 - Identifique o CICLO: gatilho (âncora) → reação automática → consequência → reforço (psicoadaptação)
 - O ponto cego deve revelar algo que a pessoa genuinamente não vê
 - Identifique se a pessoa opera com metaprograma REATIVO (espera acontecer) ou PROATIVO (age antes)
-- Explique onde a PSICOADAPTAÇÃO tornou o padrão "invisível"
-${neuroBase}`,
-    };
-  }
-
-  // Execução & Produtividade
-  if (slug.includes('execucao') || slug.includes('produtividade')) {
-    return {
-      role: 'Você analisa por que a pessoa não consegue executar com consistência, usando neurociência para explicar o mecanismo de travamento.',
-      emphasis: 'Foco em EXECUÇÃO, CONSISTÊNCIA, PROCRASTINAÇÃO e o metaprograma Proativo/Reativo.',
-      sectionOverrides: {
-        resumoPrincipal: 'Onde exatamente a execução trava — qual pilar da Tétrade (crença, foco, linguagem interna ou fisiologia) está bloqueando a ação.',
-        significadoPratico: 'Como essa falha de execução aparece no trabalho. Quais ÂNCORAS NEGATIVAS associam "começar" a desconforto.',
-        padraoIdentificado: 'O tipo de procrastinação ou bloqueio — nomeie o mecanismo específico. A pessoa é Reativa (espera motivação) ou o problema é Desassociação (se desconecta da consequência)?',
-        comoAparece: 'Exemplos: prazos perdidos, projetos abandonados, ciclos de motivação que somem. A psicoadaptação faz isso parecer "normal"?',
-        direcaoAjuste: 'A menor ação possível para quebrar o ciclo de inação — uma ÂNCORA DE RECURSO para associar "começar" a algo positivo.',
-      },
-      extraInstructions: `- NÃO diga "tenha mais disciplina" — explique o que CAUSA a falta de execução usando neurociência
+- Explique onde a PSICOADAPTAÇÃO tornou o padrão "invisível"`,
+  },
+  {
+    match: (s) => s.includes("execucao") || s.includes("produtividade"),
+    role: "Você analisa por que a pessoa não consegue executar com consistência, usando neurociência para explicar o mecanismo de travamento.",
+    emphasis: "Foco em EXECUÇÃO, CONSISTÊNCIA, PROCRASTINAÇÃO e o metaprograma Proativo/Reativo.",
+    overrides: {
+      resumoPrincipal: "Onde exatamente a execução trava — qual pilar da Tétrade (crença, foco, linguagem interna ou fisiologia) está bloqueando a ação.",
+      significadoPratico: "Como essa falha de execução aparece no trabalho. Quais ÂNCORAS NEGATIVAS associam \"começar\" a desconforto.",
+      padraoIdentificado: "O tipo de procrastinação ou bloqueio — nomeie o mecanismo específico. A pessoa é Reativa (espera motivação) ou o problema é Desassociação (se desconecta da consequência)?",
+      comoAparece: "Exemplos: prazos perdidos, projetos abandonados, ciclos de motivação que somem. A psicoadaptação faz isso parecer \"normal\"?",
+      direcaoAjuste: "A menor ação possível para quebrar o ciclo de inação — uma ÂNCORA DE RECURSO para associar \"começar\" a algo positivo.",
+    },
+    extra: `- NÃO diga "tenha mais disciplina" — explique o que CAUSA a falta de execução usando neurociência
 - Identifique se o problema é INÍCIO (não começa), SUSTENTAÇÃO (não mantém) ou FINALIZAÇÃO (não termina)
 - Gatilhos devem ser sobre SITUAÇÕES DE TRABALHO/ROTINA reais
 - Identifique o metaprograma: PROATIVO (age sem esperar) vs REATIVO (precisa de pressão externa)
-- Explique como a PSICOADAPTAÇÃO transformou a procrastinação em rotina "aceitável"
-${neuroBase}`,
-    };
-  }
-
-  // Emoções & Reatividade
-  if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) {
-    return {
-      role: 'Você analisa como as emoções controlam as decisões da pessoa, usando a Tétrade Emocional para mapear o mecanismo.',
-      emphasis: 'Foco em REAÇÕES EMOCIONAIS, REGULAÇÃO e os 4 pilares da TÉTRADE.',
-      sectionOverrides: {
-        resumoPrincipal: 'Qual emoção domina e como ela sequestra as decisões. Mapeie pela Tétrade: qual CRENÇA alimenta, qual LINGUAGEM INTERNA reforça, para onde vai o FOCO e como o CORPO reage.',
-        significadoPratico: 'Em quais situações a pessoa reage de forma desproporcional — quais são as ÂNCORAS NEGATIVAS que disparam a reatividade.',
-        padraoIdentificado: 'O tipo de reatividade — explosiva, supressiva, evitativa. A pessoa é Associadora (sente tudo intensamente) ou Desassociadora (se desconecta para não sentir)?',
-        comoAparece: 'Exemplos de reações que a pessoa se arrepende depois. Qual estado "sem recursos" ela entra.',
-        direcaoAjuste: 'Uma técnica simples para o momento entre o gatilho e a reação — uma ÂNCORA DE RECURSO para acessar estado com recursos.',
-      },
-      extraInstructions: `- Identifique a EMOÇÃO DOMINANTE (raiva, ansiedade, medo, tristeza)
+- Explique como a PSICOADAPTAÇÃO transformou a procrastinação em rotina "aceitável"`,
+  },
+  {
+    match: (s) => s.includes("emocional") || s.includes("emocoes") || s.includes("reatividade"),
+    role: "Você analisa como as emoções controlam as decisões da pessoa, usando a Tétrade Emocional para mapear o mecanismo.",
+    emphasis: "Foco em REAÇÕES EMOCIONAIS, REGULAÇÃO e os 4 pilares da TÉTRADE.",
+    overrides: {
+      resumoPrincipal: "Qual emoção domina e como ela sequestra as decisões. Mapeie pela Tétrade: qual CRENÇA alimenta, qual LINGUAGEM INTERNA reforça, para onde vai o FOCO e como o CORPO reage.",
+      significadoPratico: "Em quais situações a pessoa reage de forma desproporcional — quais são as ÂNCORAS NEGATIVAS que disparam a reatividade.",
+      padraoIdentificado: "O tipo de reatividade — explosiva, supressiva, evitativa. A pessoa é Associadora (sente tudo intensamente) ou Desassociadora (se desconecta para não sentir)?",
+      comoAparece: "Exemplos de reações que a pessoa se arrepende depois. Qual estado \"sem recursos\" ela entra.",
+      direcaoAjuste: "Uma técnica simples para o momento entre o gatilho e a reação — uma ÂNCORA DE RECURSO para acessar estado com recursos.",
+    },
+    extra: `- Identifique a EMOÇÃO DOMINANTE (raiva, ansiedade, medo, tristeza)
 - Diferencie entre SENTIR a emoção (normal) e SER CONTROLADO por ela (problema)
 - Gatilhos devem ser emocionais: situações que disparam reações intensas
 - Use a TÉTRADE para explicar: qual dos 4 pilares está mais desregulado
 - Identifique o metaprograma ASSOCIADOR (sente demais) vs DESASSOCIADOR (anestesia emoções)
-- Sugira ÂNCORAS DE RECURSO para acessar calma nos momentos de crise
-${neuroBase}`,
-    };
-  }
-
-  // Relacionamentos & Apego
-  if (slug.includes('relacionamento') || slug.includes('apego')) {
-    return {
-      role: 'Você analisa como a pessoa se conecta (ou se desconecta) dos outros e quais metaprogramas relacionais dominam.',
-      emphasis: 'Foco em PADRÕES RELACIONAIS, VÍNCULOS e o metaprograma Referência Interna/Externa.',
-      sectionOverrides: {
-        resumoPrincipal: 'Qual padrão de conexão domina — a pessoa tem Referência Interna (decide sozinha, se isola) ou Externa (depende do outro para validação)?',
-        significadoPratico: 'Como isso afeta namoro, amizades, família. Quais ÂNCORAS NEGATIVAS (situações, pessoas, memórias) disparam o padrão relacional.',
-        padraoIdentificado: 'O estilo de apego ou padrão relacional. A psicoadaptação fez esse padrão parecer "jeito de ser"?',
-        comoAparece: 'Exemplos de conflitos repetitivos. Qual pilar da Tétrade está mais ativo nos conflitos (crença sobre si, linguagem interna, foco no outro ou reação do corpo)?',
-        direcaoAjuste: 'Uma mudança concreta no próximo momento de tensão relacional — uma ÂNCORA DE RECURSO para manter estado com recursos durante conflitos.',
-      },
-      extraInstructions: `- Foque em PADRÕES QUE SE REPETEM em diferentes relações
+- Sugira ÂNCORAS DE RECURSO para acessar calma nos momentos de crise`,
+  },
+  {
+    match: (s) => s.includes("relacionamento") || s.includes("apego"),
+    role: "Você analisa como a pessoa se conecta (ou se desconecta) dos outros e quais metaprogramas relacionais dominam.",
+    emphasis: "Foco em PADRÕES RELACIONAIS, VÍNCULOS e o metaprograma Referência Interna/Externa.",
+    overrides: {
+      resumoPrincipal: "Qual padrão de conexão domina — a pessoa tem Referência Interna (decide sozinha, se isola) ou Externa (depende do outro para validação)?",
+      significadoPratico: "Como isso afeta namoro, amizades, família. Quais ÂNCORAS NEGATIVAS (situações, pessoas, memórias) disparam o padrão relacional.",
+      padraoIdentificado: "O estilo de apego ou padrão relacional. A psicoadaptação fez esse padrão parecer \"jeito de ser\"?",
+      comoAparece: "Exemplos de conflitos repetitivos. Qual pilar da Tétrade está mais ativo nos conflitos (crença sobre si, linguagem interna, foco no outro ou reação do corpo)?",
+      direcaoAjuste: "Uma mudança concreta no próximo momento de tensão relacional — uma ÂNCORA DE RECURSO para manter estado com recursos durante conflitos.",
+    },
+    extra: `- Foque em PADRÕES QUE SE REPETEM em diferentes relações
 - Identifique o PAPEL que a pessoa assume (salvador, vítima, controlador, evitador)
 - O que a pessoa FAZ que afasta os outros ou cria dependência
 - Identifique o metaprograma: REFERÊNCIA INTERNA (não precisa de ninguém) vs EXTERNA (precisa de aprovação constante)
-- Explique como a PSICOADAPTAÇÃO normalizou o padrão relacional disfuncional
-${neuroBase}`,
-    };
-  }
-
-  // Autoimagem & Identidade
-  if (slug.includes('autoimagem') || slug.includes('identidade')) {
-    return {
-      role: 'Você analisa como a pessoa se vê e onde essa visão está distorcida, usando a Tétrade para mapear as crenças centrais.',
-      emphasis: 'Foco em AUTOCONCEPÇÃO, CRENÇAS CENTRAIS e o pilar CRENÇAS da Tétrade.',
-      sectionOverrides: {
-        resumoPrincipal: 'Como a pessoa se enxerga vs como ela realmente funciona. Qual CRENÇA central (pilar 1 da Tétrade) sustenta essa distorção.',
-        significadoPratico: 'Onde essa autoimagem distorcida limita decisões. Qual LINGUAGEM INTERNA (pilar 2 da Tétrade) reforça: "eu não consigo", "eu não mereço", "eu não sou suficiente".',
-        padraoIdentificado: 'O tipo de distorção — se subestima, se idealiza, depende de validação. A pessoa tem Referência Interna (se julga sozinha) ou Externa (precisa que outros validem)?',
-        comoAparece: 'Exemplos: evita desafios, se compara demais, não se candidata, aceita menos. A psicoadaptação tornou essa identidade "confortável"?',
-        direcaoAjuste: 'Uma ação para testar uma crença limitante na prática — crie uma ÂNCORA DE RECURSO que contradiga a crença central.',
-      },
-      extraInstructions: `- Identifique a NARRATIVA INTERNA que a pessoa conta sobre si mesma (pilar LINGUAGEM da Tétrade)
+- Explique como a PSICOADAPTAÇÃO normalizou o padrão relacional disfuncional`,
+  },
+  {
+    match: (s) => s.includes("autoimagem") || s.includes("identidade"),
+    role: "Você analisa como a pessoa se vê e onde essa visão está distorcida, usando a Tétrade para mapear as crenças centrais.",
+    emphasis: "Foco em AUTOCONCEPÇÃO, CRENÇAS CENTRAIS e o pilar CRENÇAS da Tétrade.",
+    overrides: {
+      resumoPrincipal: "Como a pessoa se enxerga vs como ela realmente funciona. Qual CRENÇA central (pilar 1 da Tétrade) sustenta essa distorção.",
+      significadoPratico: "Onde essa autoimagem distorcida limita decisões. Qual LINGUAGEM INTERNA (pilar 2 da Tétrade) reforça: \"eu não consigo\", \"eu não mereço\", \"eu não sou suficiente\".",
+      padraoIdentificado: "O tipo de distorção — se subestima, se idealiza, depende de validação. A pessoa tem Referência Interna (se julga sozinha) ou Externa (precisa que outros validem)?",
+      comoAparece: "Exemplos: evita desafios, se compara demais, não se candidata, aceita menos. A psicoadaptação tornou essa identidade \"confortável\"?",
+      direcaoAjuste: "Uma ação para testar uma crença limitante na prática — crie uma ÂNCORA DE RECURSO que contradiga a crença central.",
+    },
+    extra: `- Identifique a NARRATIVA INTERNA que a pessoa conta sobre si mesma (pilar LINGUAGEM da Tétrade)
 - Contraste: como ela se vê vs o que os dados mostram
 - As armadilhas mentais devem ser FRASES que a pessoa repete para si mesma
 - Identifique qual CRENÇA CENTRAL (Tétrade) está na raiz da distorção
-- Explique como a PSICOADAPTAÇÃO transformou essa crença em "identidade"
-${neuroBase}`,
-    };
-  }
-
-  // Dinheiro & Decisão
-  if (slug.includes('dinheiro') || slug.includes('financ')) {
-    return {
-      role: 'Você analisa a relação emocional da pessoa com dinheiro usando neurociência — quais âncoras e crenças controlam as decisões financeiras.',
-      emphasis: 'Foco em COMPORTAMENTO FINANCEIRO, ÂNCORAS com dinheiro e CRENÇAS da Tétrade sobre abundância/escassez.',
-      sectionOverrides: {
-        resumoPrincipal: 'Qual é a relação real da pessoa com dinheiro — medo, impulso, evitação. Qual CRENÇA central (Tétrade) governa: "dinheiro é difícil", "não mereço ter", "se ganhar vou perder".',
-        significadoPratico: 'Como isso aparece: gastos impulsivos, medo de investir. Quais ÂNCORAS NEGATIVAS associam dinheiro a estresse, culpa ou medo.',
-        padraoIdentificado: 'O perfil financeiro comportamental. A PSICOADAPTAÇÃO fez o padrão financeiro parecer "meu jeito de lidar com dinheiro"?',
-        comoAparece: 'Exemplos: compras por impulso, nunca guarda dinheiro, medo de cobrar. Identifique se a pessoa é DESASSOCIADORA (não olha para os números) ou ASSOCIADORA demais (ansiedade com cada centavo).',
-        direcaoAjuste: 'Uma mudança concreta na próxima decisão financeira — crie uma ÂNCORA DE RECURSO que associe dinheiro a segurança em vez de estresse.',
-      },
-      extraInstructions: `- Identifique se o problema é EMOCIONAL (gasta pra compensar) ou COGNITIVO (não sabe planejar)
+- Explique como a PSICOADAPTAÇÃO transformou essa crença em "identidade"`,
+  },
+  {
+    match: (s) => s.includes("dinheiro") || s.includes("financ"),
+    role: "Você analisa a relação emocional da pessoa com dinheiro usando neurociência — quais âncoras e crenças controlam as decisões financeiras.",
+    emphasis: "Foco em COMPORTAMENTO FINANCEIRO, ÂNCORAS com dinheiro e CRENÇAS da Tétrade sobre abundância/escassez.",
+    overrides: {
+      resumoPrincipal: "Qual é a relação real da pessoa com dinheiro — medo, impulso, evitação. Qual CRENÇA central (Tétrade) governa: \"dinheiro é difícil\", \"não mereço ter\", \"se ganhar vou perder\".",
+      significadoPratico: "Como isso aparece: gastos impulsivos, medo de investir. Quais ÂNCORAS NEGATIVAS associam dinheiro a estresse, culpa ou medo.",
+      padraoIdentificado: "O perfil financeiro comportamental. A PSICOADAPTAÇÃO fez o padrão financeiro parecer \"meu jeito de lidar com dinheiro\"?",
+      comoAparece: "Exemplos: compras por impulso, nunca guarda dinheiro, medo de cobrar. Identifique se a pessoa é DESASSOCIADORA (não olha para os números) ou ASSOCIADORA demais (ansiedade com cada centavo).",
+      direcaoAjuste: "Uma mudança concreta na próxima decisão financeira — crie uma ÂNCORA DE RECURSO que associe dinheiro a segurança em vez de estresse.",
+    },
+    extra: `- Identifique se o problema é EMOCIONAL (gasta pra compensar) ou COGNITIVO (não sabe planejar)
 - Conecte o padrão financeiro com o padrão emocional da pessoa
 - Gatilhos devem ser situações financeiras reais: receber salário, ver promoção, pagar contas
 - Use a TÉTRADE para mapear: qual CRENÇA sobre dinheiro, qual LINGUAGEM INTERNA ("não dá pra mim"), onde está o FOCO (escassez ou oportunidade)
-- Explique como a PSICOADAPTAÇÃO normalizou a relação disfuncional com dinheiro
-${neuroBase}`,
-    };
-  }
-
-  // Padrões Ocultos
-  if (slug.includes('oculto') || slug.includes('hidden')) {
-    return {
-      role: 'Você identifica os padrões que a pessoa NÃO sabe que tem — os circuitos neurais que operam abaixo da consciência.',
-      emphasis: 'Foco em MECANISMOS INCONSCIENTES, AUTOENGANO e PSICOADAPTAÇÃO profunda.',
-      sectionOverrides: {
-        resumoPrincipal: 'O padrão que a pessoa jura que não tem — mas que aparece nos dados. Use os METAPROGRAMAS para revelar: como ela filtra a realidade sem perceber.',
-        significadoPratico: 'As consequências que a pessoa atribui a "azar" ou "circunstâncias". A PSICOADAPTAÇÃO é tão profunda que o padrão se tornou "personalidade".',
-        padraoIdentificado: 'O mecanismo oculto — qual pilar da TÉTRADE (crença inconsciente, linguagem interna automática, foco seletivo ou tensão corporal) está operando.',
-        comoAparece: 'Exemplos onde a pessoa sabota o próprio progresso achando que está fazendo certo. Quais ÂNCORAS NEGATIVAS operam sem percepção consciente.',
-        direcaoAjuste: 'Uma forma de "pegar" o padrão em ação no dia a dia — interromper a ANCORAGEM automática.',
-      },
-      extraInstructions: `- Este relatório deve REVELAR algo que a pessoa não quer ouvir
+- Explique como a PSICOADAPTAÇÃO normalizou a relação disfuncional com dinheiro`,
+  },
+  {
+    match: (s) => s.includes("oculto") || s.includes("hidden"),
+    role: "Você identifica os padrões que a pessoa NÃO sabe que tem — os circuitos neurais que operam abaixo da consciência.",
+    emphasis: "Foco em MECANISMOS INCONSCIENTES, AUTOENGANO e PSICOADAPTAÇÃO profunda.",
+    overrides: {
+      resumoPrincipal: "O padrão que a pessoa jura que não tem — mas que aparece nos dados. Use os METAPROGRAMAS para revelar: como ela filtra a realidade sem perceber.",
+      significadoPratico: "As consequências que a pessoa atribui a \"azar\" ou \"circunstâncias\". A PSICOADAPTAÇÃO é tão profunda que o padrão se tornou \"personalidade\".",
+      padraoIdentificado: "O mecanismo oculto — qual pilar da TÉTRADE (crença inconsciente, linguagem interna automática, foco seletivo ou tensão corporal) está operando.",
+      comoAparece: "Exemplos onde a pessoa sabota o próprio progresso achando que está fazendo certo. Quais ÂNCORAS NEGATIVAS operam sem percepção consciente.",
+      direcaoAjuste: "Uma forma de \"pegar\" o padrão em ação no dia a dia — interromper a ANCORAGEM automática.",
+    },
+    extra: `- Este relatório deve REVELAR algo que a pessoa não quer ouvir
 - O ponto cego é o CENTRO deste relatório — deve ser desenvolvido com profundidade
 - As armadilhas mentais são as JUSTIFICATIVAS que a pessoa usa para manter o padrão
 - A PSICOADAPTAÇÃO é o conceito central aqui — o padrão se tornou "eu sou assim"
 - Use METAPROGRAMAS para mostrar como a pessoa filtra a realidade para não ver o padrão
-- Identifique ÂNCORAS NEGATIVAS inconscientes que mantêm o ciclo ativo
-${neuroBase}`,
-    };
-  }
-
-  // Propósito & Sentido de Vida
-  if (slug.includes('proposito') || slug.includes('sentido')) {
-    return {
-      role: 'Você analisa o nível de conexão da pessoa com um senso de direção e significado, usando neurociência para explicar por que o cérebro evita escolher.',
-      emphasis: 'Foco em DIREÇÃO DE VIDA, SIGNIFICADO, ALINHAMENTO e o metaprograma Proativo/Reativo.',
-      sectionOverrides: {
-        resumoPrincipal: 'Qual é o nível real de conexão com propósito — conectado, perdido ou desalinhado. A pessoa é PROATIVA (cria direção) ou REATIVA (espera que a vida mostre)?',
-        significadoPratico: 'Como a falta de direção aparece. Qual pilar da TÉTRADE está travando: CRENÇA ("não sei o que quero"), FOCO (disperso em muitas coisas) ou LINGUAGEM INTERNA ("para quê?").',
-        padraoIdentificado: 'O tipo de desconexão — vive no piloto automático, segue expectativas dos outros, medo de escolher. A PSICOADAPTAÇÃO transformou a falta de propósito em "rotina normal"?',
-        comoAparece: 'Exemplos: troca de projetos frequente, insatisfação crônica, comparação com outros. Referência INTERNA (sabe mas não segue) ou EXTERNA (faz o que esperam)?',
-        direcaoAjuste: 'Uma reflexão prática para identificar o que realmente importa — crie uma ÂNCORA DE RECURSO que conecte a pessoa ao que dá energia.',
-      },
-      extraInstructions: `- NÃO use linguagem mística ou espiritual — foque em ESCOLHAS e ALINHAMENTO prático
+- Identifique ÂNCORAS NEGATIVAS inconscientes que mantêm o ciclo ativo`,
+  },
+  {
+    match: (s) => s.includes("proposito") || s.includes("sentido"),
+    role: "Você analisa o nível de conexão da pessoa com um senso de direção e significado, usando neurociência para explicar por que o cérebro evita escolher.",
+    emphasis: "Foco em DIREÇÃO DE VIDA, SIGNIFICADO, ALINHAMENTO e o metaprograma Proativo/Reativo.",
+    overrides: {
+      resumoPrincipal: "Qual é o nível real de conexão com propósito — conectado, perdido ou desalinhado. A pessoa é PROATIVA (cria direção) ou REATIVA (espera que a vida mostre)?",
+      significadoPratico: "Como a falta de direção aparece. Qual pilar da TÉTRADE está travando: CRENÇA (\"não sei o que quero\"), FOCO (disperso em muitas coisas) ou LINGUAGEM INTERNA (\"para quê?\").",
+      padraoIdentificado: "O tipo de desconexão — vive no piloto automático, segue expectativas dos outros, medo de escolher. A PSICOADAPTAÇÃO transformou a falta de propósito em \"rotina normal\"?",
+      comoAparece: "Exemplos: troca de projetos frequente, insatisfação crônica, comparação com outros. Referência INTERNA (sabe mas não segue) ou EXTERNA (faz o que esperam)?",
+      direcaoAjuste: "Uma reflexão prática para identificar o que realmente importa — crie uma ÂNCORA DE RECURSO que conecte a pessoa ao que dá energia.",
+    },
+    extra: `- NÃO use linguagem mística ou espiritual — foque em ESCOLHAS e ALINHAMENTO prático
 - Diferencie entre NÃO TER propósito e NÃO SEGUIR o propósito que já sabe
 - O próximo passo deve ser uma ação de AUTOCONHECIMENTO prático, não meditação genérica
 - Identifique o metaprograma: PROATIVO (cria direção) vs REATIVO (espera a vida mostrar)
 - Use a TÉTRADE para mapear: qual CRENÇA sobre propósito, qual LINGUAGEM INTERNA, onde está o FOCO
-- Explique como a PSICOADAPTAÇÃO normalizou viver sem direção
-${neuroBase}`,
+- Explique como a PSICOADAPTAÇÃO normalizou viver sem direção`,
+  },
+];
+
+function getCategoryContext(slug: string): CategoryContext {
+  const def = CATEGORY_DEFS.find((d) => d.match(slug));
+  if (def) {
+    return {
+      role: def.role,
+      emphasis: def.emphasis,
+      sectionOverrides: def.overrides,
+      extraInstructions: def.extra + "\n" + NEURO_BASE,
     };
   }
-
-  // Default fallback
   return {
-    role: 'Você é um analista comportamental com base neurocientífica que interpreta dados de leituras para gerar diagnósticos claros e úteis.',
-    emphasis: 'Foco em padrões concretos, direções práticas e mecanismos neurais.',
+    role: "Você é um analista comportamental com base neurocientífica que interpreta dados de leituras para gerar diagnósticos claros e úteis.",
+    emphasis: "Foco em padrões concretos, direções práticas e mecanismos neurais.",
     sectionOverrides: {},
-    extraInstructions: neuroBase,
+    extraInstructions: NEURO_BASE,
   };
 }
 
-// ── Structured prompt builder ──
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 4: Prompt Builders
+// ═══════════════════════════════════════════════════════════
 
-function buildStructuredSystemPrompt(prompts: PromptRecord[], categoryCtx: CategoryContext, template?: ReportTemplate | null): string {
-  const promptMap: Record<string, string> = {};
-  prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
-
-  const sections: string[] = [];
-
-  // Role definition — category-specific
-  sections.push(`# PAPEL
-${categoryCtx.role}
-Você recebe dados reais de uma leitura comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.
-ÊNFASE DESTE TESTE: ${categoryCtx.emphasis}`);
-
-  // Admin-configured prompt sections
-  if (promptMap.interpretation) {
-    sections.push(`# INSTRUÇÕES DE INTERPRETAÇÃO (definidas pelo administrador)
-${promptMap.interpretation}`);
-  }
-
-  if (promptMap.diagnosis) {
-    sections.push(`# DIAGNÓSTICO FINAL
-${promptMap.diagnosis}`);
-  }
-
-  if (promptMap.profile) {
-    sections.push(`# IDENTIFICAÇÃO DE PERFIL
-${promptMap.profile}`);
-  }
-
-  if (promptMap.core_pain) {
-    sections.push(`# DOR CENTRAL
-${promptMap.core_pain}`);
-  }
-
-  if (promptMap.triggers) {
-    sections.push(`# GATILHOS E ARMADILHAS
-${promptMap.triggers}`);
-  }
-
-  if (promptMap.direction) {
-    sections.push(`# DIREÇÃO PRÁTICA
-${promptMap.direction}`);
-  }
-
-  if (promptMap.restrictions) {
-    sections.push(`# RESTRIÇÕES OBRIGATÓRIAS
-${promptMap.restrictions}`);
-  }
-
-  // Hard rules — always enforced regardless of admin prompts
-  sections.push(`# REGRAS INVIOLÁVEIS
+const HARD_RULES = `# REGRAS INVIOLÁVEIS
 
 1. LINGUAGEM SIMPLES — COMO CONVERSA
    - Escreva como se estivesse explicando para um amigo inteligente que NÃO é psicólogo
@@ -382,9 +378,9 @@ ${promptMap.restrictions}`);
     - TODA saída deve conter os 3 elementos: DIAGNÓSTICO (o que acontece) + EXPLICAÇÃO SIMPLES (por que acontece) + AÇÃO EXECUTÁVEL (o que fazer)
     - chamaAtencao = diagnóstico. padraoRepetido/comoAparece = explicação. corrigirPrimeiro/acaoInicial = ação
     - Se corrigirPrimeiro ou acaoInicial estiverem vagos ou ausentes, o relatório FALHOU
-    - Teste: releia cada bloco e pergunte "a pessoa sabe O QUE FAZER depois de ler isso?" — se não, reescreva`);
+    - Teste: releia cada bloco e pergunte "a pessoa sabe O QUE FAZER depois de ler isso?" — se não, reescreva`;
 
-  sections.push(`# OBJETIVO DA ANÁLISE
+const ANALYSIS_OBJECTIVE = `# OBJETIVO DA ANÁLISE
 
 Identificar o PADRÃO COMPORTAMENTAL DOMINANTE do usuário com base nas respostas.
 
@@ -407,9 +403,9 @@ REGRAS DE DETECÇÃO DE PADRÕES:
   • ABANDONO APÓS PERDA DE EMPOLGAÇÃO: começa com energia, mas abandona quando a motivação inicial some
 - Se nenhum desses se encaixa, nomeie o padrão real encontrado nas respostas
 
-SAÍDA OBRIGATÓRIA: Nome do padrão + explicação direta baseada no comportamento observado nas respostas.`);
+SAÍDA OBRIGATÓRIA: Nome do padrão + explicação direta baseada no comportamento observado nas respostas.`;
 
-  sections.push(`# INTERPRETAÇÃO NEUROCIENTÍFICA DO COMPORTAMENTO
+const NEURO_INTERPRETATION = `# INTERPRETAÇÃO NEUROCIENTÍFICA DO COMPORTAMENTO
 
 Todo padrão identificado é resultado de um CIRCUITO NEURAL AUTOMATIZADO — não é falta de disciplina, preguiça ou fraqueza.
 
@@ -446,9 +442,9 @@ OBRIGATÓRIO NA EXPLICAÇÃO:
 - Use linguagem simples: "Seu cérebro aprendeu que..." / "Isso acontece porque sua mente associou..."
 - NUNCA diga "você escolhe fazer isso" — o padrão é AUTOMÁTICO até ser percebido
 - NUNCA trate como falha moral — é um mecanismo de proteção que já não serve mais
-- MANTENHA LINGUAGEM SIMPLES: use os conceitos neurocientíficos para EXPLICAR, não para impressionar`);
+- MANTENHA LINGUAGEM SIMPLES: use os conceitos neurocientíficos para EXPLICAR, não para impressionar`;
 
-  sections.push(`# INTERVENÇÃO COMPORTAMENTAL
+const INTERVENTION_BLOCK = `# INTERVENÇÃO COMPORTAMENTAL
 
 A ação prática (acaoInicial, corrigirPrimeiro, exitStrategy) deve ser uma INTERVENÇÃO que QUEBRA o circuito neural automático.
 
@@ -505,78 +501,81 @@ PROIBIDO:
 - "Eu sou capaz" (genérico)
 - "Eu mereço o melhor" (autoajuda)
 - "Eu confio no processo" (vazio)
-- Qualquer frase que sirva para qualquer pessoa`);
+- Qualquer frase que sirva para qualquer pessoa`;
 
-
-  sections.push(`# CAMADA DE PROFUNDIDADE
+const DEPTH_LAYER = `# CAMADA DE PROFUNDIDADE
 
 Antes de gerar o diagnóstico:
 1. Cruze o padrão dominante com os secundários — como um alimenta o outro?
 2. Identifique onde o usuário diz uma coisa e faz outra (use as respostas)
 3. A dor central NÃO é o padrão reformulado — é o mecanismo invisível por trás
 4. Teste anti-genericidade: se a frase serve para qualquer pessoa, reescreva
-5. Coerência: corePain → mechanism → contradiction → direction → firstAction`);
+5. Coerência: corePain → mechanism → contradiction → direction → firstAction`;
+
+function buildStructuredSystemPrompt(
+  prompts: PromptRecord[],
+  categoryCtx: CategoryContext,
+  template?: ReportTemplate | null,
+): string {
+  const promptMap: Record<string, string> = {};
+  prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
+
+  const sections: string[] = [];
+
+  sections.push(`# PAPEL\n${categoryCtx.role}\nVocê recebe dados reais de uma leitura comportamental e deve gerar um diagnóstico estruturado usando APENAS os dados fornecidos.\nÊNFASE DESTE TESTE: ${categoryCtx.emphasis}`);
+
+  const promptTypes = [
+    ["interpretation", "INSTRUÇÕES DE INTERPRETAÇÃO (definidas pelo administrador)"],
+    ["diagnosis", "DIAGNÓSTICO FINAL"],
+    ["profile", "IDENTIFICAÇÃO DE PERFIL"],
+    ["core_pain", "DOR CENTRAL"],
+    ["triggers", "GATILHOS E ARMADILHAS"],
+    ["direction", "DIREÇÃO PRÁTICA"],
+    ["restrictions", "RESTRIÇÕES OBRIGATÓRIAS"],
+  ];
+  for (const [key, title] of promptTypes) {
+    if (promptMap[key]) sections.push(`# ${title}\n${promptMap[key]}`);
+  }
+
+  sections.push(HARD_RULES, ANALYSIS_OBJECTIVE, NEURO_INTERPRETATION, INTERVENTION_BLOCK, DEPTH_LAYER);
 
   // Inject admin-configured output rules from report_templates
   if (template?.output_rules) {
     const rules = template.output_rules;
     const ruleLines: string[] = [];
-    
-    if (rules.tone) {
-      ruleLines.push(`- TOM OBRIGATÓRIO: ${rules.tone}`);
-    }
+    if (rules.tone) ruleLines.push(`- TOM OBRIGATÓRIO: ${rules.tone}`);
     if (rules.simplicityLevel) {
       const levelDesc: Record<number, string> = {
-        1: 'Pode usar termos técnicos quando necessário',
-        2: 'Poucos termos técnicos, sempre explicados',
-        3: 'Linguagem moderada, acessível mas precisa',
-        4: 'Linguagem simples do dia a dia, sem jargão',
-        5: 'Ultra-simples: qualquer pessoa de 14 anos deve entender',
+        1: "Pode usar termos técnicos quando necessário",
+        2: "Poucos termos técnicos, sempre explicados",
+        3: "Linguagem moderada, acessível mas precisa",
+        4: "Linguagem simples do dia a dia, sem jargão",
+        5: "Ultra-simples: qualquer pessoa de 14 anos deve entender",
       };
-      ruleLines.push(`- NÍVEL DE SIMPLICIDADE: ${levelDesc[rules.simplicityLevel] || 'Linguagem simples'}`);
+      ruleLines.push(`- NÍVEL DE SIMPLICIDADE: ${levelDesc[rules.simplicityLevel] || "Linguagem simples"}`);
     }
-    if (rules.maxSentencesPerBlock) {
-      ruleLines.push(`- MÁXIMO ${rules.maxSentencesPerBlock} frases por bloco — sem exceção`);
-    }
-    if (rules.maxTotalBlocks) {
-      ruleLines.push(`- MÁXIMO ${rules.maxTotalBlocks} blocos no relatório total`);
-    }
-    if (rules.repetitionProhibited) {
-      ruleLines.push(`- REPETIÇÃO PROIBIDA: cada bloco DEVE trazer informação nova. Se dois blocos dizem a mesma coisa com palavras diferentes, reescreva um deles.`);
-    }
-    if (rules.forbiddenLanguage && rules.forbiddenLanguage.length > 0) {
-      ruleLines.push(`- TERMOS PROIBIDOS (nunca usar): ${rules.forbiddenLanguage.map(t => `"${t}"`).join(', ')}`);
-    }
-    if (rules.requiredBlocks && rules.requiredBlocks.length > 0) {
-      ruleLines.push(`- BLOCOS OBRIGATÓRIOS (devem estar presentes): ${rules.requiredBlocks.join(', ')}`);
-    }
-
-    if (ruleLines.length > 0) {
-      sections.push(`# REGRAS DE SAÍDA CONFIGURADAS PELO ADMINISTRADOR\n\n${ruleLines.join('\n')}`);
-    }
+    if (rules.maxSentencesPerBlock) ruleLines.push(`- MÁXIMO ${rules.maxSentencesPerBlock} frases por bloco — sem exceção`);
+    if (rules.maxTotalBlocks) ruleLines.push(`- MÁXIMO ${rules.maxTotalBlocks} blocos no relatório total`);
+    if (rules.repetitionProhibited) ruleLines.push(`- REPETIÇÃO PROIBIDA: cada bloco DEVE trazer informação nova.`);
+    if (rules.forbiddenLanguage?.length) ruleLines.push(`- TERMOS PROIBIDOS: ${rules.forbiddenLanguage.map((t) => `"${t}"`).join(", ")}`);
+    if (rules.requiredBlocks?.length) ruleLines.push(`- BLOCOS OBRIGATÓRIOS: ${rules.requiredBlocks.join(", ")}`);
+    if (ruleLines.length > 0) sections.push(`# REGRAS DE SAÍDA CONFIGURADAS PELO ADMINISTRADOR\n\n${ruleLines.join("\n")}`);
   }
 
   return sections.join("\n\n---\n\n");
 }
 
-interface StructuredAnswer {
-  questionId: number;
-  questionText: string;
-  questionType: string;
-  axes: string[];
-  value: number;
-  mappedScore?: number;
-  chosenOption: string | null;
-}
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 5: Data Processing
+// ═══════════════════════════════════════════════════════════
 
 function buildAnswersSummary(answers: StructuredAnswer[]): string {
   if (!answers || answers.length === 0) return "Respostas brutas não disponíveis.";
 
-  // Group answers by axis for pattern detection
   const byAxis: Record<string, { question: string; mappedScore: number; option: string | null }[]> = {};
-  answers.forEach(a => {
+  answers.forEach((a) => {
     const score = a.mappedScore ?? a.value;
-    a.axes.forEach(axis => {
+    a.axes.forEach((axis) => {
       if (!byAxis[axis]) byAxis[axis] = [];
       byAxis[axis].push({ question: a.questionText, mappedScore: score, option: a.chosenOption });
     });
@@ -584,14 +583,14 @@ function buildAnswersSummary(answers: StructuredAnswer[]): string {
 
   const lines: string[] = [];
 
-  // High-signal answers (extremes based on mappedScore: 0-20 or 80-100)
-  const extremes = answers.filter(a => {
+  // High-signal answers (extremes: 0-20 or 80-100)
+  const extremes = answers.filter((a) => {
     const score = a.mappedScore ?? 0;
     return score <= 20 || score >= 80;
   });
   if (extremes.length > 0) {
     lines.push("### RESPOSTAS EXTREMAS (sinais fortes):");
-    extremes.forEach(a => {
+    extremes.forEach((a) => {
       const score = a.mappedScore ?? 0;
       const label = score >= 80 ? "CONCORDÂNCIA FORTE" : "DISCORDÂNCIA FORTE";
       const optionText = a.chosenOption ? ` → "${a.chosenOption}"` : "";
@@ -599,118 +598,102 @@ function buildAnswersSummary(answers: StructuredAnswer[]): string {
     });
   }
 
-  // Behavior choice answers (direct behavioral evidence)
-  const behaviorChoices = answers.filter(a => a.questionType === 'behavior_choice' && a.chosenOption);
+  // Behavior choice answers
+  const behaviorChoices = answers.filter((a) => a.questionType === "behavior_choice" && a.chosenOption);
   if (behaviorChoices.length > 0) {
     lines.push("\n### ESCOLHAS COMPORTAMENTAIS (comportamento real):");
-    behaviorChoices.forEach(a => {
+    behaviorChoices.forEach((a) => {
       const score = a.mappedScore ?? a.value;
       lines.push(`- "${a.questionText}" → escolheu: "${a.chosenOption}" (score: ${score}%, eixos: ${a.axes.join(", ")})`);
     });
   }
 
-  // All answers with mapped scores for full context
+  // All answers
   lines.push("\n### TODAS AS RESPOSTAS (com score mapeado):");
-  answers.forEach(a => {
+  answers.forEach((a) => {
     const score = a.mappedScore ?? a.value;
     const optionText = a.chosenOption ? ` → "${a.chosenOption}"` : "";
     lines.push(`- [${score}%] "${a.questionText}"${optionText} (eixos: ${a.axes.join(", ")})`);
   });
 
-  // Inconsistency detection: same axis, opposing mapped scores
+  // Inconsistency detection
   lines.push("\n### INCONSISTÊNCIAS DETECTADAS:");
   let hasInconsistency = false;
   Object.entries(byAxis).forEach(([axis, items]) => {
-    const scores = items.map(i => i.mappedScore);
+    const scores = items.map((i) => i.mappedScore);
     const min = Math.min(...scores);
     const max = Math.max(...scores);
     if (max - min >= 60 && items.length >= 2) {
       hasInconsistency = true;
-      const high = items.find(i => i.mappedScore === max);
-      const low = items.find(i => i.mappedScore === min);
+      const high = items.find((i) => i.mappedScore === max);
+      const low = items.find((i) => i.mappedScore === min);
       lines.push(`- Eixo "${axis}": resposta alta (${max}%) em "${high?.question}" vs baixa (${min}%) em "${low?.question}" — possível autoengano ou ambivalência`);
     }
   });
-  if (!hasInconsistency) {
-    lines.push("- Nenhuma inconsistência extrema detectada nos mesmos eixos.");
-  }
+  if (!hasInconsistency) lines.push("- Nenhuma inconsistência extrema detectada nos mesmos eixos.");
 
   return lines.join("\n");
 }
 
-function buildUserPrompt(
-  userContext: string,
-  slug: string,
-  intensity: string,
-  scoresSummary: string,
-  dominant: ScoreEntry,
-  secondary: ScoreEntry[],
-  contradictions: string,
-  answersSummary: string,
-  categoryCtx: CategoryContext,
-  template?: ReportTemplate | null
-): string {
-  const ov = categoryCtx.sectionOverrides;
-  return `${userContext}
-Teste: ${slug}
-Intensidade geral: ${intensity}
+function detectContradictions(scores: ScoreEntry[]): string {
+  const scoreMap: Record<string, number> = {};
+  scores.forEach((s) => { scoreMap[s.key] = s.percentage; });
 
-## DADOS DOS EIXOS (base obrigatória para toda interpretação):
-${scoresSummary}
+  const contradictions: string[] = [];
+  const sortedScores = [...scores].sort((a, b) => b.percentage - a.percentage);
 
-## PADRÃO DOMINANTE: ${dominant.label} (intensidade: ${dominant.percentage > 75 ? 'alta' : dominant.percentage > 50 ? 'moderada' : 'leve'})
-${secondary.length > 0
-    ? `## PADRÕES SECUNDÁRIOS: ${secondary.map((s) => `${s.label} (${s.percentage > 75 ? 'alta' : s.percentage > 50 ? 'moderada' : 'leve'})`).join(", ")}`
-    : "Sem padrões secundários significativos."}
+  const highScores = sortedScores.filter((s) => s.percentage >= 50);
+  for (let i = 0; i < highScores.length; i++) {
+    for (let j = i + 1; j < highScores.length; j++) {
+      const a = highScores[i];
+      const b = highScores[j];
+      if (a.percentage >= 55 && b.percentage >= 55) {
+        contradictions.push(`- Eixos "${a.label}" (${a.percentage}%) e "${b.label}" (${b.percentage}%) ambos altos — investigar se há tensão ou conflito entre esses dois comportamentos`);
+      }
+    }
+  }
 
-## CRUZAMENTOS E CONTRADIÇÕES DETECTADOS:
-${contradictions}
+  if (sortedScores.length >= 3) {
+    const top = sortedScores[0];
+    const bottom = sortedScores[sortedScores.length - 1];
+    if (top.percentage - bottom.percentage >= 40) {
+      contradictions.push(`- Grande disparidade: "${top.label}" (${top.percentage}%) é muito mais intenso que "${bottom.label}" (${bottom.percentage}%) — padrão concentrado em poucos eixos`);
+    }
+  }
 
-## EVIDÊNCIAS DAS RESPOSTAS DO USUÁRIO:
-${answersSummary}
+  const knownPairs: [string, string, string][] = [
+    ["excessive_self_criticism", "validation_dependency", "Alta autocrítica combinada com dependência de validação"],
+    ["paralyzing_perfectionism", "unstable_execution", "Perfeccionismo alto com execução instável"],
+    ["discomfort_escape", "functional_overload", "Fuga do desconforto com sobrecarga funcional"],
+    ["excessive_self_criticism", "low_routine_sustenance", "Autocrítica alta com baixa sustentação de rotina"],
+    ["emotional_self_sabotage", "validation_dependency", "Autossabotagem emocional com dependência de validação"],
+  ];
+  for (const [keyA, keyB, desc] of knownPairs) {
+    if ((scoreMap[keyA] ?? 0) >= 55 && (scoreMap[keyB] ?? 0) >= 55) {
+      const alreadyCovered = contradictions.some((c) => c.includes(keyA) || c.includes(keyB));
+      if (!alreadyCovered) contradictions.push(`- ${desc}`);
+    }
+  }
 
----
+  if (contradictions.length === 0) {
+    contradictions.push("- Sem contradições extremas detectadas. Analisar nuances entre os eixos com scores intermediários.");
+  }
 
-${buildJsonOutputSchema(ov, template, categoryCtx)}`;
+  return contradictions.join("\n");
 }
 
-/**
- * Build the JSON output schema dynamically.
- * If a report_template with sections exists, use those sections.
- * Otherwise, fall back to the default 8-section structure.
- */
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 6: JSON Output Schema Builder
+// ═══════════════════════════════════════════════════════════
+
 function buildJsonOutputSchema(
   ov: Record<string, string>,
   template?: ReportTemplate | null,
-  categoryCtx?: CategoryContext
+  categoryCtx?: CategoryContext,
 ): string {
   const maxSentences = template?.output_rules?.maxSentencesPerBlock || 2;
 
-  // If template has custom sections, build dynamic schema
-  if (template?.sections && Array.isArray(template.sections) && template.sections.length > 0) {
-    const sectionLines = template.sections.map((sec) => {
-      const instruction = ov[sec.key] || `Conteúdo para "${sec.name}" — máximo ${sec.maxSize || maxSentences} frases.`;
-      // Determine if it's a list or text field based on key patterns
-      const isListField = ['gatilhos', 'pararDeFazer', 'mentalTraps', 'selfSabotageCycle', 'whatNotToDo', 'oQueEvitar'].includes(sec.key);
-      if (isListField) {
-        return `  "${sec.key}": ["${instruction}"]`;
-      }
-      if (sec.key === 'impactoPorArea') {
-        return `  "impactoPorArea": [
-    {"area": "Rotina", "efeito": "1 frase"},
-    {"area": "Trabalho", "efeito": "1 frase"},
-    {"area": "Emocional", "efeito": "1 frase"},
-    {"area": "Relações", "efeito": "1 frase"},
-    {"area": "Autoconfiança", "efeito": "1 frase"}
-  ]`;
-      }
-      return `  "${sec.key}": "${instruction}"`;
-    });
-
-    return `Gere o diagnóstico em JSON com esta estrutura personalizada para este teste. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta, sem rodeio. Cada seção traz informação NOVA — ZERO repetição:
-{
-${sectionLines.join(',\n')},
-
+  const SHARED_FIELDS = `
   "profileName": "Nome criativo do perfil (3-5 palavras)",
   "combinedTitle": "Título curto e impactante do diagnóstico",
   "blindSpot": {"perceivedProblem": "O que a pessoa acha que é o problema", "realProblem": "O que realmente acontece"},
@@ -734,39 +717,65 @@ ${sectionLines.join(',\n')},
   "firstAction": "Copie acaoInicial ou proximoPasso",
   "focoMudanca": "Resuma em 1 frase curta QUAL área ou comportamento precisa de atenção prioritária. Deve ser DIFERENTE e MAIS CURTO que corrigirPrimeiro. Ex: 'Finalização de tarefas' ou 'Reação ao tédio nos projetos'.",
   "microAcoes": [
-    {"acao": "Ação específica 1 — verbo no imperativo + objeto + prazo. Ex: Liste 3 tarefas que precisa concluir até sexta-feira.", "detalhe": "Instrução complementar opcional. Ex: Escreva num papel e cole na mesa."},
-    {"acao": "Ação específica 2 — Ex: Escolha 2 aplicativos que mais te distraem e desligue as notificações agora.", "detalhe": ""},
-    {"acao": "Ação específica 3 — Ex: Amanhã, faça a primeira tarefa da lista ANTES de abrir qualquer rede social.", "detalhe": "Timer de 25 minutos. Sem pausas."}
+    {"acao": "Ação específica 1 — verbo no imperativo + objeto + prazo.", "detalhe": "Instrução complementar opcional."},
+    {"acao": "Ação específica 2.", "detalhe": ""},
+    {"acao": "Ação específica 3.", "detalhe": ""}
   ],
-  "mentalCommand": "Uma frase curta e direta de reprogramação mental que o usuário deve repetir ANTES de executar a ação. Objetivo: enfraquecer o padrão antigo e reforçar o novo comportamento. Formato: frase em primeira pessoa, sem aspas internas. Ex: Eu não preciso estar pronto pra começar.",
+  "mentalCommand": "Uma frase curta e direta de reprogramação mental em 1ª pessoa, máx 10 palavras.",
   "mecanismoNeural": {
-    "neurotransmissor": "Qual neurotransmissor está mais envolvido no padrão (cortisol, dopamina, serotonina, adrenalina) e como ele atua — 1 frase simples. Ex: Seu cérebro libera cortisol (hormônio do estresse) toda vez que você pensa em começar algo difícil.",
-    "cicloNeural": "Como o circuito neural se formou e por que se repete — 2 frases máximo. Explique usando: repetição criou um caminho automático no cérebro.",
-    "neuroplasticidade": "Como a neuroplasticidade permite mudar esse padrão — 1-2 frases esperançosas mas realistas. Ex: A boa notícia: seu cérebro pode criar novos caminhos."
-  }
-}
+    "neurotransmissor": "Qual neurotransmissor está mais envolvido e como atua — 1 frase.",
+    "cicloNeural": "Como o circuito neural se formou — 2 frases máximo.",
+    "neuroplasticidade": "Como a neuroplasticidade permite mudar — 1-2 frases."
+  }`;
 
+  const FINAL_RULES = `
 REGRAS FINAIS:
 - MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
 - NÃO repita a mesma ideia entre seções.
 - ZERO palavras rebuscadas.
 - actionPlan: só para áreas abaixo de 70%.
 - Se não houver áreas abaixo de 70%, retorne actionPlan como [].
-- corrigirPrimeiro/direcaoAjuste: deve conter QUAL comportamento mudar e EM QUAL situação. Proibido: "mude sua relação com X", "busque equilíbrio", "tenha mais consciência".
+- corrigirPrimeiro/direcaoAjuste: deve conter QUAL comportamento mudar e EM QUAL situação.
 - focoMudanca: RESUMO CURTO (1-5 palavras) da área prioritária. NÃO pode ser igual a corrigirPrimeiro.
-- microAcoes: 3 ações ESPECÍFICAS e EXECUTÁVEIS com verbo imperativo. Cada ação = passo-a-passo que qualquer pessoa faz SEM pensar. Proibido ações vagas.
-- acaoInicial/proximoPasso: deve conter QUANDO fazer + COMO fazer + por QUANTO TEMPO. Proibido: "reflita sobre", "observe seus padrões", "anote o que muda".
-- pararDeFazer: cada item deve ter SITUAÇÃO + COMPORTAMENTO específico. Proibido: "pare de se cobrar", "pare de procrastinar".
-- mecanismoNeural: use linguagem SIMPLES para explicar neurociência. Proibido: termos técnicos sem explicação entre parênteses.
-${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
+- microAcoes: 3 ações ESPECÍFICAS e EXECUTÁVEIS com verbo imperativo.
+- acaoInicial/proximoPasso: deve conter QUANDO fazer + COMO fazer + por QUANTO TEMPO.
+- pararDeFazer: cada item deve ter SITUAÇÃO + COMPORTAMENTO específico.
+- mecanismoNeural: use linguagem SIMPLES para explicar neurociência.
+${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ""}`;
+
+  // Dynamic schema from template
+  if (template?.sections && Array.isArray(template.sections) && template.sections.length > 0) {
+    const LIST_KEYS = new Set(["gatilhos", "pararDeFazer", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "oQueEvitar"]);
+    const sectionLines = template.sections.map((sec) => {
+      const instruction = ov[sec.key] || `Conteúdo para "${sec.name}" — máximo ${sec.maxSize || maxSentences} frases.`;
+      if (LIST_KEYS.has(sec.key)) return `  "${sec.key}": ["${instruction}"]`;
+      if (sec.key === "impactoPorArea") {
+        return `  "impactoPorArea": [
+    {"area": "Rotina", "efeito": "1 frase"},
+    {"area": "Trabalho", "efeito": "1 frase"},
+    {"area": "Emocional", "efeito": "1 frase"},
+    {"area": "Relações", "efeito": "1 frase"},
+    {"area": "Autoconfiança", "efeito": "1 frase"}
+  ]`;
+      }
+      return `  "${sec.key}": "${instruction}"`;
+    });
+
+    return `Gere o diagnóstico em JSON com esta estrutura personalizada. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta. Cada seção traz informação NOVA — ZERO repetição:
+{
+${sectionLines.join(",\n")},
+
+${SHARED_FIELDS}
+}
+${FINAL_RULES}`;
   }
 
-  // Default 8-section structure (fallback)
-  return `Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta, sem rodeio. Nada de psicologuês. Cada seção traz informação NOVA — ZERO repetição:
+  // Default 8-section fallback
+  return `Gere o diagnóstico em JSON com esta estrutura EXATA de 8 seções. Máximo ${maxSentences} frases por bloco. Linguagem simples, direta. Cada seção traz informação NOVA — ZERO repetição:
 {
-  "chamaAtencao": "${ov.resumoPrincipal || 'O que mais salta aos olhos no resultado — 1-2 frases diretas, sem introdução.'}",
-  "padraoRepetido": "${ov.padraoIdentificado || 'O padrão que mais se repete — nome curto + 1 frase explicando o mecanismo.'}",
-  "comoAparece": "${ov.comoAparece || '1-2 exemplos concretos do dia a dia onde isso aparece.'}",
+  "chamaAtencao": "${ov.resumoPrincipal || "O que mais salta aos olhos no resultado — 1-2 frases diretas, sem introdução."}",
+  "padraoRepetido": "${ov.padraoIdentificado || "O padrão que mais se repete — nome curto + 1 frase explicando o mecanismo."}",
+  "comoAparece": "${ov.comoAparece || "1-2 exemplos concretos do dia a dia onde isso aparece."}",
   "gatilhos": ["2-3 situações reais e específicas que disparam o padrão — 1 frase cada"],
   "impactoPorArea": [
     {"area": "Rotina", "efeito": "1 frase sobre como o padrão afeta a rotina diária"},
@@ -775,119 +784,122 @@ ${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TE
     {"area": "Relações", "efeito": "1 frase sobre efeito nos relacionamentos"},
     {"area": "Autoconfiança", "efeito": "1 frase sobre impacto na autoimagem"}
   ],
-  "corrigirPrimeiro": "${ov.direcaoAjuste || 'O comportamento ESPECÍFICO que precisa mudar. Diga QUAL comportamento, em QUAL situação. Exemplo: Em vez de dizer mude sua relação com trabalho, diga Pare de aceitar tarefas extras quando já está sobrecarregado. 1-2 frases.'}",
-  "pararDeFazer": ["2-3 coisas para PARAR imediatamente — cada item com SITUAÇÃO + COMPORTAMENTO. Exemplo: Parar de responder mensagens de trabalho depois das 21h"],
-  "acaoInicial": "${ov.proximoPasso || 'UMA AÇÃO EXECUTÁVEL com QUANDO + COMO + QUANTO TEMPO. Exemplo: Amanhã de manhã, antes de abrir o celular, escreva 3 coisas que precisa fazer hoje e faça a primeira antes de qualquer outra coisa. DEVE ser diferente de corrigirPrimeiro. NÃO pode ser conselho genérico como reflita sobre ou observe seus padrões.'}",
+  "corrigirPrimeiro": "${ov.direcaoAjuste || "O comportamento ESPECÍFICO que precisa mudar. Diga QUAL comportamento, em QUAL situação. 1-2 frases."}",
+  "pararDeFazer": ["2-3 coisas para PARAR imediatamente — cada item com SITUAÇÃO + COMPORTAMENTO"],
+  "acaoInicial": "${ov.proximoPasso || "UMA AÇÃO EXECUTÁVEL com QUANDO + COMO + QUANTO TEMPO. DEVE ser diferente de corrigirPrimeiro."}",
 
-  "profileName": "Nome criativo do perfil (3-5 palavras)",
-  "combinedTitle": "Título curto e impactante do diagnóstico",
-  "blindSpot": {"perceivedProblem": "O que a pessoa acha que é o problema", "realProblem": "O que realmente acontece"},
-  "criticalDiagnosis": "Copie chamaAtencao",
-  "corePain": "Resuma impactoPorArea em 1 frase",
-  "mentalState": "Estado mental atual em 1 frase",
-  "summary": "Copie chamaAtencao",
-  "mechanism": "Copie padraoRepetido",
-  "contradiction": "A contradição interna principal — 1 frase",
-  "impact": "Resuma impactoPorArea em 1 frase",
-  "direction": "Copie corrigirPrimeiro",
-  "keyUnlockArea": "Copie corrigirPrimeiro",
-  "blockingPoint": "Onde a pessoa trava — 1 frase",
-  "triggers": ["mesmos gatilhos acima"],
-  "mentalTraps": ["2-3 pensamentos que a pessoa repete e que mantêm o padrão — entre aspas"],
-  "selfSabotageCycle": ["3-4 etapas do ciclo em ordem — frases curtas"],
-  "whatNotToDo": ["mesmos itens de pararDeFazer"],
-  "lifeImpact": [{"pillar": "área", "impact": "efeito concreto em 1 frase"}],
-  "exitStrategy": [{"step": 1, "title": "título curto", "action": "ação executável"}],
-  "actionPlan": [{"area": "área com nota < 7", "score": 5, "actions": ["ação concreta"]}],
-  "firstAction": "Copie acaoInicial",
-  "focoMudanca": "Resuma em 1 frase curta QUAL área ou comportamento precisa de atenção prioritária. DIFERENTE e MAIS CURTO que corrigirPrimeiro. Ex: 'Finalização de tarefas'.",
-  "microAcoes": [
-    {"acao": "Ação 1 — verbo imperativo + objeto + prazo. Ex: Liste 3 coisas que precisa concluir até sexta.", "detalhe": "Instrução extra. Ex: Escreva num papel e cole na mesa."},
-    {"acao": "Ação 2 — Ex: Escolha 2 apps que mais te distraem e desligue as notificações agora.", "detalhe": ""},
-    {"acao": "Ação 3 — Ex: Amanhã, faça a 1ª tarefa da lista ANTES de abrir rede social. 25 min.", "detalhe": ""}
-  ],
-  "mentalCommand": "Frase de reprogramação em 1ª pessoa, máx 10 palavras. Ex: Eu não preciso estar pronto pra começar.",
-  "mecanismoNeural": {
-    "neurotransmissor": "Qual neurotransmissor está mais envolvido no padrão (cortisol, dopamina, serotonina, adrenalina) e como ele atua — 1 frase simples.",
-    "cicloNeural": "Como o circuito neural se formou e por que se repete — 2 frases máximo.",
-    "neuroplasticidade": "Como a neuroplasticidade permite mudar esse padrão — 1-2 frases esperançosas mas realistas."
-  }
+${SHARED_FIELDS}
 }
 
-REGRAS FINAIS:
-- MÁXIMO ${maxSentences} frases por bloco. Sem exceção.
-- NÃO repita a mesma ideia entre seções.
-- corrigirPrimeiro = DIREÇÃO (QUAL comportamento mudar, EM QUAL situação). acaoInicial = AÇÃO (QUANDO + COMO + QUANTO TEMPO). São OBRIGATORIAMENTE diferentes.
-- focoMudanca = RESUMO CURTO (1-3 palavras) da área prioritária. NÃO pode ser igual a corrigirPrimeiro.
-- microAcoes = 3 ações ESPECÍFICAS e EXECUTÁVEIS com verbo imperativo. Cada ação deve ser passo-a-passo que qualquer pessoa consegue fazer SEM pensar. Proibido ações vagas.
-- Proibido em corrigirPrimeiro: "mude sua relação com X", "busque equilíbrio", "tenha mais consciência"
-- Proibido em acaoInicial/microAcoes: "reflita sobre", "observe seus padrões", "tente se conhecer melhor", "anote o que muda"
-- pararDeFazer: cada item com SITUAÇÃO + COMPORTAMENTO. Proibido: "pare de se cobrar", "pare de procrastinar"
-- ZERO palavras rebuscadas.
-- actionPlan: só para áreas abaixo de 70%.
-- mecanismoNeural: use linguagem SIMPLES para explicar neurociência. Proibido: termos técnicos sem explicação entre parênteses.
-- Se não houver áreas abaixo de 70%, retorne actionPlan como [].
-${categoryCtx?.extraInstructions ? `\nINSTRUÇÕES ESPECÍFICAS DESTE TIPO DE TESTE:\n${categoryCtx.extraInstructions}` : ''}`;
+${FINAL_RULES}
+- corrigirPrimeiro = DIREÇÃO (QUAL comportamento mudar, EM QUAL situação). acaoInicial = AÇÃO (QUANDO + COMO + QUANTO TEMPO). São OBRIGATORIAMENTE diferentes.`;
 }
 
-function detectContradictions(scores: ScoreEntry[]): string {
-  const scoreMap: Record<string, number> = {};
-  scores.forEach((s) => { scoreMap[s.key] = s.percentage; });
+function buildUserPrompt(
+  userContext: string,
+  slug: string,
+  intensity: string,
+  scoresSummary: string,
+  dominant: ScoreEntry,
+  secondary: ScoreEntry[],
+  contradictions: string,
+  answersSummary: string,
+  categoryCtx: CategoryContext,
+  template?: ReportTemplate | null,
+): string {
+  const ov = categoryCtx.sectionOverrides;
+  return `${userContext}
+Teste: ${slug}
+Intensidade geral: ${intensity}
 
-  const contradictions: string[] = [];
-  const sortedScores = [...scores].sort((a, b) => b.percentage - a.percentage);
+## DADOS DOS EIXOS (base obrigatória para toda interpretação):
+${scoresSummary}
 
-  // Dynamic contradiction detection: find any pair of high-scoring axes
-  // that could represent opposing behaviors
-  const highScores = sortedScores.filter(s => s.percentage >= 50);
-  
-  for (let i = 0; i < highScores.length; i++) {
-    for (let j = i + 1; j < highScores.length; j++) {
-      const a = highScores[i];
-      const b = highScores[j];
-      // Only flag if both are significantly high
-      if (a.percentage >= 55 && b.percentage >= 55) {
-        contradictions.push(`- Eixos "${a.label}" (${a.percentage}%) e "${b.label}" (${b.percentage}%) ambos altos — investigar se há tensão ou conflito entre esses dois comportamentos`);
-      }
-    }
-  }
+## PADRÃO DOMINANTE: ${dominant.label} (intensidade: ${dominant.percentage > 75 ? "alta" : dominant.percentage > 50 ? "moderada" : "leve"})
+${secondary.length > 0
+    ? `## PADRÕES SECUNDÁRIOS: ${secondary.map((s) => `${s.label} (${s.percentage > 75 ? "alta" : s.percentage > 50 ? "moderada" : "leve"})`).join(", ")}`
+    : "Sem padrões secundários significativos."}
 
-  // Also detect when top axis is very different from bottom axis
-  if (sortedScores.length >= 3) {
-    const top = sortedScores[0];
-    const bottom = sortedScores[sortedScores.length - 1];
-    if (top.percentage - bottom.percentage >= 40) {
-      contradictions.push(`- Grande disparidade: "${top.label}" (${top.percentage}%) é muito mais intenso que "${bottom.label}" (${bottom.percentage}%) — padrão concentrado em poucos eixos`);
-    }
-  }
+## CRUZAMENTOS E CONTRADIÇÕES DETECTADOS:
+${contradictions}
 
-  // Known behavioral conflict pairs (kept for backward compat but now optional)
-  const knownPairs: [string, string, string][] = [
-    ['excessive_self_criticism', 'validation_dependency', 'Alta autocrítica combinada com dependência de validação'],
-    ['paralyzing_perfectionism', 'unstable_execution', 'Perfeccionismo alto com execução instável'],
-    ['discomfort_escape', 'functional_overload', 'Fuga do desconforto com sobrecarga funcional'],
-    ['excessive_self_criticism', 'low_routine_sustenance', 'Autocrítica alta com baixa sustentação de rotina'],
-    ['emotional_self_sabotage', 'validation_dependency', 'Autossabotagem emocional com dependência de validação'],
-  ];
+## EVIDÊNCIAS DAS RESPOSTAS DO USUÁRIO:
+${answersSummary}
 
-  for (const [keyA, keyB, desc] of knownPairs) {
-    if ((scoreMap[keyA] ?? 0) >= 55 && (scoreMap[keyB] ?? 0) >= 55) {
-      // Check if not already covered by dynamic detection
-      const alreadyCovered = contradictions.some(c => c.includes(keyA) || c.includes(keyB));
-      if (!alreadyCovered) {
-        contradictions.push(`- ${desc}`);
-      }
-    }
-  }
+---
 
-  if (contradictions.length === 0) {
-    contradictions.push("- Sem contradições extremas detectadas. Analisar nuances entre os eixos com scores intermediários.");
-  }
-
-  return contradictions.join("\n");
+${buildJsonOutputSchema(ov, template, categoryCtx)}`;
 }
 
-// ── Main handler ──
+function buildRefineInstruction(refineLevel: number): string {
+  if (refineLevel <= 0) return "";
+  const levels: string[] = [];
+  if (refineLevel >= 1) levels.push(`- PROIBIDO usar frases como "tenha mais foco", "acredite em si", "busque equilíbrio", "saia da zona de conforto"
+- Cada frase DEVE conter uma referência direta ao padrão específico detectado nos dados
+- O diagnóstico crítico deve incluir uma CAUSA raiz e uma CONSEQUÊNCIA observável
+- A contradição deve ser entre dois comportamentos CONCRETOS, não entre conceitos abstratos`);
+  if (refineLevel >= 2) levels.push(`- A dor central deve explicar o MECANISMO que sustenta o problema — não apenas nomeá-lo
+- O ponto cego deve surpreender — não pode ser óbvio
+- A primeira ação deve ser executável em 72h com critério de sucesso mensurável
+- As restrições (o que não fazer) devem ser contra-intuitivas, não óbvias`);
+  if (refineLevel >= 3) levels.push(`- Use linguagem que gere IMPACTO EMOCIONAL — o usuário deve se sentir lido com precisão cirúrgica
+- Cada seção deve conter pelo menos uma frase que o usuário NÃO esperaria ler
+- O resumo deve funcionar como um espelho — o usuário deve reconhecer seus comportamentos reais`);
+
+  return `\n\n---\n\n# INSTRUÇÃO DE REFINAMENTO (nível ${refineLevel})\n\nA resposta anterior foi considerada GENÉRICA. Aplique:\n\n${levels.join("\n")}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 7: Result Normalization
+// ═══════════════════════════════════════════════════════════
+
+function normalizeResult(result: Record<string, unknown>, dominant: ScoreEntry, sortedScores: ScoreEntry[]): Record<string, unknown> {
+  // Cross-fill between new and legacy fields
+  if (!result.criticalDiagnosis) result.criticalDiagnosis = result.resumoPrincipal || "";
+  if (!result.corePain) result.corePain = result.significadoPratico || "";
+  if (!result.mechanism) result.mechanism = result.padraoIdentificado || "";
+  if (!result.mentalState) result.mentalState = result.comoAparece || "";
+  if (!result.direction) result.direction = result.direcaoAjuste || "";
+  if (!result.keyUnlockArea) result.keyUnlockArea = result.direcaoAjuste || "";
+  if (!result.summary) result.summary = result.resumoPrincipal || "";
+  if (!result.profileName) result.profileName = "";
+  if (!result.contradiction) result.contradiction = "";
+
+  // Ensure arrays
+  for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "oQueEvitar"]) {
+    if (!Array.isArray(result[f])) result[f] = [];
+  }
+  if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
+  if (!Array.isArray(result.impactoVida)) result.impactoVida = [];
+  if (!Array.isArray(result.exitStrategy)) result.exitStrategy = [];
+  if (!result.blindSpot || typeof result.blindSpot !== "object") {
+    result.blindSpot = { perceivedProblem: "", realProblem: "" };
+  }
+  if (!result.firstAction) result.firstAction = result.proximoPasso || "";
+  if (!result.blockingPoint) result.blockingPoint = "";
+  if (!result.impact) result.impact = "";
+  if (!result.combinedTitle) result.combinedTitle = `${dominant.label}`;
+  if (!Array.isArray(result.actionPlan)) result.actionPlan = [];
+  if (!Array.isArray(result.microAcoes)) result.microAcoes = [];
+  if (!result.focoMudanca) result.focoMudanca = "";
+
+  // Quantitative anchor for frontend validation
+  const topAxis = sortedScores[0];
+  if (topAxis?.label) {
+    console.log(`[Validation] Top axis: "${topAxis.label}" (${topAxis.percentage}%) | AI combinedTitle: "${result.combinedTitle}"`);
+    result._quantitativeAnchor = {
+      topAxis: topAxis.label,
+      topPercentage: topAxis.percentage,
+      secondaryAxes: sortedScores.slice(1, 3).map((s) => ({ label: s.label, percentage: s.percentage })),
+    };
+  }
+
+  return result;
+}
+
+// ═══════════════════════════════════════════════════════════
+// ▌ SECTION 8: Main Handler
+// ═══════════════════════════════════════════════════════════
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -895,13 +907,9 @@ serve(async (req) => {
   }
 
   try {
+    // ── Auth ──
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!authHeader) return errorResponse("Não autorizado", 401);
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -912,178 +920,108 @@ serve(async (req) => {
     });
 
     const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Não autorizado" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (authError || !user) return errorResponse("Não autorizado", 401);
+
+    // ── Rate limit ──
+    if (!checkRateLimit(user.id)) {
+      return errorResponse("Limite de requisições atingido. Aguarde um minuto.", 429);
+    }
+
+    // ── Parse & validate input ──
+    const body: RequestBody = await req.json();
+    const { test_module_id, scores, slug, refine_level, answers: structuredAnswers } = body;
+
+    if (!test_module_id || !scores || !Array.isArray(scores)) {
+      return errorResponse("Dados inválidos", 400);
     }
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const { test_module_id, scores, slug, refine_level, answers: structuredAnswers } = await req.json() as {
-      test_module_id: string;
-      scores: ScoreEntry[];
-      slug: string;
-      refine_level?: number;
-      answers?: StructuredAnswer[];
-    };
+    // ── Fetch config (parallel) ──
+    const [promptsRes, templateRes, profileRes] = await Promise.all([
+      adminClient.from("test_prompts").select("prompt_type, title, content").eq("test_id", test_module_id).eq("is_active", true),
+      adminClient.from("report_templates").select("sections, output_rules").eq("test_id", test_module_id).maybeSingle(),
+      userClient.from("profiles").select("name, age").eq("user_id", user.id).maybeSingle(),
+    ]);
 
-    if (!test_module_id || !scores || !Array.isArray(scores)) {
-      return new Response(JSON.stringify({ error: "Dados inválidos" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (promptsRes.error) {
+      console.error("Error fetching prompts:", promptsRes.error);
+      return errorResponse("Erro ao carregar configuração do diagnóstico", 500);
     }
 
-    // Fetch active prompts for THIS specific test
-    const { data: prompts, error: promptsError } = await adminClient
-      .from("test_prompts")
-      .select("prompt_type, title, content")
-      .eq("test_id", test_module_id)
-      .eq("is_active", true);
-
-    if (promptsError) {
-      console.error("Error fetching prompts:", promptsError);
-      return new Response(JSON.stringify({ error: "Erro ao carregar configuração do diagnóstico" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!promptsRes.data || promptsRes.data.length === 0) {
+      return fallbackResponse();
     }
 
-    // No prompts → fallback to local analysis
-    if (!prompts || prompts.length === 0) {
-      return new Response(JSON.stringify({ useFallback: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Fetch report template for this test (sections + output_rules)
     let reportTemplate: ReportTemplate | null = null;
-    try {
-      const { data: tmpl } = await adminClient
-        .from("report_templates")
-        .select("sections, output_rules")
-        .eq("test_id", test_module_id)
-        .maybeSingle();
-      if (tmpl) {
-        reportTemplate = {
-          sections: Array.isArray(tmpl.sections) ? tmpl.sections as TemplateSection[] : [],
-          output_rules: (tmpl.output_rules && typeof tmpl.output_rules === 'object') ? tmpl.output_rules as OutputRules : {},
-        };
-      }
-    } catch { /* use defaults if template fetch fails */ }
+    if (templateRes.data) {
+      reportTemplate = {
+        sections: Array.isArray(templateRes.data.sections) ? templateRes.data.sections as TemplateSection[] : [],
+        output_rules: (templateRes.data.output_rules && typeof templateRes.data.output_rules === "object") ? templateRes.data.output_rules as OutputRules : {},
+      };
+    }
 
-    // Fetch user profile for context
-    const { data: profile } = await userClient
-      .from("profiles")
-      .select("name, age")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    // ── Build analysis data ──
+    const sortedScores = [...scores]
+      .map((s) => ({ ...s, percentage: Math.min(100, Math.max(0, s.percentage)) }))
+      .sort((a, b) => b.percentage - a.percentage);
 
-    // Build analysis data — cap all percentages at 100% as safety net
-    const sortedScores = [...scores].map(s => ({
-      ...s,
-      percentage: Math.min(100, Math.max(0, s.percentage)),
-    })).sort((a, b) => b.percentage - a.percentage);
     const dominant = sortedScores[0];
     const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
     const intensity = dominant.percentage >= 75 ? "alto" : dominant.percentage >= 50 ? "moderado" : "leve";
 
     const scoresSummary = sortedScores
-      .map((s) => `- ${s.label}: intensidade ${s.percentage >= 75 ? 'ALTA' : s.percentage >= 50 ? 'MODERADA' : 'LEVE'} (${s.percentage}%)`)
+      .map((s) => `- ${s.label}: intensidade ${s.percentage >= 75 ? "ALTA" : s.percentage >= 50 ? "MODERADA" : "LEVE"} (${s.percentage}%)`)
       .join("\n");
 
     const contradictions = detectContradictions(sortedScores);
-
-    // Build category-specific context
     const categoryCtx = getCategoryContext(slug);
 
-    // Build structured prompts — now with template integration
-    const systemPrompt = buildStructuredSystemPrompt(prompts as PromptRecord[], categoryCtx, reportTemplate);
+    const systemPrompt = buildStructuredSystemPrompt(promptsRes.data as PromptRecord[], categoryCtx, reportTemplate);
 
+    const profile = profileRes.data;
     const userContext = profile
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
       : "Usuário anônimo";
 
     const answersSummary = buildAnswersSummary(structuredAnswers || []);
+    const userPrompt = buildUserPrompt(userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary, categoryCtx, reportTemplate);
 
-    const userPrompt = buildUserPrompt(
-      userContext, slug, intensity, scoresSummary, dominant, secondary, contradictions, answersSummary, categoryCtx, reportTemplate
-    );
-
-    // Build refine instruction if needed
     const refineLevel = refine_level ?? 0;
-    const refineInstruction = refineLevel > 0 ? `
+    const refineInstruction = buildRefineInstruction(refineLevel);
 
----
-
-# INSTRUÇÃO DE REFINAMENTO (nível ${refineLevel})
-
-A resposta anterior foi considerada GENÉRICA ou VAGA. Aplique estas exigências adicionais:
-
-${refineLevel >= 1 ? `- PROIBIDO usar frases como "tenha mais foco", "acredite em si", "busque equilíbrio", "saia da zona de conforto"
-- Cada frase DEVE conter uma referência direta ao padrão específico detectado nos dados
-- O diagnóstico crítico deve incluir uma CAUSA raiz e uma CONSEQUÊNCIA observável
-- A contradição deve ser entre dois comportamentos CONCRETOS, não entre conceitos abstratos` : ""}
-${refineLevel >= 2 ? `- A dor central deve explicar o MECANISMO que sustenta o problema — não apenas nomeá-lo
-- O ponto cego deve surpreender — não pode ser óbvio
-- A primeira ação deve ser executável em 72h com critério de sucesso mensurável
-- As restrições (o que não fazer) devem ser contra-intuitivas, não óbvias` : ""}
-${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário deve se sentir lido com precisão cirúrgica
-- Cada seção deve conter pelo menos uma frase que o usuário NÃO esperaria ler
-- O resumo deve funcionar como um espelho — o usuário deve reconhecer seus comportamentos reais` : ""}
-` : "";
-
-    // Call AI
+    // ── Call AI ──
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ useFallback: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!LOVABLE_API_KEY) return fallbackResponse();
 
-    // Fetch AI config: test-specific first, then global fallback
+    // Fetch AI config
     let aiModel = "google/gemini-3-flash-preview";
     let aiTemperature: number | undefined;
     let aiMaxTokens: number | undefined;
 
     try {
-      // Check for test-specific config
-      const { data: testConfig } = await adminClient
-        .from("test_ai_config")
-        .select("use_global_defaults, ai_enabled, temperature, max_tokens, tone, depth_level, report_style")
-        .eq("test_id", test_module_id)
-        .maybeSingle();
+      const [testConfigRes, globalConfigRes] = await Promise.all([
+        adminClient.from("test_ai_config").select("use_global_defaults, ai_enabled, temperature, max_tokens").eq("test_id", test_module_id).maybeSingle(),
+        adminClient.from("global_ai_config").select("ai_model, temperature, max_tokens").limit(1).maybeSingle(),
+      ]);
 
-      // Fetch global config
-      const { data: globalConfig } = await adminClient
-        .from("global_ai_config")
-        .select("ai_model, temperature, max_tokens, tone, depth_level, report_style")
-        .limit(1)
-        .maybeSingle();
+      if (globalConfigRes.data?.ai_model) aiModel = globalConfigRes.data.ai_model;
 
-      if (globalConfig?.ai_model) aiModel = globalConfig.ai_model;
-
-      // Use test-specific params when use_global_defaults is false
-      if (testConfig && !testConfig.use_global_defaults) {
-        aiTemperature = testConfig.temperature;
-        aiMaxTokens = testConfig.max_tokens;
-      } else if (globalConfig) {
-        aiTemperature = globalConfig.temperature;
-        aiMaxTokens = globalConfig.max_tokens;
+      if (testConfigRes.data && !testConfigRes.data.use_global_defaults) {
+        aiTemperature = testConfigRes.data.temperature;
+        aiMaxTokens = testConfigRes.data.max_tokens;
+      } else if (globalConfigRes.data) {
+        aiTemperature = globalConfigRes.data.temperature;
+        aiMaxTokens = globalConfigRes.data.max_tokens;
       }
     } catch { /* use defaults */ }
 
-    // Clamp temperature to 0.5-0.6 range for diagnostic precision
-    const clampedTemp = aiTemperature !== undefined 
-      ? Math.min(0.6, Math.max(0.5, aiTemperature)) 
-      : 0.55;
+    const clampedTemp = aiTemperature !== undefined ? Math.min(0.6, Math.max(0.5, aiTemperature)) : 0.55;
 
     const aiBody: Record<string, unknown> = {
       model: aiModel,
       messages: [
-        { role: "system", content: systemPrompt + (refineLevel > 0 ? refineInstruction : "") },
+        { role: "system", content: systemPrompt + refineInstruction },
         { role: "user", content: userPrompt },
       ],
       temperature: clampedTemp,
@@ -1100,101 +1038,41 @@ ${refineLevel >= 3 ? `- Use linguagem que gere IMPACTO EMOCIONAL — o usuário 
     });
 
     if (!aiResponse.ok) {
-      if (aiResponse.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições. Tente novamente em instantes." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error("AI error:", aiResponse.status, await aiResponse.text());
-      return new Response(JSON.stringify({ useFallback: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      const status = aiResponse.status;
+      await aiResponse.text(); // consume body
+      if (status === 429) return errorResponse("Limite de requisições. Tente novamente em instantes.", 429);
+      if (status === 402) return errorResponse("Créditos de IA esgotados.", 402);
+      console.error("AI error:", status);
+      return fallbackResponse();
     }
 
     const aiData = await aiResponse.json();
     const content = aiData.choices?.[0]?.message?.content || "";
 
-    // Parse JSON
-    let result;
+    // ── Parse JSON ──
+    let result: Record<string, unknown>;
     try {
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
       result = JSON.parse(jsonMatch[1]!.trim());
     } catch {
       console.error("Failed to parse AI response:", content.substring(0, 500));
-      return new Response(JSON.stringify({ useFallback: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return fallbackResponse();
     }
 
-    // Validate: accept either new template or legacy fields
+    // ── Validate ──
     const hasNewTemplate = result.resumoPrincipal && result.significadoPratico;
     const hasLegacy = result.criticalDiagnosis && result.corePain;
-    
     if (!hasNewTemplate && !hasLegacy) {
       console.error("AI response missing required fields");
-      return new Response(JSON.stringify({ useFallback: true }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return fallbackResponse();
     }
 
-    // Cross-fill between new and legacy fields
-    if (!result.criticalDiagnosis) result.criticalDiagnosis = result.resumoPrincipal || "";
-    if (!result.corePain) result.corePain = result.significadoPratico || "";
-    if (!result.mechanism) result.mechanism = result.padraoIdentificado || "";
-    if (!result.mentalState) result.mentalState = result.comoAparece || "";
-    if (!result.direction) result.direction = result.direcaoAjuste || "";
-    if (!result.keyUnlockArea) result.keyUnlockArea = result.direcaoAjuste || "";
-    if (!result.summary) result.summary = result.resumoPrincipal || "";
-    if (!result.profileName) result.profileName = "";
-    if (!result.contradiction) result.contradiction = "";
+    // ── Normalize ──
+    const normalized = normalizeResult(result, dominant, sortedScores);
 
-    // Ensure arrays and objects
-    ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "oQueEvitar"].forEach((f) => {
-      if (!Array.isArray(result[f])) result[f] = [];
-    });
-    if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
-    if (!Array.isArray(result.impactoVida)) result.impactoVida = [];
-    if (!Array.isArray(result.exitStrategy)) result.exitStrategy = [];
-    if (!result.blindSpot || typeof result.blindSpot !== "object") {
-      result.blindSpot = { perceivedProblem: "", realProblem: "" };
-    }
-    if (!result.firstAction) result.firstAction = result.proximoPasso || "";
-    if (!result.blockingPoint) result.blockingPoint = "";
-    if (!result.impact) result.impact = "";
-    if (!result.combinedTitle) result.combinedTitle = `${dominant.label}`;
-    if (!Array.isArray(result.actionPlan)) result.actionPlan = [];
-    if (!Array.isArray(result.microAcoes)) result.microAcoes = [];
-    if (!result.focoMudanca) result.focoMudanca = "";
-
-    // Correction 7: Validate AI result coherence with quantitative data
-    // Log warning if AI's dominant pattern doesn't align with highest-scoring axis
-    const aiDominantLabel = (result.combinedTitle || result.profileName || "").toLowerCase();
-    const topAxis = sortedScores[0];
-    if (topAxis && topAxis.label) {
-      console.log(`[Validation] Top axis: "${topAxis.label}" (${topAxis.percentage}%) | AI combinedTitle: "${result.combinedTitle}"`);
-      // Inject quantitative anchor into the result so frontend can cross-check
-      result._quantitativeAnchor = {
-        topAxis: topAxis.label,
-        topPercentage: topAxis.percentage,
-        secondaryAxes: sortedScores.slice(1, 3).map(s => ({ label: s.label, percentage: s.percentage })),
-      };
-    }
-
-    return new Response(JSON.stringify({ analysis: result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ analysis: normalized });
   } catch (e) {
     console.error("analyze-test error:", e);
-    return new Response(
-      JSON.stringify({ error: "Erro interno do servidor" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse("Erro interno do servidor", 500);
   }
 });
