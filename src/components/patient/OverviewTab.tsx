@@ -11,7 +11,6 @@ import type { PersonData, TestEntry, TestModule, InviteData } from './types';
 import { fadeUp, intensityLabel, COLORS } from './types';
 
 interface OverviewTabProps {
-  person: PersonData;
   history: TestEntry[];
   modules: TestModule[];
   invites: InviteData[];
@@ -21,12 +20,11 @@ interface OverviewTabProps {
   generatingLink: string | null;
   onGenerateLink: (testModuleId: string) => void;
   onCopyExistingLink: (token: string, moduleId: string) => void;
-  onDownloadEvolutionPdf: () => void;
 }
 
 export function OverviewTab({
-  person, history, modules, invites, axisLabels, gamification,
-  copiedToken, generatingLink, onGenerateLink, onCopyExistingLink, onDownloadEvolutionPdf,
+  history, modules, invites, axisLabels, gamification,
+  copiedToken, generatingLink, onGenerateLink, onCopyExistingLink,
 }: OverviewTabProps) {
   const evolutionData = useMemo(() => {
     if (history.length < 2) return [];
