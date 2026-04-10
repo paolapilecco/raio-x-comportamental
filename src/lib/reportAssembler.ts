@@ -32,7 +32,7 @@ const BLOCK_ORDER: BlockConfig[] = [
   { key: 'acaoInicial', maxSentences: 2, required: true },
 ];
 
-const LIST_BLOCKS: { key: string; maxItems: number }[] = [
+const _LIST_BLOCKS: { key: string; maxItems: number }[] = [
   { key: 'gatilhos', maxItems: 4 },
   { key: 'pararDeFazer', maxItems: 4 },
 ];

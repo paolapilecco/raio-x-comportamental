@@ -1,11 +1,11 @@
 import jsPDF from 'jspdf';
-import type { PersonGamificationData, ScoreComparison, PersonBadge } from '@/hooks/usePersonGamification';
+import type { PersonGamificationData } from '@/hooks/usePersonGamification';
 
 const M = 22;
 const PW = 210;
 const PH = 297;
 const CW = PW - M * 2;
-const LH = 5.8;
+const _LH = 5.8;
 
 type RGB = [number, number, number];
 const C: Record<string, RGB> = {

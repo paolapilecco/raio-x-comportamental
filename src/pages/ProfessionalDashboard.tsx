@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,8 +6,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import {
-  Users, Activity, AlertTriangle, Bell, TrendingUp, TrendingDown, Minus,
-  FileText, ArrowRight, Download, UserCheck, UserX, Calendar, RefreshCw,
+  Users, Activity, AlertTriangle, Bell,
+  FileText, ArrowRight, Download, UserCheck, UserX, RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,9 +23,9 @@ interface PersonSummary {
 }
 
 export default function ProfessionalDashboard() {
-  const { user, planType, isSuperAdmin } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const axisLabels = useAxisLabels();
+  const _axisLabels = useAxisLabels();
   const [persons, setPersons] = useState<PersonSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalTests, setTotalTests] = useState(0);

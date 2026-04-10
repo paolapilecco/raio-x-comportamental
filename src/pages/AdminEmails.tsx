@@ -7,8 +7,7 @@ import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import {
   Mail, Send, Eye, RefreshCw, CheckCircle, XCircle, Clock,
-  ChevronLeft, ChevronRight, Filter, Search, AlertTriangle,
-  Edit3, Loader2, BarChart3,
+  ChevronLeft, ChevronRight, Loader2, BarChart3,
 } from 'lucide-react';
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
@@ -130,7 +129,7 @@ export default function AdminEmails() {
   const [templateFilter, setTemplateFilter] = useState('all');
 
   // Templates state
-  const [templates, setTemplates] = useState<TemplateInfo[]>([]);
+  const [_templates, _setTemplates] = useState<TemplateInfo[]>([]);
   const [previewHtml, setPreviewHtml] = useState('');
   const [previewSubject, setPreviewSubject] = useState('');
   const [previewTemplate, setPreviewTemplate] = useState('');
@@ -159,7 +158,7 @@ export default function AdminEmails() {
   const fetchLogs = async () => {
     setLogsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
+      const { data: _data, error } = await supabase.functions.invoke('send-email', {
         body: {
           action: 'get-logs',
           data: { limit: LIMIT, offset: logsPage * LIMIT, statusFilter, templateFilter },
@@ -176,7 +175,7 @@ export default function AdminEmails() {
 
   const fetchTemplates = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
+      const { data: _data, error } = await supabase.functions.invoke('send-email', {
         body: { action: 'list-templates' },
       });
       if (!error && data?.templates) setTemplates(data.templates);
@@ -185,7 +184,7 @@ export default function AdminEmails() {
 
   const handlePreview = async (templateKey: string, customData?: Record<string, string>) => {
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
+      const { data: _data, error } = await supabase.functions.invoke('send-email', {
         body: { action: 'preview', templateName: templateKey, data: customData || {} },
       });
       if (!error && data) {
@@ -200,7 +199,7 @@ export default function AdminEmails() {
     if (!sendTo || !sendTo.includes('@')) { toast.error('Email inválido'); return; }
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
+      const { data: _data, error } = await supabase.functions.invoke('send-email', {
         body: {
           templateName: sendTemplate,
           to: sendTo,
@@ -220,7 +219,7 @@ export default function AdminEmails() {
 
   const handleSendPreview = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('send-email', {
+      const { data: _data, error } = await supabase.functions.invoke('send-email', {
         body: { action: 'preview', templateName: sendTemplate, data: sendData },
       });
       if (!error && data) setSendPreviewHtml(data.html);

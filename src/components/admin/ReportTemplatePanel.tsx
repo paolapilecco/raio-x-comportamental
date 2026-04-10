@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, RotateCcw, Copy, Sparkles, Loader2 } from 'lucide-react';
+import { Save, Plus, Trash2, ChevronDown, ChevronUp, RotateCcw, Copy, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -41,7 +41,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
 
   const fetchTemplate = async () => {
     setLoading(true);
-    const { data, error } = await supabase
+    const { data, error: _fetchError } = await supabase
       .from('report_templates')
       .select('*')
       .eq('test_id', currentModule.id)
@@ -80,7 +80,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
       if (error) toast.error('Erro ao salvar template');
       else toast.success('Template salvo');
     } else {
-      const { data, error } = await supabase
+      const { data, error: _fetchError } = await supabase
         .from('report_templates')
         .insert({ test_id: currentModule.id, sections: ordered as any })
         .select()
@@ -150,7 +150,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
         supabase.from('questions').select('text, type, axes').eq('test_id', currentModule.id).order('sort_order'),
       ]);
 
-      const { data, error } = await supabase.functions.invoke('generate-template', {
+      const { data, error: _fetchError } = await supabase.functions.invoke('generate-template', {
         body: {
           testName: currentModule.name,
           testDescription: moduleRes.data?.description || '',

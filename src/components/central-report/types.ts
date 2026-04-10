@@ -1,4 +1,4 @@
-import type { PatternKey } from '@/types/diagnostic';
+// PatternKey type available from @/types/diagnostic
 
 export interface AIInsights {
   interpretacao_personalizada: string;

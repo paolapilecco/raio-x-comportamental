@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import {
-  ArrowLeft, User, Calendar, Phone, FileText, TrendingUp, TrendingDown, Minus,
+  ArrowLeft, Calendar, Phone, FileText, TrendingUp, TrendingDown, Minus,
   Plus, Trash2, Save, Clock, AlertTriangle, Download, StickyNote, Bell, Activity,
   Link2, Copy, Check, Send,
 } from 'lucide-react';
@@ -49,7 +49,7 @@ interface TestModule { id: string; slug: string; name: string; }
 
 export default function PatientDetail() {
   const { personId } = useParams<{ personId: string }>();
-  const { user, planType, isSuperAdmin, profile } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
   const axisLabels = useAxisLabels();
   const { data: patternDefinitions } = usePatternDefinitions();

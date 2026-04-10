@@ -1,6 +1,6 @@
 import { LayoutDashboard, Users, FileText, Activity, LogOut, Settings, Shield, Stethoscope } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   Sidebar,
@@ -25,11 +25,8 @@ const navItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const location = useLocation();
   const navigate = useNavigate();
-  const { profile, isSuperAdmin, planType, signOut } = useAuth();
-
-  const displayName = profile?.name || 'Usuário';
+  const { isSuperAdmin, planType, signOut } = useAuth();
 
   const handleSignOut = async () => {
     await signOut();

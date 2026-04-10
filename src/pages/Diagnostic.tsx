@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Questionnaire from '@/components/diagnostic/Questionnaire';
 import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
@@ -14,8 +14,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { UserCircle, ChevronRight, AlertTriangle } from 'lucide-react';
-import { canAccessModule, getMonthlyTestLimit, getCurrentMonthYear } from '@/lib/planLimits';
+import { UserCircle, ChevronRight } from 'lucide-react';
+// import { canAccessModule, getMonthlyTestLimit, getCurrentMonthYear } from '@/lib/planLimits';
 
 type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
@@ -100,7 +100,7 @@ const Diagnostic = () => {
   const [dbQuestions, setDbQuestions] = useState<DbQuestion[]>([]);
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
-  const { user, isPremium, isSuperAdmin, planType } = useAuth();
+  const { user, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
 

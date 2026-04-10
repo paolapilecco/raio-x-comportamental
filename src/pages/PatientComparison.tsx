@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +22,7 @@ export default function PatientComparison() {
   const [persons, setPersons] = useState<Person[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [comparisonData, setComparisonData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, _setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;

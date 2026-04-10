@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { DiagnosticResult } from '@/types/diagnostic';
-import { Download, TrendingUp, TrendingDown, AlertTriangle, Calendar, CheckCircle2, BarChart3, ArrowRight } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, AlertTriangle, Calendar, CheckCircle2 } from 'lucide-react';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 import { generateAreaActions } from '@/lib/lifeMapActions';

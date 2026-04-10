@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth, PLAN_LIMITS } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
-  Crown, ArrowLeft, CreditCard, QrCode, Check, Loader2,
+  ArrowLeft, CreditCard, QrCode, Check, Loader2,
   Shield, Copy, CheckCircle2, RefreshCw, AlertCircle, ArrowRight, Users, Brain, Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -29,7 +29,7 @@ interface PaymentInfo {
 }
 
 export default function Checkout() {
-  const { user, isPremium, isSuperAdmin, loading: authLoading } = useAuth();
+  const { isPremium, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>('plan');

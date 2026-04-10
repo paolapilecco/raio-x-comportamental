@@ -161,7 +161,7 @@ interface ValidationIssue {
 }
 
 /** Check 1: Is it clear? Detect overly long sentences (>35 words per sentence) */
-function checkClarity(text: string, field: string): ValidationIssue[] {
+function _checkClarity(text: string, field: string): ValidationIssue[] {
   if (!text) return [];
   const issues: ValidationIssue[] = [];
   const sentences = splitSentences(text);
@@ -175,7 +175,7 @@ function checkClarity(text: string, field: string): ValidationIssue[] {
 }
 
 /** Check 2: Is it too long? */
-function checkLength(text: string, field: string, maxSentences: number): ValidationIssue[] {
+function _checkLength(text: string, field: string, maxSentences: number): ValidationIssue[] {
   if (!text) return [];
   const count = splitSentences(text).length;
   if (count > maxSentences) {
@@ -185,7 +185,7 @@ function checkLength(text: string, field: string, maxSentences: number): Validat
 }
 
 /** Check 3: Uses difficult language? */
-function checkLanguageDifficulty(text: string, field: string): ValidationIssue[] {
+function _checkLanguageDifficulty(text: string, field: string): ValidationIssue[] {
   if (!text) return [];
   const issues: ValidationIssue[] = [];
   const lower = text.toLowerCase();
@@ -407,7 +407,7 @@ function deduplicateLifeImpact(items: { pillar: string; impact: string }[], mech
 }
 
 /** Ensure focus-of-change fields are specific and actionable, not abstract */
-function refineActionableField(text: string, patternLabel: string): string {
+function refineActionableField(text: string, _patternLabel: string): string {
   if (!text) return text;
   let refined = text;
   // Strip vague phrases first
@@ -426,7 +426,7 @@ function refineActionableField(text: string, patternLabel: string): string {
  * Ensure the action is a direct consequence of the direction.
  * If there's no semantic overlap (< 0.2), derive a coherent action from the direction.
  */
-function ensureActionCoherence(directionText: string, actionText: string, patternLabel: string): string {
+function ensureActionCoherence(directionText: string, actionText: string, _patternLabel: string): string {
   if (!directionText || !actionText) return actionText;
   
   const overlap = semanticOverlap(directionText, actionText);
