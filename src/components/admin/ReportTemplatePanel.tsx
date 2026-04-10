@@ -406,10 +406,22 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
         Adicionar seção
       </button>
 
-      {/* Summary */}
+      {/* Summary + Save footer */}
       <div className="bg-secondary/20 rounded-xl px-4 py-3 text-[0.7rem] text-muted-foreground/50 space-y-1">
         <p><strong className="text-foreground/60">{sections.length}</strong> seções · <strong className="text-foreground/60">{sections.filter(s => s.required).length}</strong> obrigatórias · <strong className="text-foreground/60">{sections.filter(s => !s.required).length}</strong> opcionais</p>
         <p>Este template define a estrutura visual do relatório e é usado pelo motor de geração para validar e formatar a saída da IA.</p>
+      </div>
+
+      {/* Fixed bottom save */}
+      <div className="flex justify-end pt-2">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-primary text-primary-foreground hover:brightness-90 transition-all disabled:opacity-50 shadow-lg"
+        >
+          <Save className="w-4 h-4" />
+          {saving ? 'Salvando todos os campos...' : 'Salvar Template Completo'}
+        </button>
       </div>
     </div>
   );
