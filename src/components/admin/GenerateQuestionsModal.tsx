@@ -105,7 +105,7 @@ export const GenerateQuestionsModal = ({
       ]);
 
       const desc = moduleRes.data?.description || currentModule.name;
-      setAiModuleDescription(desc);
+      _setAiModuleDescription(desc);
 
       const promptsContext = (promptsRes.data || [])
         .map(p => `[${p.prompt_type?.toUpperCase()}]: ${p.content}`)
