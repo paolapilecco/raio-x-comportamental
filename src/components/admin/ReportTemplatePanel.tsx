@@ -15,14 +15,14 @@ interface ReportSection {
 }
 
 const DEFAULT_SECTIONS: ReportSection[] = [
-  { key: 'chamaAtencao', label: 'O que mais chama atenção', maxSentences: 2, required: true, order: 1 },
-  { key: 'padraoRepetido', label: 'Padrão que se repete', maxSentences: 2, required: true, order: 2 },
-  { key: 'comoAparece', label: 'Como aparece na rotina', maxSentences: 2, required: true, order: 3 },
-  { key: 'gatilhos', label: 'Gatilhos principais', maxSentences: 1, required: true, order: 4 },
-  { key: 'impactoPorArea', label: 'Impacto por área', maxSentences: 1, required: true, order: 5 },
-  { key: 'corrigirPrimeiro', label: 'Direção de ajuste', maxSentences: 2, required: true, order: 6 },
-  { key: 'pararDeFazer', label: 'O que parar de fazer', maxSentences: 1, required: false, order: 7 },
-  { key: 'acaoInicial', label: 'Próxima ação prática', maxSentences: 2, required: true, order: 8 },
+  { key: 'chamaAtencao', slug: 'chama-atencao', label: 'O que mais chama atenção', maxSentences: 2, required: true, order: 1, aiInstructions: '' },
+  { key: 'padraoRepetido', slug: 'padrao-repetido', label: 'Padrão que se repete', maxSentences: 2, required: true, order: 2, aiInstructions: '' },
+  { key: 'comoAparece', slug: 'como-aparece', label: 'Como aparece na rotina', maxSentences: 2, required: true, order: 3, aiInstructions: '' },
+  { key: 'gatilhos', slug: 'gatilhos', label: 'Gatilhos principais', maxSentences: 1, required: true, order: 4, aiInstructions: '' },
+  { key: 'impactoPorArea', slug: 'impacto-por-area', label: 'Impacto por área', maxSentences: 1, required: true, order: 5, aiInstructions: '' },
+  { key: 'corrigirPrimeiro', slug: 'corrigir-primeiro', label: 'Direção de ajuste', maxSentences: 2, required: true, order: 6, aiInstructions: '' },
+  { key: 'pararDeFazer', slug: 'parar-de-fazer', label: 'O que parar de fazer', maxSentences: 1, required: false, order: 7, aiInstructions: '' },
+  { key: 'acaoInicial', slug: 'acao-inicial', label: 'Próxima ação prática', maxSentences: 2, required: true, order: 8, aiInstructions: '' },
 ];
 
 interface Props {
@@ -55,10 +55,12 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
       if (parsed.length > 0) {
         setSections(parsed.map((s: any, i: number) => ({
           key: s.key || `section_${i}`,
+          slug: s.slug || s.key?.replace(/([A-Z])/g, '-$1').toLowerCase().replace(/^-/, '') || `section-${i}`,
           label: s.label || '',
           maxSentences: s.maxSentences ?? 2,
           required: s.required ?? true,
           order: s.order ?? i + 1,
+          aiInstructions: s.aiInstructions || '',
         })));
       } else {
         setSections([...DEFAULT_SECTIONS]);
@@ -195,12 +197,15 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   };
 
   const addSection = () => {
+    const ts = Date.now();
     setSections(prev => [...prev, {
-      key: `custom_${Date.now()}`,
+      key: `custom_${ts}`,
+      slug: `custom-${ts}`,
       label: 'Nova seção',
       maxSentences: 2,
       required: false,
       order: prev.length + 1,
+      aiInstructions: '',
     }]);
   };
 
@@ -288,6 +293,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
             </span>
 
             {/* Content */}
+            {/* Content */}
             <div className="flex-1 min-w-0 space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Label */}
@@ -306,6 +312,18 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
               </div>
 
               <div className="flex items-center gap-4 flex-wrap">
+                {/* Slug */}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[0.65rem] text-muted-foreground/50">Slug:</label>
+                  <input
+                    type="text"
+                    value={section.slug}
+                    onChange={(e) => updateSection(index, 'slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                    className="text-[0.75rem] w-[140px] bg-secondary/30 border border-border/20 rounded-md px-2 py-0.5 text-foreground font-mono"
+                    placeholder="slug-da-secao"
+                  />
+                </div>
+
                 {/* Max sentences */}
                 <div className="flex items-center gap-1.5">
                   <label className="text-[0.65rem] text-muted-foreground/50">Máx. frases:</label>
@@ -331,6 +349,18 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
                 >
                   {section.required ? 'Obrigatório' : 'Opcional'}
                 </button>
+              </div>
+
+              {/* AI Instructions */}
+              <div className="pt-1">
+                <label className="text-[0.65rem] text-muted-foreground/50 block mb-1">Instruções para IA:</label>
+                <textarea
+                  value={section.aiInstructions}
+                  onChange={(e) => updateSection(index, 'aiInstructions', e.target.value)}
+                  rows={2}
+                  className="w-full text-[0.75rem] bg-secondary/20 border border-border/20 rounded-md px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/30 resize-none focus:outline-none focus:border-primary/40 transition-colors"
+                  placeholder="Ex: Seja direto, use no máximo 1 exemplo concreto, evite jargão técnico..."
+                />
               </div>
             </div>
 
