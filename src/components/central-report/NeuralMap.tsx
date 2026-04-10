@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo, memo } from 'react';
 
 interface NeuralMapProps {
   scores: Record<string, number>;
@@ -18,7 +18,7 @@ interface Particle {
   life: number; maxLife: number; r: number; g: number; b: number; size: number;
 }
 
-export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
+export const NeuralMap = memo(function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number>(0);
@@ -285,4 +285,4 @@ export function NeuralMap({ scores, axisLabels }: NeuralMapProps) {
       </div>
     </div>
   );
-}
+});
