@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { Save, X, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import {
   Question,
@@ -46,7 +47,7 @@ export const QuestionEditorPanel = ({
   if (!isCreating && !isEditing) return null;
 
   // Local state for options editor visibility
-  const [showOptionsEditor, setShowOptionsEditor] = React.useState(
+  const [showOptionsEditor, setShowOptionsEditor] = useState(
     isCreating || form.type === 'behavior_choice'
   );
 
@@ -408,6 +409,3 @@ export const QuestionEditorPanel = ({
     </div>
   );
 };
-
-// Add React import if needed
-import * as React from 'react';
