@@ -31,6 +31,7 @@ interface DbQuestion {
   axes: string[];
   type?: string;
   option_scores?: number[] | null;
+  weight?: number;
 }
 
 function getIntensity(percentage: number): IntensityLevel {
@@ -69,10 +70,11 @@ export function analyzeGenericTest(
       maxPerQuestion = 4;
     }
 
+    const weight = question.weight || 1;
     question.axes.forEach(axis => {
       if (axis in rawScores) {
-        rawScores[axis] += scoreValue;
-        maxScores[axis] += maxPerQuestion;
+        rawScores[axis] += scoreValue * weight;
+        maxScores[axis] += maxPerQuestion * weight;
       }
     });
   });
