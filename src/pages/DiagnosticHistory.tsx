@@ -15,7 +15,7 @@ import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
-import { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
+import { DiagnosticResult, IntensityLevel, PatternKey, PatternDefinition } from '@/types/diagnostic';
 
 interface HistoryEntry {
   id: string;
@@ -57,7 +57,7 @@ const DiagnosticHistory = () => {
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const patternDefinitions = usePatternDefinitions();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const axisLabels = useAxisLabels();
 
   const hasMultiplePersons = planType !== 'standard' || isSuperAdmin;
@@ -222,8 +222,8 @@ const DiagnosticHistory = () => {
       const secondaryDefs = (fullResult.secondary_patterns || []).map((k: string) => patternDefinitions?.[k as PatternKey]).filter(Boolean);
 
       const diagResult: DiagnosticResult = {
-        dominantPattern: dominantDef,
-        secondaryPatterns: secondaryDefs,
+        dominantPattern: dominantDef!,
+        secondaryPatterns: secondaryDefs as PatternDefinition[],
         intensity: fullResult.intensity as IntensityLevel,
         allScores: (fullResult.all_scores as any[]) || [],
         summary: fullResult.state_summary,

@@ -20,7 +20,7 @@ import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { generateEvolutionPdf } from '@/lib/generateEvolutionPdf';
-import type { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
+import type { DiagnosticResult, IntensityLevel, PatternKey, PatternDefinition } from '@/types/diagnostic';
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
@@ -52,7 +52,7 @@ export default function PatientDetail() {
   const { user, planType, isSuperAdmin, profile } = useAuth();
   const navigate = useNavigate();
   const axisLabels = useAxisLabels();
-  const patternDefinitions = usePatternDefinitions();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const gamification = usePersonGamification(user?.id, personId);
 
   const [person, setPerson] = useState<PersonData | null>(null);
@@ -276,7 +276,7 @@ export default function PatientDetail() {
       const dominantDef = patternDefinitions?.[fullResult.dominant_pattern as PatternKey];
       const secondaryDefs = (fullResult.secondary_patterns || []).map((k: string) => patternDefinitions?.[k as PatternKey]).filter(Boolean);
       const diagResult: DiagnosticResult = {
-        dominantPattern: dominantDef, secondaryPatterns: secondaryDefs,
+        dominantPattern: dominantDef!, secondaryPatterns: secondaryDefs as PatternDefinition[],
         intensity: fullResult.intensity as IntensityLevel,
         allScores: (fullResult.all_scores as any[]) || [],
         summary: fullResult.state_summary, mechanism: fullResult.mechanism,

@@ -15,7 +15,7 @@ import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
-import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
+import type { PatternKey, PatternDefinition, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 
 interface StoredResult {
   id: string;
@@ -243,8 +243,8 @@ const Dashboard = () => {
     const dominantDef = patternDefinitions?.[latestResult.dominant_pattern as PatternKey];
     const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
     const diagResult: DiagnosticResult = {
-      dominantPattern: dominantDef,
-      secondaryPatterns: secondaryDefs,
+      dominantPattern: dominantDef!,
+      secondaryPatterns: secondaryDefs as PatternDefinition[],
       intensity: latestResult.intensity as IntensityLevel,
       allScores: (latestResult.all_scores as any[]) || [],
       summary: latestResult.state_summary,
