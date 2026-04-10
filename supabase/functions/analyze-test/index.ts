@@ -822,9 +822,9 @@ Intensidade geral: ${intensity}
 ## DADOS DOS EIXOS (base obrigatória para toda interpretação):
 ${scoresSummary}
 
-## PADRÃO DOMINANTE: ${dominant.label} (intensidade: ${dominant.percentage > 75 ? "alta" : dominant.percentage > 50 ? "moderada" : "leve"})
+## PADRÃO DOMINANTE: ${dominant.key}: ${dominant.percentage}% (${classifyIntensity(dominant.percentage)}) — "${dominant.label}"
 ${secondary.length > 0
-    ? `## PADRÕES SECUNDÁRIOS: ${secondary.map((s) => `${s.label} (${s.percentage > 75 ? "alta" : s.percentage > 50 ? "moderada" : "leve"})`).join(", ")}`
+    ? `## PADRÕES SECUNDÁRIOS ATIVOS (≥40%):\n${secondary.map((s) => `- ${s.key}: ${s.percentage}% (${classifyIntensity(s.percentage)}) — "${s.label}"`).join("\n")}`
     : "Sem padrões secundários significativos."}
 
 ## CRUZAMENTOS E CONTRADIÇÕES DETECTADOS:
@@ -1024,7 +1024,9 @@ serve(async (req) => {
       }
     } catch { /* use defaults */ }
 
-    const clampedTemp = aiTemperature !== undefined ? Math.min(0.6, Math.max(0.5, aiTemperature)) : 0.55;
+    const clampedTemp = 0.55;
+
+    const effectiveMaxTokens = aiMaxTokens !== undefined ? aiMaxTokens : 6000;
 
     const aiBody: Record<string, unknown> = {
       model: aiModel,
@@ -1033,8 +1035,8 @@ serve(async (req) => {
         { role: "user", content: userPrompt },
       ],
       temperature: clampedTemp,
+      max_tokens: effectiveMaxTokens,
     };
-    if (aiMaxTokens !== undefined) aiBody.max_tokens = aiMaxTokens;
 
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
