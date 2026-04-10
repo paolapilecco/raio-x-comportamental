@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
 import { useSubscription } from '@/hooks/useSubscription';
 import {
@@ -49,7 +50,7 @@ const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } }
 
 const DiagnosticHistory = () => {
   const { user } = useAuth();
-  const { hasMultiplePersons, isSuperAdmin } = useSubscription();
+  const { hasMultiplePersons } = useSubscription();
   const navigate = useNavigate();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [modules, setModules] = useState<TestModule[]>([]);
