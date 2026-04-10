@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Eye, X, ChevronLeft, ChevronRight, CheckCircle2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { } from '@/components/ui/button';
 import { Question, defaultOptionsForType, defaultScoresForType } from './questionConstants';
 import type { TestModule } from './promptConstants';
 

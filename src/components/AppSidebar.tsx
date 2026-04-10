@@ -25,11 +25,8 @@ const navItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
-  const location = useLocation();
   const navigate = useNavigate();
   const { profile, isSuperAdmin, planType, signOut } = useAuth();
-
-  const displayName = profile?.name || 'Usuário';
 
   const handleSignOut = async () => {
     await signOut();
