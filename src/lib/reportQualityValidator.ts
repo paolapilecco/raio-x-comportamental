@@ -160,39 +160,8 @@ interface ValidationIssue {
   detail: string;
 }
 
-/** Check 1: Is it clear? Detect overly long sentences (>35 words per sentence) */
-function _checkClarity(text: string, field: string): ValidationIssue[] {
-  if (!text) return [];
-  const issues: ValidationIssue[] = [];
-  const sentences = splitSentences(text);
-  for (const s of sentences) {
-    const wordCount = s.split(/\s+/).length;
-    if (wordCount > 35) {
-      issues.push({ field, type: 'unclear', detail: `Frase com ${wordCount} palavras é difícil de ler` });
-    }
-  }
-  return issues;
-}
 
-/** Check 2: Is it too long? */
-function _checkLength(text: string, field: string, maxSentences: number): ValidationIssue[] {
-  if (!text) return [];
-  const count = splitSentences(text).length;
-  if (count > maxSentences) {
-    return [{ field, type: 'too_long', detail: `${count} frases (máx: ${maxSentences})` }];
-  }
-  return [];
-}
 
-/** Check 3: Uses difficult language? */
-function _checkLanguageDifficulty(text: string, field: string): ValidationIssue[] {
-  if (!text) return [];
-  const issues: ValidationIssue[] = [];
-  const lower = text.toLowerCase();
-  for (const word of Object.keys(COMPLEX_WORDS)) {
-    if (lower.includes(word)) {
-      issues.push({ field, type: 'complex_language', detail: `"${word}" → "${COMPLEX_WORDS[word]}"` });
-    }
   }
   for (const phrase of [...FORBIDDEN_PHRASES, ...VAGUE_ACTION_PHRASES]) {
     if (lower.includes(phrase)) {
@@ -407,7 +376,7 @@ function deduplicateLifeImpact(items: { pillar: string; impact: string }[], mech
 }
 
 /** Ensure focus-of-change fields are specific and actionable, not abstract */
-function refineActionableField(text: string, _patternLabel: string): string {
+function refineActionableField(text: string, patternLabel: string): string {
   if (!text) return text;
   let refined = text;
   // Strip vague phrases first

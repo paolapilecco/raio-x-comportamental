@@ -24,7 +24,7 @@ export default function PublicTest() {
   const [step, setStep] = useState<Step>('loading');
   const [questions, setQuestions] = useState<DbQuestion[]>([]);
   const [testName, setTestName] = useState('');
-  const [personName, setPersonName] = useState('');
+  const [_personName, _setPersonName] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {

@@ -150,7 +150,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
         supabase.from('questions').select('text, type, axes').eq('test_id', currentModule.id).order('sort_order'),
       ]);
 
-      const { data, error: _fetchError } = await supabase.functions.invoke('generate-template', {
+      const { data, error } = await supabase.functions.invoke('generate-template', {
         body: {
           testName: currentModule.name,
           testDescription: moduleRes.data?.description || '',

@@ -302,7 +302,7 @@ export function generateLifeMapPdf(
       tableY = MARGIN + 6;
     }
 
-    const _cfg2 = AREA_CONFIG[area.key];
+    // cfg not needed here - using level directly
     const level = area.score >= 7 ? 'Bom' : area.score >= 4 ? 'Atenção' : 'Crítico';
     const levelColor = area.score >= 7 ? C.green : area.score >= 4 ? C.yellow : C.red;
 

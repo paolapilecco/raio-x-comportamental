@@ -450,7 +450,7 @@ function NeuralMechanism({ data }: { data: { neurotransmissor?: string; cicloNeu
 
 /* ── Legacy sections fallback ── */
 function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
-  const _chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
+  const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
   const comoAparece = ai.comoAparece || result.mentalState;
   const gatilhos = ai.gatilhos || result.triggers;

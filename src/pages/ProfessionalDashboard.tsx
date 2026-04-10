@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
-import { useAxisLabels } from '@/hooks/useAxisLabels';
+import { useAxisLabels as _useAxisLabels } from '@/hooks/useAxisLabels';
 import {
   Users, Activity, AlertTriangle, Bell,
   FileText, ArrowRight, Download, UserCheck, UserX, RefreshCw,
