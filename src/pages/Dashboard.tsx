@@ -15,7 +15,7 @@ import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
-import type { PatternKey, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
+import type { PatternKey, PatternDefinition, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 
 interface StoredResult {
   id: string;

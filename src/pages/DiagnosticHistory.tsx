@@ -222,8 +222,8 @@ const DiagnosticHistory = () => {
       const secondaryDefs = (fullResult.secondary_patterns || []).map((k: string) => patternDefinitions?.[k as PatternKey]).filter(Boolean);
 
       const diagResult: DiagnosticResult = {
-        dominantPattern: dominantDef,
-        secondaryPatterns: secondaryDefs,
+        dominantPattern: dominantDef!,
+        secondaryPatterns: secondaryDefs as PatternDefinition[],
         intensity: fullResult.intensity as IntensityLevel,
         allScores: (fullResult.all_scores as any[]) || [],
         summary: fullResult.state_summary,
