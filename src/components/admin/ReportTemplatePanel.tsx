@@ -267,6 +267,23 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
         </div>
       </div>
 
+      {/* Emotional Architecture */}
+      <div className="border border-border/30 rounded-xl bg-card/60 px-4 py-4 space-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-foreground">🧠 Arquitetura Emocional do Relatório</span>
+        </div>
+        <p className="text-[0.7rem] text-muted-foreground/60">
+          Descreva a jornada emocional que o relatório deve provocar no leitor — do impacto inicial à motivação para agir.
+        </p>
+        <textarea
+          value={emotionalArchitecture}
+          onChange={(e) => setEmotionalArchitecture(e.target.value)}
+          rows={4}
+          className="w-full text-[0.8rem] bg-secondary/20 border border-border/20 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/30 resize-none focus:outline-none focus:border-primary/40 transition-colors"
+          placeholder="Ex: O relatório deve começar com um impacto direto (diagnóstico que surpreende), seguido de validação (o leitor se reconhece), depois gerar desconforto produtivo (mostrar consequências) e finalizar com esperança concreta (ação prática e acessível)."
+        />
+      </div>
+
       {/* Sections list */}
       <div className="space-y-2">
         {sections.map((section, index) => (
