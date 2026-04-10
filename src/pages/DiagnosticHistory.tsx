@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
+import { useSubscription } from '@/hooks/useSubscription';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
 } from 'recharts';
@@ -47,79 +49,44 @@ const intensityValue: Record<string, number> = { leve: 1, moderado: 2, alto: 3 }
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 const DiagnosticHistory = () => {
-  const { user, planType, isSuperAdmin } = useAuth();
+  const { user } = useAuth();
+  const { hasMultiplePersons } = useSubscription();
   const navigate = useNavigate();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [modules, setModules] = useState<TestModule[]>([]);
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<string>('all');
   const [selectedModule, setSelectedModule] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const { data: patternDefinitions } = usePatternDefinitions();
   const axisLabels = useAxisLabels();
 
-  const hasMultiplePersons = planType !== 'standard' || isSuperAdmin;
+  const { sessions, results, loading } = useDiagnosticSessions(user?.id, { fetchResults: true });
 
+  // Load modules and persons
   useEffect(() => {
     if (!user) return;
-
-    const fetchHistory = async () => {
-      try {
-        const sessionsPromise = supabase
-            .from('diagnostic_sessions')
-            .select('id, completed_at, test_module_id, person_id')
-            .eq('user_id', user.id)
-            .not('completed_at', 'is', null)
-            .order('completed_at', { ascending: false });
-        const modulesPromise = supabase.from('test_modules').select('id, slug, name').eq('is_active', true);
-        const personsPromise = hasMultiplePersons
+    const loadExtra = async () => {
+      const [modulesRes, personsRes] = await Promise.all([
+        supabase.from('test_modules').select('id, slug, name').eq('is_active', true),
+        hasMultiplePersons
           ? supabase.from('managed_persons').select('id, name, is_active').eq('owner_id', user.id).order('name')
-          : Promise.resolve({ data: null, error: null });
-
-        const [sessionsRes, modulesRes, personsRes] = await Promise.all([sessionsPromise, modulesPromise, personsPromise]);
-
-        if (sessionsRes.error) {
-          console.error('Error fetching sessions:', sessionsRes.error);
-          toast.error('Erro ao carregar sessões.');
-        }
-        if (modulesRes.error) {
-          console.error('Error fetching modules:', modulesRes.error);
-          toast.error('Erro ao carregar módulos.');
-        }
-
-        setModules((modulesRes.data as TestModule[]) || []);
-        if (personsRes?.data) setPersons(personsRes.data as ManagedPerson[]);
-
-        const sessions = sessionsRes.data || [];
-        if (sessions.length === 0) { setLoading(false); return; }
-
-        const { data: results, error: resErr } = await supabase
-          .from('diagnostic_results')
-          .select('*')
-          .in('session_id', sessions.map((s: any) => s.id));
-
-        if (resErr) {
-          console.error('Error fetching results:', resErr);
-          toast.error('Erro ao carregar resultados.');
-        }
-
-        // Merge test_module_id and person_id into results
-        const enriched = (results || []).map(r => {
-          const session = sessions.find((s: any) => s.id === r.session_id);
-          return { ...r, test_module_id: session?.test_module_id || null, person_id: session?.person_id || null };
-        });
-
-        setHistory(enriched);
-      } catch (err) {
-        console.error('Error loading history:', err);
-        toast.error('Erro ao carregar histórico.');
-      } finally {
-        setLoading(false);
-      }
+          : Promise.resolve({ data: null }),
+      ]);
+      setModules((modulesRes.data as TestModule[]) || []);
+      if (personsRes?.data) setPersons(personsRes.data as ManagedPerson[]);
     };
-    fetchHistory();
-  }, [user]);
+    loadExtra();
+  }, [user, hasMultiplePersons]);
+
+  // Merge results with session metadata
+  useEffect(() => {
+    const enriched = results.map(r => {
+      const session = sessions.find(s => s.id === r.session_id);
+      return { ...r, test_module_id: session?.test_module_id || null, person_id: session?.person_id || null };
+    });
+    setHistory(enriched as HistoryEntry[]);
+  }, [sessions, results]);
 
   const filteredByPerson = selectedPerson === 'all'
     ? history

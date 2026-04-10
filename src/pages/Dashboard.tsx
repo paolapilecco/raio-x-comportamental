@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
 import { useNavigate } from 'react-router-dom';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
@@ -83,13 +84,15 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
-  const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [sessionCount, setSessionCount] = useState(0);
   const [modules, setModules] = useState<TestModule[]>([]);
-  const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [latestModuleId, setLatestModuleId] = useState<string | null>(null);
+  const [extraLoading, setExtraLoading] = useState(true);
+
+  const { sessions, completedModuleIds: completedModules, latestSession, loading: sessionsLoading } = useDiagnosticSessions(user?.id, { fetchResults: false });
+  const sessionCount = sessions.length;
+  const loading = sessionsLoading || extraLoading;
   const gamification = useGamification(user?.id);
   const retestCycle = useRetestCycle(user?.id);
   const generateTestData = async () => {
@@ -169,27 +172,13 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (!user) return;
-    const fetchData = async () => {
+    if (!user || sessionsLoading) return;
+    const fetchExtra = async () => {
       try {
-        const [cpRes, sessionsRes, modulesRes] = await Promise.all([
+        const [cpRes, modulesRes] = await Promise.all([
           supabase.from('user_central_profile').select('*').eq('user_id', user.id).maybeSingle(),
-          supabase.from('diagnostic_sessions').select('id, test_module_id').eq('user_id', user.id).not('completed_at', 'is', null).order('completed_at', { ascending: false }),
           supabase.from('test_modules').select('id, slug, name, description, icon, question_count').eq('is_active', true).order('sort_order'),
         ]);
-
-        if (cpRes.error) {
-          console.error('Error fetching central profile:', cpRes.error);
-          toast.error('Erro ao carregar perfil central.');
-        }
-        if (sessionsRes.error) {
-          console.error('Error fetching sessions:', sessionsRes.error);
-          toast.error('Erro ao carregar sessões.');
-        }
-        if (modulesRes.error) {
-          console.error('Error fetching modules:', modulesRes.error);
-          toast.error('Erro ao carregar módulos.');
-        }
 
         if (cpRes.data) {
           const cp = cpRes.data;
@@ -205,29 +194,22 @@ const Dashboard = () => {
           });
         }
 
-        const sessions = sessionsRes.data || [];
-        setSessionCount(sessions.length);
-        setCompletedModules(new Set(sessions.map(s => s.test_module_id).filter(Boolean) as string[]));
         setModules((modulesRes.data as TestModule[]) || []);
 
-        if (sessions.length > 0) {
-          setLatestModuleId(sessions[0].test_module_id || null);
-          const { data: result, error: resultErr } = await supabase.from('diagnostic_results').select('*').eq('session_id', sessions[0].id).maybeSingle();
-          if (resultErr) {
-            console.error('Error fetching latest result:', resultErr);
-            toast.error('Erro ao carregar resultado mais recente.');
-          }
+        if (latestSession) {
+          setLatestModuleId(latestSession.test_module_id || null);
+          const { data: result } = await supabase.from('diagnostic_results').select('*').eq('session_id', latestSession.id).maybeSingle();
           setLatestResult(result);
         }
       } catch (err) {
         console.error('Error loading dashboard data:', err);
         toast.error('Erro ao carregar dados. Tente recarregar a página.');
       } finally {
-        setLoading(false);
+        setExtraLoading(false);
       }
     };
-    fetchData();
-  }, [user]);
+    fetchExtra();
+  }, [user, sessionsLoading, latestSession]);
 
   const handleDownloadPdf = () => {
     if (!latestResult) return;
