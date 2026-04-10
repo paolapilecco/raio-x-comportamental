@@ -226,6 +226,50 @@ const DiagnosticHistory = () => {
   // Unique modules that have results
   const modulesWithResults = modules.filter(m => history.some(h => h.test_module_id === m.id));
 
+  const handleResetHistory = async () => {
+    if (!user) return;
+    const confirmed = confirm('⚠️ Tem certeza que deseja apagar TODO o seu histórico de testes? Esta ação é irreversível.');
+    if (!confirmed) return;
+    const doubleConfirm = confirm('Esta ação vai apagar permanentemente todas as suas sessões, respostas e resultados. Confirmar?');
+    if (!doubleConfirm) return;
+
+    setResettingHistory(true);
+    try {
+      // Get all session IDs for this user
+      const { data: userSessions } = await supabase
+        .from('diagnostic_sessions')
+        .select('id')
+        .eq('user_id', user.id);
+
+      const sessionIds = (userSessions || []).map(s => s.id);
+
+      if (sessionIds.length > 0) {
+        // Delete results
+        for (const sid of sessionIds) {
+          await supabase.from('diagnostic_results').delete().eq('session_id', sid);
+          await supabase.from('diagnostic_answers').delete().eq('session_id', sid);
+        }
+      }
+
+      // Delete sessions
+      await supabase.from('diagnostic_sessions').delete().eq('user_id', user.id);
+
+      // Delete user profiles
+      await supabase.from('user_profile').delete().eq('user_id', user.id);
+      await supabase.from('user_central_profile').delete().eq('user_id', user.id);
+      await supabase.from('test_results').delete().eq('user_id', user.id);
+
+      toast.success('Histórico resetado com sucesso!');
+      // Reload page to refresh data
+      window.location.reload();
+    } catch (err) {
+      console.error('Error resetting history:', err);
+      toast.error('Erro ao resetar histórico.');
+    } finally {
+      setResettingHistory(false);
+    }
+  };
+
   if (loading) {
     return <DiagnosticHistorySkeleton />;
   }
