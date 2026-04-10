@@ -8,7 +8,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
 } from 'recharts';
-import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download, Users, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
