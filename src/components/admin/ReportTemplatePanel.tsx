@@ -36,6 +36,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const [spreading, setSpreading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [aiGenerating, setAiGenerating] = useState(false);
+  const [emotionalArchitecture, setEmotionalArchitecture] = useState('');
 
   useEffect(() => {
     fetchTemplate();
