@@ -7,7 +7,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
 } from 'recharts';
-import type { PersonData, TestEntry, TestModule, InviteData } from './types';
+import type { TestEntry, TestModule, InviteData } from './types';
 import { fadeUp, intensityLabel, COLORS } from './types';
 
 interface OverviewTabProps {
