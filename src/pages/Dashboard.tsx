@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { Brain, History, Lock, ArrowRight, Shield, Zap, Heart, CheckCircle2, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
+import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
 import { useRetestCycle } from '@/hooks/useRetestCycle';
 import { RetestCycleCard } from '@/components/dashboard/RetestCycleCard';
@@ -79,7 +79,7 @@ const fadeIn = {
 const Dashboard = () => {
   const { user, profile, role, isPremium, isSuperAdmin, previewMode, togglePreviewMode } = useAuth();
   const { data: patternDefinitions } = usePatternDefinitions();
-  const radarAxisLabels = useAxisLabels();
+  const _radarAxisLabels = useAxisLabels();
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);

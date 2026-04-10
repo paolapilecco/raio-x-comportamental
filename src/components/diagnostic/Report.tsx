@@ -108,7 +108,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const ai = (result as any);
 
   // Legacy field resolution (used for QuickRead and fallback)
-  const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const focoMudanca = ai.focoMudanca || result.keyUnlockArea || ai.blockingPoint || result.blockingPoint || corrigirPrimeiro;
 
