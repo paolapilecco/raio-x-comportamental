@@ -52,6 +52,8 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
 
     if (data) {
       setTemplateId(data.id);
+      const rules = (data.output_rules as any) || {};
+      setEmotionalArchitecture(rules.emotionalArchitecture || '');
       const parsed = (data.sections as any[]) || [];
       if (parsed.length > 0) {
         setSections(parsed.map((s: any, i: number) => ({
@@ -69,6 +71,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     } else {
       setSections([...DEFAULT_SECTIONS]);
       setTemplateId(null);
+      setEmotionalArchitecture('');
     }
     setLoading(false);
   };
@@ -76,18 +79,19 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const handleSave = async () => {
     setSaving(true);
     const ordered = sections.map((s, i) => ({ ...s, order: i + 1 }));
+    const outputRules = { emotionalArchitecture };
 
     if (templateId) {
       const { error } = await supabase
         .from('report_templates')
-        .update({ sections: ordered as any, updated_at: new Date().toISOString() })
+        .update({ sections: ordered as any, output_rules: outputRules as any, updated_at: new Date().toISOString() })
         .eq('id', templateId);
       if (error) toast.error('Erro ao salvar template');
       else toast.success('Template salvo');
     } else {
     const { data: insertData, error: insertError } = await supabase
       .from('report_templates')
-      .insert({ test_id: currentModule.id, sections: ordered as any })
+      .insert({ test_id: currentModule.id, sections: ordered as any, output_rules: outputRules as any })
       .select()
       .single();
       if (insertError) toast.error('Erro ao criar template');
