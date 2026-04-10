@@ -49,7 +49,7 @@ const intensityValue: Record<string, number> = { leve: 1, moderado: 2, alto: 3 }
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 const DiagnosticHistory = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { hasMultiplePersons } = useSubscription();
   const navigate = useNavigate();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
