@@ -58,6 +58,7 @@ const DiagnosticHistory = () => {
   const [selectedPerson, setSelectedPerson] = useState<string>('all');
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [resettingHistory, setResettingHistory] = useState(false);
   const { data: patternDefinitions } = usePatternDefinitions();
   const axisLabels = useAxisLabels();
 
