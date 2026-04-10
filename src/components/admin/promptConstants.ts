@@ -28,7 +28,7 @@ export const AI_MODELS = [
   { value: 'openai/gpt-5.2', label: 'GPT-5.2', description: 'Último modelo OpenAI' },
 ];
 
-export const TONE_OPTIONS = ['empático e direto', 'clínico e técnico', 'casual e acolhedor', 'provocativo e desafiador', 'analítico e neutro'];
+export const TONE_OPTIONS = ['empático e direto', 'clínico e técnico', 'casual e acolhedor', 'provocativo e desafiador', 'analítico e neutro', 'direto e assertivo'];
 export const STYLE_OPTIONS = ['narrativo', 'bullet-points', 'estruturado', 'misto', 'conversacional'];
 export const DEPTH_LABELS: Record<number, string> = { 1: 'Superficial', 2: 'Leve', 3: 'Moderado', 4: 'Profundo', 5: 'Máximo' };
 
