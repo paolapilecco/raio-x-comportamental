@@ -104,7 +104,7 @@ export function analyzeGenericTest(
     axes: q.axes,
     type: q.type || 'likert',
   }));
-  const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label);
+  const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label, moduleSlug);
 
   const corePain = interpretation.derivedCorePain || dominantDef.corePain;
   const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;
