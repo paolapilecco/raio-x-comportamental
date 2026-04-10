@@ -82,7 +82,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     const outputRules = { emotionalArchitecture };
 
     if (templateId) {
-      const { error, count } = await supabase
+      const { error } = await supabase
         .from('report_templates')
         .update({ sections: ordered as any, output_rules: outputRules as any, updated_at: new Date().toISOString() })
         .eq('id', templateId)
