@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, TrendingDown, Minus, Download, Send, Link2, Copy, Check, Activity,
+  TrendingUp, TrendingDown, Minus, Send, Link2, Copy, Check, Activity,
 } from 'lucide-react';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
