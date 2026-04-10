@@ -38,8 +38,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   // UI state
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [_previewIndex, _setPreviewIndex] = useState(0);
-  const [_previewAnswers, _setPreviewAnswers] = useState<Record<string, number>>({});
+  const [, setPreviewIndex] = useState(0);
+  const [, setPreviewAnswers] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
 

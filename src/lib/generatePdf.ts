@@ -178,12 +178,6 @@ function labelAbove(ctx: Ctx, label: string, color: RGB = C.light) {
   ctx.y += 4;
 }
 
-function _impactCard(ctx: Ctx, area: string, effect: string) {
-  const { doc } = ctx;
-  const lines = doc.splitTextToSize(effect, (CW / 2) - 12);
-  const h = lines.length * LH + 10;
-  return { area, lines, h };
-}
 
 function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) {
   // Render as 2-column cards

@@ -11,11 +11,7 @@ function scoreColorRgb(score: number): [number, number, number] {
   return [100, 180, 255];                   // light blue
 }
 
-function _scoreGlowColor(score: number): string {
-  if (score <= 40) return 'rgba(34,197,94,';
-  if (score <= 70) return 'rgba(234,179,8,';
-  return 'rgba(100,180,255,';
-}
+
 
 interface Particle {
   x: number; y: number; vx: number; vy: number;

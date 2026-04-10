@@ -79,7 +79,7 @@ const fadeIn = {
 const Dashboard = () => {
   const { user, profile, role, isPremium, isSuperAdmin, previewMode, togglePreviewMode } = useAuth();
   const { data: patternDefinitions } = usePatternDefinitions();
-  const radarAxisLabels = useAxisLabels();
+  useAxisLabels(); // kept for hook stability
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
@@ -273,14 +273,7 @@ const Dashboard = () => {
   }
 
   const displayName = profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário';
-  const _fullName = profile?.name || user?.email?.split('@')[0] || 'Usuário';
   const hasData = !!latestResult || (centralProfile && centralProfile.tests_completed > 0);
-
-  const _radarData = centralProfile
-    ? Object.entries(centralProfile.aggregated_scores).map(([key, value]) => ({ axis: radarAxisLabels[key] || key, value }))
-    : latestResult
-    ? ((latestResult.all_scores as any[]) || []).map((s: any) => ({ axis: radarAxisLabels[s.key] || s.label, value: s.percentage }))
-    : [];
 
   return (
     <AppLayout>

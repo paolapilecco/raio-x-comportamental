@@ -25,7 +25,7 @@ interface PersonSummary {
 export default function ProfessionalDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const _axisLabels = useAxisLabels();
+  useAxisLabels(); // kept for potential future use
   const [persons, setPersons] = useState<PersonSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalTests, setTotalTests] = useState(0);

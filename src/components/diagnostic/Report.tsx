@@ -108,7 +108,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const ai = (result as any);
 
   // Legacy field resolution (used for QuickRead and fallback)
-  const _chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const focoMudanca = ai.focoMudanca || result.keyUnlockArea || ai.blockingPoint || result.blockingPoint || corrigirPrimeiro;
 
@@ -450,7 +449,7 @@ function NeuralMechanism({ data }: { data: { neurotransmissor?: string; cicloNeu
 
 /* ── Legacy sections fallback ── */
 function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
-  const _chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
+  const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
   const comoAparece = ai.comoAparece || result.mentalState;
   const gatilhos = ai.gatilhos || result.triggers;
