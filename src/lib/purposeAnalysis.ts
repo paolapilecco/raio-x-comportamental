@@ -101,7 +101,7 @@ export function analyzePurposeAnswers(answers: Answer[]): PurposeResult {
     axes: q.axes as string[],
     type: (q as any).type || 'likert',
   }));
-  const interpretation = generateInterpretation(answers, questionMeta, allScores as any, dominant.label);
+  const interpretation = generateInterpretation(answers, questionMeta, allScores as any, dominant.label, 'proposito-sentido');
 
   const corePain = interpretation.derivedCorePain || dominantDef.corePain;
   const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;

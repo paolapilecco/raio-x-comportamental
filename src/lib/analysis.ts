@@ -76,7 +76,7 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     axes: q.axes as string[],
     type: (q as any).type || 'likert',
   }));
-  const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label);
+  const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label, 'padrao-comportamental');
 
   // Use derived insights when available, fallback to pattern definitions
   const corePain = interpretation.derivedCorePain || dominantDef.corePain;

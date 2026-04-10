@@ -372,7 +372,7 @@ const Diagnostic = () => {
 
     const engine = getTestEngine(slug);
     if (engine) {
-      return analyzeGenericTest(answers, dbQuestions, engine.axes, engine.definitions);
+      return analyzeGenericTest(answers, dbQuestions, engine.axes, engine.definitions, slug);
     }
 
     // Fallback — should not happen since all modules are registered
