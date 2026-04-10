@@ -8,7 +8,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
 } from 'recharts';
-import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download, Users, Trash2, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
@@ -49,7 +49,7 @@ const intensityValue: Record<string, number> = { leve: 1, moderado: 2, alto: 3 }
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 const DiagnosticHistory = () => {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { hasMultiplePersons } = useSubscription();
   const navigate = useNavigate();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
@@ -58,6 +58,7 @@ const DiagnosticHistory = () => {
   const [selectedPerson, setSelectedPerson] = useState<string>('all');
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [resettingHistory, setResettingHistory] = useState(false);
   const { data: patternDefinitions } = usePatternDefinitions();
   const axisLabels = useAxisLabels();
 
@@ -225,6 +226,50 @@ const DiagnosticHistory = () => {
   // Unique modules that have results
   const modulesWithResults = modules.filter(m => history.some(h => h.test_module_id === m.id));
 
+  const handleResetHistory = async () => {
+    if (!user) return;
+    const confirmed = confirm('⚠️ Tem certeza que deseja apagar TODO o seu histórico de testes? Esta ação é irreversível.');
+    if (!confirmed) return;
+    const doubleConfirm = confirm('Esta ação vai apagar permanentemente todas as suas sessões, respostas e resultados. Confirmar?');
+    if (!doubleConfirm) return;
+
+    setResettingHistory(true);
+    try {
+      // Get all session IDs for this user
+      const { data: userSessions } = await supabase
+        .from('diagnostic_sessions')
+        .select('id')
+        .eq('user_id', user.id);
+
+      const sessionIds = (userSessions || []).map(s => s.id);
+
+      if (sessionIds.length > 0) {
+        // Delete results
+        for (const sid of sessionIds) {
+          await supabase.from('diagnostic_results').delete().eq('session_id', sid);
+          await supabase.from('diagnostic_answers').delete().eq('session_id', sid);
+        }
+      }
+
+      // Delete sessions
+      await supabase.from('diagnostic_sessions').delete().eq('user_id', user.id);
+
+      // Delete user profiles
+      await supabase.from('user_profile').delete().eq('user_id', user.id);
+      await supabase.from('user_central_profile').delete().eq('user_id', user.id);
+      await supabase.from('test_results').delete().eq('user_id', user.id);
+
+      toast.success('Histórico resetado com sucesso!');
+      // Reload page to refresh data
+      window.location.reload();
+    } catch (err) {
+      console.error('Error resetting history:', err);
+      toast.error('Erro ao resetar histórico.');
+    } finally {
+      setResettingHistory(false);
+    }
+  };
+
   if (loading) {
     return <DiagnosticHistorySkeleton />;
   }
@@ -233,14 +278,26 @@ const DiagnosticHistory = () => {
     <AppLayout>
       <div className="max-w-5xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10 space-y-6 sm:space-y-8">
         {/* Header */}
-        <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="flex items-center gap-4">
-          <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">Evolução</h1>
-            <p className="text-sm text-muted-foreground mt-1">Compare seus resultados ao longo do tempo</p>
+        <motion.div {...fadeUp} transition={{ duration: 0.4 }} className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <button onClick={() => navigate('/dashboard')} className="text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground">Evolução</h1>
+              <p className="text-sm text-muted-foreground mt-1">Compare seus resultados ao longo do tempo</p>
+            </div>
           </div>
+          {isSuperAdmin && filtered.length > 0 && (
+            <button
+              onClick={handleResetHistory}
+              disabled={resettingHistory}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all disabled:opacity-50 border border-destructive/20"
+            >
+              {resettingHistory ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+              {resettingHistory ? 'Resetando...' : 'Resetar meu histórico'}
+            </button>
+          )}
         </motion.div>
 
         {/* Person filter */}
