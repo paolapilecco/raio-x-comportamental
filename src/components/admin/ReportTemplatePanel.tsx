@@ -6,10 +6,12 @@ import type { TestModule } from './promptConstants';
 
 interface ReportSection {
   key: string;
+  slug: string;
   label: string;
   maxSentences: number;
   required: boolean;
   order: number;
+  aiInstructions: string;
 }
 
 const DEFAULT_SECTIONS: ReportSection[] = [
