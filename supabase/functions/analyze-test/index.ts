@@ -827,7 +827,7 @@ ${secondary.length > 0
     ? `## PADRÕES SECUNDÁRIOS ATIVOS (≥40%):\n${secondary.map((s) => `- ${s.key}: ${s.percentage}% (${classifyIntensity(s.percentage)}) — "${s.label}"`).join("\n")}`
     : "Sem padrões secundários significativos."}
 
-## CRUZAMENTOS E CONTRADIÇÕES DETECTADOS:
+## CONFLITOS E CRUZAMENTOS DETECTADOS:
 ${contradictions}
 
 ## EVIDÊNCIAS DAS RESPOSTAS DO USUÁRIO:
