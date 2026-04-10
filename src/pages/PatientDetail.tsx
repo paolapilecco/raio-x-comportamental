@@ -20,7 +20,7 @@ import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { generateEvolutionPdf } from '@/lib/generateEvolutionPdf';
-import type { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
+import type { DiagnosticResult, IntensityLevel, PatternKey, PatternDefinition } from '@/types/diagnostic';
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 const intensityLabel: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };

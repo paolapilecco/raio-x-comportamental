@@ -15,7 +15,7 @@ import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
-import { DiagnosticResult, IntensityLevel, PatternKey } from '@/types/diagnostic';
+import { DiagnosticResult, IntensityLevel, PatternKey, PatternDefinition } from '@/types/diagnostic';
 
 interface HistoryEntry {
   id: string;
