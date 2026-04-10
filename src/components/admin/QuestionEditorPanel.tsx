@@ -1,14 +1,12 @@
 import { useState } from 'react';
 import { Save, X, ChevronDown, ChevronRight, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import {
-  Question,
   QuestionType,
   typeLabels,
   typeDescriptions,
   defaultOptionsForType,
   defaultScoresForType,
-  validateQuestion,
-} from './questionConstants';
+  validate} from './questionConstants';
 
 interface FormData {
   text: string;
@@ -36,10 +34,10 @@ interface QuestionEditorPanelProps {
 export const QuestionEditorPanel = ({
   isCreating,
   isEditing,
-  editingQuestionId,
+  editingQuestionId: _editingQuestionId,
   form,
   saving,
-  currentModule,
+  currentModule: _currentModule,
   onFormChange,
   onSave,
   onCancel,

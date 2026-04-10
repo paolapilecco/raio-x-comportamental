@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, User, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity, Award } from 'lucide-react';
+import { ArrowLeft, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity, Award } from 'lucide-react';
 import { useBadges } from '@/hooks/useBadges';
 import { useGamification } from '@/hooks/useGamification';
 import { BadgeUnlockCelebration } from '@/components/gamification/BadgeUnlockCelebration';
@@ -170,7 +170,7 @@ const Profile = () => {
               label: 'Última',
               icon: Activity,
             },
-          ].map((stat, i) => {
+          ].map((stat, _i) => {
             const StatIcon = stat.icon;
             return (
               <div

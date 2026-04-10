@@ -178,7 +178,7 @@ function labelAbove(ctx: Ctx, label: string, color: RGB = C.light) {
   ctx.y += 4;
 }
 
-function impactCard(ctx: Ctx, area: string, effect: string) {
+function _impactCard(ctx: Ctx, area: string, effect: string) {
   const { doc } = ctx;
   const lines = doc.splitTextToSize(effect, (CW / 2) - 12);
   const h = lines.length * LH + 10;

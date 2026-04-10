@@ -13,7 +13,7 @@ interface RadarSectionProps {
   hasAccess: boolean;
 }
 
-function groupByIntensity(items: [string, number][], axisLabels: Record<string, string>) {
+function groupByIntensity(items: [string, number][], _axisLabels: Record<string, string>) {
   const alto = items.filter(([, v]) => v > 70);
   const moderado = items.filter(([, v]) => v >= 40 && v <= 70);
   const baixo = items.filter(([, v]) => v < 40);

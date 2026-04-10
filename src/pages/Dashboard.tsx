@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer } from 'recharts';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
 import { useRetestCycle } from '@/hooks/useRetestCycle';
@@ -78,7 +77,7 @@ const fadeIn = {
 };
 
 const Dashboard = () => {
-  const { user, profile, role, isPremium, isSuperAdmin, signOut, previewMode, togglePreviewMode } = useAuth();
+  const { user, profile, role, isPremium, isSuperAdmin, previewMode, togglePreviewMode } = useAuth();
   const { data: patternDefinitions } = usePatternDefinitions();
   const radarAxisLabels = useAxisLabels();
   const navigate = useNavigate();
@@ -274,10 +273,10 @@ const Dashboard = () => {
   }
 
   const displayName = profile?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Usuário';
-  const fullName = profile?.name || user?.email?.split('@')[0] || 'Usuário';
+  const _fullName = profile?.name || user?.email?.split('@')[0] || 'Usuário';
   const hasData = !!latestResult || (centralProfile && centralProfile.tests_completed > 0);
 
-  const radarData = centralProfile
+  const _radarData = centralProfile
     ? Object.entries(centralProfile.aggregated_scores).map(([key, value]) => ({ axis: radarAxisLabels[key] || key, value }))
     : latestResult
     ? ((latestResult.all_scores as any[]) || []).map((s: any) => ({ axis: radarAxisLabels[s.key] || s.label, value: s.percentage }))

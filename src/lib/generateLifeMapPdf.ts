@@ -170,7 +170,7 @@ function drawWheel(
 
     doc.setFontSize(7.5);
     doc.setFont('helvetica', 'bold');
-    const cfg = AREA_CONFIG[area.key];
+    const _cfg = AREA_CONFIG[area.key];
     if (cfg) {
       doc.setTextColor(...cfg.color);
     } else {
@@ -302,7 +302,7 @@ export function generateLifeMapPdf(
       tableY = MARGIN + 6;
     }
 
-    const cfg = AREA_CONFIG[area.key];
+    const _cfg = AREA_CONFIG[area.key];
     const level = area.score >= 7 ? 'Bom' : area.score >= 4 ? 'Atenção' : 'Crítico';
     const levelColor = area.score >= 7 ? C.green : area.score >= 4 ? C.yellow : C.red;
 

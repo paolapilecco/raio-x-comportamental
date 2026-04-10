@@ -40,7 +40,7 @@ function formatCpfDisplay(cpf: string): string {
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 export default function ManagedPersons() {
-  const { user, isPremium, isSuperAdmin, planType, profile } = useAuth();
+  const { user, isSuperAdmin, planType, profile } = useAuth();
   const navigate = useNavigate();
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [loading, setLoading] = useState(true);

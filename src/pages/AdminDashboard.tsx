@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Crown, TrendingUp, BarChart3, Activity, Download,
+  Users, Crown, Activity, Download,
   Loader2, RefreshCw, CreditCard, Brain, LayoutGrid,
   Settings, FileText, UserCheck, DollarSign, Percent, Calendar,
 } from 'lucide-react';

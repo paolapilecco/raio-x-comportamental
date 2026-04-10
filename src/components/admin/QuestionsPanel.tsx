@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -38,8 +38,8 @@ const QuestionsPanel = ({ currentModule }: QuestionsPanelProps) => {
   // UI state
   const [showAIPanel, setShowAIPanel] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [previewIndex, setPreviewIndex] = useState(0);
-  const [previewAnswers, setPreviewAnswers] = useState<Record<string, number>>({});
+  const [_previewIndex, _setPreviewIndex] = useState(0);
+  const [_previewAnswers, _setPreviewAnswers] = useState<Record<string, number>>({});
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
 
