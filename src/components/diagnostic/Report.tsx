@@ -6,7 +6,7 @@ import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import LifeMapReport from './LifeMapReport';
 import { ReportGamification } from './ReportGamification';
 
@@ -693,4 +693,4 @@ function QuickReadCell({ icon, label, value, bold, colorClass }: { icon: React.R
   );
 }
 
-export default Report;
+export default memo(Report);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { questions as defaultQuestions } from '@/data/questions';
 import { Answer } from '@/types/diagnostic';
@@ -220,4 +220,4 @@ const Questionnaire = ({ onComplete, questions: questionsProp }: QuestionnairePr
   );
 };
 
-export default Questionnaire;
+export default memo(Questionnaire);
