@@ -79,7 +79,7 @@ const fadeIn = {
 const Dashboard = () => {
   const { user, profile, role, isPremium, isSuperAdmin, previewMode, togglePreviewMode } = useAuth();
   const { data: patternDefinitions } = usePatternDefinitions();
-  const _radarAxisLabels = useAxisLabels();
+  useAxisLabels(); // kept for hook stability
   const navigate = useNavigate();
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);

@@ -152,13 +152,6 @@ function isRedundant(textA: string, textB: string, threshold = 0.6): boolean {
   return semanticOverlap(textA, textB) >= threshold;
 }
 
-// ── Validation Checks ──
-
-interface ValidationIssue {
-  field: string;
-  type: 'too_long' | 'redundant' | 'complex_language' | 'forbidden_phrase' | 'unclear';
-  detail: string;
-}
 
 
 // ── Auto-Refiners ──
