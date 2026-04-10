@@ -52,7 +52,7 @@ export default function PatientDetail() {
   const { user, planType, isSuperAdmin, profile } = useAuth();
   const navigate = useNavigate();
   const axisLabels = useAxisLabels();
-  const patternDefinitions = usePatternDefinitions();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const gamification = usePersonGamification(user?.id, personId);
 
   const [person, setPerson] = useState<PersonData | null>(null);

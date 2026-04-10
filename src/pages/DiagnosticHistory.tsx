@@ -57,7 +57,7 @@ const DiagnosticHistory = () => {
   const [selectedModule, setSelectedModule] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
-  const patternDefinitions = usePatternDefinitions();
+  const { data: patternDefinitions } = usePatternDefinitions();
   const axisLabels = useAxisLabels();
 
   const hasMultiplePersons = planType !== 'standard' || isSuperAdmin;

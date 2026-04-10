@@ -243,8 +243,8 @@ const Dashboard = () => {
     const dominantDef = patternDefinitions?.[latestResult.dominant_pattern as PatternKey];
     const secondaryDefs = (latestResult.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
     const diagResult: DiagnosticResult = {
-      dominantPattern: dominantDef,
-      secondaryPatterns: secondaryDefs,
+      dominantPattern: dominantDef!,
+      secondaryPatterns: secondaryDefs as PatternDefinition[],
       intensity: latestResult.intensity as IntensityLevel,
       allScores: (latestResult.all_scores as any[]) || [],
       summary: latestResult.state_summary,
