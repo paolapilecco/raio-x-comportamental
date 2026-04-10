@@ -44,7 +44,8 @@ export function analyzeGenericTest(
   answers: Answer[],
   questions: DbQuestion[],
   axisKeys: string[],
-  definitions: Record<string, GenericPatternDefinition>
+  definitions: Record<string, GenericPatternDefinition>,
+  moduleSlug?: string
 ): DiagnosticResult {
   // Calculate scores per axis
   const rawScores: Record<string, number> = {};
