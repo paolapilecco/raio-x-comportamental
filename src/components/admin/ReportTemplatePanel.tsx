@@ -82,12 +82,18 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     const outputRules = { emotionalArchitecture };
 
     if (templateId) {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('report_templates')
         .update({ sections: ordered as any, output_rules: outputRules as any, updated_at: new Date().toISOString() })
-        .eq('id', templateId);
-      if (error) toast.error('Erro ao salvar template');
-      else toast.success('Template salvo');
+        .eq('id', templateId)
+        .select('id')
+        .single();
+      if (error) {
+        console.error('Save template error:', error);
+        toast.error('Erro ao salvar template. Verifique suas permissões.');
+      } else {
+        toast.success('Template salvo com sucesso!');
+      }
     } else {
     const { data: insertData, error: insertError } = await supabase
       .from('report_templates')
