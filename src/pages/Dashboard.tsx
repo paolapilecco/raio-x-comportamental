@@ -12,6 +12,7 @@ import { useActionPlan } from '@/hooks/useActionPlan';
 import { RetestCycleCard } from '@/components/dashboard/RetestCycleCard';
 import { ActionPlanCard } from '@/components/dashboard/ActionPlanCard';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
+import { useRetestConfig } from '@/hooks/useRetestConfig';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
@@ -99,11 +100,13 @@ const Dashboard = () => {
   const gamification = useGamification(user?.id);
   const retestCycle = useRetestCycle(user?.id);
   const actionPlan = useActionPlan(user?.id);
+  const retestConfig = useRetestConfig();
 
   const inactiveModules = useMemo(() => {
     if (!sessions.length || !modules.length) return [];
+    if (!retestConfig.retest_enabled || !retestConfig.dashboard_alert_enabled) return [];
     const now = Date.now();
-    const INACTIVITY_THRESHOLD = 15 * 24 * 60 * 60 * 1000;
+    const INACTIVITY_THRESHOLD = retestConfig.retest_days_threshold * 24 * 60 * 60 * 1000;
     const latestByModule = new Map<string, Date>();
     for (const s of sessions) {
       if (!s.test_module_id || !s.completed_at) continue;
@@ -127,7 +130,7 @@ const Dashboard = () => {
       }
     }
     return result.sort((a, b) => b.daysSinceLastTest - a.daysSinceLastTest);
-  }, [sessions, modules]);
+  }, [sessions, modules, retestConfig]);
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
     setGenerating(true);
