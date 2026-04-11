@@ -28,15 +28,18 @@ interface TrackEventOptions {
  * Never throws — silently drops on error so it never breaks user flow.
  */
 export function trackEvent({ userId, event, moduleId, diagnosticResultId, metadata }: TrackEventOptions) {
-  supabase
-    .from('analytics_events' as any)
-    .insert({
-      user_id: userId,
-      event_name: event,
-      module_id: moduleId || null,
-      diagnostic_result_id: diagnosticResultId || null,
-      metadata: metadata || {},
-    })
-    .then(() => {})
-    .catch(() => {});
+  try {
+    supabase
+      .from('analytics_events' as any)
+      .insert({
+        user_id: userId,
+        event_name: event,
+        module_id: moduleId || null,
+        diagnostic_result_id: diagnosticResultId || null,
+        metadata: metadata || {},
+      })
+      .then(() => {});
+  } catch {
+    // silently ignore
+  }
 }
