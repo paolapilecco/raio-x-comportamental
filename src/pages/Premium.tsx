@@ -9,6 +9,7 @@ import {
   Clock, CheckCircle2, BarChart3, CalendarDays, Lightbulb, Compass,
   LineChart, BookOpen, Star, Gem, User, LogOut
 } from 'lucide-react';
+import { trackEvent } from '@/lib/trackEvent';
 
 const iconMap: Record<string, any> = { brain: Brain, zap: Zap, shield: Shield, heart: Heart };
 
