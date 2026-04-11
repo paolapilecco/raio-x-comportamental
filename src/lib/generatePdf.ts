@@ -66,36 +66,38 @@ function pb(ctx: Ctx, need = 14) {
 
 // ── Primitives ──
 
-function sectionHeader(ctx: Ctx, num: number, title: string, accentColor: RGB = C.accent) {
+function sectionHeader(ctx: Ctx, _num: number, title: string, accentColor: RGB = C.accent) {
   pb(ctx, 18);
   ctx.y += 8;
   const { doc } = ctx;
   
-  // Number badge
+  // Accent bar (no number badge)
   doc.setFillColor(...accentColor);
-  doc.roundedRect(M, ctx.y - 4, 8, 8, 2, 2, 'F');
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.white);
-  doc.text(String(num), M + 2.8, ctx.y + 0.8);
+  doc.roundedRect(M, ctx.y - 4, 3, 8, 1, 1, 'F');
   
   // Title
   doc.setFontSize(11.5);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.dark);
-  doc.text(title, M + 12, ctx.y + 0.8);
+  doc.text(title, M + 7, ctx.y + 0.8);
   
   // Underline accent
   const tw = doc.getTextWidth(title);
   doc.setDrawColor(...accentColor);
   doc.setLineWidth(0.6);
-  doc.line(M + 12, ctx.y + 3, M + 12 + Math.min(tw, CW - 14), ctx.y + 3);
+  doc.line(M + 7, ctx.y + 3, M + 7 + Math.min(tw, CW - 9), ctx.y + 3);
   
   ctx.y += 10;
 }
 
+function safe(v: any): string {
+  if (v == null || v === undefined || v === 'undefined') return '';
+  const s = String(v).trim();
+  return s === 'undefined' ? '' : s;
+}
+
 function textBlock(ctx: Ctx, t: string, color: RGB = C.text, indent = 0) {
-  if (!t) return;
+  if (!safe(t)) return;
   const { doc } = ctx;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -136,7 +138,7 @@ function bulletItem(ctx: Ctx, t: string, dotColor: RGB = C.accent, icon?: string
 }
 
 function alertBox(ctx: Ctx, t: string, borderColor: RGB = C.red, bgColor: RGB = C.redSoft) {
-  if (!t) return;
+  if (!safe(t)) return;
   const { doc } = ctx;
   doc.setFontSize(9);
   const lines = doc.splitTextToSize(t, CW - 16);
@@ -161,7 +163,7 @@ function alertBox(ctx: Ctx, t: string, borderColor: RGB = C.red, bgColor: RGB = 
 }
 
 function accentBox(ctx: Ctx, t: string, borderColor: RGB = C.accent, bgColor: RGB = C.accentSoft) {
-  if (!t) return;
+  if (!safe(t)) return;
   const { doc } = ctx;
   doc.setFontSize(9);
   const lines = doc.splitTextToSize(t, CW - 16);
