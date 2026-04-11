@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
 import { useNavigate } from 'react-router-dom';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
+import { InactivityAlertCard } from '@/components/dashboard/InactivityAlertCard';
 import { useGamification } from '@/hooks/useGamification';
 import { useRetestCycle } from '@/hooks/useRetestCycle';
 import { useActionPlan } from '@/hooks/useActionPlan';
@@ -98,6 +99,35 @@ const Dashboard = () => {
   const gamification = useGamification(user?.id);
   const retestCycle = useRetestCycle(user?.id);
   const actionPlan = useActionPlan(user?.id);
+
+  const inactiveModules = useMemo(() => {
+    if (!sessions.length || !modules.length) return [];
+    const now = Date.now();
+    const INACTIVITY_THRESHOLD = 15 * 24 * 60 * 60 * 1000;
+    const latestByModule = new Map<string, Date>();
+    for (const s of sessions) {
+      if (!s.test_module_id || !s.completed_at) continue;
+      const d = new Date(s.completed_at);
+      const prev = latestByModule.get(s.test_module_id);
+      if (!prev || d > prev) latestByModule.set(s.test_module_id, d);
+    }
+    const result: { moduleId: string; moduleName: string; moduleSlug: string; daysSinceLastTest: number }[] = [];
+    for (const [modId, lastDate] of latestByModule) {
+      const diff = now - lastDate.getTime();
+      if (diff >= INACTIVITY_THRESHOLD) {
+        const mod = modules.find(m => m.id === modId);
+        if (mod) {
+          result.push({
+            moduleId: modId,
+            moduleName: mod.name,
+            moduleSlug: mod.slug,
+            daysSinceLastTest: Math.floor(diff / (24 * 60 * 60 * 1000)),
+          });
+        }
+      }
+    }
+    return result.sort((a, b) => b.daysSinceLastTest - a.daysSinceLastTest);
+  }, [sessions, modules]);
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
     setGenerating(true);
@@ -451,6 +481,11 @@ const Dashboard = () => {
         {/* Retest Cycle - 15 days */}
         {!retestCycle.loading && retestCycle.lastTestDate && (
           <RetestCycleCard retest={retestCycle} />
+        )}
+
+        {/* Inactivity Alert */}
+        {!loading && inactiveModules.length > 0 && (
+          <InactivityAlertCard inactiveModules={inactiveModules} />
         )}
 
         {/* Action Plan Tracking */}
