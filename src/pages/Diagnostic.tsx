@@ -13,8 +13,8 @@ import { assembleReport } from '@/lib/reportAssembler';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createActionPlanTracking } from '@/hooks/useActionPlan';
-import { trackEvent } from '@/lib/trackEvent';
-import { useNavigate, useParams } from 'react-router-dom';
+import { trackEvent, RetestOrigin } from '@/lib/trackEvent';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { UserCircle, ChevronRight } from 'lucide-react';
 // import { canAccessModule, getMonthlyTestLimit, getCurrentMonthYear } from '@/lib/planLimits';
@@ -102,14 +102,24 @@ const Diagnostic = () => {
   const [dbQuestions, setDbQuestions] = useState<DbQuestion[]>([]);
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [previousSessionId, setPreviousSessionId] = useState<string | null>(null);
+  const [previousResultId, setPreviousResultId] = useState<string | null>(null);
+  const [isRetest, setIsRetest] = useState(false);
   const { user, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
+  const [searchParams] = useSearchParams();
 
   const slug = moduleSlug || BEHAVIORAL_SLUG;
   const isFreeTest = slug === BEHAVIORAL_SLUG;
   const canAccessTest = isSuperAdmin || isPremium || isFreeTest;
 
+  // Determine retest origin from URL param
+  const retestOrigin: RetestOrigin = (() => {
+    const origin = searchParams.get('origin');
+    if (origin === 'dashboard_alert' || origin === 'email_reminder') return origin;
+    return isRetest ? 'manual_return' : 'unknown';
+  })();
   useEffect(() => {
     if (!canAccessTest) {
       toast.error('Este teste requer um plano pago');
@@ -132,6 +142,28 @@ const Diagnostic = () => {
       }
 
       setModuleId(mod.id);
+
+      // Check if this is a retest (user has previous completed session for this module)
+      const { data: prevSessions } = await supabase
+        .from('diagnostic_sessions')
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('test_module_id', mod.id)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(1);
+
+      if (prevSessions && prevSessions.length > 0) {
+        setIsRetest(true);
+        setPreviousSessionId(prevSessions[0].id);
+        // Get the previous result ID
+        const { data: prevResult } = await supabase
+          .from('diagnostic_results')
+          .select('id')
+          .eq('session_id', prevSessions[0].id)
+          .maybeSingle();
+        if (prevResult) setPreviousResultId(prevResult.id);
+      }
 
       const { data: questions, error } = await supabase
         .from('questions')
@@ -313,8 +345,23 @@ const Diagnostic = () => {
         .update({ completed_at: new Date().toISOString() })
         .eq('id', session.id);
 
-      // Track diagnostic_completed event
+      // Track diagnostic_completed event (always)
       trackEvent({ userId: user.id, event: 'diagnostic_completed', moduleId: moduleId || undefined, diagnosticResultId: savedResult?.id });
+
+      // Track retest_completed if this is a retest
+      if (isRetest) {
+        trackEvent({
+          userId: user.id,
+          event: 'retest_completed',
+          moduleId: moduleId || undefined,
+          diagnosticResultId: savedResult?.id,
+          metadata: {
+            origin: retestOrigin,
+            previous_session_id: previousSessionId,
+            previous_diagnostic_result_id: previousResultId,
+          },
+        });
+      }
 
       await updateCentralProfile(user.id);
 
@@ -381,7 +428,7 @@ const Diagnostic = () => {
       console.error('Error saving diagnostic:', err);
       toast.error('Erro ao salvar diagnóstico, mas seu resultado está disponível.');
     }
-  }, [user, moduleId, selectedPersonId]);
+  }, [user, moduleId, selectedPersonId, isRetest, retestOrigin, previousSessionId, previousResultId]);
 
   /**
    * Local fallback analysis (hardcoded patterns).
@@ -607,6 +654,20 @@ const Diagnostic = () => {
     setStep('analyzing');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    // Track retest_started if this is a retest
+    if (isRetest && user) {
+      trackEvent({
+        userId: user.id,
+        event: 'retest_started',
+        moduleId: moduleId || undefined,
+        metadata: {
+          origin: retestOrigin,
+          previous_session_id: previousSessionId,
+          previous_diagnostic_result_id: previousResultId,
+        },
+      });
+    }
+
     // Try AI-powered analysis first, fall back to local
     let analysisResult = await runAIAnalysis(answers);
     
@@ -623,7 +684,7 @@ const Diagnostic = () => {
     setStep('report');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     saveToDatabase(answers, analysisResult);
-  }, [saveToDatabase, runAIAnalysis, runLocalAnalysis]);
+  }, [saveToDatabase, runAIAnalysis, runLocalAnalysis, isRetest, user, moduleId, retestOrigin, previousSessionId, previousResultId]);
 
   const handleGoToDashboard = useCallback(() => {
     navigate('/dashboard');

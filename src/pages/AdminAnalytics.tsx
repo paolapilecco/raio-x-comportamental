@@ -15,6 +15,7 @@ interface FunnelMetrics {
   actionPlanDaysCompleted: number;
   retestAlerts: number;
   retestEmails: number;
+  retestStarted: number;
   retestCompleted: number;
   paywallViews: number;
   checkoutStarted: number;
@@ -64,6 +65,7 @@ export default function AdminAnalytics() {
         actionPlanDaysCompleted: count('action_plan_day_completed'),
         retestAlerts: count('retest_alert_viewed'),
         retestEmails: count('retest_email_sent'),
+        retestStarted: count('retest_started'),
         retestCompleted: count('retest_completed'),
         paywallViews: count('premium_paywall_viewed'),
         checkoutStarted: count('premium_checkout_started'),
@@ -75,16 +77,21 @@ export default function AdminAnalytics() {
       const modMap = new Map((modules || []).map((m: any) => [m.id, m.name]));
 
       const diagEvents = all.filter(e => e.event_name === 'diagnostic_completed' && e.module_id);
-      const moduleGroups = new Map<string, { diagnostics: number; users: Set<string>; retests: number; pdfs: number }>();
+      const retestEvents = all.filter(e => e.event_name === 'retest_completed' && e.module_id);
+      const moduleGroups = new Map<string, { diagnostics: number; retests: number; pdfs: number }>();
 
       diagEvents.forEach(e => {
         if (!moduleGroups.has(e.module_id)) {
-          moduleGroups.set(e.module_id, { diagnostics: 0, users: new Set(), retests: 0, pdfs: 0 });
+          moduleGroups.set(e.module_id, { diagnostics: 0, retests: 0, pdfs: 0 });
         }
-        const g = moduleGroups.get(e.module_id)!;
-        g.diagnostics++;
-        if (g.users.has(e.user_id)) g.retests++;
-        g.users.add(e.user_id);
+        moduleGroups.get(e.module_id)!.diagnostics++;
+      });
+
+      retestEvents.forEach(e => {
+        if (!moduleGroups.has(e.module_id)) {
+          moduleGroups.set(e.module_id, { diagnostics: 0, retests: 0, pdfs: 0 });
+        }
+        moduleGroups.get(e.module_id)!.retests++;
       });
 
       all.filter(e => e.event_name === 'pdf_downloaded' && e.module_id).forEach(e => {
@@ -139,7 +146,8 @@ export default function AdminAnalytics() {
     { label: 'Dias concluídos', value: metrics.actionPlanDaysCompleted, icon: Flame, color: 'text-orange-500' },
     { label: 'Alertas inatividade', value: metrics.retestAlerts, icon: TrendingUp, color: 'text-yellow-600' },
     { label: 'Emails reteste', value: metrics.retestEmails, icon: Mail, color: 'text-blue-500' },
-    { label: 'Reavaliações', value: metrics.retestCompleted, icon: RefreshCw, color: 'text-emerald-600' },
+    { label: 'Retestes iniciados', value: metrics.retestStarted, icon: RefreshCw, color: 'text-blue-600' },
+    { label: 'Retestes concluídos', value: metrics.retestCompleted, icon: RefreshCw, color: 'text-emerald-600' },
     { label: 'Paywall views', value: metrics.paywallViews, icon: Crown, color: 'text-amber-500' },
     { label: 'Checkouts iniciados', value: metrics.checkoutStarted, icon: Users, color: 'text-primary' },
     { label: 'Checkouts concluídos', value: metrics.checkoutCompleted, icon: Crown, color: 'text-emerald-600' },
@@ -147,7 +155,8 @@ export default function AdminAnalytics() {
 
   const conversionRate = metrics.paywallViews > 0 ? Math.round((metrics.checkoutCompleted / metrics.paywallViews) * 100) : 0;
   const pdfRate = metrics.diagnostics > 0 ? Math.round((metrics.pdfDownloads / metrics.diagnostics) * 100) : 0;
-  const retestRate = metrics.retestAlerts > 0 ? Math.round((metrics.retestCompleted / metrics.retestAlerts) * 100) : 0;
+  const retestRate = metrics.retestStarted > 0 ? Math.round((metrics.retestCompleted / metrics.retestStarted) * 100) : 0;
+  const retestFromAlerts = metrics.retestAlerts > 0 ? Math.round((metrics.retestStarted / metrics.retestAlerts) * 100) : 0;
 
   return (
     <AppLayout>
@@ -176,11 +185,12 @@ export default function AdminAnalytics() {
         </motion.div>
 
         {/* Rates */}
-        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-1 sm:grid-cols-5 gap-4">
           {[
             { label: 'Taxa de conversão Premium', value: `${conversionRate}%`, sub: `${metrics.checkoutCompleted}/${metrics.paywallViews}` },
             { label: 'Taxa de download PDF', value: `${pdfRate}%`, sub: `${metrics.pdfDownloads}/${metrics.diagnostics}` },
-            { label: 'Taxa de reavaliação', value: `${retestRate}%`, sub: `${metrics.retestCompleted}/${metrics.retestAlerts}` },
+            { label: 'Taxa de conclusão reteste', value: `${retestRate}%`, sub: `${metrics.retestCompleted}/${metrics.retestStarted}` },
+            { label: 'Conversão alerta → reteste', value: `${retestFromAlerts}%`, sub: `${metrics.retestStarted}/${metrics.retestAlerts}` },
             { label: 'Conclusão do plano 15d', value: `${planCompletionRate}%`, sub: 'dias concluídos / total' },
           ].map((r, i) => (
             <div key={i} className="bg-card rounded-xl border p-5">
