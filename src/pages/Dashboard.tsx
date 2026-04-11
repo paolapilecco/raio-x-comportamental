@@ -518,7 +518,7 @@ const Dashboard = () => {
 
         {/* Inactivity Alert */}
         {!loading && inactiveModules.length > 0 && (
-          <InactivityAlertCard inactiveModules={inactiveModules} />
+          <InactivityAlertCard inactiveModules={inactiveModules} userId={user?.id} />
         )}
 
         {/* Action Plan Tracking */}

@@ -8,6 +8,7 @@ import {
   Shield, Copy, CheckCircle2, RefreshCw, AlertCircle, ArrowRight, Users, Brain, Zap,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { trackEvent } from '@/lib/trackEvent';
 
 const PLANS = {
   pessoal_monthly: { key: 'pessoal', label: 'Pessoal', billing: 'monthly', price: 5.99, priceLabel: 'R$ 5,99', period: '/mês', maxPersons: 3, allTests: true },
@@ -29,7 +30,7 @@ interface PaymentInfo {
 }
 
 export default function Checkout() {
-  const { isPremium, isSuperAdmin, loading: authLoading } = useAuth();
+  const { user, isPremium, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>('plan');
@@ -50,6 +51,7 @@ export default function Checkout() {
 
   const handleCheckout = async () => {
     setProcessing(true);
+    if (user) trackEvent({ userId: user.id, event: 'premium_checkout_started', metadata: { plan: selectedPlan, billingType } });
     setStep('processing');
     try {
       const { data, error } = await supabase.functions.invoke('asaas-checkout', {
@@ -88,6 +90,7 @@ export default function Checkout() {
       if (!error && data?.subscription?.status === 'active') {
         setStep('success');
         toast.success('Pagamento confirmado!');
+        if (user) trackEvent({ userId: user.id, event: 'premium_checkout_completed', metadata: { plan: selectedPlan } });
       } else if (data?.payment?.qrCodeImage) {
         setPaymentInfo(data.payment);
         toast.info('Pagamento ainda pendente. Aguardando confirmação...');

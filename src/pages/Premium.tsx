@@ -9,6 +9,7 @@ import {
   Clock, CheckCircle2, BarChart3, CalendarDays, Lightbulb, Compass,
   LineChart, BookOpen, Star, Gem, User, LogOut
 } from 'lucide-react';
+import { trackEvent } from '@/lib/trackEvent';
 
 const iconMap: Record<string, any> = { brain: Brain, zap: Zap, shield: Shield, heart: Heart };
 
@@ -45,6 +46,13 @@ const Premium = () => {
     };
     fetchData();
   }, [user]);
+
+  // Track paywall view for non-premium users
+  useEffect(() => {
+    if (!loading && user && !canAccess) {
+      trackEvent({ userId: user.id, event: 'premium_paywall_viewed' });
+    }
+  }, [loading, user, canAccess]);
 
   if (loading) {
     return (

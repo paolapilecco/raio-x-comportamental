@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowRight, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { trackEvent } from '@/lib/trackEvent';
 
 interface InactivityModule {
   moduleId: string;
@@ -11,6 +13,7 @@ interface InactivityModule {
 
 interface InactivityAlertCardProps {
   inactiveModules: InactivityModule[];
+  userId?: string;
 }
 
 const fadeIn = {
@@ -19,8 +22,14 @@ const fadeIn = {
   transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] },
 };
 
-export function InactivityAlertCard({ inactiveModules }: InactivityAlertCardProps) {
+export function InactivityAlertCard({ inactiveModules, userId }: InactivityAlertCardProps) {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (inactiveModules.length > 0 && userId) {
+      trackEvent({ userId, event: 'retest_alert_viewed', metadata: { modules: inactiveModules.map(m => m.moduleSlug) } });
+    }
+  }, [inactiveModules.length, userId]);
 
   if (inactiveModules.length === 0) return null;
 

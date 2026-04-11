@@ -173,6 +173,13 @@ serve(async (req) => {
         console.error(`Error sending to ${email}:`, sendErr);
       } else {
         sentCount++;
+        // Track retest_email_sent event
+        await supabase.from("analytics_events").insert({
+          user_id: session.user_id,
+          event_name: "retest_email_sent",
+          module_id: session.test_module_id,
+          metadata: { daysSince, dedupKey },
+        }).then(() => {});
       }
     }
 

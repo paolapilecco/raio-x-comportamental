@@ -4,7 +4,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import {
-  Users, Crown, Activity, Download,
+  Users, Crown, Activity, Download, BarChart3,
   Loader2, RefreshCw, CreditCard, Brain, LayoutGrid,
   Settings, FileText, UserCheck, DollarSign, Percent, Calendar, BookOpen,
 } from 'lucide-react';
@@ -99,6 +99,7 @@ export default function AdminDashboard() {
     { label: 'Roadmap', icon: LayoutGrid, path: '/admin/roadmap', desc: 'Tarefas do projeto' },
     { label: 'Emails', icon: Activity, path: '/admin/emails', desc: 'Logs e templates de email' },
     { label: 'Ciclo de Reteste', icon: Activity, path: '/admin/retest-config', desc: 'Alertas e emails de reavaliação' },
+    { label: 'Telemetria', icon: BarChart3, path: '/admin/analytics', desc: 'Funil de retenção e conversão' },
     { label: 'Documentação', icon: BookOpen, path: '/admin/docs', desc: 'PRD, Manual Técnico e Segurança' },
   ];
 

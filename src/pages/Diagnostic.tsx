@@ -13,6 +13,7 @@ import { assembleReport } from '@/lib/reportAssembler';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createActionPlanTracking } from '@/hooks/useActionPlan';
+import { trackEvent } from '@/lib/trackEvent';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { UserCircle, ChevronRight } from 'lucide-react';
@@ -312,6 +313,9 @@ const Diagnostic = () => {
         .update({ completed_at: new Date().toISOString() })
         .eq('id', session.id);
 
+      // Track diagnostic_completed event
+      trackEvent({ userId: user.id, event: 'diagnostic_completed', moduleId: moduleId || undefined, diagnosticResultId: savedResult?.id });
+
       await updateCentralProfile(user.id);
 
       // Create action plan tracking (non-blocking)
@@ -341,6 +345,7 @@ const Diagnostic = () => {
           }
           if (actions.length > 0) {
             await createActionPlanTracking(user.id, savedResult.id, actions);
+            trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: actions.length } });
           }
         } catch (e) {
           console.error('Action plan creation failed (non-blocking):', e);
