@@ -483,6 +483,11 @@ const Dashboard = () => {
           <RetestCycleCard retest={retestCycle} />
         )}
 
+        {/* Inactivity Alert */}
+        {!loading && inactiveModules.length > 0 && (
+          <InactivityAlertCard inactiveModules={inactiveModules} />
+        )}
+
         {/* Action Plan Tracking */}
         {!actionPlan.loading && actionPlan.days.length > 0 && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.08 }}>
