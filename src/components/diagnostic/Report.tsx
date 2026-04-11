@@ -568,7 +568,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <Section num={ai.futureConsequence ? 9 : 8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
+      <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 10 : 9) : 8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
         {ai.mentalCommand && (
           <div className="mb-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
             <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold mb-2">Repita antes de agir</p>
