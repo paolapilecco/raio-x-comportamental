@@ -96,6 +96,51 @@ export type Database = {
           },
         ]
       }
+      analytics_events: {
+        Row: {
+          created_at: string
+          diagnostic_result_id: string | null
+          event_name: string
+          id: string
+          metadata: Json | null
+          module_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          diagnostic_result_id?: string | null
+          event_name: string
+          id?: string
+          metadata?: Json | null
+          module_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          diagnostic_result_id?: string | null
+          event_name?: string
+          id?: string
+          metadata?: Json | null
+          module_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "analytics_events_diagnostic_result_id_fkey"
+            columns: ["diagnostic_result_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_results"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "analytics_events_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "test_modules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagnostic_answers: {
         Row: {
           answer_value: number
