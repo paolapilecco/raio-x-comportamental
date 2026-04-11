@@ -344,6 +344,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 );
               })}
 
+              {/* Evolution comparison (if available) */}
+              <EvolutionComparisonSection ai={ai} delay={0.04 + templateSections.length * 0.04} />
+
               {/* Blind spot (always show if available) */}
               {result.interpretation?.blindSpot?.realProblem && (
                 <motion.div {...fade} transition={{ delay: 0.07 }}>
