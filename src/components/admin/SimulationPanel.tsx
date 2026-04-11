@@ -9,6 +9,7 @@ interface SimulationPanelProps {
   testPrompts: TestPrompt[];
   expanded: boolean;
   onToggle: () => void;
+  defaultTestId?: string;
 }
 
 /** Generate dynamic presets from real axis names */
