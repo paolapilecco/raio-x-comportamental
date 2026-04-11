@@ -300,12 +300,52 @@ const Diagnostic = () => {
         what_not_to_do: analysisResult.whatNotToDo || [],
       }]);
 
+      // Get the saved result ID
+      const { data: savedResult } = await supabase
+        .from('diagnostic_results')
+        .select('id')
+        .eq('session_id', session.id)
+        .maybeSingle();
+
       await supabase
         .from('diagnostic_sessions')
         .update({ completed_at: new Date().toISOString() })
         .eq('id', session.id);
 
       await updateCentralProfile(user.id);
+
+      // Create action plan tracking (non-blocking)
+      if (savedResult?.id) {
+        try {
+          const ai = analysisResult as any;
+          const actions: string[] = [];
+          // Collect microAcoes
+          if (Array.isArray(ai.microAcoes)) {
+            ai.microAcoes.forEach((a: any) => {
+              if (typeof a === 'string') actions.push(a);
+              else if (a?.acao) actions.push(a.acao);
+            });
+          }
+          // Collect exitStrategy
+          if (Array.isArray(analysisResult.exitStrategy)) {
+            analysisResult.exitStrategy.forEach((s: any) => {
+              const text = s.action || s.title || '';
+              if (text && !actions.includes(text)) actions.push(text);
+            });
+          }
+          // Collect whatNotToDo as inverted actions
+          if (Array.isArray(analysisResult.whatNotToDo)) {
+            analysisResult.whatNotToDo.forEach((w: string) => {
+              if (w && !actions.includes(w)) actions.push(w);
+            });
+          }
+          if (actions.length > 0) {
+            await createActionPlanTracking(user.id, savedResult.id, actions);
+          }
+        } catch (e) {
+          console.error('Action plan creation failed (non-blocking):', e);
+        }
+      }
 
       // Send report-ready email (non-blocking)
       try {
