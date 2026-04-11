@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown } from 'lucide-react';
-import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
@@ -112,11 +112,40 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const focoMudanca = ai.focoMudanca || result.keyUnlockArea || ai.blockingPoint || result.blockingPoint || corrigirPrimeiro;
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (moduleSlug === 'mapa-de-vida') {
       generateLifeMapPdf(result.allScores, profile?.name);
     } else {
-      generateDiagnosticPdf(result, profile?.name);
+      // Fetch action plan tracking if available
+      let extras: PdfEvolutionData | undefined;
+      if (user) {
+        try {
+          const { data: tracking } = await supabase
+            .from('action_plan_tracking')
+            .select('completed')
+            .eq('user_id', user.id)
+            .eq('diagnostic_result_id', (result as any).id || '');
+          if (tracking && tracking.length > 0) {
+            const completed = tracking.filter(t => t.completed).length;
+            // Calculate streak
+            const sortedDays = tracking.sort((a: any, b: any) => a.day_number - b.day_number);
+            let streak = 0;
+            for (let i = sortedDays.length - 1; i >= 0; i--) {
+              if ((sortedDays[i] as any).completed) streak++;
+              else break;
+            }
+            extras = {
+              actionPlanStatus: {
+                total_days: tracking.length,
+                completed_days: completed,
+                execution_rate: Math.round((completed / tracking.length) * 100),
+                current_streak: streak,
+              },
+            };
+          }
+        } catch { /* ignore - extras remain undefined */ }
+      }
+      generateDiagnosticPdf(result, profile?.name, extras);
     }
   };
 
