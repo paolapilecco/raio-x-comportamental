@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
 import { useNavigate } from 'react-router-dom';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
+import { InactivityAlertCard } from '@/components/dashboard/InactivityAlertCard';
 import { useGamification } from '@/hooks/useGamification';
 import { useRetestCycle } from '@/hooks/useRetestCycle';
 import { useActionPlan } from '@/hooks/useActionPlan';
