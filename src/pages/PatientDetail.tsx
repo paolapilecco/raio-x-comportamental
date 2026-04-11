@@ -9,7 +9,7 @@ import { ArrowLeft, Calendar, Phone, FileText, Download, AlertTriangle, Activity
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { usePersonGamification } from '@/hooks/usePersonGamification';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
-import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { generateEvolutionPdf } from '@/lib/generateEvolutionPdf';
 import type { DiagnosticResult, IntensityLevel, PatternKey, PatternDefinition } from '@/types/diagnostic';
@@ -218,7 +218,35 @@ export default function PatientDetail() {
         criticalDiagnosis: fullResult.critical_diagnosis || dominantDef?.criticalDiagnosis || '',
         whatNotToDo: fullResult.what_not_to_do || dominantDef?.whatNotToDo || [],
       };
-      generateDiagnosticPdf(diagResult, person?.name);
+      // Fetch action plan tracking
+      let extras: PdfEvolutionData | undefined;
+      if (user) {
+        try {
+          const { data: tracking } = await supabase
+            .from('action_plan_tracking')
+            .select('completed, day_number')
+            .eq('user_id', user.id)
+            .eq('diagnostic_result_id', fullResult.id);
+          if (tracking && tracking.length > 0) {
+            const completed = tracking.filter(t => t.completed).length;
+            let streak = 0;
+            const sorted = [...tracking].sort((a, b) => a.day_number - b.day_number);
+            for (let i = sorted.length - 1; i >= 0; i--) {
+              if (sorted[i].completed) streak++;
+              else break;
+            }
+            extras = {
+              actionPlanStatus: {
+                total_days: tracking.length,
+                completed_days: completed,
+                execution_rate: Math.round((completed / tracking.length) * 100),
+                current_streak: streak,
+              },
+            };
+          }
+        } catch { /* ignore */ }
+      }
+      generateDiagnosticPdf(diagResult, person?.name, extras);
       toast.success('PDF gerado!');
     } catch { toast.error('Erro ao gerar PDF.'); }
   };

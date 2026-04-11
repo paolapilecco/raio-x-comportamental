@@ -1,6 +1,25 @@
 import jsPDF from 'jspdf';
 import { DiagnosticResult } from '@/types/diagnostic';
 
+export interface PdfEvolutionData {
+  futureConsequence?: string;
+  evolutionComparison?: {
+    previous_score?: number;
+    current_score?: number;
+    improved_axes?: { key: string; label: string; previous: number; current: number }[];
+    worsened_axes?: { key: string; label: string; previous: number; current: number }[];
+    unchanged_axes?: { key: string; label: string; previous: number; current: number }[];
+    summary_text?: string;
+  };
+  evolutionSummary?: string;
+  actionPlanStatus?: {
+    total_days: number;
+    completed_days: number;
+    execution_rate: number;
+    current_streak: number;
+  };
+}
+
 // ── Layout constants ──
 const M = 20;        // margin
 const PW = 210;      // page width
@@ -231,7 +250,7 @@ function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) 
 
 // ── Main export ──
 
-export function generateDiagnosticPdf(result: DiagnosticResult, userName?: string) {
+export function generateDiagnosticPdf(result: DiagnosticResult, userName?: string, extras?: PdfEvolutionData) {
   const doc = new jsPDF('p', 'mm', 'a4');
   const ctx: Ctx = { doc, y: M, pageNum: 1 };
 
@@ -452,9 +471,91 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   }
 
   // ═══════════════════════════════════════════
-  // SECTION 8: Próxima ação prática
+  // SECTION 8: Consequência Futura
   // ═══════════════════════════════════════════
-  sectionHeader(ctx, 8, 'Próxima ação prática', C.green);
+  let sectionNum = 8;
+  const fc = extras?.futureConsequence || (ai as any).futureConsequence;
+  if (fc) {
+    sectionHeader(ctx, sectionNum, 'Consequência Futura', C.red);
+    alertBox(ctx, fc);
+    sectionNum++;
+  }
+
+  // ═══════════════════════════════════════════
+  // SECTION 9: Comparação de Evolução
+  // ═══════════════════════════════════════════
+  const evo = extras?.evolutionComparison || (ai as any).evolutionComparison;
+  if (evo && (evo.previous_score != null || evo.improved_axes?.length || evo.worsened_axes?.length)) {
+    sectionHeader(ctx, sectionNum, 'Comparação de Evolução', C.accent);
+
+    // Score comparison bar
+    if (evo.previous_score != null && evo.current_score != null) {
+      pb(ctx, 28);
+      const { doc: d } = ctx;
+      const barW = (CW - 10) / 2;
+
+      // Previous score
+      d.setFontSize(7);
+      d.setFont('helvetica', 'bold');
+      d.setTextColor(...C.muted);
+      d.text('ANTERIOR', M + 4, ctx.y);
+      d.setFontSize(14);
+      d.setTextColor(...C.light);
+      d.text(`${evo.previous_score}%`, M + 4, ctx.y + 8);
+
+      // Current score
+      d.setFontSize(7);
+      d.setFont('helvetica', 'bold');
+      d.setTextColor(...C.muted);
+      d.text('ATUAL', M + 4 + barW + 6, ctx.y);
+      const curColor: RGB = evo.current_score < evo.previous_score ? C.green : evo.current_score > evo.previous_score ? C.red : C.yellow;
+      d.setFontSize(14);
+      d.setTextColor(...curColor);
+      d.text(`${evo.current_score}%`, M + 4 + barW + 6, ctx.y + 8);
+
+      // Delta
+      const delta = evo.current_score - evo.previous_score;
+      const deltaStr = delta > 0 ? `+${delta}%` : `${delta}%`;
+      d.setFontSize(9);
+      d.setFont('helvetica', 'bold');
+      d.setTextColor(...curColor);
+      d.text(deltaStr, M + CW - d.getTextWidth(deltaStr) - 4, ctx.y + 8);
+
+      ctx.y += 16;
+    }
+
+    // Improved axes
+    if (evo.improved_axes?.length > 0) {
+      labelAbove(ctx, 'Eixos que melhoraram', C.green);
+      evo.improved_axes.forEach((a: any) => {
+        bulletItem(ctx, `${a.label}: ${a.previous}% → ${a.current}%`, C.green, '↓');
+      });
+    }
+
+    // Worsened axes
+    if (evo.worsened_axes?.length > 0) {
+      labelAbove(ctx, 'Eixos que pioraram', C.red);
+      evo.worsened_axes.forEach((a: any) => {
+        bulletItem(ctx, `${a.label}: ${a.previous}% → ${a.current}%`, C.red, '↑');
+      });
+    }
+
+    // Evolution summary
+    const evoSummary = extras?.evolutionSummary || evo.summary_text;
+    if (evoSummary) {
+      pb(ctx, 14);
+      labelAbove(ctx, 'Resumo da evolução', C.accent);
+      accentBox(ctx, evoSummary);
+    }
+
+    sectionNum++;
+  }
+
+  // ═══════════════════════════════════════════
+  // SECTION: Próxima ação prática
+  // ═══════════════════════════════════════════
+  sectionHeader(ctx, sectionNum, 'Próxima ação prática', C.green);
+  sectionNum++;
   
   // Mental Command (reprogramming phrase)
   if (mentalCommand) {
@@ -536,7 +637,8 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   // SECTION 9: Mecanismo Neural
   // ═══════════════════════════════════════════
   if (mecanismoNeural && (mecanismoNeural.neurotransmissor || mecanismoNeural.cicloNeural || mecanismoNeural.neuroplasticidade)) {
-    sectionHeader(ctx, 9, 'Mecanismo Neural', C.accent);
+    sectionHeader(ctx, sectionNum, 'Mecanismo Neural', C.accent);
+    sectionNum++;
     
     if (mecanismoNeural.neurotransmissor) {
       pb(ctx, 14);
@@ -561,7 +663,8 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   // SECTION 10: Plano de Ação (if available)
   // ═══════════════════════════════════════════
   if (actionPlan.length > 0) {
-    sectionHeader(ctx, 10, 'Plano de Ação por Área', C.green);
+    sectionHeader(ctx, sectionNum, 'Plano de Ação por Área', C.green);
+    sectionNum++;
     
     actionPlan.forEach((plan) => {
       pb(ctx, 16);
@@ -586,6 +689,56 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       });
       ctx.y += 2;
     });
+  }
+
+  // ═══════════════════════════════════════════
+  // SECTION: Status do Plano de Ação
+  // ═══════════════════════════════════════════
+  const aps = extras?.actionPlanStatus;
+  if (aps && aps.total_days > 0) {
+    sectionHeader(ctx, sectionNum, 'Status de Execução do Plano', C.accent);
+    sectionNum++;
+
+    pb(ctx, 30);
+    const { doc: d } = ctx;
+    const cardH = 28;
+    d.setFillColor(...C.bg);
+    d.setDrawColor(...C.border);
+    d.roundedRect(M, ctx.y, CW, cardH, 2.5, 2.5, 'FD');
+
+    const colW = CW / 4;
+    const metrics = [
+      { label: 'TOTAL', value: `${aps.total_days} dias` },
+      { label: 'CONCLUÍDOS', value: `${aps.completed_days} dias` },
+      { label: 'EXECUÇÃO', value: `${aps.execution_rate}%` },
+      { label: 'SEQUÊNCIA', value: `${aps.current_streak} dias` },
+    ];
+
+    metrics.forEach((m, i) => {
+      const x = M + colW * i + 5;
+      d.setFontSize(6.5);
+      d.setFont('helvetica', 'bold');
+      d.setTextColor(...C.muted);
+      d.text(m.label, x, ctx.y + 8);
+      d.setFontSize(11);
+      d.setFont('helvetica', 'bold');
+      const vColor: RGB = i === 2
+        ? (aps.execution_rate >= 70 ? C.green : aps.execution_rate >= 40 ? C.yellow : C.red)
+        : C.dark;
+      d.setTextColor(...vColor);
+      d.text(m.value, x, ctx.y + 17);
+    });
+
+    // Progress bar
+    const barY = ctx.y + cardH - 5;
+    d.setFillColor(...C.border);
+    d.roundedRect(M + 5, barY, CW - 10, 3, 1.5, 1.5, 'F');
+    const pctColor: RGB = aps.execution_rate >= 70 ? C.green : aps.execution_rate >= 40 ? C.yellow : C.red;
+    d.setFillColor(...pctColor);
+    const fw = (aps.execution_rate / 100) * (CW - 10);
+    if (fw > 0) d.roundedRect(M + 5, barY, Math.max(fw, 2), 3, 1.5, 1.5, 'F');
+
+    ctx.y += cardH + 6;
   }
 
   // ═══════════════════════════════════════════
