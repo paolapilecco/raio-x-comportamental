@@ -77,16 +77,21 @@ export default function AdminAnalytics() {
       const modMap = new Map((modules || []).map((m: any) => [m.id, m.name]));
 
       const diagEvents = all.filter(e => e.event_name === 'diagnostic_completed' && e.module_id);
-      const moduleGroups = new Map<string, { diagnostics: number; users: Set<string>; retests: number; pdfs: number }>();
+      const retestEvents = all.filter(e => e.event_name === 'retest_completed' && e.module_id);
+      const moduleGroups = new Map<string, { diagnostics: number; retests: number; pdfs: number }>();
 
       diagEvents.forEach(e => {
         if (!moduleGroups.has(e.module_id)) {
-          moduleGroups.set(e.module_id, { diagnostics: 0, users: new Set(), retests: 0, pdfs: 0 });
+          moduleGroups.set(e.module_id, { diagnostics: 0, retests: 0, pdfs: 0 });
         }
-        const g = moduleGroups.get(e.module_id)!;
-        g.diagnostics++;
-        if (g.users.has(e.user_id)) g.retests++;
-        g.users.add(e.user_id);
+        moduleGroups.get(e.module_id)!.diagnostics++;
+      });
+
+      retestEvents.forEach(e => {
+        if (!moduleGroups.has(e.module_id)) {
+          moduleGroups.set(e.module_id, { diagnostics: 0, retests: 0, pdfs: 0 });
+        }
+        moduleGroups.get(e.module_id)!.retests++;
       });
 
       all.filter(e => e.event_name === 'pdf_downloaded' && e.module_id).forEach(e => {
