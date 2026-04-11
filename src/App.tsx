@@ -41,6 +41,7 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminSubscriptions = lazy(() => import("./pages/AdminSubscriptions"));
 const AdminEmails = lazy(() => import("./pages/AdminEmails"));
 const AdminDocs = lazy(() => import("./pages/AdminDocs"));
+const AdminRetestConfig = lazy(() => import("./pages/AdminRetestConfig"));
 const queryClient = new QueryClient();
 
 function LazyFallback() {
@@ -98,6 +99,7 @@ const App = () => (
               <Route path="/admin/subscriptions" element={<ProtectedRoute><AdminSubscriptions /></ProtectedRoute>} />
               <Route path="/admin/emails" element={<ProtectedRoute><AdminEmails /></ProtectedRoute>} />
               <Route path="/admin/docs" element={<ProtectedRoute><AdminDocs /></ProtectedRoute>} />
+              <Route path="/admin/retest-config" element={<ProtectedRoute><AdminRetestConfig /></ProtectedRoute>} />
               <Route path="/admin/ai-config" element={<Navigate to="/admin/prompts" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
