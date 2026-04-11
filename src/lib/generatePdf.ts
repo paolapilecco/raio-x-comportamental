@@ -692,6 +692,56 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   }
 
   // ═══════════════════════════════════════════
+  // SECTION: Status do Plano de Ação
+  // ═══════════════════════════════════════════
+  const aps = extras?.actionPlanStatus;
+  if (aps && aps.total_days > 0) {
+    sectionHeader(ctx, sectionNum, 'Status de Execução do Plano', C.accent);
+    sectionNum++;
+
+    pb(ctx, 30);
+    const { doc: d } = ctx;
+    const cardH = 28;
+    d.setFillColor(...C.bg);
+    d.setDrawColor(...C.border);
+    d.roundedRect(M, ctx.y, CW, cardH, 2.5, 2.5, 'FD');
+
+    const colW = CW / 4;
+    const metrics = [
+      { label: 'TOTAL', value: `${aps.total_days} dias` },
+      { label: 'CONCLUÍDOS', value: `${aps.completed_days} dias` },
+      { label: 'EXECUÇÃO', value: `${aps.execution_rate}%` },
+      { label: 'SEQUÊNCIA', value: `${aps.current_streak} dias` },
+    ];
+
+    metrics.forEach((m, i) => {
+      const x = M + colW * i + 5;
+      d.setFontSize(6.5);
+      d.setFont('helvetica', 'bold');
+      d.setTextColor(...C.muted);
+      d.text(m.label, x, ctx.y + 8);
+      d.setFontSize(11);
+      d.setFont('helvetica', 'bold');
+      const vColor: RGB = i === 2
+        ? (aps.execution_rate >= 70 ? C.green : aps.execution_rate >= 40 ? C.yellow : C.red)
+        : C.dark;
+      d.setTextColor(...vColor);
+      d.text(m.value, x, ctx.y + 17);
+    });
+
+    // Progress bar
+    const barY = ctx.y + cardH - 5;
+    d.setFillColor(...C.border);
+    d.roundedRect(M + 5, barY, CW - 10, 3, 1.5, 1.5, 'F');
+    const pctColor: RGB = aps.execution_rate >= 70 ? C.green : aps.execution_rate >= 40 ? C.yellow : C.red;
+    d.setFillColor(...pctColor);
+    const fw = (aps.execution_rate / 100) * (CW - 10);
+    if (fw > 0) d.roundedRect(M + 5, barY, Math.max(fw, 2), 3, 1.5, 1.5, 'F');
+
+    ctx.y += cardH + 6;
+  }
+
+  // ═══════════════════════════════════════════
   // INTENSITY BARS
   // ═══════════════════════════════════════════
   ctx.y += 4;
