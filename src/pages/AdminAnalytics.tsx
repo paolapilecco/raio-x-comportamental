@@ -64,6 +64,7 @@ export default function AdminAnalytics() {
         actionPlanDaysCompleted: count('action_plan_day_completed'),
         retestAlerts: count('retest_alert_viewed'),
         retestEmails: count('retest_email_sent'),
+        retestStarted: count('retest_started'),
         retestCompleted: count('retest_completed'),
         paywallViews: count('premium_paywall_viewed'),
         checkoutStarted: count('premium_checkout_started'),
