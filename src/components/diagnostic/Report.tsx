@@ -319,6 +319,23 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   );
                 }
 
+                // Future consequence section
+                if (/futureConsequence|consequencia/i.test(section.key)) {
+                  return (
+                    <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent="destructive">
+                      <CardBlock variant="alert">
+                        <div className="flex items-start gap-3">
+                          <TrendingDown className="w-4 h-4 text-destructive/60 mt-0.5 shrink-0" />
+                          <div>
+                            <p className="text-[9px] text-destructive/50 uppercase tracking-widest font-semibold mb-1.5">Se nada mudar</p>
+                            <p className="text-sm text-foreground leading-[1.8]">{typeof value === 'string' ? value : ''}</p>
+                          </div>
+                        </div>
+                      </CardBlock>
+                    </Section>
+                  );
+                }
+
                 // Default text section
                 return (
                   <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent={accent}>
