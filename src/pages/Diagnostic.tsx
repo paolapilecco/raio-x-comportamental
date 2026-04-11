@@ -143,6 +143,28 @@ const Diagnostic = () => {
 
       setModuleId(mod.id);
 
+      // Check if this is a retest (user has previous completed session for this module)
+      const { data: prevSessions } = await supabase
+        .from('diagnostic_sessions')
+        .select('id')
+        .eq('user_id', user!.id)
+        .eq('test_module_id', mod.id)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(1);
+
+      if (prevSessions && prevSessions.length > 0) {
+        setIsRetest(true);
+        setPreviousSessionId(prevSessions[0].id);
+        // Get the previous result ID
+        const { data: prevResult } = await supabase
+          .from('diagnostic_results')
+          .select('id')
+          .eq('session_id', prevSessions[0].id)
+          .maybeSingle();
+        if (prevResult) setPreviousResultId(prevResult.id);
+      }
+
       const { data: questions, error } = await supabase
         .from('questions')
         .select('sort_order, text, axes, type, options, option_scores, context')
