@@ -66,36 +66,38 @@ function pb(ctx: Ctx, need = 14) {
 
 // ── Primitives ──
 
-function sectionHeader(ctx: Ctx, num: number, title: string, accentColor: RGB = C.accent) {
+function sectionHeader(ctx: Ctx, _num: number, title: string, accentColor: RGB = C.accent) {
   pb(ctx, 18);
   ctx.y += 8;
   const { doc } = ctx;
   
-  // Number badge
+  // Accent bar (no number badge)
   doc.setFillColor(...accentColor);
-  doc.roundedRect(M, ctx.y - 4, 8, 8, 2, 2, 'F');
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.white);
-  doc.text(String(num), M + 2.8, ctx.y + 0.8);
+  doc.roundedRect(M, ctx.y - 4, 3, 8, 1, 1, 'F');
   
   // Title
   doc.setFontSize(11.5);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.dark);
-  doc.text(title, M + 12, ctx.y + 0.8);
+  doc.text(title, M + 7, ctx.y + 0.8);
   
   // Underline accent
   const tw = doc.getTextWidth(title);
   doc.setDrawColor(...accentColor);
   doc.setLineWidth(0.6);
-  doc.line(M + 12, ctx.y + 3, M + 12 + Math.min(tw, CW - 14), ctx.y + 3);
+  doc.line(M + 7, ctx.y + 3, M + 7 + Math.min(tw, CW - 9), ctx.y + 3);
   
   ctx.y += 10;
 }
 
+function safe(v: any): string {
+  if (v == null || v === undefined || v === 'undefined') return '';
+  const s = String(v).trim();
+  return s === 'undefined' ? '' : s;
+}
+
 function textBlock(ctx: Ctx, t: string, color: RGB = C.text, indent = 0) {
-  if (!t) return;
+  if (!safe(t)) return;
   const { doc } = ctx;
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
@@ -136,7 +138,7 @@ function bulletItem(ctx: Ctx, t: string, dotColor: RGB = C.accent, icon?: string
 }
 
 function alertBox(ctx: Ctx, t: string, borderColor: RGB = C.red, bgColor: RGB = C.redSoft) {
-  if (!t) return;
+  if (!safe(t)) return;
   const { doc } = ctx;
   doc.setFontSize(9);
   const lines = doc.splitTextToSize(t, CW - 16);
@@ -161,7 +163,7 @@ function alertBox(ctx: Ctx, t: string, borderColor: RGB = C.red, bgColor: RGB = 
 }
 
 function accentBox(ctx: Ctx, t: string, borderColor: RGB = C.accent, bgColor: RGB = C.accentSoft) {
-  if (!t) return;
+  if (!safe(t)) return;
   const { doc } = ctx;
   doc.setFontSize(9);
   const lines = doc.splitTextToSize(t, CW - 16);
@@ -199,16 +201,19 @@ function labelAbove(ctx: Ctx, label: string, color: RGB = C.light) {
 
 
 function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) {
+  // Filter out items with undefined/null values
+  const validItems = items.filter(i => safe(i.area) && safe(i.efeito));
+  if (validItems.length === 0) return;
   // Render as 2-column cards
-  for (let i = 0; i < items.length; i += 2) {
-    const left = items[i];
-    const right = items[i + 1];
+  for (let i = 0; i < validItems.length; i += 2) {
+    const left = validItems[i];
+    const right = validItems[i + 1];
     const colW = (CW - 4) / 2;
     
     const { doc } = ctx;
     doc.setFontSize(9);
-    const leftLines = doc.splitTextToSize(left.efeito, colW - 10);
-    const rightLines = right ? doc.splitTextToSize(right.efeito, colW - 10) : [];
+    const leftLines = doc.splitTextToSize(safe(left.efeito), colW - 10);
+    const rightLines = right ? doc.splitTextToSize(safe(right.efeito), colW - 10) : [];
     const maxH = Math.max(leftLines.length, rightLines.length) * LH + 12;
     
     pb(ctx, maxH + 2);
@@ -256,18 +261,18 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
 
   const ai = result as any;
   
-  // ── Resolve all fields ──
-  const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
-  const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
-  const comoAparece = ai.comoAparece || result.mentalState;
-  const gatilhos: string[] = ai.gatilhos || result.triggers || [];
-  const comoAtrapalha = ai.comoAtrapalha || ai.significadoPratico || result.corePain;
-  const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
-  const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
-  const pararDeFazer: string[] = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo || [];
-  const acaoInicial = ai.acaoInicial || ai.proximoPasso || result.exitStrategy?.[0]?.action || result.direction;
-  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
-  const mentalCommand: string = ai.mentalCommand || '';
+  // ── Resolve all fields (with null safety) ──
+  const chamaAtencao = safe(ai.chamaAtencao) || safe(ai.resumoPrincipal) || safe(result.criticalDiagnosis);
+  const padraoRepetido = safe(ai.padraoRepetido) || safe(ai.padraoIdentificado) || safe(result.mechanism);
+  const comoAparece = safe(ai.comoAparece) || safe(result.mentalState);
+  const gatilhos: string[] = (ai.gatilhos || result.triggers || []).filter((t: any) => safe(t));
+  const comoAtrapalha = safe(ai.comoAtrapalha) || safe(ai.significadoPratico) || safe(result.corePain);
+  const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: safe(l.area) || safe(l.pillar), efeito: safe(l.efeito) || safe(l.impact) })) || result.lifeImpact?.map((l: any) => ({ area: safe(l.pillar), efeito: safe(l.impact) })) || [];
+  const corrigirPrimeiro = safe(ai.corrigirPrimeiro) || safe(ai.direcaoAjuste) || safe(result.keyUnlockArea);
+  const pararDeFazer: string[] = (ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo || []).filter((t: any) => safe(t));
+  const acaoInicial = safe(ai.acaoInicial) || safe(ai.proximoPasso) || safe(result.exitStrategy?.[0]?.action) || safe(result.direction);
+  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes.filter((m: any) => safe(m.acao)) : [];
+  const mentalCommand: string = safe(ai.mentalCommand);
   const blindSpot = result.interpretation?.blindSpot;
   const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
   const actionPlan: { area: string; score: number; actions: string[] }[] = Array.isArray(ai.actionPlan) ? ai.actionPlan : [];
@@ -336,7 +341,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   pb(ctx, 36);
   ctx.y += 3;
   const qrY = ctx.y;
-  const qrH = 32;
+  const qrH = 38;
   
   doc.setFillColor(...C.bg);
   doc.setDrawColor(...C.border);
@@ -346,36 +351,39 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.muted);
-  doc.text('LEITURA RÁPIDA', M + 5, qrY + 5.5);
+  doc.text('LEITURA RAPIDA', M + 5, qrY + 5.5);
   
   const halfW = (CW - 8) / 2;
   const col1 = M + 5;
   const col2 = M + 5 + halfW + 4;
-  const row1 = qrY + 10;
-  const row2 = qrY + 21;
+  const row1 = qrY + 11;
+  const row2 = qrY + 25;
   
   // Cell labels
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.light);
-  doc.text('Padrão principal', col1, row1);
+  doc.text('Padrao principal', col1, row1);
   doc.text('Intensidade', col2, row1);
   doc.text('Ponto de travamento', col1, row2);
-  doc.text('Foco de mudança', col2, row2);
+  doc.text('Foco de mudanca', col2, row2);
   
-  // Cell values
+  // Cell values - use splitTextToSize for wrapping
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.dark);
-  const pName = (result as any).interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '');
-  doc.text(pName.length > 30 ? pName.slice(0, 27) + '…' : pName, col1, row1 + 4.5);
+  const pName = safe((result as any).interpretation?.behavioralProfile?.name) || safe(result.profileName) || safe(result.dominantPattern) || 'N/A';
+  const pNameLines = doc.splitTextToSize(pName, halfW - 4);
+  pNameLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row1 + 4.5 + i * 4));
   doc.setTextColor(...intColor);
   doc.text(intLabel, col2, row1 + 4.5);
   doc.setTextColor(...C.dark);
-  const bp = (ai.blockingPoint || result.blockingPoint || 'Não identificado');
-  doc.text(bp.length > 38 ? bp.slice(0, 35) + '…' : bp, col1, row2 + 4.5);
-  const fm = focoMudanca || corrigirPrimeiro || 'Não identificado';
-  doc.text((fm as string).length > 38 ? (fm as string).slice(0, 35) + '…' : fm, col2, row2 + 4.5);
+  const bp = safe(ai.blockingPoint) || safe(result.blockingPoint) || 'Nao identificado';
+  const bpLines = doc.splitTextToSize(bp, halfW - 4);
+  bpLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row2 + 4.5 + i * 4));
+  const fm = safe(focoMudanca) || safe(corrigirPrimeiro) || 'Nao identificado';
+  const fmLines = doc.splitTextToSize(fm, halfW - 4);
+  fmLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col2, row2 + 4.5 + i * 4));
   
   ctx.y = qrY + qrH + 6;
 
@@ -614,19 +622,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       ctx.y += h + 3;
     });
     
-    // "Regra de ouro" box
-    pb(ctx, 14);
-    doc.setFillColor(...C.bg);
-    doc.roundedRect(M, ctx.y, CW, 12, 2, 2, 'F');
-    doc.setFontSize(6.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(...C.muted);
-    doc.text('REGRA DE OURO', M + 5, ctx.y + 4.5);
-    doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...C.text);
-    doc.text('Só comece novas tarefas quando essas estiverem feitas. Sem exceção.', M + 5, ctx.y + 9);
-    ctx.y += 15;
+    // (REGRA DE OURO removed — no hardcoded blocks)
   } else {
     // Fallback: single action
     labelAbove(ctx, 'Faça isso agora', C.green);
