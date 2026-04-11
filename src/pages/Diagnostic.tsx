@@ -342,6 +342,7 @@ const Diagnostic = () => {
           }
           if (actions.length > 0) {
             await createActionPlanTracking(user.id, savedResult.id, actions);
+            trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: actions.length } });
           }
         } catch (e) {
           console.error('Action plan creation failed (non-blocking):', e);
