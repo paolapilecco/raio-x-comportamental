@@ -349,14 +349,19 @@ Trigger de banco garante atribuição automática no signup.
           <button onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-2 text-muted-foreground/60 hover:text-foreground/80 text-[0.8rem] transition-colors mb-3">
             <ArrowLeft className="w-4 h-4" /> Voltar ao Admin
           </button>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight">Documentação do Sistema</h1>
+                <p className="text-[0.78rem] text-muted-foreground/60">PRD completo · Manual Técnico · Arquitetura</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">Documentação do Sistema</h1>
-              <p className="text-[0.78rem] text-muted-foreground/60">PRD completo · Manual Técnico · Arquitetura</p>
-            </div>
+            <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
+              <Download className="w-4 h-4" /> Baixar .md
+            </Button>
           </div>
         </motion.div>
 
