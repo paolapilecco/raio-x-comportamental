@@ -66,6 +66,14 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle, defaultTest
   const [loadedAxes, setLoadedAxes] = useState<string[]>([]);
   const [showPromptPreview, setShowPromptPreview] = useState(false);
 
+  // Auto-load axes when defaultTestId is set
+  useEffect(() => {
+    if (defaultTestId && defaultTestId !== previewTestId) {
+      setPreviewTestId(defaultTestId);
+      loadAxes(defaultTestId);
+    }
+  }, [defaultTestId]);
+
   // Build the final system prompt preview (mirrors edge function logic)
   const assembledPrompt = useMemo(() => {
     if (!previewTestId) return '';
