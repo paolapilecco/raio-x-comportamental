@@ -67,6 +67,8 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <GlobalDashboardButton />
+          <InstallPrompt />
+          <UpdatePrompt />
           <Suspense fallback={<LazyFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
