@@ -247,7 +247,7 @@ const Dashboard = () => {
     fetchExtra();
   }, [user, sessionsLoading, latestSession]);
 
-  const handleDownloadPdf = () => {
+  const handleDownloadPdf = async () => {
     if (!latestResult) return;
 
     // Check if latest result is from "Mapa de Vida" module
@@ -283,7 +283,37 @@ const Dashboard = () => {
       criticalDiagnosis: latestResult.critical_diagnosis || dominantDef?.criticalDiagnosis || '',
       whatNotToDo: latestResult.what_not_to_do || dominantDef?.whatNotToDo || [],
     };
-    generateDiagnosticPdf(diagResult, profile?.name);
+
+    // Fetch action plan tracking
+    let extras: PdfEvolutionData | undefined;
+    if (user) {
+      try {
+        const { data: tracking } = await supabase
+          .from('action_plan_tracking')
+          .select('completed, day_number')
+          .eq('user_id', user.id)
+          .eq('diagnostic_result_id', latestResult.id);
+        if (tracking && tracking.length > 0) {
+          const completed = tracking.filter(t => t.completed).length;
+          let streak = 0;
+          const sorted = [...tracking].sort((a, b) => a.day_number - b.day_number);
+          for (let i = sorted.length - 1; i >= 0; i--) {
+            if (sorted[i].completed) streak++;
+            else break;
+          }
+          extras = {
+            actionPlanStatus: {
+              total_days: tracking.length,
+              completed_days: completed,
+              execution_rate: Math.round((completed / tracking.length) * 100),
+              current_streak: streak,
+            },
+          };
+        }
+      } catch { /* ignore */ }
+    }
+
+    generateDiagnosticPdf(diagResult, profile?.name, extras);
   };
 
   if (loading) {
