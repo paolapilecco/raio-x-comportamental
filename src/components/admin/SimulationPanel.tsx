@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { PlayCircle, ChevronDown, ChevronRight, Sliders, CheckCircle2, AlertTriangle, Loader2, Eye, Sparkles, GitCompare, FileCode, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
