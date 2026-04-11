@@ -390,6 +390,48 @@ const Diagnostic = () => {
               if (w && !actions.includes(w)) actions.push(w);
             });
           }
+
+          // ── Fallback: guarantee minimum 3 actions from the result ──
+          const MIN_ACTIONS = 3;
+          if (actions.length < MIN_ACTIONS) {
+            const fallbacks: string[] = [];
+            // From direction
+            const dir = ai.acaoInicial || ai.proximoPasso || analysisResult.direction;
+            if (dir && typeof dir === 'string' && !actions.includes(dir)) fallbacks.push(dir);
+            // From corrigirPrimeiro / keyUnlockArea
+            const focus = ai.corrigirPrimeiro || ai.direcaoAjuste || analysisResult.keyUnlockArea;
+            if (focus && typeof focus === 'string' && !actions.includes(focus) && !fallbacks.includes(focus))
+              fallbacks.push(`Foque em: ${focus}`);
+            // From mentalCommand
+            if (ai.mentalCommand && !actions.includes(ai.mentalCommand) && !fallbacks.includes(ai.mentalCommand))
+              fallbacks.push(`Repita diariamente: "${ai.mentalCommand}"`);
+            // From blockingPoint
+            const bp = ai.blockingPoint || analysisResult.blockingPoint;
+            if (bp && typeof bp === 'string') {
+              const bpAction = `Identifique quando o ponto de travamento "${bp.length > 60 ? bp.slice(0, 57) + '...' : bp}" aparecer e pause antes de reagir`;
+              if (!actions.includes(bpAction) && !fallbacks.includes(bpAction)) fallbacks.push(bpAction);
+            }
+            // From triggers
+            if (Array.isArray(analysisResult.triggers)) {
+              analysisResult.triggers.slice(0, 2).forEach((t: string) => {
+                if (t) {
+                  const tAction = `Observe o gatilho "${t.length > 50 ? t.slice(0, 47) + '...' : t}" e registre quando acontecer`;
+                  if (!actions.includes(tAction) && !fallbacks.includes(tAction)) fallbacks.push(tAction);
+                }
+              });
+            }
+            // From corePain
+            if (analysisResult.corePain && typeof analysisResult.corePain === 'string') {
+              const cpAction = `Reflita sobre como "${analysisResult.corePain.length > 50 ? analysisResult.corePain.slice(0, 47) + '...' : analysisResult.corePain}" afeta suas decisões diárias`;
+              if (!actions.includes(cpAction) && !fallbacks.includes(cpAction)) fallbacks.push(cpAction);
+            }
+            // Fill up to MIN_ACTIONS
+            for (const fb of fallbacks) {
+              if (actions.length >= MIN_ACTIONS) break;
+              actions.push(fb);
+            }
+          }
+
           if (actions.length > 0) {
             await createActionPlanTracking(user.id, savedResult.id, actions);
             trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: actions.length } });
