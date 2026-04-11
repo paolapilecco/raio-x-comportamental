@@ -775,6 +775,48 @@ export type Database = {
           },
         ]
       }
+      retest_config: {
+        Row: {
+          created_at: string
+          dashboard_alert_enabled: boolean
+          email_body_cta: string
+          email_body_intro: string
+          email_heading: string
+          email_reminder_enabled: boolean
+          email_subject: string
+          id: string
+          retest_days_threshold: number
+          retest_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dashboard_alert_enabled?: boolean
+          email_body_cta?: string
+          email_body_intro?: string
+          email_heading?: string
+          email_reminder_enabled?: boolean
+          email_subject?: string
+          id?: string
+          retest_days_threshold?: number
+          retest_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dashboard_alert_enabled?: boolean
+          email_body_cta?: string
+          email_body_intro?: string
+          email_heading?: string
+          email_reminder_enabled?: boolean
+          email_subject?: string
+          id?: string
+          retest_days_threshold?: number
+          retest_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       retest_reminders: {
         Row: {
           created_at: string
