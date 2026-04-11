@@ -1381,6 +1381,7 @@ export type Database = {
     }
     Functions: {
       count_managed_persons: { Args: { _user_id: string }; Returns: number }
+      get_public_retest_config: { Args: never; Returns: Json }
       get_test_usage_count: {
         Args: {
           _month_year: string
