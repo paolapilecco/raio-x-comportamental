@@ -453,6 +453,13 @@ const Dashboard = () => {
           <RetestCycleCard retest={retestCycle} />
         )}
 
+        {/* Action Plan Tracking */}
+        {!actionPlan.loading && actionPlan.days.length > 0 && (
+          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.08 }}>
+            <ActionPlanCard plan={actionPlan} />
+          </motion.section>
+        )}
+
         {/* Super Admin tools */}
         {role === 'super_admin' && (
           <div className="flex items-center gap-3 flex-wrap">
