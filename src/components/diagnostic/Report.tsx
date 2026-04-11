@@ -556,7 +556,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
       </Section>
 
       {pararDeFazer?.length > 0 && (
-        <Section num={ai.futureConsequence ? 8 : 7} title={sectionTitles.pararDeFazer} delay={0.3} accent="destructive">
+        <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 9 : 8) : 7} title={sectionTitles.pararDeFazer} delay={0.3} accent="destructive">
           <div className="space-y-2">
             {pararDeFazer.map((item: string, i: number) => (
               <div key={i} className="flex items-start gap-3 py-1.5 px-3.5 rounded-lg bg-destructive/[0.03] border border-destructive/10">
