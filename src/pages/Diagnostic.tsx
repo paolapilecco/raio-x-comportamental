@@ -313,6 +313,9 @@ const Diagnostic = () => {
         .update({ completed_at: new Date().toISOString() })
         .eq('id', session.id);
 
+      // Track diagnostic_completed event
+      trackEvent({ userId: user.id, event: 'diagnostic_completed', moduleId: moduleId || undefined, diagnosticResultId: savedResult?.id });
+
       await updateCentralProfile(user.id);
 
       // Create action plan tracking (non-blocking)
