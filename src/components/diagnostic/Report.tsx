@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
+import { trackEvent } from '@/lib/trackEvent';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
@@ -100,6 +101,13 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
     fetchTemplate();
   }, [moduleSlug]);
+
+  // Track report_viewed event
+  useEffect(() => {
+    if (user) {
+      trackEvent({ userId: user.id, event: 'report_viewed', metadata: { moduleSlug } });
+    }
+  }, [user, moduleSlug]);
 
   if (moduleSlug === 'mapa-de-vida') {
     return <LifeMapReport result={result} onRestart={onRestart} />;
