@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3 } from 'lucide-react';
+import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,6 +33,7 @@ const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg
 // Determine visual style for a section based on key patterns
 function getSectionAccent(key: string): string | undefined {
   if (key.match(/diagnostico|chamaAtencao|dorCentral|corePain/i)) return 'destructive';
+  if (key.match(/futureConsequence|consequencia/i)) return 'destructive';
   if (key.match(/direcao|corrigir|ajuste/i)) return 'primary';
   if (key.match(/acao|proximo|imediata/i)) return 'green';
   if (key.match(/gatilho|parar|oQue/i)) return 'destructive';
