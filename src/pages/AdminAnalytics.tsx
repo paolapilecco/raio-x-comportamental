@@ -180,11 +180,12 @@ export default function AdminAnalytics() {
         </motion.div>
 
         {/* Rates */}
-        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="grid grid-cols-1 sm:grid-cols-5 gap-4">
           {[
             { label: 'Taxa de conversão Premium', value: `${conversionRate}%`, sub: `${metrics.checkoutCompleted}/${metrics.paywallViews}` },
             { label: 'Taxa de download PDF', value: `${pdfRate}%`, sub: `${metrics.pdfDownloads}/${metrics.diagnostics}` },
-            { label: 'Taxa de reavaliação', value: `${retestRate}%`, sub: `${metrics.retestCompleted}/${metrics.retestAlerts}` },
+            { label: 'Taxa de conclusão reteste', value: `${retestRate}%`, sub: `${metrics.retestCompleted}/${metrics.retestStarted}` },
+            { label: 'Conversão alerta → reteste', value: `${retestFromAlerts}%`, sub: `${metrics.retestStarted}/${metrics.retestAlerts}` },
             { label: 'Conclusão do plano 15d', value: `${planCompletionRate}%`, sub: 'dias concluídos / total' },
           ].map((r, i) => (
             <div key={i} className="bg-card rounded-xl border p-5">
