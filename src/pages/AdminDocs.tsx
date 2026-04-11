@@ -325,7 +325,7 @@ Trigger de banco garante atribuição automática no signup.
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = \`RaioX_Documentacao_Completa_\${new Date().toISOString().slice(0,10)}.md\`;
+    a.download = 'RaioX_Documentacao_Completa_' + new Date().toISOString().slice(0,10) + '.md';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
