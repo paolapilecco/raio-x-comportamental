@@ -47,6 +47,13 @@ const Premium = () => {
     fetchData();
   }, [user]);
 
+  // Track paywall view for non-premium users
+  useEffect(() => {
+    if (!loading && user && !canAccess) {
+      trackEvent({ userId: user.id, event: 'premium_paywall_viewed' });
+    }
+  }, [loading, user, canAccess]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
