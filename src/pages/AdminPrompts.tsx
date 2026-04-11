@@ -3,17 +3,18 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Sparkles, Loader2, FileText, HelpCircle, Settings, LayoutTemplate } from 'lucide-react';
+import { ArrowLeft, Brain, Sparkles, Loader2, Layers, HelpCircle, PlayCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 import PromptEditor from '@/components/admin/PromptEditor';
 import AIConfigPanel from '@/components/admin/AIConfigPanel';
-import SimulationPanel from '@/components/admin/SimulationPanel';
-import HistoryPanel from '@/components/admin/HistoryPanel';
 import QuestionsPanel from '@/components/admin/QuestionsPanel';
 import ReportTemplatePanel from '@/components/admin/ReportTemplatePanel';
 import OutputRulesPanel from '@/components/admin/OutputRulesPanel';
+import SimulationPanel from '@/components/admin/SimulationPanel';
+import HistoryPanel from '@/components/admin/HistoryPanel';
+import ModuleHealthScore from '@/components/admin/ModuleHealthScore';
 import {
   iconMap, PROMPT_SECTIONS,
   type TestPrompt, type TestModule, type GlobalAiConfig, type TestAiConfig,
@@ -33,7 +34,7 @@ const AdminPrompts = () => {
   const [editedTexts, setEditedTexts] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const [selectedModule, setSelectedModule] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<string>('prompts');
+  const [activeTab, setActiveTab] = useState<string>('pipeline');
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -62,7 +63,6 @@ const AdminPrompts = () => {
     (taiRes.data || []).forEach((c: TestAiConfig) => { tai[c.test_id] = { ...c }; });
     setEditedTestAi(tai);
 
-    // Count questions per test
     const counts: Record<string, number> = {};
     (qCountRes.data || []).forEach((q: any) => { counts[q.test_id] = (counts[q.test_id] || 0) + 1; });
     setQuestionCounts(counts);
@@ -169,14 +169,14 @@ const AdminPrompts = () => {
 
   const getModuleStats = (modId: string) => {
     const modPrompts = testPrompts.filter(p => p.test_id === modId);
-    const promptCount = PROMPT_SECTIONS.filter(s => modPrompts.find(p => p.prompt_type === s.type)).length;
+    const promptCount = PROMPT_SECTIONS.filter(s => modPrompts.find(p => p.prompt_type === s.type && p.is_active && p.content.trim().length > 50)).length;
     const qCount = questionCounts[modId] || 0;
     const hasAiConfig = !!testAiConfigs.find(c => c.test_id === modId);
     return { promptCount, qCount, hasAiConfig };
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground px-4 py-8 max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background text-foreground px-4 py-8 max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <motion.div {...fadeUp} className="space-y-2">
         <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-muted-foreground/60 hover:text-foreground/80 text-[0.8rem] transition-colors mb-4">
@@ -187,15 +187,15 @@ const AdminPrompts = () => {
             <Sparkles className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-             <h1 className="text-xl font-semibold tracking-tight">Central de Inteligência de Diagnósticos</h1>
-             <p className="text-[0.78rem] text-muted-foreground/60">Controle completo · Prompts, Perguntas e Configuração por diagnóstico</p>
+            <h1 className="text-xl font-semibold tracking-tight">Central de Inteligência</h1>
+            <p className="text-[0.78rem] text-muted-foreground/60">Pipeline completo · Prompts, Template, Config, Perguntas e Simulação</p>
           </div>
         </div>
       </motion.div>
 
-      {/* Test Selector */}
+      {/* Module Selector */}
       <motion.div {...fadeUp} transition={{ delay: 0.02 }}>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
           {modules.map((mod) => {
             const ModIcon = iconMap[mod.icon] || Brain;
             const stats = getModuleStats(mod.id);
@@ -204,16 +204,17 @@ const AdminPrompts = () => {
             return (
               <button
                 key={mod.id}
-                onClick={() => { setSelectedModule(mod.id); setActiveTab('prompts'); }}
-                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-xl border text-[0.8rem] font-medium transition-all ${
+                onClick={() => setSelectedModule(mod.id)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[0.78rem] font-medium transition-all ${
                   isSelected
                     ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
                     : 'bg-card/60 border-border/30 text-foreground/60 hover:bg-card/90'
                 }`}
               >
-                <ModIcon className="w-4 h-4" />
-                <span>{mod.name}</span>
-                <span className={`text-[0.6rem] px-1.5 py-0.5 rounded-full font-mono ${
+                <ModIcon className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{mod.name}</span>
+                <span className="sm:hidden">{mod.name.split(' ')[0]}</span>
+                <span className={`text-[0.55rem] px-1.5 py-0.5 rounded-full font-mono ${
                   completeness >= 80 ? 'bg-emerald-500/10 text-emerald-600' : completeness >= 40 ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-600'
                 }`}>{completeness}%</span>
               </button>
@@ -222,33 +223,41 @@ const AdminPrompts = () => {
         </div>
       </motion.div>
 
-      {/* Per-Test Tabs: Prompts / Perguntas / Configuração */}
+      {/* Module Health Score */}
+      {currentModule && (
+        <motion.div {...fadeUp} transition={{ delay: 0.03 }}>
+          <ModuleHealthScore
+            currentModule={currentModule}
+            testPrompts={testPrompts}
+            testAiConfigs={testAiConfigs}
+            questionCounts={questionCounts}
+          />
+        </motion.div>
+      )}
+
+      {/* Main 3-Tab Layout */}
       {currentModule && (
         <motion.div {...fadeUp} transition={{ delay: 0.04 }}>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full grid grid-cols-4 h-12 bg-muted/30 p-1 rounded-xl gap-1">
-              <TabsTrigger value="prompts" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
-                <FileText className="w-4 h-4" />
-                <span className="hidden sm:inline">Prompts</span>
-                <span className="text-[0.6rem] font-mono opacity-60">{getModuleStats(currentModule.id).promptCount}/7</span>
+            <TabsList className="w-full grid grid-cols-3 h-12 bg-muted/30 p-1 rounded-xl gap-1">
+              <TabsTrigger value="pipeline" className="flex items-center gap-2 text-[0.82rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
+                <Layers className="w-4 h-4" />
+                Pipeline
               </TabsTrigger>
-              <TabsTrigger value="questions" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
+              <TabsTrigger value="questions" className="flex items-center gap-2 text-[0.82rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
                 <HelpCircle className="w-4 h-4" />
-                <span className="hidden sm:inline">Perguntas</span>
+                Perguntas
                 <span className="text-[0.6rem] font-mono opacity-60">{questionCounts[currentModule.id] || 0}</span>
               </TabsTrigger>
-              <TabsTrigger value="template" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
-                <LayoutTemplate className="w-4 h-4" />
-                <span className="hidden sm:inline">Template</span>
-              </TabsTrigger>
-              <TabsTrigger value="config" className="flex items-center gap-2 text-[0.8rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
-                <Settings className="w-4 h-4" />
-                <span className="hidden sm:inline">Config</span>
+              <TabsTrigger value="validate" className="flex items-center gap-2 text-[0.82rem] font-semibold data-[state=active]:shadow-sm rounded-lg">
+                <PlayCircle className="w-4 h-4" />
+                Testar
               </TabsTrigger>
             </TabsList>
 
-            {/* TAB: Prompts */}
-            <TabsContent value="prompts" className="mt-5 space-y-4">
+            {/* ═══ TAB 1: PIPELINE ═══ */}
+            <TabsContent value="pipeline" className="mt-5 space-y-8">
+              {/* Prompts */}
               <PromptEditor
                 currentModule={currentModule}
                 testPrompts={testPrompts}
@@ -259,60 +268,57 @@ const AdminPrompts = () => {
                 onTogglePrompt={handleToggleTestPrompt}
                 onCreatePrompt={handleCreatePrompt}
               />
+
+              {/* Template + Output Rules */}
+              <div className="border-t border-border/20 pt-6 space-y-8">
+                <ReportTemplatePanel currentModule={currentModule} />
+                <div className="border-t border-border/10 pt-6">
+                  <OutputRulesPanel currentModule={currentModule} />
+                </div>
+              </div>
+
+              {/* AI Config */}
+              <div className="border-t border-border/20 pt-6">
+                <AIConfigPanel
+                  globalAiConfig={globalAiConfig}
+                  editedGlobalAi={editedGlobalAi}
+                  setEditedGlobalAi={setEditedGlobalAi}
+                  onSaveGlobalAi={handleSaveGlobalAi}
+                  currentModule={currentModule}
+                  editedTai={editedTai}
+                  onUpdateTestAiField={(field, value) => updateTestAiField(selectedModule, field, value)}
+                  onSaveTestAi={() => handleSaveTestAi(selectedModule)}
+                  saving={saving}
+                  selectedModule={selectedModule}
+                  expandedGlobal={expandedSections['ai_config'] ?? false}
+                  onToggleGlobal={() => toggleSection('ai_config')}
+                />
+              </div>
             </TabsContent>
 
-            {/* TAB: Perguntas */}
+            {/* ═══ TAB 2: PERGUNTAS ═══ */}
             <TabsContent value="questions" className="mt-5">
               <QuestionsPanel currentModule={currentModule} />
             </TabsContent>
 
-            {/* TAB: Template do Relatório */}
-            <TabsContent value="template" className="mt-5 space-y-8">
-              <ReportTemplatePanel currentModule={currentModule} />
-              <div className="border-t border-border/20 pt-6">
-                <OutputRulesPanel currentModule={currentModule} />
-              </div>
-            </TabsContent>
-
-            {/* TAB: Configuração */}
-            <TabsContent value="config" className="mt-5">
-              <AIConfigPanel
-                globalAiConfig={globalAiConfig}
-                editedGlobalAi={editedGlobalAi}
-                setEditedGlobalAi={setEditedGlobalAi}
-                onSaveGlobalAi={handleSaveGlobalAi}
-                currentModule={currentModule}
-                editedTai={editedTai}
-                onUpdateTestAiField={(field, value) => updateTestAiField(selectedModule, field, value)}
-                onSaveTestAi={() => handleSaveTestAi(selectedModule)}
-                saving={saving}
-                selectedModule={selectedModule}
-                expandedGlobal={expandedSections['ai_config'] ?? false}
-                onToggleGlobal={() => toggleSection('ai_config')}
+            {/* ═══ TAB 3: TESTAR (Simulation + History) ═══ */}
+            <TabsContent value="validate" className="mt-5 space-y-6">
+              <SimulationPanel
+                modules={modules}
+                testPrompts={testPrompts}
+                expanded={true}
+                onToggle={() => {}}
+                defaultTestId={currentModule.id}
+              />
+              <HistoryPanel
+                modules={modules}
+                expanded={expandedSections['history'] ?? false}
+                onToggle={() => toggleSection('history')}
               />
             </TabsContent>
           </Tabs>
         </motion.div>
       )}
-
-      {/* Simulation */}
-      <motion.div {...fadeUp} transition={{ delay: 0.08 }}>
-        <SimulationPanel
-          modules={modules}
-          testPrompts={testPrompts}
-          expanded={expandedSections['preview'] ?? false}
-          onToggle={() => toggleSection('preview')}
-        />
-      </motion.div>
-
-      {/* History */}
-      <motion.div {...fadeUp} transition={{ delay: 0.12 }}>
-        <HistoryPanel
-          modules={modules}
-          expanded={expandedSections['history'] ?? false}
-          onToggle={() => toggleSection('history')}
-        />
-      </motion.div>
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { PlayCircle, ChevronDown, ChevronRight, Sliders, CheckCircle2, AlertTriangle, Loader2, Eye, Sparkles, GitCompare, FileCode, AlertCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -9,6 +9,7 @@ interface SimulationPanelProps {
   testPrompts: TestPrompt[];
   expanded: boolean;
   onToggle: () => void;
+  defaultTestId?: string;
 }
 
 /** Generate dynamic presets from real axis names */
@@ -52,8 +53,8 @@ const generateDynamicPresets = (axes: string[]) => {
   return presets;
 };
 
-const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: SimulationPanelProps) => {
-  const [previewTestId, setPreviewTestId] = useState('');
+const SimulationPanel = ({ modules, testPrompts, expanded, onToggle, defaultTestId }: SimulationPanelProps) => {
+  const [previewTestId, setPreviewTestId] = useState(defaultTestId || '');
   const [previewScores, setPreviewScores] = useState<Record<string, number>>({});
   const [previewRunning, setPreviewRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<any>(null);
@@ -64,6 +65,14 @@ const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: Simulatio
   const [dynamicPresets, setDynamicPresets] = useState<{ label: string; icon: string; description: string; scores: Record<string, number> }[]>([]);
   const [loadedAxes, setLoadedAxes] = useState<string[]>([]);
   const [showPromptPreview, setShowPromptPreview] = useState(false);
+
+  // Auto-load axes when defaultTestId is set
+  useEffect(() => {
+    if (defaultTestId && defaultTestId !== previewTestId) {
+      setPreviewTestId(defaultTestId);
+      loadAxes(defaultTestId);
+    }
+  }, [defaultTestId]);
 
   // Build the final system prompt preview (mirrors edge function logic)
   const assembledPrompt = useMemo(() => {
