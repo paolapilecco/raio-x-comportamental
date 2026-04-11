@@ -654,6 +654,20 @@ const Diagnostic = () => {
     setStep('analyzing');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
+    // Track retest_started if this is a retest
+    if (isRetest && user) {
+      trackEvent({
+        userId: user.id,
+        event: 'retest_started',
+        moduleId: moduleId || undefined,
+        metadata: {
+          origin: retestOrigin,
+          previous_session_id: previousSessionId,
+          previous_diagnostic_result_id: previousResultId,
+        },
+      });
+    }
+
     // Try AI-powered analysis first, fall back to local
     let analysisResult = await runAIAnalysis(answers);
     
