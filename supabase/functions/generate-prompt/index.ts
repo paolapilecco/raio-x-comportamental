@@ -13,6 +13,7 @@ const SECTION_PURPOSES: Record<string, string> = {
   core_pain: "Identificar a dor central (medo/ferida emocional) que sustenta todos os padrões — não sintomas, mas a causa.",
   triggers: "Mapear gatilhos situacionais concretos, armadilhas mentais (pensamentos automáticos) e o ciclo de autossabotagem.",
   direction: "Sugerir direção prática com ação imediata, área-chave de destravamento e ponto de bloqueio.",
+  future_consequence: "Descrever o que acontece se o padrão comportamental atual continuar ativo: o que a pessoa tende a repetir, o que tende a perder e como o padrão mantém estagnação. Linguagem direta, sem motivacional.",
   restrictions: "Definir regras negativas obrigatórias — o que a IA NÃO deve fazer ao gerar os resultados.",
 };
 
