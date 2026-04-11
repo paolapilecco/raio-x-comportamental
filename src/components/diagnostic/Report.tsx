@@ -641,6 +641,130 @@ function getLegacySectionTitles(slug?: string): SectionTitles {
   return base;
 }
 
+/* ── Evolution Comparison Section ── */
+function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: number }) {
+  const evo = ai.evolutionComparison;
+  if (!evo) return null;
+
+  const improved = evo.improved_axes || [];
+  const worsened = evo.worsened_axes || [];
+  const unchanged = evo.unchanged_axes || [];
+  const hasData = improved.length > 0 || worsened.length > 0 || unchanged.length > 0;
+  if (!hasData) return null;
+
+  const scoreDelta = evo.current_score - evo.previous_score;
+  const scoreDirection = scoreDelta < 0 ? 'melhorou' : scoreDelta > 0 ? 'piorou' : 'estável';
+
+  return (
+    <motion.section {...fade} transition={{ delay, duration: 0.4 }}>
+      <div className="flex items-center gap-3.5 mb-5">
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-primary/10 text-primary">
+          <ArrowUpDown className="w-4 h-4" />
+        </span>
+        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">Comparação com diagnóstico anterior</h2>
+      </div>
+      <div className="pl-[42px] space-y-5">
+        {/* Score comparison bar */}
+        <div className="rounded-2xl border border-border/40 bg-card px-5 py-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-center flex-1">
+              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-1">Anterior</p>
+              <p className="text-2xl font-bold text-muted-foreground">{evo.previous_score}%</p>
+            </div>
+            <div className="px-4">
+              <span className={`text-lg font-bold ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                →
+              </span>
+            </div>
+            <div className="text-center flex-1">
+              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-1">Atual</p>
+              <p className={`text-2xl font-bold ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-foreground'}`}>{evo.current_score}%</p>
+            </div>
+          </div>
+          <div className="text-center">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+              scoreDirection === 'melhorou' ? 'bg-green-500/10 text-green-600' :
+              scoreDirection === 'piorou' ? 'bg-destructive/10 text-destructive' :
+              'bg-secondary text-muted-foreground'
+            }`}>
+              {scoreDirection === 'melhorou' && <TrendingDown className="w-3 h-3" />}
+              {scoreDirection === 'piorou' && <TrendingUp className="w-3 h-3" />}
+              {scoreDirection === 'estável' && <Minus className="w-3 h-3" />}
+              Score {scoreDirection} ({scoreDelta > 0 ? '+' : ''}{scoreDelta}%)
+            </span>
+          </div>
+        </div>
+
+        {/* Improved axes */}
+        {improved.length > 0 && (
+          <div>
+            <p className="text-[9px] text-green-600/70 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+              <TrendingDown className="w-3 h-3" /> Eixos que melhoraram
+            </p>
+            <div className="space-y-2">
+              {improved.map((axis: any) => (
+                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-green-500/20 bg-green-500/[0.04] px-4 py-3">
+                  <span className="text-sm font-medium text-foreground">{axis.label}</span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{axis.previous}%</span>
+                    <span className="text-green-600">→ {axis.current}%</span>
+                    <span className="text-green-600 font-semibold">({axis.delta}%)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Worsened axes */}
+        {worsened.length > 0 && (
+          <div>
+            <p className="text-[9px] text-destructive/70 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+              <TrendingUp className="w-3 h-3" /> Eixos que pioraram
+            </p>
+            <div className="space-y-2">
+              {worsened.map((axis: any) => (
+                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/[0.04] px-4 py-3">
+                  <span className="text-sm font-medium text-foreground">{axis.label}</span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{axis.previous}%</span>
+                    <span className="text-destructive">→ {axis.current}%</span>
+                    <span className="text-destructive font-semibold">(+{axis.delta}%)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Unchanged axes */}
+        {unchanged.length > 0 && (
+          <div>
+            <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+              <Minus className="w-3 h-3" /> Sem alteração significativa
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {unchanged.map((axis: any) => (
+                <span key={axis.key} className="text-xs px-3 py-1.5 rounded-lg border border-border/40 bg-secondary/50 text-muted-foreground font-medium">
+                  {axis.label}: {axis.value}%
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI summary text */}
+        {evo.summary_text && (
+          <div className="rounded-2xl border border-border/30 bg-card px-5 py-4 shadow-sm">
+            <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-2">Análise da evolução</p>
+            <p className="text-sm text-muted-foreground leading-[1.8]">{evo.summary_text}</p>
+          </div>
+        )}
+      </div>
+    </motion.section>
+  );
+}
+
 /* ── Sub-components ── */
 
 function Section({ num, title, delay = 0, accent, children }: { num: number; title: string; delay?: number; accent?: string; children: React.ReactNode }) {
