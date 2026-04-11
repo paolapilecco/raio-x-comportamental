@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, FileText, Shield, Database, Cpu, CreditCard, Users, Layers, Zap, ChevronDown, ChevronRight, Search, Smartphone, Gamepad2, Brain, Activity, Heart, Eye, DollarSign, EyeOff, Compass, Stethoscope } from 'lucide-react';
+import { ArrowLeft, BookOpen, FileText, Shield, Database, Cpu, CreditCard, Layers, Zap, ChevronDown, ChevronRight, Search, Smartphone, Gamepad2, Brain, Activity, Stethoscope } from 'lucide-react';
 import { AppLayout } from '@/components/AppLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -47,10 +47,6 @@ function InfoTable({ headers, rows }: { headers: string[]; rows: string[][] }) {
       </table>
     </div>
   );
-}
-
-function Badge({ children, color = 'primary' }: { children: React.ReactNode; color?: string }) {
-  return <span className={`text-[0.65rem] px-2 py-0.5 rounded-full font-medium bg-${color}/10 text-${color}`}>{children}</span>;
 }
 
 /* ─────── Page ─────── */
