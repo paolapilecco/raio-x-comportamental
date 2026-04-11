@@ -12,6 +12,7 @@ import { updateCentralProfile } from '@/lib/centralProfile';
 import { assembleReport } from '@/lib/reportAssembler';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { createActionPlanTracking } from '@/hooks/useActionPlan';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { UserCircle, ChevronRight } from 'lucide-react';
