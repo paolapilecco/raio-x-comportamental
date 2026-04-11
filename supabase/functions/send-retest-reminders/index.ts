@@ -174,12 +174,14 @@ serve(async (req) => {
       } else {
         sentCount++;
         // Track retest_email_sent event
-        await supabase.from("analytics_events").insert({
+        const eventKey = `res::${session.user_id}::${session.test_module_id || ''}::${session.id}`;
+        await supabase.from("analytics_events").upsert({
           user_id: session.user_id,
           event_name: "retest_email_sent",
           module_id: session.test_module_id,
           metadata: { daysSince, dedupKey },
-        }).then(() => {});
+          event_key: eventKey,
+        }, { onConflict: 'event_key', ignoreDuplicates: true }).then(() => {});
       }
     }
 
