@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown } from 'lucide-react';
+import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown } from 'lucide-react';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
@@ -344,6 +344,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 );
               })}
 
+              {/* Evolution comparison (if available) */}
+              <EvolutionComparisonSection ai={ai} delay={0.04 + templateSections.length * 0.04} />
+
               {/* Blind spot (always show if available) */}
               {result.interpretation?.blindSpot?.realProblem && (
                 <motion.div {...fade} transition={{ delay: 0.07 }}>
@@ -537,7 +540,10 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <Section num={ai.futureConsequence ? 7 : 6} title={sectionTitles.corrigirPrimeiro} delay={0.26} accent="primary">
+      {/* Evolution comparison — after futureConsequence, before action */}
+      <EvolutionComparisonSection ai={ai} delay={0.255} />
+
+      <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 8 : 7) : 6} title={sectionTitles.corrigirPrimeiro} delay={0.26} accent="primary">
         <CardBlock variant="primary">
           <div className="flex items-start gap-3">
             <ArrowRight className="w-4 h-4 text-primary/60 mt-0.5 shrink-0" />
@@ -550,7 +556,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
       </Section>
 
       {pararDeFazer?.length > 0 && (
-        <Section num={ai.futureConsequence ? 8 : 7} title={sectionTitles.pararDeFazer} delay={0.3} accent="destructive">
+        <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 9 : 8) : 7} title={sectionTitles.pararDeFazer} delay={0.3} accent="destructive">
           <div className="space-y-2">
             {pararDeFazer.map((item: string, i: number) => (
               <div key={i} className="flex items-start gap-3 py-1.5 px-3.5 rounded-lg bg-destructive/[0.03] border border-destructive/10">
@@ -562,7 +568,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <Section num={ai.futureConsequence ? 9 : 8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
+      <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 10 : 9) : 8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
         {ai.mentalCommand && (
           <div className="mb-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
             <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold mb-2">Repita antes de agir</p>
@@ -633,6 +639,130 @@ function getLegacySectionTitles(slug?: string): SectionTitles {
   if (slug.includes('proposito') || slug.includes('sentido')) return { ...base, chamaAtencao: 'Seu nível de conexão', padraoRepetido: 'Seu tipo de desconexão', comoAparece: 'Sinais de piloto automático', gatilhos: 'O que ativa a sensação de vazio', comoAtrapalha: 'Onde a falta de rumo aparece', corrigirPrimeiro: 'O que mudar na busca de propósito', acaoInicial: 'Reflexão para esta semana' };
   if (slug === 'padrao-comportamental') return { ...base, chamaAtencao: 'Seu padrão dominante', padraoRepetido: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa', comoAtrapalha: 'O que esse padrão causa', corrigirPrimeiro: 'O comportamento a mudar primeiro', acaoInicial: 'Faça isso nos próximos 3 dias' };
   return base;
+}
+
+/* ── Evolution Comparison Section ── */
+function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: number }) {
+  const evo = ai.evolutionComparison;
+  if (!evo) return null;
+
+  const improved = evo.improved_axes || [];
+  const worsened = evo.worsened_axes || [];
+  const unchanged = evo.unchanged_axes || [];
+  const hasData = improved.length > 0 || worsened.length > 0 || unchanged.length > 0;
+  if (!hasData) return null;
+
+  const scoreDelta = evo.current_score - evo.previous_score;
+  const scoreDirection = scoreDelta < 0 ? 'melhorou' : scoreDelta > 0 ? 'piorou' : 'estável';
+
+  return (
+    <motion.section {...fade} transition={{ delay, duration: 0.4 }}>
+      <div className="flex items-center gap-3.5 mb-5">
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-primary/10 text-primary">
+          <ArrowUpDown className="w-4 h-4" />
+        </span>
+        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">Comparação com diagnóstico anterior</h2>
+      </div>
+      <div className="pl-[42px] space-y-5">
+        {/* Score comparison bar */}
+        <div className="rounded-2xl border border-border/40 bg-card px-5 py-5 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="text-center flex-1">
+              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-1">Anterior</p>
+              <p className="text-2xl font-bold text-muted-foreground">{evo.previous_score}%</p>
+            </div>
+            <div className="px-4">
+              <span className={`text-lg font-bold ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
+                →
+              </span>
+            </div>
+            <div className="text-center flex-1">
+              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-1">Atual</p>
+              <p className={`text-2xl font-bold ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-foreground'}`}>{evo.current_score}%</p>
+            </div>
+          </div>
+          <div className="text-center">
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
+              scoreDirection === 'melhorou' ? 'bg-green-500/10 text-green-600' :
+              scoreDirection === 'piorou' ? 'bg-destructive/10 text-destructive' :
+              'bg-secondary text-muted-foreground'
+            }`}>
+              {scoreDirection === 'melhorou' && <TrendingDown className="w-3 h-3" />}
+              {scoreDirection === 'piorou' && <TrendingUp className="w-3 h-3" />}
+              {scoreDirection === 'estável' && <Minus className="w-3 h-3" />}
+              Score {scoreDirection} ({scoreDelta > 0 ? '+' : ''}{scoreDelta}%)
+            </span>
+          </div>
+        </div>
+
+        {/* Improved axes */}
+        {improved.length > 0 && (
+          <div>
+            <p className="text-[9px] text-green-600/70 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+              <TrendingDown className="w-3 h-3" /> Eixos que melhoraram
+            </p>
+            <div className="space-y-2">
+              {improved.map((axis: any) => (
+                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-green-500/20 bg-green-500/[0.04] px-4 py-3">
+                  <span className="text-sm font-medium text-foreground">{axis.label}</span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{axis.previous}%</span>
+                    <span className="text-green-600">→ {axis.current}%</span>
+                    <span className="text-green-600 font-semibold">({axis.delta}%)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Worsened axes */}
+        {worsened.length > 0 && (
+          <div>
+            <p className="text-[9px] text-destructive/70 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+              <TrendingUp className="w-3 h-3" /> Eixos que pioraram
+            </p>
+            <div className="space-y-2">
+              {worsened.map((axis: any) => (
+                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/[0.04] px-4 py-3">
+                  <span className="text-sm font-medium text-foreground">{axis.label}</span>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">{axis.previous}%</span>
+                    <span className="text-destructive">→ {axis.current}%</span>
+                    <span className="text-destructive font-semibold">(+{axis.delta}%)</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Unchanged axes */}
+        {unchanged.length > 0 && (
+          <div>
+            <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+              <Minus className="w-3 h-3" /> Sem alteração significativa
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {unchanged.map((axis: any) => (
+                <span key={axis.key} className="text-xs px-3 py-1.5 rounded-lg border border-border/40 bg-secondary/50 text-muted-foreground font-medium">
+                  {axis.label}: {axis.value}%
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* AI summary text */}
+        {evo.summary_text && (
+          <div className="rounded-2xl border border-border/30 bg-card px-5 py-4 shadow-sm">
+            <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-2">Análise da evolução</p>
+            <p className="text-sm text-muted-foreground leading-[1.8]">{evo.summary_text}</p>
+          </div>
+        )}
+      </div>
+    </motion.section>
+  );
 }
 
 /* ── Sub-components ── */

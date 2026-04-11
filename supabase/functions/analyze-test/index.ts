@@ -65,6 +65,16 @@ interface RequestBody {
   answers?: StructuredAnswer[];
 }
 
+interface EvolutionComparison {
+  improved_axes: { key: string; label: string; previous: number; current: number; delta: number }[];
+  worsened_axes: { key: string; label: string; previous: number; current: number; delta: number }[];
+  unchanged_axes: { key: string; label: string; value: number }[];
+  previous_score: number;
+  current_score: number;
+  previous_date: string;
+  summary_text: string;
+}
+
 // ═══════════════════════════════════════════════════════════
 // ▌ SECTION 2: Helpers
 // ═══════════════════════════════════════════════════════════
@@ -163,6 +173,72 @@ function buildEvidencesSection(answers: StructuredAnswer[]): string {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ▌ SECTION 3.5: Evolution Comparison Builder
+// ═══════════════════════════════════════════════════════════
+
+function buildEvolutionComparison(
+  currentScores: ScoreEntry[],
+  previousScores: ScoreEntry[],
+  previousDate: string
+): Omit<EvolutionComparison, "summary_text"> {
+  const prevMap = new Map(previousScores.map((s) => [s.key, s]));
+  const improved: EvolutionComparison["improved_axes"] = [];
+  const worsened: EvolutionComparison["worsened_axes"] = [];
+  const unchanged: EvolutionComparison["unchanged_axes"] = [];
+
+  const THRESHOLD = 3; // minimum % change to count as improved/worsened
+
+  for (const curr of currentScores) {
+    const prev = prevMap.get(curr.key);
+    if (!prev) continue;
+    const delta = curr.percentage - prev.percentage;
+    if (delta <= -THRESHOLD) {
+      // Lower score = improved (less of a problem)
+      improved.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
+    } else if (delta >= THRESHOLD) {
+      worsened.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
+    } else {
+      unchanged.push({ key: curr.key, label: curr.label, value: curr.percentage });
+    }
+  }
+
+  const prevAvg = previousScores.length > 0 ? Math.round(previousScores.reduce((a, b) => a + b.percentage, 0) / previousScores.length) : 0;
+  const currAvg = currentScores.length > 0 ? Math.round(currentScores.reduce((a, b) => a + b.percentage, 0) / currentScores.length) : 0;
+
+  return {
+    improved_axes: improved,
+    worsened_axes: worsened,
+    unchanged_axes: unchanged,
+    previous_score: prevAvg,
+    current_score: currAvg,
+    previous_date: previousDate,
+  };
+}
+
+function buildEvolutionPromptSection(comparison: Omit<EvolutionComparison, "summary_text">): string {
+  const lines: string[] = ["--- COMPARAÇÃO COM DIAGNÓSTICO ANTERIOR ---"];
+  lines.push(`Score médio anterior: ${comparison.previous_score}% | Score médio atual: ${comparison.current_score}%`);
+  lines.push(`Data do diagnóstico anterior: ${comparison.previous_date}`);
+
+  if (comparison.improved_axes.length > 0) {
+    lines.push(`\nEIXOS QUE MELHORARAM (score diminuiu):`);
+    comparison.improved_axes.forEach((a) => lines.push(`- ${a.label}: ${a.previous}% → ${a.current}% (${a.delta}%)`));
+  }
+  if (comparison.worsened_axes.length > 0) {
+    lines.push(`\nEIXOS QUE PIORARAM (score aumentou):`);
+    comparison.worsened_axes.forEach((a) => lines.push(`- ${a.label}: ${a.previous}% → ${a.current}% (+${a.delta}%)`));
+  }
+  if (comparison.unchanged_axes.length > 0) {
+    lines.push(`\nEIXOS SEM ALTERAÇÃO SIGNIFICATIVA:`);
+    comparison.unchanged_axes.forEach((a) => lines.push(`- ${a.label}: ${a.value}%`));
+  }
+
+  lines.push(`\nGere o campo "evolutionSummary" com base nesses dados. Direto, sem motivacional, mostrando claramente o que melhorou, piorou e permanece igual.`);
+
+  return lines.join("\n");
+}
+
+// ═══════════════════════════════════════════════════════════
 // ▌ SECTION 4: Prompt Builders
 // ═══════════════════════════════════════════════════════════
 
@@ -195,6 +271,7 @@ Retorne APENAS este JSON, sem markdown, sem texto adicional:
   "blindSpot": "ponto cego em 1 frase",
   "mentalCommand": "comando mental em 1 frase curta",
   "futureConsequence": "o que acontece se esse padrão continuar nos próximos meses — em 3 frases: (1) o que a pessoa tende a repetir, (2) o que ela tende a perder, (3) como esse padrão mantém estagnação. Direto, prático, sem motivacional, sem exagero dramático, sem psicologuês.",
+  "evolutionSummary": "resumo da comparação com diagnóstico anterior (se dados fornecidos). 3 frases: o que melhorou, o que piorou, o que continua igual. Direto, sem motivacional. Se não houver dados de comparação, retorne string vazia.",
   "summary": "resumo geral em 2 frases",
   "mechanism": "mecanismo central em 2 frases",
   "contradiction": "contradição interna em 1 frase",
@@ -219,6 +296,7 @@ function buildUserPrompt(
   answers: StructuredAnswer[],
   prompts: PromptRecord[],
   template: ReportTemplate | null,
+  evolutionSection?: string,
 ): string {
   const promptMap: Record<string, string> = {};
   prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
@@ -235,6 +313,11 @@ function buildUserPrompt(
   sections.push(buildSecondarySection(secondary));
   sections.push(buildConflictsSection(sortedScores));
   sections.push(buildEvidencesSection(answers));
+
+  // 2.5. Evolution comparison (if exists)
+  if (evolutionSection) {
+    sections.push(evolutionSection);
+  }
 
   // 3. Admin prompts — injected in order
   const promptTypes: [string, string][] = [
@@ -289,7 +372,7 @@ function normalizeResult(result: Record<string, unknown>, dominant: ScoreEntry, 
     "profileName", "combinedTitle", "perfilComportamental", "diagnosis",
     "chamaAtencao", "padraoRepetido", "corePain", "comoAparece",
     "corrigirPrimeiro", "acaoInicial", "blindSpot", "mentalCommand",
-    "futureConsequence",
+    "futureConsequence", "evolutionSummary",
     "summary", "mechanism", "contradiction", "impact", "direction",
     "keyUnlockArea", "criticalDiagnosis", "mentalState", "blockingPoint",
     "focoMudanca",
@@ -356,11 +439,20 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // ── Fetch config (parallel) ──
-    const [promptsRes, templateRes, profileRes] = await Promise.all([
+    // ── Fetch config + previous diagnostic (parallel) ──
+    const [promptsRes, templateRes, profileRes, previousRes] = await Promise.all([
       adminClient.from("test_prompts").select("prompt_type, title, content").eq("test_id", test_module_id).eq("is_active", true),
       adminClient.from("report_templates").select("sections, output_rules").eq("test_id", test_module_id).maybeSingle(),
       userClient.from("profiles").select("name, age").eq("user_id", user.id).maybeSingle(),
+      // Fetch previous completed diagnostic for same user + module
+      adminClient
+        .from("diagnostic_sessions")
+        .select("id, completed_at, diagnostic_results(all_scores)")
+        .eq("user_id", user.id)
+        .eq("test_module_id", test_module_id)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(2), // Get 2 to skip the current one if it exists
     ]);
 
     if (promptsRes.error) {
@@ -388,6 +480,35 @@ serve(async (req) => {
     const dominant = sortedScores[0];
     const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
 
+    // ── Build evolution comparison (if previous exists) ──
+    let evolutionData: Omit<EvolutionComparison, "summary_text"> | null = null;
+    let evolutionPromptSection: string | undefined;
+
+    try {
+      if (previousRes.data && previousRes.data.length > 0) {
+        // Find the most recent completed session that has results with scores
+        const prevSession = previousRes.data.find((s: any) => {
+          const results = s.diagnostic_results;
+          if (Array.isArray(results) && results.length > 0) {
+            return results[0]?.all_scores && Array.isArray(results[0].all_scores) && results[0].all_scores.length > 0;
+          }
+          return false;
+        });
+
+        if (prevSession) {
+          const prevResults = Array.isArray(prevSession.diagnostic_results) ? prevSession.diagnostic_results[0] : prevSession.diagnostic_results;
+          const prevScores: ScoreEntry[] = (prevResults as any)?.all_scores || [];
+          if (prevScores.length > 0) {
+            evolutionData = buildEvolutionComparison(sortedScores, prevScores, prevSession.completed_at || "");
+            evolutionPromptSection = buildEvolutionPromptSection(evolutionData);
+            console.log(`[analyze-test] Evolution comparison: improved=${evolutionData.improved_axes.length}, worsened=${evolutionData.worsened_axes.length}, unchanged=${evolutionData.unchanged_axes.length}`);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("[analyze-test] Evolution comparison error (non-blocking):", e);
+    }
+
     // ── Build prompts ──
     const profile = profileRes.data;
     const userContext = profile
@@ -402,6 +523,7 @@ serve(async (req) => {
       structuredAnswers || [],
       promptsRes.data as PromptRecord[],
       reportTemplate,
+      evolutionPromptSection,
     );
 
     // ── Fetch AI config ──
@@ -497,6 +619,18 @@ serve(async (req) => {
 
     // ── Normalize (no hardcoded fallback) ──
     const normalized = normalizeResult(result, dominant, sortedScores);
+
+    // ── Attach evolution comparison data (deterministic + AI summary) ──
+    if (evolutionData) {
+      const summaryText = typeof normalized.evolutionSummary === "string" && normalized.evolutionSummary.trim()
+        ? normalized.evolutionSummary as string
+        : "";
+
+      normalized.evolutionComparison = {
+        ...evolutionData,
+        summary_text: summaryText,
+      };
+    }
 
     return jsonResponse({ analysis: normalized });
   } catch (e) {
