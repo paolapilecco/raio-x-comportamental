@@ -428,7 +428,7 @@ const Diagnostic = () => {
       console.error('Error saving diagnostic:', err);
       toast.error('Erro ao salvar diagnóstico, mas seu resultado está disponível.');
     }
-  }, [user, moduleId, selectedPersonId]);
+  }, [user, moduleId, selectedPersonId, isRetest, retestOrigin, previousSessionId, previousResultId]);
 
   /**
    * Local fallback analysis (hardcoded patterns).
@@ -684,7 +684,7 @@ const Diagnostic = () => {
     setStep('report');
     window.scrollTo({ top: 0, behavior: 'smooth' });
     saveToDatabase(answers, analysisResult);
-  }, [saveToDatabase, runAIAnalysis, runLocalAnalysis]);
+  }, [saveToDatabase, runAIAnalysis, runLocalAnalysis, isRetest, user, moduleId, retestOrigin, previousSessionId, previousResultId]);
 
   const handleGoToDashboard = useCallback(() => {
     navigate('/dashboard');
