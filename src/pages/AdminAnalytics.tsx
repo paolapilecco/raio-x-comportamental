@@ -15,6 +15,7 @@ interface FunnelMetrics {
   actionPlanDaysCompleted: number;
   retestAlerts: number;
   retestEmails: number;
+  retestStarted: number;
   retestCompleted: number;
   paywallViews: number;
   checkoutStarted: number;
