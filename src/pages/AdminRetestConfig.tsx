@@ -18,17 +18,7 @@ interface RetestConfig {
   email_body_cta: string;
 }
 
-const _DEFAULTS: Omit<RetestConfig, 'id'> = {
-  retest_enabled: true,
-  retest_days_threshold: 15,
-  dashboard_alert_enabled: true,
-  email_reminder_enabled: true,
-  email_subject: 'Sua análise já está desatualizada',
-  email_heading: 'Seu padrão continua ativo.',
-  email_body_intro: 'Seu último resultado ainda define seu comportamento atual. Nada indica que isso mudou.',
-  email_body_cta: 'Refaça sua análise e veja se você evoluiu ou só adiou.',
-};
-
+// Defaults are defined in the database defaults
 export default function AdminRetestConfig() {
   const { isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
