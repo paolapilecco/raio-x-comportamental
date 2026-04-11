@@ -102,14 +102,24 @@ const Diagnostic = () => {
   const [dbQuestions, setDbQuestions] = useState<DbQuestion[]>([]);
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null);
+  const [previousSessionId, setPreviousSessionId] = useState<string | null>(null);
+  const [previousResultId, setPreviousResultId] = useState<string | null>(null);
+  const [isRetest, setIsRetest] = useState(false);
   const { user, isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
+  const [searchParams] = useSearchParams();
 
   const slug = moduleSlug || BEHAVIORAL_SLUG;
   const isFreeTest = slug === BEHAVIORAL_SLUG;
   const canAccessTest = isSuperAdmin || isPremium || isFreeTest;
 
+  // Determine retest origin from URL param
+  const retestOrigin: RetestOrigin = (() => {
+    const origin = searchParams.get('origin');
+    if (origin === 'dashboard_alert' || origin === 'email_reminder') return origin;
+    return isRetest ? 'manual_return' : 'unknown';
+  })();
   useEffect(() => {
     if (!canAccessTest) {
       toast.error('Este teste requer um plano pago');
