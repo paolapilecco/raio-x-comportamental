@@ -9,7 +9,7 @@ import { ArrowLeft, Calendar, Phone, FileText, Download, AlertTriangle, Activity
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { usePersonGamification } from '@/hooks/usePersonGamification';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
-import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { generateEvolutionPdf } from '@/lib/generateEvolutionPdf';
 import type { DiagnosticResult, IntensityLevel, PatternKey, PatternDefinition } from '@/types/diagnostic';

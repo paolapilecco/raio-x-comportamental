@@ -14,7 +14,7 @@ import { ActionPlanCard } from '@/components/dashboard/ActionPlanCard';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useRetestConfig } from '@/hooks/useRetestConfig';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
-import { generateDiagnosticPdf } from '@/lib/generatePdf';
+import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
