@@ -7,7 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { useGamification } from '@/hooks/useGamification';
 import { useRetestCycle } from '@/hooks/useRetestCycle';
+import { useActionPlan } from '@/hooks/useActionPlan';
 import { RetestCycleCard } from '@/components/dashboard/RetestCycleCard';
+import { ActionPlanCard } from '@/components/dashboard/ActionPlanCard';
 import { usePatternDefinitions } from '@/hooks/usePatternDefinitions';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { generateDiagnosticPdf } from '@/lib/generatePdf';
@@ -95,6 +97,7 @@ const Dashboard = () => {
   const loading = sessionsLoading || extraLoading;
   const gamification = useGamification(user?.id);
   const retestCycle = useRetestCycle(user?.id);
+  const actionPlan = useActionPlan(user?.id);
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
     setGenerating(true);
@@ -448,6 +451,13 @@ const Dashboard = () => {
         {/* Retest Cycle - 15 days */}
         {!retestCycle.loading && retestCycle.lastTestDate && (
           <RetestCycleCard retest={retestCycle} />
+        )}
+
+        {/* Action Plan Tracking */}
+        {!actionPlan.loading && actionPlan.days.length > 0 && (
+          <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.08 }}>
+            <ActionPlanCard plan={actionPlan} />
+          </motion.section>
         )}
 
         {/* Super Admin tools */}

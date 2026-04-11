@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_plan_tracking: {
+        Row: {
+          action_text: string
+          completed: boolean
+          completed_at: string | null
+          created_at: string
+          day_number: number
+          diagnostic_result_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action_text?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          day_number: number
+          diagnostic_result_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action_text?: string
+          completed?: boolean
+          completed_at?: string | null
+          created_at?: string
+          day_number?: number
+          diagnostic_result_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_plan_tracking_diagnostic_result_id_fkey"
+            columns: ["diagnostic_result_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_results"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_prompts: {
         Row: {
           context: string
