@@ -3,9 +3,10 @@
   "short_name": "Raio-X",
   "description": "Sistema de Análise de Padrões Comportamentais. Identifique os padrões invisíveis que dirigem suas decisões, travas e repetições.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0a0a0f",
-  "theme_color": "#6366f1",
+  "theme_color": "#2d6a5e",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -22,5 +23,6 @@
     }
   ],
   "categories": ["health", "lifestyle", "education"],
-  "lang": "pt-BR"
+  "lang": "pt-BR",
+  "prefer_related_applications": false
 }
