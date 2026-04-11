@@ -345,8 +345,23 @@ const Diagnostic = () => {
         .update({ completed_at: new Date().toISOString() })
         .eq('id', session.id);
 
-      // Track diagnostic_completed event
+      // Track diagnostic_completed event (always)
       trackEvent({ userId: user.id, event: 'diagnostic_completed', moduleId: moduleId || undefined, diagnosticResultId: savedResult?.id });
+
+      // Track retest_completed if this is a retest
+      if (isRetest) {
+        trackEvent({
+          userId: user.id,
+          event: 'retest_completed',
+          moduleId: moduleId || undefined,
+          diagnosticResultId: savedResult?.id,
+          metadata: {
+            origin: retestOrigin,
+            previous_session_id: previousSessionId,
+            previous_diagnostic_result_id: previousResultId,
+          },
+        });
+      }
 
       await updateCentralProfile(user.id);
 
