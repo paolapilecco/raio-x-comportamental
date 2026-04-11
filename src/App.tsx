@@ -6,6 +6,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { GlobalDashboardButton } from "@/components/GlobalDashboardButton";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { UpdatePrompt } from "@/components/pwa/UpdatePrompt";
 
 // Critical path – eagerly loaded
 import Index from "./pages/Index";
