@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, FileText, Shield, Database, Cpu, CreditCard, Layers, Zap, ChevronDown, ChevronRight, Search, Smartphone, Gamepad2, Brain, Activity, Stethoscope } from 'lucide-react';
+import { ArrowLeft, BookOpen, FileText, Shield, Database, Cpu, CreditCard, Layers, Zap, ChevronDown, ChevronRight, Search, Smartphone, Gamepad2, Brain, Activity, Stethoscope, Download } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { AppLayout } from '@/components/AppLayout';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -56,6 +57,281 @@ export default function AdminDocs() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('prd');
 
+  const handleDownload = () => {
+    const md = `# Raio-X Comportamental — Documentação Completa
+> Gerado em ${new Date().toLocaleDateString('pt-BR')} · v2.0
+
+---
+
+## 1. PRD — Visão Geral do Produto
+
+O **Raio-X Comportamental** é uma plataforma de análise comportamental que identifica padrões invisíveis que dirigem decisões, travas e repetições dos usuários. Através de leituras estruturadas e inteligência artificial, gera diagnósticos profundos e acionáveis.
+
+### Terminologia Obrigatória
+- ❌ Nunca usar: "teste", "questionário", "quiz"
+- ✅ Sempre usar: "análise", "leitura comportamental", "diagnóstico de padrão"
+
+### Números do Sistema
+| Métrica | Valor |
+|---------|-------|
+| Módulos | 8 |
+| Edge Functions | 13 |
+| Tabelas | 25+ |
+| Páginas | 22 |
+
+### Módulos de Leitura Comportamental
+| Slug | Nome | Eixos | Acesso |
+|------|------|-------|--------|
+| padrao-comportamental | Padrão Comportamental | 8 eixos base | Gratuito |
+| execucao-produtividade | Execução & Produtividade | Execução, consistência, evitação | Premium |
+| emocoes-reatividade | Emoções & Reatividade | Regulação, ansiedade, reatividade | Premium |
+| relacionamentos-apego | Relacionamentos & Apego | Apego, comunicação, limites | Premium |
+| autoimagem-identidade | Autoimagem & Identidade | Autocrítica, percepção, valor | Premium |
+| dinheiro-decisao | Dinheiro & Decisão | Escassez, abundância, controle | Premium |
+| padroes-ocultos | Padrões Ocultos | Mecanismos inconscientes | Premium |
+| proposito-sentido | Propósito & Sentido | Pilares de vida | Premium |
+
+### Páginas e Rotas (22)
+| Rota | Página | Acesso |
+|------|--------|--------|
+| / | Landing Page | Público |
+| /auth | Login / Cadastro / Google | Público |
+| /reset-password | Redefinição de senha | Público |
+| /t/:token | Link público para pacientes | Público |
+| /onboarding | Config de perfil | Autenticado |
+| /tests | Catálogo de leituras | Autenticado |
+| /diagnostic/:moduleSlug | Realizar leitura | Autenticado |
+| /dashboard | Painel principal | Autenticado |
+| /history | Histórico de leituras | Autenticado |
+| /central-report | Relatório central unificado | Autenticado |
+| /premium | Plano premium | Autenticado |
+| /checkout | Pagamento Asaas | Autenticado |
+| /profile | Perfil do usuário | Autenticado |
+| /pessoas | Gestão de pacientes | Autenticado |
+| /paciente/:personId | Detalhe do paciente | Autenticado |
+| /painel-profissional | Dashboard profissional | Autenticado |
+| /comparar-pacientes | Comparação de pacientes | Autenticado |
+| /admin/dashboard | Painel administrativo | Super Admin |
+| /admin/prompts | Central de Inteligência | Super Admin |
+| /admin/test-modules | Módulos | Super Admin |
+| /admin/users | Usuários | Super Admin |
+| /admin/subscriptions | Assinaturas | Super Admin |
+| /admin/emails | Logs de email | Super Admin |
+| /admin/roadmap | Roadmap | Super Admin |
+| /admin/docs | Documentação | Super Admin |
+
+### Pagamentos e Planos (Asaas)
+| Plano | Métodos | Funcionalidades |
+|-------|---------|-----------------|
+| Mensal | PIX, Boleto, Cartão | Acesso a todos os módulos premium |
+| Anual | PIX, Boleto, Cartão | Premium + desconto anual |
+| Profissional | PIX, Boleto, Cartão | Premium + gestão de pacientes + relatórios ilimitados |
+
+Ciclo de vida: pending → active → overdue/canceled/expired. Webhook Asaas atualiza status automaticamente.
+
+### Gestão Profissional
+- **Gestão de pacientes** (/pessoas): cadastro com CPF, telefone, data nascimento
+- **Detalhe do paciente** (/paciente/:id): 4 abas — Visão Geral, Histórico, Notas, Lembretes
+- **Convites de leitura**: links únicos com token UUID, validade 7 dias, uso único
+- **Dashboard profissional** (/painel-profissional): visão agregada de todos os pacientes
+- **Comparação entre pacientes** (/comparar-pacientes): análise lado a lado
+- **Limites por plano**: controle de uso mensal (planLimits.ts)
+
+### Gamificação
+- **Badges**: conquistas por completar leituras e marcos
+- **Celebração**: animação de desbloqueio de badges (BadgeUnlockCelebration)
+- **Ciclo de reteste**: incentivo periódico para reavaliação (RetestCycleCard)
+
+### PWA (App Instalável)
+- Manifest.json com ícones 192×192 e 512×512
+- Meta tags Apple Web App para iOS
+- Open Graph + Twitter Cards para compartilhamento
+- Capacitor JS configurado para builds nativos Android/iOS
+
+---
+
+## 2. Manual Técnico
+
+### Stack Tecnológico
+| Camada | Tecnologia |
+|--------|------------|
+| Frontend | React 18 + TypeScript 5 + Vite 5 |
+| Estilização | Tailwind CSS v3 + shadcn/ui |
+| Animações | Framer Motion |
+| Estado | TanStack React Query |
+| Roteamento | React Router v6 |
+| Backend | Lovable Cloud (Supabase) |
+| PDF | jsPDF |
+| Validação | Zod |
+
+### Banco de Dados (25+ tabelas)
+| Tabela | Função |
+|--------|--------|
+| profiles | Dados do usuário (nome, nascimento, CPF, idade) |
+| user_roles | Roles: user, premium, admin, super_admin |
+| test_modules | Módulos de leitura (slug, nome, ícone, categoria) |
+| questions | Perguntas com option_scores, axes, weight, type, context |
+| pattern_definitions | Definições de padrões (label, mechanism, triggers) |
+| diagnostic_sessions | Sessões de leitura (user_id, module_id, person_id) |
+| diagnostic_answers | Respostas do usuário (imutáveis) |
+| diagnostic_results | Resultados processados (scores, padrões, diagnóstico) |
+| test_prompts | Prompts de IA por módulo (7 tipos) |
+| prompt_history | Histórico de alterações em prompts (trigger) |
+| report_templates | Templates de relatório (sections + output_rules) |
+| global_ai_config | Config global de IA (modelo, temp, tokens, tom) |
+| test_ai_config | Config de IA por módulo (override) |
+| subscriptions | Assinaturas (plano, status, Asaas IDs) |
+| managed_persons | Pacientes gerenciados por profissionais |
+| professional_notes | Notas de profissionais sobre pacientes |
+| test_invites | Convites de leitura (token único, 7 dias) |
+| test_usage | Controle de uso por módulo/mês |
+| email_logs | Logs de emails enviados via Resend |
+| roadmap_tasks | Tarefas do roadmap (com realtime) |
+
+### Enums do Banco
+| Enum | Valores |
+|------|---------|
+| app_role | admin, user, premium, super_admin |
+| prompt_type | interpretation, diagnosis, profile, core_pain, triggers, direction, restrictions |
+| question_type | likert, behavior_choice, frequency, intensity |
+| subscription_plan | monthly, yearly, profissional |
+| subscription_status | pending, active, overdue, canceled, expired |
+
+### Edge Functions (13)
+| Função | Descrição | Validação |
+|--------|-----------|-----------|
+| analyze-test | Processa respostas com IA | Input validation |
+| generate-insights | Gera insights baseados nos resultados | Auth check |
+| generate-prompt | Gera prompts com IA para o admin | Admin only |
+| generate-questions | Gera perguntas inteligentes com IA | Input + deduplicação |
+| generate-template | Gera template de relatório com IA | Admin only |
+| suggest-question-config | Sugere config ideal de perguntas | Admin only |
+| admin-users | Gestão de usuários (listar, roles) | Super admin only |
+| asaas-checkout | Criação de checkout no Asaas | Auth + CPF validation |
+| asaas-status | Status de pagamento | Auth check |
+| asaas-webhook | Webhooks do Asaas | Webhook token validation |
+| send-email | Envio de emails via Resend | Auth check |
+| submit-public-test | Submissão via link público | Token + single-use |
+| validate-invite | Valida token de convite | Token + expiration |
+
+### Funções do Banco (9)
+| Função | Tipo | Descrição |
+|--------|------|-----------|
+| has_role(_user_id, _role) | SECURITY DEFINER | Verifica se usuário tem uma role |
+| handle_new_user_role() | Trigger | Atribui role "user" em novos cadastros |
+| assign_admin_on_signup() | Trigger | Atribui super_admin para emails autorizados |
+| calculate_age() | Trigger | Calcula idade a partir de birth_date |
+| update_updated_at_column() | Trigger | Atualiza campo updated_at |
+| update_question_count() | Trigger | Sincroniza question_count do módulo |
+| log_prompt_change() | Trigger | Registra histórico de alterações em prompts |
+| count_managed_persons(_user_id) | SECURITY DEFINER | Conta pacientes ativos do profissional |
+| increment_test_usage(...) | SECURITY DEFINER | Incrementa contador de uso com upsert |
+
+### Motor de Pontuação
+1. **Com option_scores** (ex: [0, 25, 50, 75, 100]): índice da resposta → valor real do score
+2. **Likert sem option_scores**: normalizado 1-5 → 0-4 (subtraindo 1), max=4
+3. **Intensity**: valor 0-10 direto (max=10)
+4. **Porcentagem final**: (somaScores / somaMaxScores) × 100, capped em 100%
+5. **Normalização visual**: padrões ativos (≥15%) recebem piso de 20% no radar
+
+Pipeline: Respostas → option_scores → Soma por eixo → Percentual → Normalização visual → Interpretação neurocientífica → Validação de qualidade → Relatório final
+
+### Central de Inteligência (/admin/prompts)
+**Estrutura de 3 Abas:**
+1. **Pipeline** — Prompts + Template + Output Rules + AI Config
+2. **Perguntas** — CRUD completo (edição, geração IA, importação)
+3. **Testar** — Simulação de diagnóstico com IA + Histórico
+
+**Module Health Score (0-100):**
+| Métrica | Peso | Target |
+|---------|------|--------|
+| Cobertura de prompts | 30% | 7 seções preenchidas |
+| Profundidade | 20% | >2500 caracteres/seção |
+| Cobertura de eixos | 15% | Eixos das perguntas nos prompts |
+| Perguntas | 20% | Quantidade + option_scores |
+| Configuração | 15% | AI config + template + rules |
+
+**7 Tipos de Prompt:**
+| Tipo | Função |
+|------|--------|
+| interpretation | Como interpretar os scores dos eixos |
+| diagnosis | Como gerar o diagnóstico comportamental |
+| profile | Como nomear o perfil do usuário |
+| core_pain | Como identificar a dor central |
+| triggers | Como identificar gatilhos e armadilhas |
+| direction | Como gerar direcionamentos de saída |
+| restrictions | O que NÃO fazer / orientações negativas |
+
+### Geração Inteligente de Perguntas (IA)
+- **Análise contextual**: carrega prompts, template e padrões antes de gerar
+- **Deduplicação**: compara com perguntas existentes do mesmo e outros testes
+- **Perguntas invertidas**: 20-30% reverse-scored para validação cruzada
+- **Cruzamento de eixos**: ≥40% tocam 2+ eixos
+- **Cobertura total**: valida que todos os eixos são cobertos
+- **Alinhamento com relatório**: perguntas para alimentar seções do template
+- **Validação option_scores**: cada pergunta inclui valores de score por opção
+
+---
+
+## 3. Segurança
+
+### Autenticação
+**Métodos:**
+- **Email + Senha** — validação Zod (email max 255, senha min 6)
+- **Google OAuth** — via Lovable Cloud
+- **Recuperação de senha** — link por email com redirecionamento
+
+**Sistema de Roles:**
+| Role | Permissões |
+|------|-----------|
+| user | Acesso básico, leituras gratuitas |
+| premium | Conteúdo premium + tudo de user |
+| admin | Gestão parcial |
+| super_admin | Gerenciamento total |
+
+**Super Admins autorizados:** paolabem@gmail.com · trafegocomkrisan@gmail.com
+Trigger de banco garante atribuição automática no signup.
+
+### Row Level Security (RLS)
+- ✅ RLS habilitado em todas as tabelas
+- ✅ Roles via tabela dedicada user_roles (nunca no perfil)
+- ✅ Função has_role() — SECURITY DEFINER com search_path fixo
+- ✅ Triggers automáticos: role "user" no signup + admin para emails autorizados
+- ✅ Respostas imutáveis: diagnostic_answers não permite UPDATE
+- ✅ Mensagens de erro genéricas — erros internos nunca expostos ao cliente
+- ✅ HIBP Check — proteção contra senhas vazadas
+- ✅ 0 vulnerabilidades ativas — auditorias constantes confirmam
+
+### Segurança de Edge Functions
+- Todos os endpoints validam JWT ou token conforme o contexto
+- Endpoints admin exigem role super_admin via has_role()
+- Endpoints públicos protegidos por tokens UUID únicos + expiração + uso único
+- Inputs validados server-side
+- Erros genéricos retornados ao cliente
+
+### Auditoria e Compliance
+- **plan_change_history**: toda mudança de plano é registrada
+- **prompt_history**: toda alteração em prompts é versionada (trigger automático)
+- **email_logs**: logs de todos os emails enviados
+- **CPF protegido**: apenas o próprio usuário pode ler seu CPF via RLS
+- **Tokens de convite**: expiram em 7 dias, uso único, UUID aleatório
+
+---
+
+*Raio-X Comportamental · v2.0*
+`;
+
+    const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'RaioX_Documentacao_Completa_' + new Date().toISOString().slice(0,10) + '.md';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     if (authLoading) return;
     if (!isSuperAdmin) { navigate('/dashboard', { replace: true }); return; }
@@ -73,14 +349,19 @@ export default function AdminDocs() {
           <button onClick={() => navigate('/admin/dashboard')} className="flex items-center gap-2 text-muted-foreground/60 hover:text-foreground/80 text-[0.8rem] transition-colors mb-3">
             <ArrowLeft className="w-4 h-4" /> Voltar ao Admin
           </button>
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <BookOpen className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-semibold tracking-tight">Documentação do Sistema</h1>
+                <p className="text-[0.78rem] text-muted-foreground/60">PRD completo · Manual Técnico · Arquitetura</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-semibold tracking-tight">Documentação do Sistema</h1>
-              <p className="text-[0.78rem] text-muted-foreground/60">PRD completo · Manual Técnico · Arquitetura</p>
-            </div>
+            <Button onClick={handleDownload} variant="outline" size="sm" className="gap-2">
+              <Download className="w-4 h-4" /> Baixar .md
+            </Button>
           </div>
         </motion.div>
 
