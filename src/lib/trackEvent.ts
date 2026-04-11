@@ -1,5 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
+export type RetestOrigin = 'dashboard_alert' | 'email_reminder' | 'manual_return' | 'unknown';
+
 export type AnalyticsEventName =
   | 'diagnostic_completed'
   | 'report_viewed'

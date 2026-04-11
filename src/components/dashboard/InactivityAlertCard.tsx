@@ -62,7 +62,7 @@ export function InactivityAlertCard({ inactiveModules, userId }: InactivityAlert
 
               <div className="flex flex-wrap gap-2">
                 <button
-                  onClick={() => navigate(`/diagnostic/${mod.moduleSlug}`)}
+                  onClick={() => navigate(`/diagnostic/${mod.moduleSlug}?origin=dashboard_alert`)}
                   className="inline-flex items-center gap-1.5 text-xs font-medium px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity active:scale-[0.97]"
                 >
                   Refazer análise
