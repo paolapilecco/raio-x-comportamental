@@ -67,7 +67,7 @@ const fade = {
 
 const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const axisLabels = useAxisLabels();
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
 
