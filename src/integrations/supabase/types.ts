@@ -266,6 +266,7 @@ export type Database = {
           id: string
           max_tokens: number
           report_style: string
+          system_prompt: string
           temperature: number
           tone: string
           updated_at: string
@@ -278,6 +279,7 @@ export type Database = {
           id?: string
           max_tokens?: number
           report_style?: string
+          system_prompt?: string
           temperature?: number
           tone?: string
           updated_at?: string
@@ -290,6 +292,7 @@ export type Database = {
           id?: string
           max_tokens?: number
           report_style?: string
+          system_prompt?: string
           temperature?: number
           tone?: string
           updated_at?: string

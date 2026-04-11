@@ -1,0 +1,1 @@
+ALTER TABLE public.global_ai_config ADD COLUMN IF NOT EXISTS system_prompt text NOT NULL DEFAULT '';
