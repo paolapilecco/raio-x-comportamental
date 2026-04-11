@@ -159,6 +159,17 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    // Fetch global system_prompt
+    let globalSystemPrompt = "";
+    try {
+      const { data: globalConfig } = await supabase
+        .from("global_ai_config")
+        .select("system_prompt")
+        .limit(1)
+        .maybeSingle();
+      if (globalConfig?.system_prompt) globalSystemPrompt = globalConfig.system_prompt;
+    } catch { /* use empty */ }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
