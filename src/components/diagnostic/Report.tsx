@@ -154,7 +154,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         } catch { /* ignore - extras remain undefined */ }
       }
       generateDiagnosticPdf(result, profile?.name, extras);
-      trackEvent({ userId: user.id, event: 'pdf_downloaded', metadata: { moduleSlug } });
+      if (user) trackEvent({ userId: user.id, event: 'pdf_downloaded', metadata: { moduleSlug } });
     }
   };
 
