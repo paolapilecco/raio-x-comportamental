@@ -202,15 +202,15 @@ const templates: Record<string, (data: Record<string, string>) => { subject: str
   }),
 
   "retest-overdue": (data) => ({
-    subject: "Sua análise já está desatualizada",
+    subject: data.subjectOverride || "Sua análise já está desatualizada",
     html: baseLayout(`
-      ${heading("Seu padrão continua ativo.")}
-      ${paragraph("Nada indica que houve mudança.")}
+      ${heading(data.heading || "Seu padrão continua ativo.")}
+      ${paragraph(data.bodyIntro || "Nada indica que houve mudança.")}
       ${paragraph(`Seu último resultado no módulo <strong>"${data.moduleName || "Análise Comportamental"}"</strong> foi gerado há <strong>${data.daysSince || "15+"} dias</strong>. Esse resultado ainda define seu comportamento atual.`)}
       ${divider()}
-      ${paragraph("Refaça sua análise e veja se você evoluiu ou só adiou.")}
+      ${paragraph(data.bodyCta || "Refaça sua análise e veja se você evoluiu ou só adiou.")}
       ${btn(data.testUrl || "https://raio-x-comportamental.lovable.app/dashboard", "Refazer Análise")}
-    `, "Seu padrão continua ativo. Nada indica que houve mudança."),
+    `, data.heading || "Seu padrão continua ativo. Nada indica que houve mudança."),
   }),
 
   "password-reset": (data) => ({
