@@ -28,39 +28,21 @@ interface TrackEventOptions {
 }
 
 // ─── Client-side deduplication ─────────────────────────────
-// Keeps track of recently fired events to prevent duplicates caused by
-// re-renders, double-clicks, or component remounts within the same session.
-
 /** Map of dedupKey → timestamp of last fire */
 const recentEvents = new Map<string, number>();
-
-/** Max entries before pruning old ones */
 const MAX_CACHE = 500;
 
-/**
- * Time windows (ms) per event type.
- * Events within the window with the same dedup key are silently dropped.
- * Events NOT listed here pass through without dedup (e.g. action_plan_day_completed).
- */
 const DEDUP_WINDOWS: Partial<Record<AnalyticsEventName, number>> = {
-  // Flow-unique events: one per diagnostic/module combination per session
-  retest_started:              Infinity, // once per module per page session
-  retest_completed:            Infinity, // once per diagnostic result
-  // View/impression events: short cooldown to avoid re-render spam
-  report_viewed:               30_000,   // 30s
+  retest_started:              Infinity,
+  retest_completed:            Infinity,
+  report_viewed:               30_000,
   evolution_comparison_viewed: 30_000,
   premium_paywall_viewed:      30_000,
-  // Click events: guard against rapid double-click
-  premium_checkout_started:    10_000,   // 10s
+  premium_checkout_started:    10_000,
   pdf_downloaded:              10_000,
 };
 
-/**
- * Build a composite dedup key from event params.
- * The key uniquely identifies "this specific occurrence" so that
- * the same logical action doesn't get counted twice.
- */
-function buildDedupKey(opts: TrackEventOptions): string {
+function buildClientDedupKey(opts: TrackEventOptions): string {
   if (opts.dedupKey) return opts.dedupKey;
   const parts = [opts.userId, opts.event];
   if (opts.moduleId) parts.push(opts.moduleId);
@@ -68,19 +50,13 @@ function buildDedupKey(opts: TrackEventOptions): string {
   return parts.join('::');
 }
 
-/**
- * Returns true if the event should be dropped (duplicate).
- */
 function isDuplicate(key: string, windowMs: number): boolean {
   const last = recentEvents.get(key);
   if (last == null) return false;
-  if (windowMs === Infinity) return true; // already fired this session
+  if (windowMs === Infinity) return true;
   return Date.now() - last < windowMs;
 }
 
-/**
- * Prune oldest entries when cache exceeds MAX_CACHE.
- */
 function pruneCache() {
   if (recentEvents.size <= MAX_CACHE) return;
   const entries = [...recentEvents.entries()].sort((a, b) => a[1] - b[1]);
@@ -88,10 +64,66 @@ function pruneCache() {
   for (const [k] of toRemove) recentEvents.delete(k);
 }
 
+// ─── Backend event_key generation ──────────────────────────
+// Deterministic keys for critical events so the DB unique index rejects duplicates.
+
+/** 5-minute time bucket for view/click events */
+function timeBucket5m(): string {
+  const now = Date.now();
+  return String(Math.floor(now / (5 * 60 * 1000)));
+}
+
+/**
+ * Events that need a backend event_key.
+ * Returns null for events that don't need one (they insert without event_key).
+ */
+function buildEventKey(opts: TrackEventOptions): string | null {
+  const { userId, event, moduleId, diagnosticResultId, metadata } = opts;
+
+  switch (event) {
+    case 'retest_started':
+      // user + module + previous session + origin → one per retest flow
+      return `rs::${userId}::${moduleId || ''}::${metadata?.previousSessionId || ''}::${metadata?.origin || ''}`;
+
+    case 'retest_completed':
+      // user + module + diagnostic result → one per completed retest
+      return `rc::${userId}::${moduleId || ''}::${diagnosticResultId || ''}`;
+
+    case 'report_viewed':
+      // user + module + result + 5min window
+      return `rv::${userId}::${moduleId || ''}::${diagnosticResultId || ''}::${timeBucket5m()}`;
+
+    case 'evolution_comparison_viewed':
+      // user + result + 5min window
+      return `ecv::${userId}::${diagnosticResultId || ''}::${timeBucket5m()}`;
+
+    case 'premium_paywall_viewed':
+      // user + 5min window
+      return `ppv::${userId}::${timeBucket5m()}`;
+
+    case 'premium_checkout_started':
+      // user + plan + billing + 5min window
+      return `pcs::${userId}::${metadata?.plan || ''}::${metadata?.billingType || ''}::${timeBucket5m()}`;
+
+    case 'pdf_downloaded':
+      // user + result + 5min window
+      return `pd::${userId}::${diagnosticResultId || ''}::${timeBucket5m()}`;
+
+    case 'retest_email_sent':
+      // user + module + session → one per email per session
+      return `res::${userId}::${moduleId || ''}::${metadata?.session_id || metadata?.sessionId || ''}`;
+
+    default:
+      return null; // no backend dedup for other events
+  }
+}
+
 // ─── Public API ────────────────────────────────────────────
 
 /**
- * Fire-and-forget telemetry event with built-in deduplication.
+ * Fire-and-forget telemetry event with two-layer deduplication:
+ * 1) Client-side memory cache (UI noise reduction)
+ * 2) Backend unique event_key (analytical truth)
  * Never throws — silently drops on error so it never breaks user flow.
  */
 export function trackEvent(opts: TrackEventOptions) {
@@ -99,24 +131,42 @@ export function trackEvent(opts: TrackEventOptions) {
     const { userId, event, moduleId, diagnosticResultId, metadata } = opts;
     const windowMs = DEDUP_WINDOWS[event];
 
-    // If this event type has dedup enabled, check before inserting
+    // Layer 1: client-side dedup
     if (windowMs != null) {
-      const key = buildDedupKey(opts);
-      if (isDuplicate(key, windowMs)) return; // silently skip
+      const key = buildClientDedupKey(opts);
+      if (isDuplicate(key, windowMs)) return;
       recentEvents.set(key, Date.now());
       pruneCache();
     }
 
-    supabase
-      .from('analytics_events' as any)
-      .insert({
-        user_id: userId,
-        event_name: event,
-        module_id: moduleId || null,
-        diagnostic_result_id: diagnosticResultId || null,
-        metadata: metadata || {},
-      })
-      .then(() => {});
+    // Layer 2: build backend event_key (null for non-critical events)
+    const eventKey = buildEventKey(opts);
+
+    const row: Record<string, unknown> = {
+      user_id: userId,
+      event_name: event,
+      module_id: moduleId || null,
+      diagnostic_result_id: diagnosticResultId || null,
+      metadata: metadata || {},
+    };
+
+    if (eventKey) {
+      row.event_key = eventKey;
+    }
+
+    // Use upsert with ignoreDuplicates for events with event_key
+    // For events without event_key, normal insert
+    if (eventKey) {
+      supabase
+        .from('analytics_events' as any)
+        .upsert(row as any, { onConflict: 'event_key', ignoreDuplicates: true })
+        .then(() => {});
+    } else {
+      supabase
+        .from('analytics_events' as any)
+        .insert(row as any)
+        .then(() => {});
+    }
   } catch {
     // silently ignore
   }
