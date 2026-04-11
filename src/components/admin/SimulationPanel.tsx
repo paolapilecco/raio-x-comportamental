@@ -53,8 +53,8 @@ const generateDynamicPresets = (axes: string[]) => {
   return presets;
 };
 
-const SimulationPanel = ({ modules, testPrompts, expanded, onToggle }: SimulationPanelProps) => {
-  const [previewTestId, setPreviewTestId] = useState('');
+const SimulationPanel = ({ modules, testPrompts, expanded, onToggle, defaultTestId }: SimulationPanelProps) => {
+  const [previewTestId, setPreviewTestId] = useState(defaultTestId || '');
   const [previewScores, setPreviewScores] = useState<Record<string, number>>({});
   const [previewRunning, setPreviewRunning] = useState(false);
   const [previewResult, setPreviewResult] = useState<any>(null);
