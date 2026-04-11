@@ -6,8 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const INACTIVITY_DAYS = 15;
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
@@ -16,13 +14,34 @@ serve(async (req) => {
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // Find the cutoff date (15 days ago)
+    // Load dynamic config
+    const { data: configRow } = await supabase
+      .from("retest_config")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    const cfg = {
+      retest_enabled: configRow?.retest_enabled ?? true,
+      retest_days_threshold: configRow?.retest_days_threshold ?? 15,
+      email_reminder_enabled: configRow?.email_reminder_enabled ?? true,
+      email_subject: configRow?.email_subject ?? "Sua análise já está desatualizada",
+      email_heading: configRow?.email_heading ?? "Seu padrão continua ativo.",
+      email_body_intro: configRow?.email_body_intro ?? "Seu último resultado ainda define seu comportamento atual. Nada indica que isso mudou.",
+      email_body_cta: configRow?.email_body_cta ?? "Refaça sua análise e veja se você evoluiu ou só adiou.",
+    };
+
+    if (!cfg.retest_enabled || !cfg.email_reminder_enabled) {
+      return new Response(JSON.stringify({ sent: 0, message: "Envio desativado pela configuração" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const INACTIVITY_DAYS = cfg.retest_days_threshold;
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - INACTIVITY_DAYS);
     const cutoffISO = cutoff.toISOString();
 
-    // Get all completed sessions grouped by user+module, only the latest per combo
-    // Using a raw approach: get all completed sessions, then process in JS
     const { data: sessions, error: sessErr } = await supabase
       .from("diagnostic_sessions")
       .select("id, user_id, test_module_id, completed_at")
@@ -44,7 +63,6 @@ serve(async (req) => {
       });
     }
 
-    // Find the latest session per user+module
     const latestByUserModule = new Map<string, typeof sessions[0]>();
     for (const s of sessions) {
       const key = `${s.user_id}__${s.test_module_id}`;
@@ -53,7 +71,6 @@ serve(async (req) => {
       }
     }
 
-    // Filter to those older than cutoff
     const stale = Array.from(latestByUserModule.values()).filter(
       (s) => new Date(s.completed_at!) < cutoff
     );
@@ -64,8 +81,6 @@ serve(async (req) => {
       });
     }
 
-    // Check which reminders were already sent (by checking email_logs)
-    // We use a dedup key: template_name=retest-overdue + template_data contains session_id
     const { data: existingLogs } = await supabase
       .from("email_logs")
       .select("template_data")
@@ -82,11 +97,9 @@ serve(async (req) => {
       }
     }
 
-    // Get user emails and module names
     const userIds = [...new Set(stale.map((s) => s.user_id))];
     const moduleIds = [...new Set(stale.map((s) => s.test_module_id))];
 
-    // Fetch auth users via profiles (since we can't query auth.users)
     const { data: profiles } = await supabase
       .from("profiles")
       .select("user_id, name")
@@ -99,7 +112,6 @@ serve(async (req) => {
       }
     }
 
-    // Get user emails from auth.users via admin API
     const userEmails = new Map<string, string>();
     for (const uid of userIds) {
       const { data: userData } = await supabase.auth.admin.getUserById(uid);
@@ -135,11 +147,11 @@ serve(async (req) => {
         (Date.now() - new Date(session.completed_at!).getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      // Send via the existing send-email function
       const { error: sendErr } = await supabase.functions.invoke("send-email", {
         body: {
           templateName: "retest-overdue",
           to: email,
+          subjectOverride: cfg.email_subject,
           data: {
             name: profile?.name || "",
             moduleName: mod?.name || "Análise Comportamental",
@@ -149,6 +161,10 @@ serve(async (req) => {
             user_id: session.user_id,
             module_id: session.test_module_id,
             session_id: session.id,
+            // Dynamic content from config
+            heading: cfg.email_heading,
+            bodyIntro: cfg.email_body_intro,
+            bodyCta: cfg.email_body_cta,
           },
         },
       });

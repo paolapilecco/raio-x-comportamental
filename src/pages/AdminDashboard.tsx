@@ -98,6 +98,7 @@ export default function AdminDashboard() {
     { label: 'Prompts & IA', icon: Settings, path: '/admin/prompts', desc: 'Central de Inteligência' },
     { label: 'Roadmap', icon: LayoutGrid, path: '/admin/roadmap', desc: 'Tarefas do projeto' },
     { label: 'Emails', icon: Activity, path: '/admin/emails', desc: 'Logs e templates de email' },
+    { label: 'Ciclo de Reteste', icon: Activity, path: '/admin/retest-config', desc: 'Alertas e emails de reavaliação' },
     { label: 'Documentação', icon: BookOpen, path: '/admin/docs', desc: 'PRD, Manual Técnico e Segurança' },
   ];
 

@@ -1,0 +1,1 @@
+CREATE POLICY "Service role can view retest_config" ON public.retest_config FOR SELECT TO service_role USING (true);
