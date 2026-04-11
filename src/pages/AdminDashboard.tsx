@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Crown, Activity, Download,
   Loader2, RefreshCw, CreditCard, Brain, LayoutGrid,
-  Settings, FileText, UserCheck, DollarSign, Percent, Calendar,
+  Settings, FileText, UserCheck, DollarSign, Percent, Calendar, BookOpen,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
@@ -95,10 +95,10 @@ export default function AdminDashboard() {
     { label: 'Assinaturas', icon: CreditCard, path: '/admin/subscriptions', desc: 'Pagamentos e assinaturas' },
     { label: 'Módulos', icon: Brain, path: '/admin/test-modules', desc: 'Diagnósticos e perguntas' },
     { label: 'Perguntas', icon: FileText, path: '/admin/questions', desc: 'Editar leituras' },
-    { label: 'Prompts IA', icon: Settings, path: '/admin/prompts', desc: 'Configurar prompts de IA' },
-    { label: 'Prompts & IA', icon: Settings, path: '/admin/prompts', desc: 'Prompts e configuração de IA' },
+    { label: 'Prompts & IA', icon: Settings, path: '/admin/prompts', desc: 'Central de Inteligência' },
     { label: 'Roadmap', icon: LayoutGrid, path: '/admin/roadmap', desc: 'Tarefas do projeto' },
     { label: 'Emails', icon: Activity, path: '/admin/emails', desc: 'Logs e templates de email' },
+    { label: 'Documentação', icon: BookOpen, path: '/admin/docs', desc: 'PRD, Manual Técnico e Segurança' },
   ];
 
   return (
