@@ -522,7 +522,22 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         )}
       </Section>
 
-      <Section num={6} title={sectionTitles.corrigirPrimeiro} delay={0.26} accent="primary">
+      {/* Future consequence — after diagnosis, before action */}
+      {ai.futureConsequence && (
+        <Section num={6} title="Se nada mudar nos próximos meses" delay={0.25} accent="destructive">
+          <CardBlock variant="alert">
+            <div className="flex items-start gap-3">
+              <TrendingDown className="w-4 h-4 text-destructive/60 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-[9px] text-destructive/50 uppercase tracking-widest font-semibold mb-1.5">Consequência futura</p>
+                <p className="text-sm text-foreground leading-[1.8]">{ai.futureConsequence}</p>
+              </div>
+            </div>
+          </CardBlock>
+        </Section>
+      )}
+
+      <Section num={ai.futureConsequence ? 7 : 6} title={sectionTitles.corrigirPrimeiro} delay={0.26} accent="primary">
         <CardBlock variant="primary">
           <div className="flex items-start gap-3">
             <ArrowRight className="w-4 h-4 text-primary/60 mt-0.5 shrink-0" />
@@ -535,7 +550,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
       </Section>
 
       {pararDeFazer?.length > 0 && (
-        <Section num={7} title={sectionTitles.pararDeFazer} delay={0.3} accent="destructive">
+        <Section num={ai.futureConsequence ? 8 : 7} title={sectionTitles.pararDeFazer} delay={0.3} accent="destructive">
           <div className="space-y-2">
             {pararDeFazer.map((item: string, i: number) => (
               <div key={i} className="flex items-start gap-3 py-1.5 px-3.5 rounded-lg bg-destructive/[0.03] border border-destructive/10">
@@ -547,7 +562,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <Section num={8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
+      <Section num={ai.futureConsequence ? 9 : 8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
         {ai.mentalCommand && (
           <div className="mb-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
             <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold mb-2">Repita antes de agir</p>
