@@ -97,6 +97,7 @@ const Dashboard = () => {
   const loading = sessionsLoading || extraLoading;
   const gamification = useGamification(user?.id);
   const retestCycle = useRetestCycle(user?.id);
+  const actionPlan = useActionPlan(user?.id);
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
     setGenerating(true);
