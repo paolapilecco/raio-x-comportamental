@@ -261,18 +261,18 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
 
   const ai = result as any;
   
-  // ── Resolve all fields ──
-  const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
-  const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
-  const comoAparece = ai.comoAparece || result.mentalState;
-  const gatilhos: string[] = ai.gatilhos || result.triggers || [];
-  const comoAtrapalha = ai.comoAtrapalha || ai.significadoPratico || result.corePain;
-  const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
-  const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
-  const pararDeFazer: string[] = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo || [];
-  const acaoInicial = ai.acaoInicial || ai.proximoPasso || result.exitStrategy?.[0]?.action || result.direction;
-  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
-  const mentalCommand: string = ai.mentalCommand || '';
+  // ── Resolve all fields (with null safety) ──
+  const chamaAtencao = safe(ai.chamaAtencao) || safe(ai.resumoPrincipal) || safe(result.criticalDiagnosis);
+  const padraoRepetido = safe(ai.padraoRepetido) || safe(ai.padraoIdentificado) || safe(result.mechanism);
+  const comoAparece = safe(ai.comoAparece) || safe(result.mentalState);
+  const gatilhos: string[] = (ai.gatilhos || result.triggers || []).filter((t: any) => safe(t));
+  const comoAtrapalha = safe(ai.comoAtrapalha) || safe(ai.significadoPratico) || safe(result.corePain);
+  const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: safe(l.area) || safe(l.pillar), efeito: safe(l.efeito) || safe(l.impact) })) || result.lifeImpact?.map((l: any) => ({ area: safe(l.pillar), efeito: safe(l.impact) })) || [];
+  const corrigirPrimeiro = safe(ai.corrigirPrimeiro) || safe(ai.direcaoAjuste) || safe(result.keyUnlockArea);
+  const pararDeFazer: string[] = (ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo || []).filter((t: any) => safe(t));
+  const acaoInicial = safe(ai.acaoInicial) || safe(ai.proximoPasso) || safe(result.exitStrategy?.[0]?.action) || safe(result.direction);
+  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes.filter((m: any) => safe(m.acao)) : [];
+  const mentalCommand: string = safe(ai.mentalCommand);
   const blindSpot = result.interpretation?.blindSpot;
   const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
   const actionPlan: { area: string; score: number; actions: string[] }[] = Array.isArray(ai.actionPlan) ? ai.actionPlan : [];
