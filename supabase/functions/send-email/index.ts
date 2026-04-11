@@ -191,7 +191,7 @@ const templates: Record<string, (data: Record<string, string>) => { subject: str
     subject: `⏰ Ciclo de reteste — ${data.patientName || "paciente"} está pronto para nova leitura`,
     html: baseLayout(`
       ${heading("Ciclo de reteste disponível")}
-      ${paragraph(`O período ideal para reaplicação do diagnóstico de <strong>${data.patientName || ""}</strong> chegou.`)}
+      ${paragraph(`O paciente <strong>${data.patientName || ""}</strong> completou o diagnóstico <strong>"${data.testName || ""}"</strong>. Os resultados já foram processados pela IA.`)}
       ${paragraph("Reaplicar diagnósticos em intervalos estratégicos permite mapear a <strong>evolução dos padrões</strong>, validar intervenções e identificar mudanças comportamentais com precisão científica.")}
       ${infoBox(`
         ${infoRow("Paciente", data.patientName || "—")}
@@ -199,6 +199,18 @@ const templates: Record<string, (data: Record<string, string>) => { subject: str
       `)}
       ${btn(data.detailUrl || "#", "Acessar Paciente")}
     `, `Hora de reaplicar o diagnóstico para ${data.patientName}`),
+  }),
+
+  "retest-overdue": (data) => ({
+    subject: "Sua análise já está desatualizada",
+    html: baseLayout(`
+      ${heading("Seu padrão continua ativo.")}
+      ${paragraph("Nada indica que houve mudança.")}
+      ${paragraph(`Seu último resultado no módulo <strong>"${data.moduleName || "Análise Comportamental"}"</strong> foi gerado há <strong>${data.daysSince || "15+"} dias</strong>. Esse resultado ainda define seu comportamento atual.`)}
+      ${divider()}
+      ${paragraph("Refaça sua análise e veja se você evoluiu ou só adiou.")}
+      ${btn(data.testUrl || "https://raio-x-comportamental.lovable.app/dashboard", "Refazer Análise")}
+    `, "Seu padrão continua ativo. Nada indica que houve mudança."),
   }),
 
   "password-reset": (data) => ({
