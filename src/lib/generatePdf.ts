@@ -231,7 +231,7 @@ function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) 
 
 // ── Main export ──
 
-export function generateDiagnosticPdf(result: DiagnosticResult, userName?: string) {
+export function generateDiagnosticPdf(result: DiagnosticResult, userName?: string, extras?: PdfEvolutionData) {
   const doc = new jsPDF('p', 'mm', 'a4');
   const ctx: Ctx = { doc, y: M, pageNum: 1 };
 
