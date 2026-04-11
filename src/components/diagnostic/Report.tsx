@@ -540,7 +540,10 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <Section num={ai.futureConsequence ? 7 : 6} title={sectionTitles.corrigirPrimeiro} delay={0.26} accent="primary">
+      {/* Evolution comparison — after futureConsequence, before action */}
+      <EvolutionComparisonSection ai={ai} delay={0.255} />
+
+      <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 8 : 7) : 6} title={sectionTitles.corrigirPrimeiro} delay={0.26} accent="primary">
         <CardBlock variant="primary">
           <div className="flex items-start gap-3">
             <ArrowRight className="w-4 h-4 text-primary/60 mt-0.5 shrink-0" />
