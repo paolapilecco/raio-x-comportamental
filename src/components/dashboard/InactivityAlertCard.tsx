@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, ArrowRight, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { trackEvent } from '@/lib/trackEvent';
 
 interface InactivityModule {
   moduleId: string;
