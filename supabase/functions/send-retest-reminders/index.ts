@@ -156,7 +156,7 @@ serve(async (req) => {
             name: profile?.name || "",
             moduleName: mod?.name || "Análise Comportamental",
             daysSince: String(daysSince),
-            testUrl: `https://raio-x-comportamental.lovable.app/diagnostic/${mod?.slug || ""}`,
+            testUrl: `https://raio-x-comportamental.lovable.app/diagnostic/${mod?.slug || ""}?origin=email_reminder`,
             dedup_key: dedupKey,
             user_id: session.user_id,
             module_id: session.test_module_id,
