@@ -352,7 +352,7 @@ Gere o prompt profissional para esta seção. Baseie-se nos DADOS REAIS das perg
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: [globalSystemPrompt, systemPrompt].filter(Boolean).join("\n\n") },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.5,

@@ -28,6 +28,18 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    // Fetch global system_prompt
+    let globalSystemPrompt = "";
+    if (testModuleId) {
+      try {
+        const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+        const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+        const tmpClient = createClient(supabaseUrl, supabaseKey);
+        const { data: gConfig } = await tmpClient.from("global_ai_config").select("system_prompt").limit(1).maybeSingle();
+        if (gConfig?.system_prompt) globalSystemPrompt = gConfig.system_prompt;
+      } catch { /* use empty */ }
+    }
+
     // ── STEP 1: Fetch full test context from DB ──
     let reportTemplateSections = "";
     let outputRules = "";
@@ -236,7 +248,7 @@ Retorne APENAS um JSON array. Sem texto adicional.`;
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: [globalSystemPrompt, systemPrompt].filter(Boolean).join("\n\n") },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.6,
