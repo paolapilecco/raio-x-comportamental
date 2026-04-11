@@ -413,7 +413,7 @@ serve(async (req) => {
     try {
       const [testConfigRes, globalConfigRes] = await Promise.all([
         adminClient.from("test_ai_config").select("use_global_defaults, ai_enabled, temperature, max_tokens").eq("test_id", test_module_id).maybeSingle(),
-        adminClient.from("global_ai_config").select("ai_model, temperature, max_tokens").limit(1).maybeSingle(),
+        adminClient.from("global_ai_config").select("ai_model, temperature, max_tokens, system_prompt").limit(1).maybeSingle(),
       ]);
 
       if (globalConfigRes.data?.ai_model) aiModel = globalConfigRes.data.ai_model;
@@ -434,11 +434,19 @@ serve(async (req) => {
       refineInstruction = "\n\nINSTRUÇÃO DE REFINAMENTO: A resposta anterior foi genérica. Seja mais específico, use os dados reais do usuário, e garanta que cada bloco traz informação nova.";
     }
 
+    // ── Fetch global system_prompt ──
+    let globalSystemPrompt = "";
+    try {
+      const gConfig = await adminClient.from("global_ai_config").select("system_prompt").limit(1).maybeSingle();
+      if (gConfig.data?.system_prompt) globalSystemPrompt = gConfig.data.system_prompt;
+    } catch { /* use empty */ }
+
     // ── Call AI ──
+    const fullSystemPrompt = [globalSystemPrompt, SYSTEM_PROMPT, refineInstruction].filter(Boolean).join("\n\n");
     const aiBody = {
       model: aiModel,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT + refineInstruction },
+        { role: "system", content: fullSystemPrompt },
         { role: "user", content: userPrompt },
       ],
       temperature: aiTemperature,

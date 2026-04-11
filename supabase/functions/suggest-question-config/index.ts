@@ -25,6 +25,17 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
+    // Fetch global system_prompt
+    let globalSystemPrompt = "";
+    try {
+      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+      const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+      const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.1");
+      const adminClient = createClient(supabaseUrl, serviceKey);
+      const { data: gConfig } = await adminClient.from("global_ai_config").select("system_prompt").limit(1).maybeSingle();
+      if (gConfig?.system_prompt) globalSystemPrompt = gConfig.system_prompt;
+    } catch { /* use empty */ }
+
     const systemPrompt = `Você é um especialista em psicometria comportamental. Analise o texto de uma pergunta/afirmação e sugira a configuração ideal.
 
 CRITÉRIOS DE CLASSIFICAÇÃO:
@@ -67,7 +78,7 @@ Retorne APENAS um JSON com:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: [globalSystemPrompt, systemPrompt].filter(Boolean).join("\n\n") },
           { role: "user", content: userPrompt },
         ],
         temperature: 0.3,
