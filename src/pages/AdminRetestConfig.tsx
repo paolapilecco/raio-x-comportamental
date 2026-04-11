@@ -18,7 +18,7 @@ interface RetestConfig {
   email_body_cta: string;
 }
 
-const DEFAULTS: Omit<RetestConfig, 'id'> = {
+const _DEFAULTS: Omit<RetestConfig, 'id'> = {
   retest_enabled: true,
   retest_days_threshold: 15,
   dashboard_alert_enabled: true,
