@@ -141,7 +141,8 @@ export default function AdminAnalytics() {
     { label: 'Dias concluídos', value: metrics.actionPlanDaysCompleted, icon: Flame, color: 'text-orange-500' },
     { label: 'Alertas inatividade', value: metrics.retestAlerts, icon: TrendingUp, color: 'text-yellow-600' },
     { label: 'Emails reteste', value: metrics.retestEmails, icon: Mail, color: 'text-blue-500' },
-    { label: 'Reavaliações', value: metrics.retestCompleted, icon: RefreshCw, color: 'text-emerald-600' },
+    { label: 'Retestes iniciados', value: metrics.retestStarted, icon: RefreshCw, color: 'text-blue-600' },
+    { label: 'Retestes concluídos', value: metrics.retestCompleted, icon: RefreshCw, color: 'text-emerald-600' },
     { label: 'Paywall views', value: metrics.paywallViews, icon: Crown, color: 'text-amber-500' },
     { label: 'Checkouts iniciados', value: metrics.checkoutStarted, icon: Users, color: 'text-primary' },
     { label: 'Checkouts concluídos', value: metrics.checkoutCompleted, icon: Crown, color: 'text-emerald-600' },
@@ -149,7 +150,8 @@ export default function AdminAnalytics() {
 
   const conversionRate = metrics.paywallViews > 0 ? Math.round((metrics.checkoutCompleted / metrics.paywallViews) * 100) : 0;
   const pdfRate = metrics.diagnostics > 0 ? Math.round((metrics.pdfDownloads / metrics.diagnostics) * 100) : 0;
-  const retestRate = metrics.retestAlerts > 0 ? Math.round((metrics.retestCompleted / metrics.retestAlerts) * 100) : 0;
+  const retestRate = metrics.retestStarted > 0 ? Math.round((metrics.retestCompleted / metrics.retestStarted) * 100) : 0;
+  const retestFromAlerts = metrics.retestAlerts > 0 ? Math.round((metrics.retestStarted / metrics.retestAlerts) * 100) : 0;
 
   return (
     <AppLayout>
