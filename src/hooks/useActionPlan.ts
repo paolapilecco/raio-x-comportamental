@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { trackEvent } from '@/lib/trackEvent';
 
 export interface ActionPlanDay {
   id: string;
@@ -94,6 +95,8 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
         d.id === dayId ? { ...d, completed: !completed, completed_at: completed ? null : d.completed_at } : d
       ));
       console.error('Error toggling day:', error);
+    } else if (completed && userId) {
+      trackEvent({ userId, event: 'action_plan_day_completed', diagnosticResultId: diagnosticResultId || undefined, metadata: { dayId } });
     }
   }, []);
 
