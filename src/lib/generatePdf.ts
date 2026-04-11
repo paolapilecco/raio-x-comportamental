@@ -555,7 +555,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   // SECTION: Próxima ação prática
   // ═══════════════════════════════════════════
   sectionHeader(ctx, sectionNum, 'Próxima ação prática', C.green);
-  const actionSectionNum = sectionNum;
   sectionNum++;
   
   // Mental Command (reprogramming phrase)
@@ -638,7 +637,8 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   // SECTION 9: Mecanismo Neural
   // ═══════════════════════════════════════════
   if (mecanismoNeural && (mecanismoNeural.neurotransmissor || mecanismoNeural.cicloNeural || mecanismoNeural.neuroplasticidade)) {
-    sectionHeader(ctx, 9, 'Mecanismo Neural', C.accent);
+    sectionHeader(ctx, sectionNum, 'Mecanismo Neural', C.accent);
+    sectionNum++;
     
     if (mecanismoNeural.neurotransmissor) {
       pb(ctx, 14);
@@ -663,7 +663,8 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   // SECTION 10: Plano de Ação (if available)
   // ═══════════════════════════════════════════
   if (actionPlan.length > 0) {
-    sectionHeader(ctx, 10, 'Plano de Ação por Área', C.green);
+    sectionHeader(ctx, sectionNum, 'Plano de Ação por Área', C.green);
+    sectionNum++;
     
     actionPlan.forEach((plan) => {
       pb(ctx, 16);
