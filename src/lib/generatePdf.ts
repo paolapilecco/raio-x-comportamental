@@ -1,6 +1,25 @@
 import jsPDF from 'jspdf';
 import { DiagnosticResult } from '@/types/diagnostic';
 
+export interface PdfEvolutionData {
+  futureConsequence?: string;
+  evolutionComparison?: {
+    previous_score?: number;
+    current_score?: number;
+    improved_axes?: { key: string; label: string; previous: number; current: number }[];
+    worsened_axes?: { key: string; label: string; previous: number; current: number }[];
+    unchanged_axes?: { key: string; label: string; previous: number; current: number }[];
+    summary_text?: string;
+  };
+  evolutionSummary?: string;
+  actionPlanStatus?: {
+    total_days: number;
+    completed_days: number;
+    execution_rate: number;
+    current_streak: number;
+  };
+}
+
 // ── Layout constants ──
 const M = 20;        // margin
 const PW = 210;      // page width
