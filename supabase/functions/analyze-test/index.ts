@@ -247,54 +247,86 @@ As microAcoes são a parte MAIS IMPORTANTE do relatório — sem elas, o produto
 
 Retorne exclusivamente um JSON válido sem nenhum texto antes ou depois.`;
 
-const OUTPUT_SCHEMA = `--- SCHEMA DE SAÍDA ---
-
-Retorne APENAS este JSON, sem markdown, sem texto adicional:
-
-{
-  "profileName": "nome do perfil comportamental",
-  "combinedTitle": "título do relatório que captura o padrão central",
-  "perfilComportamental": "descrição do perfil em 3 frases",
-  "diagnosis": "diagnóstico central em 3 frases",
-  "chamaAtencao": "insight mais revelador em 2 frases",
-  "padraoRepetido": "ciclo que se repete em 2 frases",
-  "corePain": "dor central em 2 frases",
-  "comoAparece": "como aparece na rotina em 2 frases",
-  "gatilhos": ["gatilho 1", "gatilho 2", "gatilho 3"],
-  "impactoPorArea": [
-    {"area": "nome da área", "impacto": "impacto concreto"},
-    {"area": "nome da área", "impacto": "impacto concreto"}
-  ],
-  "corrigirPrimeiro": "direção de mudança em 2 frases",
-  "pararDeFazer": "comportamento a parar em 1 frase",
-  "acaoInicial": "ação concreta dos próximos 7 dias + gancho reteste",
-  "selfSabotageCycle": ["passo 1", "passo 2", "passo 3", "passo 4"],
-  "microAcoes": [
+function buildDynamicOutputSchema(template: ReportTemplate | null): string {
+  // Fixed structural fields that are always required
+  const FIXED_FIELDS: Record<string, string> = {
+    profileName: '"nome do perfil comportamental"',
+    combinedTitle: '"título do relatório que captura o padrão central"',
+    perfilComportamental: '"descrição do perfil em 3 frases"',
+    diagnosis: '"diagnóstico central em 3 frases"',
+    corePain: '"dor central em 2 frases"',
+    gatilhos: '["gatilho 1", "gatilho 2", "gatilho 3"]',
+    impactoPorArea: '[{"area": "nome da área", "impacto": "impacto concreto"}]',
+    selfSabotageCycle: '["passo 1", "passo 2", "passo 3", "passo 4"]',
+    microAcoes: `[
     {"gatilho": "situação específica derivada do PADRÃO DOMINANTE do usuário", "acao": "ação que ataca diretamente esse padrão — verbo claro + tempo + instrução concreta"},
     {"gatilho": "situação derivada do EIXO COM MAIOR SCORE do usuário", "acao": "ação que neutraliza esse eixo — verbo claro + tempo + instrução concreta"},
     {"gatilho": "comportamento recorrente detectado nas EVIDÊNCIAS COMPORTAMENTAIS (respostas com score >= 80)", "acao": "ação que interrompe esse comportamento — verbo claro + tempo + instrução concreta"}
-  ],
-  "exitStrategy": ["passo 1", "passo 2", "passo 3"],
-  "blindSpot": "ponto cego em 1 frase",
-  "mentalCommand": "comando mental em 1 frase curta",
-  "futureConsequence": "o que acontece se esse padrão continuar nos próximos meses — em 3 frases: (1) o que a pessoa tende a repetir, (2) o que ela tende a perder, (3) como esse padrão mantém estagnação. Direto, prático, sem motivacional, sem exagero dramático, sem psicologuês.",
-  "evolutionSummary": "resumo da comparação com diagnóstico anterior (se dados fornecidos). 3 frases: o que melhorou, o que piorou, o que continua igual. Direto, sem motivacional. Se não houver dados de comparação, retorne string vazia.",
-  "summary": "resumo geral em 2 frases",
-  "mechanism": "mecanismo central em 2 frases",
-  "contradiction": "contradição interna em 1 frase",
-  "impact": "impacto na vida em 1 frase",
-  "direction": "direção de mudança resumida",
-  "keyUnlockArea": "área chave de desbloqueio",
-  "criticalDiagnosis": "diagnóstico crítico em 2 frases",
-  "mentalState": "estado mental atual em 1 frase",
-  "blockingPoint": "ponto de travamento em 1 frase",
-  "triggers": ["gatilho 1", "gatilho 2", "gatilho 3"],
-  "mentalTraps": ["armadilha 1", "armadilha 2"],
-  "whatNotToDo": ["o que não fazer 1", "o que não fazer 2"],
-  "lifeImpact": [{"pillar": "área", "impact": "impacto"}],
-  "focoMudanca": "foco da mudança em 1 frase curta"
-}
+  ]`,
+    exitStrategy: '["passo 1", "passo 2", "passo 3"]',
+    blindSpot: '"ponto cego em 1 frase"',
+    mentalCommand: '"comando mental em 1 frase curta"',
+    futureConsequence: '"o que acontece se esse padrão continuar — 3 frases diretas"',
+    evolutionSummary: '"resumo da comparação com diagnóstico anterior (string vazia se não houver dados)"',
+    summary: '"resumo geral em 2 frases"',
+    mechanism: '"mecanismo central em 2 frases"',
+    contradiction: '"contradição interna em 1 frase"',
+    impact: '"impacto na vida em 1 frase"',
+    direction: '"direção de mudança resumida"',
+    keyUnlockArea: '"área chave de desbloqueio"',
+    criticalDiagnosis: '"diagnóstico crítico em 2 frases"',
+    mentalState: '"estado mental atual em 1 frase"',
+    blockingPoint: '"ponto de travamento em 1 frase"',
+    triggers: '["gatilho 1", "gatilho 2", "gatilho 3"]',
+    mentalTraps: '["armadilha 1", "armadilha 2"]',
+    whatNotToDo: '["o que não fazer 1", "o que não fazer 2"]',
+    lifeImpact: '[{"pillar": "área", "impact": "impacto"}]',
+    focoMudanca: '"foco da mudança em 1 frase curta"',
+  };
 
+  // If template has sections, use them to add/override dynamic fields
+  const dynamicFields: Record<string, string> = {};
+  if (template?.sections && template.sections.length > 0) {
+    for (const section of template.sections) {
+      const maxSentences = section.maxSentences ?? section.maxSize ?? 2;
+      const label = section.label || section.name || section.key;
+      // Only add if not already in fixed fields, or override description
+      if (FIXED_FIELDS[section.key]) {
+        // Keep the fixed field format but note the template constraint
+        continue;
+      }
+      // New dynamic section from template
+      dynamicFields[section.key] = `"${label} — máximo ${maxSentences} frases"`;
+    }
+  }
+
+  const allFields = { ...FIXED_FIELDS, ...dynamicFields };
+  const fieldLines = Object.entries(allFields)
+    .map(([key, value]) => `  "${key}": ${value}`)
+    .join(",\n");
+
+  let schema = `--- SCHEMA DE SAÍDA ---\n\nRetorne APENAS este JSON, sem markdown, sem texto adicional:\n\n{\n${fieldLines}\n}`;
+
+  // Add template-driven section instructions
+  if (template?.sections && template.sections.length > 0) {
+    const sectionConstraints = template.sections
+      .map((s) => {
+        const maxSentences = s.maxSentences ?? s.maxSize ?? 2;
+        const label = s.label || s.name || s.key;
+        const requiredTag = s.required ? "[OBRIGATÓRIO]" : "[OPCIONAL]";
+        let line = `- "${s.key}" ${requiredTag}: "${label}" — máximo ${maxSentences} frases`;
+        if (s.aiInstructions && s.aiInstructions.trim().length > 0) {
+          line += `\n  INSTRUÇÃO ESPECÍFICA: ${s.aiInstructions.trim()}`;
+        }
+        return line;
+      })
+      .join("\n");
+
+    schema += `\n\n--- INSTRUÇÕES POR SEÇÃO DO TEMPLATE ---\nCada seção abaixo tem regras específicas. Respeite o limite de frases e as instruções:\n${sectionConstraints}`;
+  }
+
+  // microAcoes rules (always included)
+  schema += `\n
 REGRAS OBRIGATÓRIAS PARA microAcoes:
 
 ═══ 1. VINCULAÇÃO AO DIAGNÓSTICO (INEGOCIÁVEL) ═══
@@ -305,45 +337,30 @@ REGRAS OBRIGATÓRIAS PARA microAcoes:
 ═══ 2. GATILHO CONCRETO (OBRIGATÓRIO) ═══
 O gatilho DEVE incluir pelo menos um: contexto real, situação específica, tipo de interação, comportamento observável, pessoa/ambiente/canal.
 CORRETO: "quando estiver evitando responder alguém no WhatsApp para não entrar em conflito"
-CORRETO: "quando perceber que concordou com algo no trabalho só para não desagradar"
-CORRETO: "quando começar a enrolar antes de uma tarefa que exige exposição"
-ERRADO: "quando se sentir mal", "em situações difíceis", "quando estiver estressada", "quando sentir desconforto"
+ERRADO: "quando se sentir mal", "em situações difíceis", "quando estiver estressada"
 
 ═══ 3. AÇÃO FORTE (OBRIGATÓRIO) ═══
-Cada ação DEVE ter: verbo claro + contexto + tempo definido + instrução física ou mental concreta + leve desconforto produtivo + interrupção real do padrão.
+Cada ação DEVE ter: verbo claro + contexto + tempo definido + instrução concreta + interrupção real do padrão.
 CORRETO: "pare, conte até 5 e diga em voz alta o que você está evitando antes de sair da situação"
-CORRETO: "responda em até 2 minutos com uma frase objetiva, sem explicar demais"
-CORRETO: "faça exatamente o oposto do impulso automático por 5 minutos e anote o resultado"
-ERRADO: "respire fundo", "observe seus padrões", "reflita sobre isso", "tenha consciência", "mude seu comportamento"
+ERRADO: "respire fundo", "observe seus padrões", "reflita sobre isso"
 
 ═══ 4. FORMATO ═══
 - 1 frase executável por ação (curta, direta)
-- Sem texto longo, sem explicação teórica, sem linguagem motivacional, sem psicologuês
+- Sem texto longo, sem explicação teórica, sem linguagem motivacional
 
-═══ 5. VALIDAÇÃO MENTAL OBRIGATÓRIA (antes de aceitar cada ação) ═══
+═══ 5. VALIDAÇÃO MENTAL (antes de aceitar cada ação) ═══
 Teste 1: "essa ação faz sentido APENAS para esse diagnóstico específico?" → se não, DESCARTAR
 Teste 2: "essa ação tem gatilho concreto e execução real?" → se não, DESCARTAR
 Teste 3: "essa ação interrompe o padrão ou é só conselho bonito?" → se não, DESCARTAR
-Se descartada → reescrever até passar nos 3 testes.
 
 ═══ 6. PROIBIÇÕES ABSOLUTAS ═══
 - Gatilhos vagos ou abstratos
 - Conselhos genéricos que serviriam para qualquer pessoa
-- Linguagem abstrata ou bonita demais
-- Ações sem verbo forte, sem tempo ou sem condição
-- Qualquer ação que NÃO referencia implicitamente o padrão dominante, eixo mais alto ou evidência comportamental
+- Ações sem verbo forte, sem tempo ou sem condição`;
 
-═══ 7. OBJETIVO ═══
-Cada microAção deve fazer o usuário pensar: "isso foi escrito exatamente para o meu problema"
+  return schema;
+}
 
-Exemplo CORRETO (padrão dominante = evitação de conflito):
-{"gatilho": "perceber que está escolhendo ficar quieta para não criar conflito com alguém próximo", "acao": "pare, diga em voz alta 'eu estou evitando' e formule uma frase honesta sobre o que você quer — diga antes de sair do ambiente"}
-
-Exemplo CORRETO (eixo alto = perfeccionismo paralisante):
-{"gatilho": "quando perceber que está revisando a mesma tarefa pela terceira vez antes de entregar", "acao": "entregue agora como está, cronometre 2 minutos e anote o que aconteceu de verdade — nada do que você temia"}
-
-Exemplo ERRADO:
-{"gatilho": "quando se sentir insegura", "acao": "respire fundo e observe o que está sentindo"}`;
 
 function buildUserPrompt(
   userContext: string,
