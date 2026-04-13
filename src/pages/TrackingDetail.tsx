@@ -11,7 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp, Save, Lock, Crown } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp, Save, Lock, Crown, History } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ActionItem {
@@ -23,17 +23,18 @@ interface ActionItem {
   notes: string;
 }
 
-interface TestSummary {
-  testName: string;
-  testIcon: string;
-  lastTestDate: string;
+interface CycleData {
+  cycleNumber: number;
+  sessionId: string;
+  diagnosticResultId: string;
+  completedAt: string;
   dominantPattern: string;
   profileName: string;
   stateSummary: string;
-  diagnosticResultId: string;
-  sessionId: string;
   allScores: { key: string; label: string; percentage: number }[];
   topScore: { label: string; percentage: number } | null;
+  actions: ActionItem[];
+  aiFeedback: string | null;
 }
 
 const RETEST_DAYS = 15;
@@ -46,34 +47,19 @@ export default function TrackingDetail() {
   const hasAccess = isPremium || isSuperAdmin;
 
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState<TestSummary | null>(null);
-  const [actions, setActions] = useState<ActionItem[]>([]);
+  const [testName, setTestName] = useState('');
+  const [cycles, setCycles] = useState<CycleData[]>([]);
+  const [activeCycleIndex, setActiveCycleIndex] = useState(0);
   const [expandedAction, setExpandedAction] = useState<string | null>(null);
   const [savingNotes, setSavingNotes] = useState<Set<string>>(new Set());
-  const [aiFeedback, setAiFeedback] = useState<string | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [daysSinceTest, setDaysSinceTest] = useState(0);
-  const [daysUntilRetest, setDaysUntilRetest] = useState(RETEST_DAYS);
-  const [retestAvailable, setRetestAvailable] = useState(false);
+  const [showCycleHistory, setShowCycleHistory] = useState(false);
 
   useEffect(() => {
     if (!user || !hasAccess || !testModuleId) { setLoading(false); return; }
 
     const load = async () => {
       try {
-        // Get latest session for this module
-        const { data: sessions } = await supabase
-          .from('diagnostic_sessions')
-          .select('id, completed_at')
-          .eq('user_id', user.id)
-          .eq('test_module_id', testModuleId)
-          .not('completed_at', 'is', null)
-          .order('completed_at', { ascending: false })
-          .limit(1);
-
-        if (!sessions?.length) { setLoading(false); return; }
-        const session = sessions[0];
-
         // Get module info
         const { data: mod } = await supabase
           .from('test_modules')
@@ -81,62 +67,88 @@ export default function TrackingDetail() {
           .eq('id', testModuleId)
           .single();
 
-        // Get result
-        const { data: result } = await supabase
+        setTestName(mod?.name || 'Teste');
+
+        // Get ALL completed sessions for this module (cycles)
+        const { data: sessions } = await supabase
+          .from('diagnostic_sessions')
+          .select('id, completed_at')
+          .eq('user_id', user.id)
+          .eq('test_module_id', testModuleId)
+          .not('completed_at', 'is', null)
+          .order('completed_at', { ascending: true }); // oldest first = cycle 1
+
+        if (!sessions?.length) { setLoading(false); return; }
+
+        // Get results for all sessions
+        const sessionIds = sessions.map(s => s.id);
+        const { data: results } = await supabase
           .from('diagnostic_results')
-          .select('id, dominant_pattern, profile_name, state_summary, all_scores')
-          .eq('session_id', session.id)
-          .single();
+          .select('id, session_id, dominant_pattern, profile_name, state_summary, all_scores')
+          .in('session_id', sessionIds);
 
-        if (!result) { setLoading(false); return; }
+        if (!results?.length) { setLoading(false); return; }
 
-        const scores = (result.all_scores as any[] || []) as { key: string; label: string; percentage: number }[];
-        const topScore = scores.length > 0
-          ? scores.reduce((max, s) => s.percentage > max.percentage ? s : max, scores[0])
-          : null;
+        const resultMap = new Map(results.map(r => [r.session_id, r]));
 
-        const lastDate = new Date(session.completed_at!);
-        const daysSince = Math.floor((Date.now() - lastDate.getTime()) / 86400000);
-
-        setSummary({
-          testName: mod?.name || 'Teste',
-          testIcon: mod?.icon || 'brain',
-          lastTestDate: session.completed_at!,
-          dominantPattern: result.dominant_pattern,
-          profileName: result.profile_name,
-          stateSummary: result.state_summary,
-          diagnosticResultId: result.id,
-          sessionId: session.id,
-          allScores: scores,
-          topScore,
-        });
-
-        setDaysSinceTest(daysSince);
-        setDaysUntilRetest(Math.max(0, RETEST_DAYS - daysSince));
-        setRetestAvailable(daysSince >= RETEST_DAYS);
-
-        // Get actions
-        const { data: actionData } = await supabase
+        // Get actions for all results
+        const resultIds = results.map(r => r.id);
+        const { data: allActions } = await supabase
           .from('action_plan_tracking')
-          .select('id, day_number, action_text, completed, completed_at, notes')
-          .eq('diagnostic_result_id', result.id)
+          .select('id, day_number, action_text, completed, completed_at, notes, diagnostic_result_id')
+          .in('diagnostic_result_id', resultIds)
           .eq('user_id', user.id)
           .order('day_number');
 
-        setActions((actionData as ActionItem[]) || []);
-
-        // Get latest AI feedback
-        const { data: feedback } = await supabase
-          .from('progress_ai_feedback')
-          .select('feedback_text')
-          .eq('user_id', user.id)
-          .eq('diagnostic_result_id', result.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-
-        if (feedback?.length) {
-          setAiFeedback(feedback[0].feedback_text);
+        const actionsByResult = new Map<string, ActionItem[]>();
+        for (const a of (allActions || [])) {
+          const list = actionsByResult.get(a.diagnostic_result_id) || [];
+          list.push(a);
+          actionsByResult.set(a.diagnostic_result_id, list);
         }
+
+        // Get AI feedback for all results
+        const { data: allFeedback } = await supabase
+          .from('progress_ai_feedback')
+          .select('diagnostic_result_id, feedback_text, created_at')
+          .in('diagnostic_result_id', resultIds)
+          .order('created_at', { ascending: false });
+
+        const feedbackByResult = new Map<string, string>();
+        for (const f of (allFeedback || [])) {
+          if (!feedbackByResult.has(f.diagnostic_result_id)) {
+            feedbackByResult.set(f.diagnostic_result_id, f.feedback_text);
+          }
+        }
+
+        // Build cycles
+        const cycleList: CycleData[] = [];
+        sessions.forEach((session, index) => {
+          const result = resultMap.get(session.id);
+          if (!result) return;
+
+          const scores = (result.all_scores as any[] || []) as { key: string; label: string; percentage: number }[];
+          const topScore = scores.length > 0
+            ? scores.reduce((max, s) => s.percentage > max.percentage ? s : max, scores[0])
+            : null;
+
+          cycleList.push({
+            cycleNumber: index + 1,
+            sessionId: session.id,
+            diagnosticResultId: result.id,
+            completedAt: session.completed_at!,
+            dominantPattern: result.dominant_pattern,
+            profileName: result.profile_name,
+            stateSummary: result.state_summary,
+            allScores: scores,
+            topScore,
+            actions: actionsByResult.get(result.id) || [],
+            aiFeedback: feedbackByResult.get(result.id) || null,
+          });
+        });
+
+        setCycles(cycleList);
+        setActiveCycleIndex(cycleList.length - 1); // latest cycle active by default
       } catch (e) {
         console.error('Error loading tracking detail:', e);
       } finally {
@@ -147,9 +159,19 @@ export default function TrackingDetail() {
     load();
   }, [user, hasAccess, testModuleId]);
 
+  const activeCycle = cycles[activeCycleIndex] || null;
+
+  const updateActionInCycle = useCallback((actionId: string, updates: Partial<ActionItem>) => {
+    setCycles(prev => prev.map((cycle, idx) =>
+      idx === activeCycleIndex
+        ? { ...cycle, actions: cycle.actions.map(a => a.id === actionId ? { ...a, ...updates } : a) }
+        : cycle
+    ));
+  }, [activeCycleIndex]);
+
   const toggleAction = useCallback(async (actionId: string, completed: boolean) => {
     const now = completed ? new Date().toISOString() : null;
-    setActions(prev => prev.map(a => a.id === actionId ? { ...a, completed, completed_at: now } : a));
+    updateActionInCycle(actionId, { completed, completed_at: now });
 
     const { error } = await supabase
       .from('action_plan_tracking')
@@ -157,10 +179,10 @@ export default function TrackingDetail() {
       .eq('id', actionId);
 
     if (error) {
-      setActions(prev => prev.map(a => a.id === actionId ? { ...a, completed: !completed } : a));
+      updateActionInCycle(actionId, { completed: !completed });
       toast.error('Erro ao atualizar ação');
     }
-  }, []);
+  }, [updateActionInCycle]);
 
   const saveNotes = useCallback(async (actionId: string, notes: string) => {
     setSavingNotes(prev => new Set(prev).add(actionId));
@@ -180,21 +202,23 @@ export default function TrackingDetail() {
   }, []);
 
   const requestAIFeedback = useCallback(async () => {
-    if (!summary || !user) return;
+    if (!activeCycle || !user) return;
     setLoadingAI(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('analyze-progress', {
         body: {
           userId: user.id,
-          diagnosticResultId: summary.diagnosticResultId,
+          diagnosticResultId: activeCycle.diagnosticResultId,
           testModuleId,
         },
       });
 
       if (error) throw error;
       if (data?.feedback) {
-        setAiFeedback(data.feedback);
+        setCycles(prev => prev.map((cycle, idx) =>
+          idx === activeCycleIndex ? { ...cycle, aiFeedback: data.feedback } : cycle
+        ));
         toast.success('Feedback gerado');
       }
     } catch (e) {
@@ -203,7 +227,7 @@ export default function TrackingDetail() {
     } finally {
       setLoadingAI(false);
     }
-  }, [summary, user, testModuleId]);
+  }, [activeCycle, user, testModuleId, activeCycleIndex]);
 
   if (!hasAccess) {
     return (
@@ -212,9 +236,13 @@ export default function TrackingDetail() {
           <Card className="max-w-md text-center">
             <CardContent className="pt-8 pb-8 space-y-4">
               <Lock className="w-10 h-10 text-accent mx-auto" />
-              <h2 className="text-xl font-bold">Área Premium</h2>
-              <Button onClick={() => navigate('/checkout')} className="bg-accent text-accent-foreground">
-                <Crown className="w-4 h-4 mr-2" /> Desbloquear por R$9,99/mês
+              <div className="space-y-2">
+                <p className="text-foreground font-bold text-base">Você já sabe o que está errado.</p>
+                <p className="text-foreground font-bold text-base">Mas continua fazendo igual.</p>
+                <p className="text-muted-foreground text-sm">Sem execução, nada muda.</p>
+              </div>
+              <Button onClick={() => navigate('/checkout')} className="bg-accent text-accent-foreground w-full">
+                <Crown className="w-4 h-4 mr-2" /> Desbloquear acompanhamento — R$9,99/mês
               </Button>
             </CardContent>
           </Card>
@@ -233,7 +261,7 @@ export default function TrackingDetail() {
     );
   }
 
-  if (!summary) {
+  if (!activeCycle) {
     return (
       <AppLayout>
         <div className="p-8 text-center">
@@ -246,20 +274,89 @@ export default function TrackingDetail() {
     );
   }
 
-  const completedCount = actions.filter(a => a.completed).length;
-  const progressPct = actions.length > 0 ? Math.round((completedCount / actions.length) * 100) : 0;
+  const completedCount = activeCycle.actions.filter(a => a.completed).length;
+  const progressPct = activeCycle.actions.length > 0 ? Math.round((completedCount / activeCycle.actions.length) * 100) : 0;
+  const lastDate = new Date(activeCycle.completedAt);
+  const daysSinceTest = Math.floor((Date.now() - lastDate.getTime()) / 86400000);
+  const daysUntilRetest = Math.max(0, RETEST_DAYS - daysSinceTest);
+  const retestAvailable = daysSinceTest >= RETEST_DAYS;
   const retestProgressPct = Math.min(100, Math.round((daysSinceTest / RETEST_DAYS) * 100));
+  const isLatestCycle = activeCycleIndex === cycles.length - 1;
 
   return (
     <AppLayout>
       <div className="p-4 md:p-8 max-w-3xl mx-auto space-y-5">
         {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/acompanhamento')}>
-            <ArrowLeft className="w-4 h-4" />
-          </Button>
-          <h1 className="text-lg font-bold text-foreground">{summary.testName}</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/acompanhamento')}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+            <div>
+              <h1 className="text-lg font-bold text-foreground">{testName}</h1>
+              <p className="text-xs text-muted-foreground">
+                Ciclo {activeCycle.cycleNumber} de {cycles.length}
+                {isLatestCycle && ' (atual)'}
+              </p>
+            </div>
+          </div>
+          {cycles.length > 1 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCycleHistory(!showCycleHistory)}
+              className="text-xs"
+            >
+              <History className="w-3.5 h-3.5 mr-1" />
+              Ciclos
+            </Button>
+          )}
         </div>
+
+        {/* Cycle selector */}
+        {showCycleHistory && cycles.length > 1 && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}>
+            <Card>
+              <CardContent className="p-4 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Histórico de Ciclos</p>
+                {[...cycles].reverse().map((cycle, reverseIdx) => {
+                  const realIdx = cycles.length - 1 - reverseIdx;
+                  const isActive = realIdx === activeCycleIndex;
+                  const cycleCompleted = cycle.actions.filter(a => a.completed).length;
+                  const cyclePct = cycle.actions.length > 0 ? Math.round((cycleCompleted / cycle.actions.length) * 100) : 0;
+
+                  return (
+                    <button
+                      key={cycle.sessionId}
+                      onClick={() => { setActiveCycleIndex(realIdx); setShowCycleHistory(false); }}
+                      className={`w-full text-left p-3 rounded-xl border transition-all ${
+                        isActive ? 'border-primary bg-primary/5' : 'border-border/50 hover:border-primary/30'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <span className="text-sm font-semibold text-foreground">
+                            Ciclo {cycle.cycleNumber}
+                          </span>
+                          {realIdx === cycles.length - 1 && (
+                            <Badge variant="secondary" className="ml-2 text-[10px]">Atual</Badge>
+                          )}
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {new Date(cycle.completedAt).toLocaleDateString('pt-BR')} — {cycle.profileName}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-medium text-foreground">{cyclePct}%</p>
+                          <p className="text-[10px] text-muted-foreground">{cycleCompleted}/{cycle.actions.length}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* BLOCO A — Resumo */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
@@ -267,87 +364,96 @@ export default function TrackingDetail() {
             <CardContent className="p-5 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Diagnóstico Principal</p>
-                  <p className="font-semibold text-foreground">{summary.profileName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ciclo {activeCycle.cycleNumber} — Diagnóstico Principal
+                  </p>
+                  <p className="font-semibold text-foreground">{activeCycle.profileName}</p>
                 </div>
-                {summary.topScore && (
+                {activeCycle.topScore && (
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">Eixo mais alto</p>
-                    <p className="text-sm font-semibold text-primary">{summary.topScore.label}: {summary.topScore.percentage}%</p>
+                    <p className="text-sm font-semibold text-primary">
+                      {activeCycle.topScore.label}: {activeCycle.topScore.percentage}%
+                    </p>
                   </div>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground leading-relaxed">{summary.stateSummary}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{activeCycle.stateSummary}</p>
               <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
                 <span className="flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5" />
-                  {new Date(summary.lastTestDate).toLocaleDateString('pt-BR')}
+                  {new Date(activeCycle.completedAt).toLocaleDateString('pt-BR')}
                 </span>
                 <span className="flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  {completedCount}/{actions.length} ações concluídas
+                  {completedCount}/{activeCycle.actions.length} ações concluídas
                 </span>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* BLOCO D — Contagem Regressiva */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <Card className={retestAvailable ? 'border-accent/40' : ''}>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <RefreshCw className={`w-4 h-4 ${retestAvailable ? 'text-accent' : 'text-muted-foreground'}`} />
-                  <span className="text-sm font-medium text-foreground">Ciclo de Reteste</span>
+        {/* BLOCO D — Contagem Regressiva (only for latest cycle) */}
+        {isLatestCycle && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
+            <Card className={retestAvailable ? 'border-accent/40' : ''}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className={`w-4 h-4 ${retestAvailable ? 'text-accent' : 'text-muted-foreground'}`} />
+                    <span className="text-sm font-medium text-foreground">Ciclo de Reteste</span>
+                  </div>
+                  {retestAvailable ? (
+                    <Badge className="bg-accent/15 text-accent border-accent/30 text-[10px]">
+                      Reteste liberado!
+                    </Badge>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">{daysUntilRetest} dias restantes</span>
+                  )}
                 </div>
+                <Progress value={retestProgressPct} className="h-1.5 mb-2" />
                 {retestAvailable ? (
-                  <Badge className="bg-accent/15 text-accent border-accent/30 text-[10px]">
-                    Reteste liberado!
-                  </Badge>
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      Seu ciclo {activeCycle.cycleNumber} se completou. Refaça o teste para iniciar o ciclo {activeCycle.cycleNumber + 1}.
+                    </p>
+                    <Button
+                      size="sm"
+                      className="w-full"
+                      onClick={() => navigate(`/diagnostic/${testModuleId}`)}
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 mr-2" /> Iniciar Ciclo {activeCycle.cycleNumber + 1}
+                    </Button>
+                  </div>
                 ) : (
-                  <span className="text-xs text-muted-foreground">{daysUntilRetest} dias restantes</span>
-                )}
-              </div>
-              <Progress value={retestProgressPct} className="h-1.5 mb-2" />
-              {retestAvailable ? (
-                <div className="space-y-2">
                   <p className="text-xs text-muted-foreground">
-                    Seu ciclo atual se completou. Refaça o teste para medir sua evolução real.
+                    Continue executando suas ações. O reteste será liberado em {daysUntilRetest} dia{daysUntilRetest !== 1 ? 's' : ''}.
                   </p>
-                  <Button
-                    size="sm"
-                    className="w-full"
-                    onClick={() => navigate(`/diagnostic/${testModuleId}`)}
-                  >
-                    <RefreshCw className="w-3.5 h-3.5 mr-2" /> Refazer Teste
-                  </Button>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Continue executando suas ações. O reteste será liberado em {daysUntilRetest} dia{daysUntilRetest !== 1 ? 's' : ''}.
-                </p>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
 
         {/* BLOCO B — Ações */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Ações Propostas</CardTitle>
+                <CardTitle className="text-base">Ações — Ciclo {activeCycle.cycleNumber}</CardTitle>
                 <span className="text-xs text-muted-foreground">{progressPct}% concluído</span>
               </div>
               <Progress value={progressPct} className="h-1.5" />
             </CardHeader>
             <CardContent className="space-y-2 pt-0">
-              {actions.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma ação gerada para este teste.</p>
+              {activeCycle.actions.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  Nenhuma ação gerada para este ciclo.
+                </p>
               ) : (
-                actions.map((action) => {
+                activeCycle.actions.map((action) => {
                   const isExpanded = expandedAction === action.id;
+                  const isPastCycle = !isLatestCycle;
                   return (
                     <div key={action.id} className="border border-border/50 rounded-xl p-3 space-y-2">
                       <div className="flex items-start gap-3">
@@ -355,6 +461,7 @@ export default function TrackingDetail() {
                           checked={action.completed}
                           onCheckedChange={(checked) => toggleAction(action.id, !!checked)}
                           className="mt-0.5"
+                          disabled={isPastCycle}
                         />
                         <div className="flex-1 min-w-0">
                           <p className={`text-sm leading-relaxed ${action.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
@@ -374,7 +481,6 @@ export default function TrackingDetail() {
                         </button>
                       </div>
 
-                      {/* BLOCO C — Anotação individual */}
                       {isExpanded && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
@@ -387,20 +493,23 @@ export default function TrackingDetail() {
                             value={action.notes}
                             onChange={(e) => {
                               const val = e.target.value;
-                              setActions(prev => prev.map(a => a.id === action.id ? { ...a, notes: val } : a));
+                              updateActionInCycle(action.id, { notes: val });
                             }}
                             className="min-h-[60px] text-sm resize-none"
+                            disabled={isPastCycle}
                           />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => saveNotes(action.id, action.notes)}
-                            disabled={savingNotes.has(action.id)}
-                            className="text-xs"
-                          >
-                            <Save className="w-3 h-3 mr-1" />
-                            {savingNotes.has(action.id) ? 'Salvando...' : 'Salvar'}
-                          </Button>
+                          {!isPastCycle && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => saveNotes(action.id, action.notes)}
+                              disabled={savingNotes.has(action.id)}
+                              className="text-xs"
+                            >
+                              <Save className="w-3 h-3 mr-1" />
+                              {savingNotes.has(action.id) ? 'Salvando...' : 'Salvar'}
+                            </Button>
+                          )}
                         </motion.div>
                       )}
                     </div>
@@ -418,36 +527,40 @@ export default function TrackingDetail() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-accent" />
-                  <CardTitle className="text-base">Leitura da IA</CardTitle>
+                  <CardTitle className="text-base">Leitura da IA — Ciclo {activeCycle.cycleNumber}</CardTitle>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={requestAIFeedback}
-                  disabled={loadingAI}
-                  className="text-xs"
-                >
-                  {loadingAI ? (
-                    <>
-                      <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1" />
-                      Analisando...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-3 h-3 mr-1" /> Gerar feedback
-                    </>
-                  )}
-                </Button>
+                {isLatestCycle && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={requestAIFeedback}
+                    disabled={loadingAI}
+                    className="text-xs"
+                  >
+                    {loadingAI ? (
+                      <>
+                        <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin mr-1" />
+                        Analisando...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3 mr-1" /> Gerar feedback
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent>
-              {aiFeedback ? (
+              {activeCycle.aiFeedback ? (
                 <div className="text-sm text-foreground leading-relaxed whitespace-pre-line bg-secondary/30 rounded-xl p-4">
-                  {aiFeedback}
+                  {activeCycle.aiFeedback}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Marque ações e escreva anotações para receber um feedback personalizado da IA sobre seu progresso.
+                  {isLatestCycle
+                    ? 'Marque ações e escreva anotações para receber um feedback personalizado da IA sobre seu progresso.'
+                    : 'Nenhum feedback gerado para este ciclo.'}
                 </p>
               )}
             </CardContent>

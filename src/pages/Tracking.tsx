@@ -18,8 +18,7 @@ interface TestTrackingItem {
   lastTestDate: string;
   dominantPattern: string;
   profileName: string;
-  diagnosticResultId: string;
-  sessionId: string;
+  totalCycles: number;
   actionsTotal: number;
   actionsCompleted: number;
   daysSinceTest: number;
@@ -43,7 +42,6 @@ export default function Tracking() {
 
     const load = async () => {
       try {
-        // Get all completed sessions with their test modules
         const { data: sessions } = await supabase
           .from('diagnostic_sessions')
           .select('id, completed_at, test_module_id')
@@ -53,7 +51,6 @@ export default function Tracking() {
 
         if (!sessions?.length) { setLoading(false); return; }
 
-        // Get test modules
         const moduleIds = [...new Set(sessions.map(s => s.test_module_id).filter(Boolean))];
         const { data: modules } = await supabase
           .from('test_modules')
@@ -62,15 +59,17 @@ export default function Tracking() {
 
         const moduleMap = new Map((modules || []).map(m => [m.id, m]));
 
-        // Group sessions by test_module_id, take latest per module
+        // Count cycles per module and get latest session
         const latestByModule = new Map<string, typeof sessions[0]>();
+        const cycleCountByModule = new Map<string, number>();
         for (const s of sessions) {
-          if (s.test_module_id && !latestByModule.has(s.test_module_id)) {
+          if (!s.test_module_id) continue;
+          cycleCountByModule.set(s.test_module_id, (cycleCountByModule.get(s.test_module_id) || 0) + 1);
+          if (!latestByModule.has(s.test_module_id)) {
             latestByModule.set(s.test_module_id, s);
           }
         }
 
-        // Get results for latest sessions
         const sessionIds = [...latestByModule.values()].map(s => s.id);
         const { data: results } = await supabase
           .from('diagnostic_results')
@@ -79,14 +78,12 @@ export default function Tracking() {
 
         const resultMap = new Map((results || []).map(r => [r.session_id, r]));
 
-        // Get action plan counts
         const resultIds = (results || []).map(r => r.id);
         const { data: actions } = await supabase
           .from('action_plan_tracking')
           .select('diagnostic_result_id, completed')
           .in('diagnostic_result_id', resultIds.length ? resultIds : ['__none__']);
 
-        // Group actions by result
         const actionsByResult = new Map<string, { total: number; completed: number }>();
         for (const a of (actions || [])) {
           const existing = actionsByResult.get(a.diagnostic_result_id) || { total: 0, completed: 0 };
@@ -112,8 +109,7 @@ export default function Tracking() {
             lastTestDate: session.completed_at!,
             dominantPattern: result.dominant_pattern,
             profileName: result.profile_name,
-            diagnosticResultId: result.id,
-            sessionId: session.id,
+            totalCycles: cycleCountByModule.get(moduleId) || 1,
             actionsTotal: actionStats.total,
             actionsCompleted: actionStats.completed,
             daysSinceTest: daysSince,
@@ -142,14 +138,14 @@ export default function Tracking() {
               <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto">
                 <Lock className="w-8 h-8 text-accent" />
               </div>
-              <h2 className="text-xl font-bold text-foreground">Área Premium</h2>
-              <p className="text-muted-foreground text-sm leading-relaxed">
-                O acompanhamento por teste é exclusivo para assinantes premium.
-                Monitore seu progresso, anote reflexões e receba feedback da IA.
-              </p>
-              <Button onClick={() => navigate('/checkout')} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <div className="space-y-2">
+                <p className="text-foreground font-bold text-base">Você já sabe o que está errado.</p>
+                <p className="text-foreground font-bold text-base">Mas continua fazendo igual.</p>
+                <p className="text-muted-foreground text-sm">Sem execução, nada muda.</p>
+              </div>
+              <Button onClick={() => navigate('/checkout')} className="bg-accent text-accent-foreground hover:bg-accent/90 w-full">
                 <Crown className="w-4 h-4 mr-2" />
-                Desbloquear por R$9,99/mês
+                Desbloquear acompanhamento — R$9,99/mês
               </Button>
             </CardContent>
           </Card>
@@ -220,7 +216,14 @@ export default function Tracking() {
                             <p className="text-xs text-muted-foreground">{item.profileName}</p>
                           </div>
                         </div>
-                        <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <div className="flex items-center gap-2">
+                          {item.totalCycles > 1 && (
+                            <Badge variant="secondary" className="text-[10px]">
+                              {item.totalCycles} ciclos
+                            </Badge>
+                          )}
+                          <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-4 text-xs text-muted-foreground mb-3">
