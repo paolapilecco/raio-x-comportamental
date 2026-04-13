@@ -480,7 +480,7 @@ export default function TrackingDetail() {
         )}
 
         {/* BLOCO C — Ações de Execução */}
-        {hasActions && (
+        {hasActions ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card>
               <CardHeader className="pb-3">
