@@ -63,7 +63,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
         // Fetch action plan tracking for this result
         const { data: tracking } = await supabase
           .from('action_plan_tracking')
-          .select('id, day_number, action_text, completed, completed_at, notes')
+          .select('id, day_number, action_text, gatilho, acao, completed, completed_at, notes')
           .eq('diagnostic_result_id', results.id)
           .eq('user_id', userId)
           .order('day_number');
