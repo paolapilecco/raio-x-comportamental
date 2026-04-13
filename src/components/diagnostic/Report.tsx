@@ -71,7 +71,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const { profile, user } = useAuth();
   const axisLabels = useAxisLabels();
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
-  const [actionPlanItems, setActionPlanItems] = useState<{ id: string; day_number: number; action_text: string; completed: boolean }[]>([]);
 
   // Fetch template sections for this test module
   useEffect(() => {
@@ -102,23 +101,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
     fetchTemplate();
   }, [moduleSlug]);
-
-  // Fetch action plan items for this result
-  useEffect(() => {
-    if (!user) return;
-    const resultId = (result as any).id;
-    if (!resultId) return;
-    const fetchPlan = async () => {
-      const { data } = await supabase
-        .from('action_plan_tracking')
-        .select('id, day_number, action_text, completed')
-        .eq('diagnostic_result_id', resultId)
-        .eq('user_id', user.id)
-        .order('day_number');
-      if (data) setActionPlanItems(data);
-    };
-    fetchPlan();
-  }, [user, result]);
 
   // Track report_viewed event
   useEffect(() => {
