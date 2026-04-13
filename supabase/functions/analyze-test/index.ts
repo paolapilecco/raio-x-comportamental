@@ -578,8 +578,9 @@ function buildValidationContext(
   dominant: ScoreEntry,
   sortedScores: ScoreEntry[],
   answers: StructuredAnswer[] = [],
-): ValidationContext {
+): ValidationContext & { hasRealAnswers: boolean } {
   const topAxis = sortedScores[0] ?? dominant;
+  const hasRealAnswers = answers.length > 0;
 
   const getTopAnswers = (axisKey?: string, minScore = 65, limit = 3) =>
     [...answers]
@@ -591,12 +592,12 @@ function buildValidationContext(
   const topEvidence = getTopAnswers(topAxis.key);
   const strongEvidence = getTopAnswers(undefined, 80, 1)[0] || getTopAnswers(undefined, 65, 1)[0];
 
-  // When no answers exist (simulation mode), include all score keys/labels as broad anchors
-  const allScoreTokens = answers.length === 0
+  const allScoreTokens = !hasRealAnswers
     ? sortedScores.flatMap((s) => [s.key, s.label])
     : [];
 
   return {
+    hasRealAnswers,
     dominant: {
       ref: domEvidence[0]?.questionText || dominant.label || dominant.key,
       tokens: buildAnchorTokens([dominant.key, dominant.label, ...allScoreTokens, ...domEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
