@@ -322,7 +322,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   }
 
   // Blocking point + focus — editorial prose
-  const openingY = ctx.y;
+  
   const openingData: { label: string; text: string }[] = [];
   if (blockingPoint) openingData.push({ label: 'O QUE TRAVA VOCE', text: blockingPoint });
   if (focoMudanca) openingData.push({ label: 'ONDE CONCENTRAR ENERGIA', text: focoMudanca });
