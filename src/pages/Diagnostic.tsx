@@ -18,7 +18,6 @@ import { UserCircle, ChevronRight } from 'lucide-react';
 
 type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
-const PURPOSE_SLUG = 'proposito-sentido';
 const BEHAVIORAL_SLUG = 'padrao-comportamental';
 
 interface DbQuestion {
@@ -511,7 +510,7 @@ const Diagnostic = () => {
       }
 
       const ai = data?.analysis;
-      if (!ai) return null;
+      if (!ai) throw new Error('AI returned empty analysis');
 
       // Build DiagnosticResult from AI response
       const dominant = scores[0];
