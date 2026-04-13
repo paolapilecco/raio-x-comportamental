@@ -8,6 +8,7 @@ export interface ActionPlanDay {
   action_text: string;
   completed: boolean;
   completed_at: string | null;
+  notes: string;
 }
 
 export interface ActionPlanStats {
@@ -60,7 +61,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
         // Fetch action plan tracking for this result
         const { data: tracking } = await supabase
           .from('action_plan_tracking')
-          .select('id, day_number, action_text, completed, completed_at')
+          .select('id, day_number, action_text, completed, completed_at, notes')
           .eq('diagnostic_result_id', results.id)
           .eq('user_id', userId)
           .order('day_number');
@@ -98,7 +99,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
     } else if (completed && userId) {
       trackEvent({ userId, event: 'action_plan_day_completed', diagnosticResultId: diagnosticResultId || undefined, metadata: { dayId } });
     }
-  }, []);
+  }, [userId, diagnosticResultId]);
 
   // Compute stats
   const completedDays = days.filter(d => d.completed).length;
@@ -106,7 +107,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
   const remainingDays = totalDays - completedDays;
   const executionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
 
-  // Calculate current streak (consecutive completed days from start)
+  // Calculate current streak (consecutive completed actions from start)
   let currentStreak = 0;
   const sorted = [...days].sort((a, b) => a.day_number - b.day_number);
   for (const d of sorted) {
@@ -125,6 +126,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
 
 /**
  * Creates action plan tracking records for a diagnostic result.
+ * Stores exactly 1 row per action (max 3 actions).
  * Call after saving diagnostic results.
  */
 export async function createActionPlanTracking(
@@ -143,37 +145,13 @@ export async function createActionPlanTracking(
 
   if (existing && existing.length > 0) return; // Already created
 
-  // Distribute actions across 15 days max
-  const MAX_DAYS = 15;
-  const rows: { user_id: string; diagnostic_result_id: string; day_number: number; action_text: string }[] = [];
-
-  if (actions.length >= MAX_DAYS) {
-    // More actions than days: take first 15
-    for (let i = 0; i < MAX_DAYS; i++) {
-      rows.push({
-        user_id: userId,
-        diagnostic_result_id: diagnosticResultId,
-        day_number: i + 1,
-        action_text: actions[i],
-      });
-    }
-  } else {
-    // Fewer actions: distribute evenly across 15 days
-    const daysPerAction = Math.floor(MAX_DAYS / actions.length);
-    let dayNum = 1;
-    for (let i = 0; i < actions.length; i++) {
-      const span = i < actions.length - 1 ? daysPerAction : MAX_DAYS - dayNum + 1;
-      for (let j = 0; j < span && dayNum <= MAX_DAYS; j++) {
-        rows.push({
-          user_id: userId,
-          diagnostic_result_id: diagnosticResultId,
-          day_number: dayNum,
-          action_text: actions[i],
-        });
-        dayNum++;
-      }
-    }
-  }
+  // Store exactly 1 row per action (max 3)
+  const rows = actions.slice(0, 3).map((actionText, i) => ({
+    user_id: userId,
+    diagnostic_result_id: diagnosticResultId,
+    day_number: i + 1,
+    action_text: actionText,
+  }));
 
   await supabase.from('action_plan_tracking').insert(rows);
 }

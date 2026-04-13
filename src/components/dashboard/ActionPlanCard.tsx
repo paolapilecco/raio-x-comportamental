@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Flame, Target } from 'lucide-react';
+import { parseActionString } from '@/lib/buildActionPreview';
 import type { ActionPlanData } from '@/hooks/useActionPlan';
 
 interface ActionPlanCardProps {
@@ -30,7 +31,7 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
             </div>
             <div>
               <h3 className="text-base font-semibold text-foreground">Plano de Ação</h3>
-              <p className="text-[0.65rem] text-muted-foreground">15 dias de acompanhamento</p>
+              <p className="text-[0.65rem] text-muted-foreground">{stats.total_days} ações para executar</p>
             </div>
           </div>
           {stats.current_streak > 0 && (
@@ -45,7 +46,7 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
         <div className="grid grid-cols-3 gap-3 mb-3">
           <div className="text-center">
             <p className="text-lg font-bold text-foreground tabular-nums">{stats.completed_days}</p>
-            <p className="text-[0.6rem] text-muted-foreground">concluídos</p>
+            <p className="text-[0.6rem] text-muted-foreground">concluídas</p>
           </div>
           <div className="text-center">
             <p className="text-lg font-bold text-foreground tabular-nums">{stats.remaining_days}</p>
@@ -68,36 +69,37 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
         </div>
       </div>
 
-      {/* Day list */}
-      <div className="px-4 py-3 max-h-[320px] overflow-y-auto">
+      {/* Action list */}
+      <div className="px-4 py-3">
         <div className="space-y-1">
-          {days.map((day) => (
-            <button
-              key={day.id}
-              onClick={() => toggleDay(day.id, !day.completed)}
-              className={`w-full flex items-start gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200 hover:bg-secondary/30 active:scale-[0.99] ${
-                day.completed ? 'opacity-60' : ''
-              }`}
-            >
-              <div className="mt-0.5 shrink-0">
-                {day.completed ? (
-                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                ) : (
-                  <Circle className="w-5 h-5 text-muted-foreground/30" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-0.5">
-                  <span className="text-[0.65rem] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-                    Dia {day.day_number}
-                  </span>
+          {days.map((day) => {
+            const parsed = parseActionString(day.action_text);
+            return (
+              <button
+                key={day.id}
+                onClick={() => toggleDay(day.id, !day.completed)}
+                className={`w-full flex items-start gap-3 px-3 py-3 rounded-xl text-left transition-all duration-200 hover:bg-secondary/30 active:scale-[0.99] ${
+                  day.completed ? 'opacity-60' : ''
+                }`}
+              >
+                <div className="mt-0.5 shrink-0">
+                  {day.completed ? (
+                    <CheckCircle2 className="w-5 h-5 text-green-500" />
+                  ) : (
+                    <Circle className="w-5 h-5 text-muted-foreground/30" />
+                  )}
                 </div>
-                <p className={`text-sm leading-relaxed ${day.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                  {day.action_text}
-                </p>
-              </div>
-            </button>
-          ))}
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] text-muted-foreground/60 mb-0.5 leading-relaxed">
+                    Quando {parsed.trigger} →
+                  </p>
+                  <p className={`text-sm leading-relaxed ${day.completed ? 'line-through text-muted-foreground' : 'text-foreground font-medium'}`}>
+                    {parsed.action}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </motion.div>

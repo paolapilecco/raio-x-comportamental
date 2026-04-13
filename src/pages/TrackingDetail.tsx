@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
+import { parseActionString } from '@/lib/buildActionPreview';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
@@ -454,21 +455,28 @@ export default function TrackingDetail() {
                 activeCycle.actions.map((action) => {
                   const isExpanded = expandedAction === action.id;
                   const isPastCycle = !isLatestCycle;
+                  const parsed = parseActionString(action.action_text);
                   return (
-                    <div key={action.id} className="border border-border/50 rounded-xl p-3 space-y-2">
+                    <div key={action.id} className={`border rounded-xl p-4 space-y-2 transition-all ${
+                      action.completed ? 'border-green-500/20 bg-green-500/[0.02]' : 'border-border/50'
+                    }`}>
                       <div className="flex items-start gap-3">
                         <Checkbox
                           checked={action.completed}
                           onCheckedChange={(checked) => toggleAction(action.id, !!checked)}
-                          className="mt-0.5"
+                          className="mt-1"
                           disabled={isPastCycle}
                         />
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm leading-relaxed ${action.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                            {action.action_text}
+                          <p className="text-[10px] text-muted-foreground/60 mb-1 leading-relaxed">
+                            Quando <span className="text-foreground/70 font-medium">{parsed.trigger}</span> →
+                          </p>
+                          <p className={`text-sm leading-relaxed ${action.completed ? 'line-through text-muted-foreground' : 'text-foreground font-medium'}`}>
+                            {parsed.action}
                           </p>
                           {action.completed && action.completed_at && (
-                            <p className="text-[10px] text-muted-foreground mt-1">
+                            <p className="text-[10px] text-green-600/60 mt-1.5 flex items-center gap-1">
+                              <CheckCircle2 className="w-3 h-3" />
                               Concluída em {new Date(action.completed_at).toLocaleDateString('pt-BR')}
                             </p>
                           )}
@@ -485,7 +493,7 @@ export default function TrackingDetail() {
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
-                          className="pl-8 space-y-2"
+                          className="pl-8 space-y-2 pt-1"
                         >
                           <label className="text-xs text-muted-foreground font-medium">Anotação</label>
                           <Textarea
