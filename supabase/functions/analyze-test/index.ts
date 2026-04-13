@@ -293,30 +293,55 @@ Retorne APENAS este JSON, sem markdown, sem texto adicional:
 }
 
 REGRAS OBRIGATÓRIAS PARA microAcoes:
-VINCULAÇÃO AO DIAGNÓSTICO:
-- microAcoes[0] → DEVE atacar diretamente o PADRÃO DOMINANTE identificado nos scores. O gatilho deve descrever a situação concreta onde esse padrão se manifesta.
-- microAcoes[1] → DEVE atacar o EIXO COM MAIOR SCORE (%). O gatilho deve referenciar um comportamento real associado a esse eixo.
-- microAcoes[2] → DEVE atacar um COMPORTAMENTO RECORRENTE detectado nas EVIDÊNCIAS COMPORTAMENTAIS (respostas com score >= 80). O gatilho deve citar o comportamento específico revelado.
 
-QUALIDADE OBRIGATÓRIA:
-- Cada gatilho DEVE ser uma situação concreta e específica — nunca genérico (ex: "situações difíceis", "momentos de estresse")
-- Cada ação DEVE ter: verbo de ação claro, tempo definido (agora, por 5 minutos, hoje, antes de sair), instrução física ou mental concreta
-- Cada ação deve fazer o usuário sentir "isso foi feito para mim" — se poderia servir para qualquer pessoa, está ERRADA
+═══ 1. VINCULAÇÃO AO DIAGNÓSTICO (INEGOCIÁVEL) ═══
+- microAcoes[0] → ataca o PADRÃO DOMINANTE. O gatilho descreve a situação concreta onde esse padrão aparece na vida real.
+- microAcoes[1] → ataca o EIXO COM MAIOR SCORE (%). O gatilho referencia um comportamento real desse eixo.
+- microAcoes[2] → ataca um COMPORTAMENTO RECORRENTE das EVIDÊNCIAS COMPORTAMENTAIS (respostas score >= 80). O gatilho cita o comportamento específico revelado.
 
-PROIBIDO:
-- "respire fundo", "observe seus padrões", "reflita sobre isso", "tenha consciência", "mude seu comportamento"
-- Gatilhos vagos: "quando se sentir mal", "em situações difíceis", "quando estiver estressada"
-- Ações genéricas que funcionariam para qualquer perfil
+═══ 2. GATILHO CONCRETO (OBRIGATÓRIO) ═══
+O gatilho DEVE incluir pelo menos um: contexto real, situação específica, tipo de interação, comportamento observável, pessoa/ambiente/canal.
+CORRETO: "quando estiver evitando responder alguém no WhatsApp para não entrar em conflito"
+CORRETO: "quando perceber que concordou com algo no trabalho só para não desagradar"
+CORRETO: "quando começar a enrolar antes de uma tarefa que exige exposição"
+ERRADO: "quando se sentir mal", "em situações difíceis", "quando estiver estressada", "quando sentir desconforto"
 
-VALIDAÇÃO:
-- Se a ação não referencia implicitamente o padrão dominante, o eixo mais alto ou uma evidência comportamental → DESCARTAR e gerar outra
-- Teste mental: "essa ação faz sentido APENAS para esse diagnóstico específico?" — se não, reescreva
+═══ 3. AÇÃO FORTE (OBRIGATÓRIO) ═══
+Cada ação DEVE ter: verbo claro + contexto + tempo definido + instrução física ou mental concreta + leve desconforto produtivo + interrupção real do padrão.
+CORRETO: "pare, conte até 5 e diga em voz alta o que você está evitando antes de sair da situação"
+CORRETO: "responda em até 2 minutos com uma frase objetiva, sem explicar demais"
+CORRETO: "faça exatamente o oposto do impulso automático por 5 minutos e anote o resultado"
+ERRADO: "respire fundo", "observe seus padrões", "reflita sobre isso", "tenha consciência", "mude seu comportamento"
+
+═══ 4. FORMATO ═══
+- 1 frase executável por ação (curta, direta)
+- Sem texto longo, sem explicação teórica, sem linguagem motivacional, sem psicologuês
+
+═══ 5. VALIDAÇÃO MENTAL OBRIGATÓRIA (antes de aceitar cada ação) ═══
+Teste 1: "essa ação faz sentido APENAS para esse diagnóstico específico?" → se não, DESCARTAR
+Teste 2: "essa ação tem gatilho concreto e execução real?" → se não, DESCARTAR
+Teste 3: "essa ação interrompe o padrão ou é só conselho bonito?" → se não, DESCARTAR
+Se descartada → reescrever até passar nos 3 testes.
+
+═══ 6. PROIBIÇÕES ABSOLUTAS ═══
+- Gatilhos vagos ou abstratos
+- Conselhos genéricos que serviriam para qualquer pessoa
+- Linguagem abstrata ou bonita demais
+- Ações sem verbo forte, sem tempo ou sem condição
+- Qualquer ação que NÃO referencia implicitamente o padrão dominante, eixo mais alto ou evidência comportamental
+
+═══ 7. OBJETIVO ═══
+Cada microAção deve fazer o usuário pensar: "isso foi escrito exatamente para o meu problema"
 
 Exemplo CORRETO (padrão dominante = evitação de conflito):
-{"gatilho": "perceber que está escolhendo ficar quieta para não criar conflito com alguém próximo", "acao": "pare, diga em voz alta 'eu estou evitando' e formule uma frase honesta sobre o que você quer. Diga antes de sair do ambiente"}
+{"gatilho": "perceber que está escolhendo ficar quieta para não criar conflito com alguém próximo", "acao": "pare, diga em voz alta 'eu estou evitando' e formule uma frase honesta sobre o que você quer — diga antes de sair do ambiente"}
+
+Exemplo CORRETO (eixo alto = perfeccionismo paralisante):
+{"gatilho": "quando perceber que está revisando a mesma tarefa pela terceira vez antes de entregar", "acao": "entregue agora como está, cronometre 2 minutos e anote o que aconteceu de verdade — nada do que você temia"}
 
 Exemplo ERRADO:
 {"gatilho": "quando se sentir insegura", "acao": "respire fundo e observe o que está sentindo"}`;
+
 
 
 function buildUserPrompt(
