@@ -64,7 +64,7 @@ const ChecklistSection = () => {
             className="p-6 rounded-2xl border border-accent/20 bg-accent/5"
           >
             <p className="text-[10px] font-semibold text-accent uppercase tracking-[0.15em] mb-4">
-              Desbloqueio Total — R$ 5,99/mês
+              Desbloqueio Total — R$ 9,99/mês
             </p>
             <div className="space-y-3">
               {premium.map((item, i) => (

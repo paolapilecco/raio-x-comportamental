@@ -260,7 +260,7 @@ serve(async (req) => {
             .update({ 
               plan_type: newPlan, 
               status: "active",
-              value: newPlan === "pessoal" ? 5.99 : 39.90,
+              value: newPlan === "pessoal" ? 9.99 : 39.90,
               updated_at: new Date().toISOString(),
             })
             .eq("id", currentSub.id);
@@ -270,7 +270,7 @@ serve(async (req) => {
             plan: "monthly",
             plan_type: newPlan,
             status: "active",
-            value: newPlan === "pessoal" ? 5.99 : 39.90,
+            value: newPlan === "pessoal" ? 9.99 : 39.90,
             billing_type: "ADMIN",
           });
         }

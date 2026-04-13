@@ -71,7 +71,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const { profile, user } = useAuth();
   const axisLabels = useAxisLabels();
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
-  const [actionPlanItems, setActionPlanItems] = useState<{ id: string; day_number: number; action_text: string; completed: boolean }[]>([]);
 
   // Fetch template sections for this test module
   useEffect(() => {
@@ -102,23 +101,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
     fetchTemplate();
   }, [moduleSlug]);
-
-  // Fetch action plan items for this result
-  useEffect(() => {
-    if (!user) return;
-    const resultId = (result as any).id;
-    if (!resultId) return;
-    const fetchPlan = async () => {
-      const { data } = await supabase
-        .from('action_plan_tracking')
-        .select('id, day_number, action_text, completed')
-        .eq('diagnostic_result_id', resultId)
-        .eq('user_id', user.id)
-        .order('day_number');
-      if (data) setActionPlanItems(data);
-    };
-    fetchPlan();
-  }, [user, result]);
 
   // Track report_viewed event
   useEffect(() => {
@@ -425,49 +407,8 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             <LegacySections result={result} moduleSlug={moduleSlug} ai={ai} />
           )}
 
-          {/* ── Action Plan (15 days) ── */}
-          {actionPlanItems.length > 0 && (
-            <motion.section {...fade} transition={{ delay: 0.40 }}>
-              <div className="flex items-center gap-3.5 mb-5">
-                <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-green-500/10 text-green-600">
-                  <Target className="w-4 h-4" />
-                </span>
-                <div>
-                  <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">Seu plano de ação — 15 dias</h2>
-                  <p className="text-[10px] text-muted-foreground/50 mt-0.5">Ações específicas baseadas no seu padrão</p>
-                </div>
-              </div>
-              <div className="pl-[42px]">
-                <div className="rounded-2xl border border-border/30 overflow-hidden shadow-sm bg-card">
-                  <div className="bg-green-500/[0.04] border-b border-green-500/10 px-5 py-3">
-                    <p className="text-[9px] text-green-700/60 dark:text-green-400/60 uppercase tracking-[0.2em] font-semibold">
-                      {actionPlanItems.length} ações para os próximos 15 dias
-                    </p>
-                  </div>
-                  <div className="divide-y divide-border/15">
-                    {actionPlanItems.map((item, i) => (
-                      <div key={item.id} className="flex items-start gap-3 px-5 py-4">
-                        <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">
-                          {i + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-widest font-semibold mb-1">
-                            Dia {item.day_number}
-                          </p>
-                          <p className="text-sm text-foreground leading-[1.7]">{item.action_text}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="bg-secondary/30 border-t border-border/20 px-5 py-3">
-                    <p className="text-[10px] text-muted-foreground/50 text-center">
-                      Acompanhe sua execução diária no Dashboard
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </motion.section>
-          )}
+          {/* ── 3 Ações para mudar esse padrão ── */}
+          <ActionPreviewSection result={result} ai={ai} />
 
           {/* ── Intensity bars ── */}
           <motion.section {...fade} transition={{ delay: 0.42 }}>
@@ -860,6 +801,92 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
             <p className="text-sm text-muted-foreground leading-[1.8]">{evo.summary_text}</p>
           </div>
         )}
+      </div>
+    </motion.section>
+  );
+}
+
+/* ── Action Preview Section (3 actions) ── */
+function ActionPreviewSection({ result, ai }: { result: DiagnosticResult; ai: any }) {
+  // Build 3 actions from the diagnosis data
+  const actions: { title: string; description: string }[] = [];
+
+  // 1. From microAcoes (AI)
+  if (Array.isArray(ai.microAcoes)) {
+    ai.microAcoes.forEach((a: any) => {
+      if (actions.length >= 3) return;
+      if (typeof a === 'string') actions.push({ title: a, description: '' });
+      else if (a?.acao) actions.push({ title: a.acao, description: a.detalhe || '' });
+    });
+  }
+
+  // 2. From exitStrategy
+  if (actions.length < 3 && Array.isArray(result.exitStrategy)) {
+    result.exitStrategy.forEach((s: any) => {
+      if (actions.length >= 3) return;
+      const text = s.action || s.title || '';
+      if (text && !actions.some(a => a.title === text)) {
+        actions.push({ title: text, description: s.detail || s.detalhe || '' });
+      }
+    });
+  }
+
+  // 3. Fallbacks from diagnosis fields
+  const fallbackSources = [
+    { title: ai.acaoInicial || ai.proximoPasso || '', description: 'Ação prática derivada do seu diagnóstico' },
+    { title: result.direction || '', description: 'Direção de ajuste para o seu padrão' },
+    { title: result.keyUnlockArea ? `Foque em: ${result.keyUnlockArea}` : '', description: 'Área-chave de desbloqueio identificada' },
+    { title: ai.mentalCommand ? `Repita diariamente: "${ai.mentalCommand}"` : '', description: 'Comando mental de reprogramação' },
+    { title: result.blockingPoint ? `Identifique quando "${result.blockingPoint.length > 50 ? result.blockingPoint.slice(0, 47) + '...' : result.blockingPoint}" aparecer e pause` : '', description: 'Consciência do ponto de travamento' },
+    ...(Array.isArray(result.triggers) ? result.triggers.slice(0, 2).map((t: string) => ({
+      title: `Observe o gatilho "${t.length > 50 ? t.slice(0, 47) + '...' : t}" e registre`,
+      description: 'Mapeamento de gatilhos comportamentais',
+    })) : []),
+  ];
+
+  for (const fb of fallbackSources) {
+    if (actions.length >= 3) break;
+    if (fb.title && !actions.some(a => a.title === fb.title)) {
+      actions.push(fb);
+    }
+  }
+
+  // Ensure exactly 3
+  while (actions.length < 3) {
+    actions.push({ title: 'Registre suas reações emocionais diariamente', description: 'Autoconhecimento começa pela observação' });
+  }
+
+  if (actions.length === 0) return null;
+
+  return (
+    <motion.section {...fade} transition={{ delay: 0.38, duration: 0.4 }}>
+      <div className="flex items-center gap-3.5 mb-5">
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-green-500/10 text-green-600">
+          <Target className="w-4 h-4" />
+        </span>
+        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">
+          3 ações para começar a mudar esse padrão
+        </h2>
+      </div>
+      <div className="pl-[42px] space-y-3">
+        {actions.slice(0, 3).map((action, i) => (
+          <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">
+                {i + 1}
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground leading-[1.7]">{action.title}</p>
+                {action.description && (
+                  <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{action.description}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        <p className="text-[10px] text-muted-foreground/40 text-center pt-2">
+          Acompanhe sua execução diária no plano premium
+        </p>
       </div>
     </motion.section>
   );

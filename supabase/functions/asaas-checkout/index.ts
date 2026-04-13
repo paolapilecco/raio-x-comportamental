@@ -11,8 +11,8 @@ const ASAAS_API_URL = "https://api.asaas.com/v3";
 
 const PLANS: Record<string, Record<string, { value: number; cycle: string; description: string }>> = {
   pessoal: {
-    monthly: { value: 5.99, cycle: "MONTHLY", description: "Plano Pessoal Mensal" },
-    yearly: { value: 59.90, cycle: "YEARLY", description: "Plano Pessoal Anual" },
+    monthly: { value: 9.99, cycle: "MONTHLY", description: "Plano Pessoal Mensal" },
+    yearly: { value: 99.90, cycle: "YEARLY", description: "Plano Pessoal Anual" },
   },
   profissional: {
     monthly: { value: 39.90, cycle: "MONTHLY", description: "Plano Profissional Mensal" },

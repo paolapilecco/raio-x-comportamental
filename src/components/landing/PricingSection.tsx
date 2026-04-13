@@ -28,7 +28,7 @@ const PricingSection = () => {
       icon: Crown,
       name: 'Desbloqueio Total',
       tagline: 'Mais escolhido',
-      price: 'R$ 5,99',
+      price: 'R$ 9,99',
       period: '/mês',
       highlight: true,
       cta: 'Desbloquear tudo',

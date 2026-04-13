@@ -524,7 +524,35 @@ const Dashboard = () => {
         {/* Action Plan Tracking */}
         {!actionPlan.loading && actionPlan.days.length > 0 && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.08 }}>
-            <ActionPlanCard plan={actionPlan} />
+            {(isPremium || isSuperAdmin) ? (
+              <ActionPlanCard plan={actionPlan} />
+            ) : (
+              <div className="bg-card rounded-2xl border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] overflow-hidden">
+                <div className="px-6 py-5 border-b border-border/20">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Lock className="w-[18px] h-[18px] text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-foreground">Seu plano já foi gerado</h3>
+                      <p className="text-[0.65rem] text-muted-foreground">As 3 ações já estão definidas</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="px-6 py-5 space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    O acompanhamento da execução fica disponível no premium. Acompanhe seu progresso diário, marque ações concluídas e veja sua taxa de evolução.
+                  </p>
+                  <button
+                    onClick={() => navigate('/premium')}
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
+                  >
+                    <Crown className="w-4 h-4" />
+                    Desbloquear acompanhamento — R$9,99
+                  </button>
+                </div>
+              </div>
+            )}
           </motion.section>
         )}
 

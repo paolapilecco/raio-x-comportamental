@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 import { trackEvent } from '@/lib/trackEvent';
 
 const PLANS = {
-  pessoal_monthly: { key: 'pessoal', label: 'Pessoal', billing: 'monthly', price: 5.99, priceLabel: 'R$ 5,99', period: '/mês', maxPersons: 3, allTests: true },
-  pessoal_yearly: { key: 'pessoal', label: 'Pessoal', billing: 'yearly', price: 59.90, priceLabel: 'R$ 59,90', period: '/ano', maxPersons: 3, allTests: true, savings: 'Economize R$ 11,98' },
+  pessoal_monthly: { key: 'pessoal', label: 'Pessoal', billing: 'monthly', price: 9.99, priceLabel: 'R$ 9,99', period: '/mês', maxPersons: 3, allTests: true },
+  pessoal_yearly: { key: 'pessoal', label: 'Pessoal', billing: 'yearly', price: 99.90, priceLabel: 'R$ 99,90', period: '/ano', maxPersons: 3, allTests: true, savings: 'Economize R$ 19,98' },
   profissional_monthly: { key: 'profissional', label: 'Profissional', billing: 'monthly', price: 39.90, priceLabel: 'R$ 39,90', period: '/mês', maxPersons: 15, allTests: true },
   profissional_yearly: { key: 'profissional', label: 'Profissional', billing: 'yearly', price: 399.90, priceLabel: 'R$ 399,90', period: '/ano', maxPersons: 15, allTests: true, savings: 'Economize R$ 78,90' },
 };
