@@ -13,6 +13,7 @@ import { assembleReport } from '@/lib/reportAssembler';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createActionPlanTracking } from '@/hooks/useActionPlan';
+import { buildActionPreviews, actionPreviewsToStrings } from '@/lib/buildActionPreview';
 import { trackEvent, RetestOrigin } from '@/lib/trackEvent';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
