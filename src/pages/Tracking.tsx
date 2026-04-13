@@ -5,11 +5,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { AppLayout } from '@/components/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Brain, ArrowRight, Clock, CheckCircle2, Lock, Crown, ChevronRight, Activity } from 'lucide-react';
+import { Brain, Clock, CheckCircle2, Lock, Crown, ChevronRight, Activity } from 'lucide-react';
 
 interface TestTrackingItem {
   testModuleId: string;
