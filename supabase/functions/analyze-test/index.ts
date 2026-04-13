@@ -621,7 +621,7 @@ function validateAction(
   index: number,
   gatilho: string,
   acao: string,
-  ctx: ValidationContext,
+  ctx: ValidationContext & { hasRealAnswers?: boolean },
 ): { pass: boolean; reason?: string } {
   const g = norm(gatilho.replace(/^quando\s+/i, "").trim());
   const a = norm(acao.replace(/^→\s*/i, "").trim());
