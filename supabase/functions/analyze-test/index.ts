@@ -602,7 +602,7 @@ function buildValidationContext(
 }
 
 function hasMatch(text: string, anchors: Set<string>): boolean {
-  if (anchors.size === 0) return false;
+  if (anchors.size === 0) return true; // No anchors = no constraint (e.g. simulation mode)
   return tokenize(text).some((t) => anchors.has(t));
 }
 
