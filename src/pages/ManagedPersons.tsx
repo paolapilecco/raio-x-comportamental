@@ -62,12 +62,18 @@ export default function ManagedPersons() {
   const [editPhone, setEditPhone] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
 
+  const isIndividual = planType !== 'profissional' && !isSuperAdmin;
   const limit = getPersonLimit(planType, isSuperAdmin);
   const activeCount = persons.filter(p => p.is_active).length;
-  const canAdd = isSuperAdmin || activeCount < limit;
-  const canInvite = planType === 'pessoal' || planType === 'profissional' || isSuperAdmin;
+  const canAdd = isSuperAdmin || (!isIndividual && activeCount < limit);
+  const canInvite = planType === 'profissional' || isSuperAdmin;
 
   useEffect(() => {
+    // Individual plans don't need person management
+    if (isIndividual) {
+      navigate('/dashboard', { replace: true });
+      return;
+    }
     if (!user) return;
     fetchPersons();
   }, [user]);
