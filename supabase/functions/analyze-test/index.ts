@@ -412,16 +412,58 @@ function buildUserPrompt(
 }
 
 // ═══════════════════════════════════════════════════════════
-// ▌ SECTION 5: Result Normalization (no fallback content)
+// ▌ SECTION 5: Result Normalization + microAcoes Validation
 // ═══════════════════════════════════════════════════════════
+
+const FORBIDDEN_ACTIONS = [
+  "respire fundo", "observe seus padrões", "reflita sobre", "tenha consciência",
+  "mude seu comportamento", "preste atenção", "tente melhorar", "busque ajuda",
+  "aceite seus sentimentos", "seja mais", "tente ser", "procure entender",
+];
+
+const VAGUE_TRIGGERS = [
+  "quando se sentir mal", "em situações difíceis", "quando estiver estressada",
+  "quando sentir desconforto", "em momentos de crise", "quando tiver problema",
+  "quando se sentir insegura", "em situações de estresse",
+];
+
+function validateMicroAcao(item: { gatilho?: string; acao?: string }): boolean {
+  if (!item.gatilho || !item.acao) return false;
+  const g = (item.gatilho || "").toLowerCase().trim();
+  const a = (item.acao || "").toLowerCase().trim();
+  
+  // Reject vague triggers
+  for (const vague of VAGUE_TRIGGERS) {
+    if (g.includes(vague) || g.length < 20) return false;
+  }
+  
+  // Reject forbidden generic actions
+  for (const forbidden of FORBIDDEN_ACTIONS) {
+    if (a.startsWith(forbidden) || a === forbidden) return false;
+  }
+  
+  // Must have a verb-like start (at least 2 words)
+  if (a.split(" ").length < 4) return false;
+  
+  return true;
+}
 
 function normalizeResult(result: Record<string, unknown>, dominant: ScoreEntry, sortedScores: ScoreEntry[]): Record<string, unknown> {
   // Ensure arrays exist (empty if not provided by AI)
-  for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "pararDeFazer", "microAcoes", "exitStrategy"]) {
+  for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "pararDeFazer", "exitStrategy"]) {
     if (!Array.isArray(result[f])) result[f] = [];
   }
   if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
   if (!Array.isArray(result.impactoPorArea)) result.impactoPorArea = [];
+
+  // ── Validate microAcoes quality ──
+  const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
+  const validMicro = rawMicro.filter(validateMicroAcao);
+  result.microAcoes = validMicro.slice(0, 3);
+  
+  if (validMicro.length < rawMicro.length) {
+    console.log(`[analyze-test] microAcoes validation: ${rawMicro.length} generated, ${validMicro.length} passed quality check`);
+  }
 
   // Ensure strings exist (empty if not provided by AI — NO fallback content)
   const stringFields = [
