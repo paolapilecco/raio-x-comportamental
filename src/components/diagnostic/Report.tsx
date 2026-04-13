@@ -841,9 +841,14 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
             </div>
           </div>
         ))}
-        <p className="text-[10px] text-muted-foreground/40 text-center pt-2">
-          Acompanhe sua execução diária no plano premium
-        </p>
+        <div className="mt-4 border border-destructive/15 bg-destructive/[0.03] rounded-xl px-5 py-4">
+          <p className="text-xs text-foreground/80 font-medium text-center leading-relaxed">
+            Você já sabe o que precisa mudar. Cada dia sem agir reforça o padrão.
+          </p>
+          <p className="text-[10px] text-destructive/60 text-center mt-1 font-semibold">
+            Acompanhamento de execução disponível no premium — R$9,99
+          </p>
+        </div>
       </div>
     </motion.section>
   );
