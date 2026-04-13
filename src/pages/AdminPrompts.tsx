@@ -257,6 +257,14 @@ const AdminPrompts = () => {
 
             {/* ═══ TAB 1: PIPELINE ═══ */}
             <TabsContent value="pipeline" className="mt-5 space-y-8">
+              {/* Pipeline Flow Indicator */}
+              <PipelineFlowIndicator
+                module={currentModule}
+                promptCount={getModuleStats(currentModule.id).promptCount}
+                qCount={questionCounts[currentModule.id] || 0}
+                hasAiConfig={!!testAiConfigs.find(c => c.test_id === currentModule.id)}
+              />
+
               {/* Prompts */}
               <PromptEditor
                 currentModule={currentModule}
