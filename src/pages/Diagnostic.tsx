@@ -434,7 +434,7 @@ const Diagnostic = () => {
    * Local fallback analysis (hardcoded patterns).
    * Used when AI prompts aren't configured or AI call fails.
    */
-  const runLocalAnalysis = useCallback((answers: Answer[]): DiagnosticResult => {
+  const _runLocalAnalysis = useCallback((answers: Answer[]): DiagnosticResult => {
     if (slug === PURPOSE_SLUG) {
       const r = analyzePurposeAnswers(answers);
       return {
@@ -665,6 +665,10 @@ const Diagnostic = () => {
 
     try {
       let analysisResult = await runAIAnalysis(answers);
+
+      if (!analysisResult) {
+        throw new Error('AI analysis returned null');
+      }
 
       console.log('[Diagnostic] Using AI-powered analysis from admin prompts');
       // Apply structured block assembly + quality validation to AI output
