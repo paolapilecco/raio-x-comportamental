@@ -898,7 +898,7 @@ serve(async (req) => {
     }
 
     // ── Normalize (no hardcoded fallback) ──
-    const normalized = normalizeResult(result, dominant, sortedScores);
+    const normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || []);
 
     // ── Attach evolution comparison data (deterministic + AI summary) ──
     if (evolutionData) {
