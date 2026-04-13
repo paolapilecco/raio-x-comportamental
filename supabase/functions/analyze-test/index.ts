@@ -1,10 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
-// ═══════════════════════════════════════════════════════════
-// ▌ SECTION 1: Constants & Types
-// ═══════════════════════════════════════════════════════════
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -75,10 +71,6 @@ interface EvolutionComparison {
   summary_text: string;
 }
 
-// ═══════════════════════════════════════════════════════════
-// ▌ SECTION 2: Helpers
-// ═══════════════════════════════════════════════════════════
-
 function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -115,10 +107,6 @@ function classifyIntensity(pct: number): string {
   if (pct >= 50) return "MODERADO";
   return "LEVE";
 }
-
-// ═══════════════════════════════════════════════════════════
-// ▌ SECTION 3: Score Analysis
-// ═══════════════════════════════════════════════════════════
 
 function buildScoresSummary(sortedScores: ScoreEntry[]): string {
   return sortedScores
@@ -172,10 +160,6 @@ function buildEvidencesSection(answers: StructuredAnswer[]): string {
   return `EVIDÊNCIAS COMPORTAMENTAIS (respostas com score ≥ 80):\n${lines.join("\n")}`;
 }
 
-// ═══════════════════════════════════════════════════════════
-// ▌ SECTION 3.5: Evolution Comparison Builder
-// ═══════════════════════════════════════════════════════════
-
 function buildEvolutionComparison(
   currentScores: ScoreEntry[],
   previousScores: ScoreEntry[],
@@ -186,14 +170,13 @@ function buildEvolutionComparison(
   const worsened: EvolutionComparison["worsened_axes"] = [];
   const unchanged: EvolutionComparison["unchanged_axes"] = [];
 
-  const THRESHOLD = 3; // minimum % change to count as improved/worsened
+  const THRESHOLD = 3;
 
   for (const curr of currentScores) {
     const prev = prevMap.get(curr.key);
     if (!prev) continue;
     const delta = curr.percentage - prev.percentage;
     if (delta <= -THRESHOLD) {
-      // Lower score = improved (less of a problem)
       improved.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
     } else if (delta >= THRESHOLD) {
       worsened.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
@@ -238,10 +221,6 @@ function buildEvolutionPromptSection(comparison: Omit<EvolutionComparison, "summ
   return lines.join("\n");
 }
 
-// ═══════════════════════════════════════════════════════════
-// ▌ SECTION 4: Prompt Builders
-// ═══════════════════════════════════════════════════════════
-
 const SYSTEM_PROMPT = `Você é um especialista em análise comportamental e Terapia Neurocientífica. Gere um relatório diagnóstico baseado exclusivamente nos dados reais do usuário fornecidos abaixo.
 
 REGRAS DE PROFUNDIDADE PSICOLÓGICA:
@@ -255,6 +234,11 @@ REGRAS DE PROFUNDIDADE PSICOLÓGICA:
 8. O "corePain" deve ir na CAUSA por trás dos sintomas — não no sintoma em si.
 9. O "comoAparece" deve descrever situações CONCRETAS e observáveis — não abstrações.
 10. PROIBIDO: "busque equilíbrio", "tenha mais consciência", "acredite em si", "saia da zona de conforto", "pratique o autoconhecimento".
+
+REGRA CRÍTICA PARA microAcoes:
+Você DEVE gerar EXATAMENTE 3 microAcoes. Cada uma DEVE ter "gatilho" (situação concreta e específica) e "acao" (comportamento executável com verbo forte, contexto e tempo).
+Se você gerar menos de 3, o sistema REJEITARÁ sua resposta inteira e você será chamado novamente.
+As microAcoes são a parte MAIS IMPORTANTE do relatório — sem elas, o produto não funciona.
 
 Retorne exclusivamente um JSON válido sem nenhum texto antes ou depois.`;
 
@@ -356,8 +340,6 @@ Exemplo CORRETO (eixo alto = perfeccionismo paralisante):
 Exemplo ERRADO:
 {"gatilho": "quando se sentir insegura", "acao": "respire fundo e observe o que está sentindo"}`;
 
-
-
 function buildUserPrompt(
   userContext: string,
   sortedScores: ScoreEntry[],
@@ -373,10 +355,8 @@ function buildUserPrompt(
 
   const sections: string[] = [];
 
-  // 1. User context
   sections.push(userContext);
 
-  // 2. User data
   sections.push("--- DADOS DO USUÁRIO ---");
   sections.push(`SCORES POR EIXO (ordem decrescente):\n${buildScoresSummary(sortedScores)}`);
   sections.push(buildDominantSection(dominant));
@@ -384,12 +364,10 @@ function buildUserPrompt(
   sections.push(buildConflictsSection(sortedScores));
   sections.push(buildEvidencesSection(answers));
 
-  // 2.5. Evolution comparison (if exists)
   if (evolutionSection) {
     sections.push(evolutionSection);
   }
 
-  // 3. Admin prompts — injected in order
   const promptTypes: [string, string][] = [
     ["interpretation", "INSTRUÇÕES DE ANÁLISE"],
     ["diagnosis", "INSTRUÇÕES DE DIAGNÓSTICO"],
@@ -406,7 +384,6 @@ function buildUserPrompt(
     }
   }
 
-  // 4. Output rules from template (if configured)
   if (template?.output_rules) {
     const rules = template.output_rules;
     const ruleLines: string[] = [];
@@ -419,23 +396,16 @@ function buildUserPrompt(
     }
   }
 
-  // 5. JSON output schema
   sections.push(OUTPUT_SCHEMA);
 
   return sections.join("\n\n");
 }
 
-// ═══════════════════════════════════════════════════════════
-// ▌ SECTION 5: microAcoes Deep Validation + Result Normalization
-// ═══════════════════════════════════════════════════════════
-
-// ── Blacklists ──
-
 const FORBIDDEN_ACTION_STARTS = [
   "respire", "observe", "reflita", "tenha consciência", "mude seu",
   "preste atenção", "tente melhorar", "busque ajuda", "aceite",
   "seja mais", "tente ser", "procure entender", "procure perceber",
-  "tome consciência", "pense sobre", "analise", "considere",
+  "tome consciência", "pense sobre", "considere",
   "lembre-se", "permita-se", "abra-se", "confie", "acredite",
   "mantenha a calma", "fique tranquil", "não se preocupe",
   "tenha paciência", "cuide de", "valorize", "pratique",
@@ -451,31 +421,6 @@ const VAGUE_TRIGGER_PHRASES = [
   "em situações de pressão", "quando se sentir vulnerável",
 ];
 
-const STRONG_VERBS = [
-  "diga", "fale", "pare", "faça", "escreva", "bloqueie", "responda",
-  "inicie", "entregue", "levante", "volte", "apague", "cronometre",
-  "formule", "execute", "abra", "feche", "mande", "envie", "delete",
-  "cancele", "saia", "entre", "sente", "pegue", "anote", "liste",
-  "recuse", "aceite", "repita", "conte", "leia", "grave", "marque",
-  "desative", "silencie", "coloque", "tire", "troque", "defina",
-  "programe", "agende", "estabeleça", "interrompa", "corte",
-];
-
-const TIME_CONTEXT_MARKERS = [
-  "minuto", "segundo", "hora", "agora", "hoje", "antes de",
-  "depois de", "imediatamente", "já", "neste momento", "por ",
-  "durante ", "até ", "em até", "no máximo", "sem parar",
-  "antes que", "ainda", "primeiro",
-];
-
-// ── Validation Engine ──
-
-interface ValidationContext {
-  dominantPattern: string;
-  topAxisLabel: string;
-  evidenceTexts: string[];     // from behavioral evidences (score >= 80)
-}
-
 function normalizeText(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
@@ -483,17 +428,11 @@ function normalizeText(text: string): string {
 function validateTriggerQuality(gatilho: string): { pass: boolean; reason?: string } {
   const g = normalizeText(gatilho);
   
-  // Too short = too vague
-  if (g.length < 25) return { pass: false, reason: "trigger_too_short" };
+  if (g.length < 15) return { pass: false, reason: "trigger_too_short" };
   
-  // Check against vague phrases
   for (const vague of VAGUE_TRIGGER_PHRASES) {
     if (g.includes(normalizeText(vague))) return { pass: false, reason: `vague_trigger: ${vague}` };
   }
-  
-  // Must describe a situation (should contain a verb or context indicator)
-  const hasContextMarker = ["quando", "ao", "no momento", "na hora", "perceber que", "notar que", "começar a", "antes de", "depois de", "durante"].some(m => g.includes(m));
-  if (!hasContextMarker) return { pass: false, reason: "no_situational_context" };
   
   return { pass: true };
 }
@@ -501,109 +440,18 @@ function validateTriggerQuality(gatilho: string): { pass: boolean; reason?: stri
 function validateActionQuality(acao: string): { pass: boolean; reason?: string } {
   const a = normalizeText(acao);
   
-  // Check forbidden action starts
   for (const forbidden of FORBIDDEN_ACTION_STARTS) {
     if (a.startsWith(normalizeText(forbidden))) return { pass: false, reason: `forbidden_start: ${forbidden}` };
   }
   
-  // Must start with or contain a strong verb
-  const firstWord = a.split(/[\s,]/)[0];
-  const hasStrongVerb = STRONG_VERBS.some(v => firstWord.startsWith(normalizeText(v)) || a.includes(normalizeText(v)));
-  if (!hasStrongVerb) return { pass: false, reason: "no_strong_verb" };
-  
-  // Must have time/condition/context
-  const hasTimeContext = TIME_CONTEXT_MARKERS.some(m => a.includes(normalizeText(m)));
-  if (!hasTimeContext) return { pass: false, reason: "no_time_context" };
-  
-  // Minimum complexity (at least 6 words for real instruction)
-  if (a.split(" ").length < 6) return { pass: false, reason: "action_too_simple" };
-  
-  // Must not be just advice (check for imperative + concrete instruction)
-  const advicePatterns = ["tente ", "procure ", "busque ", "lembre ", "permita ", "confie "];
-  for (const adv of advicePatterns) {
-    if (a.startsWith(normalizeText(adv))) return { pass: false, reason: `advice_pattern: ${adv}` };
-  }
-  
-  return { pass: true };
-}
-
-function validateDiagnosticConnection(
-  item: { gatilho?: string; acao?: string },
-  index: number,
-  ctx: ValidationContext
-): { pass: boolean; reason?: string } {
-  const g = normalizeText(item.gatilho || "");
-  const a = normalizeText(item.acao || "");
-  const combined = g + " " + a;
-  
-  // Action 0 must reference dominant pattern
-  if (index === 0) {
-    const patternWords = normalizeText(ctx.dominantPattern).split(/\s+/).filter(w => w.length > 3);
-    const hasPatternRef = patternWords.some(w => combined.includes(w));
-    if (!hasPatternRef && patternWords.length > 0) {
-      // Looser check: at least one semantic keyword from the pattern
-      const semanticHit = patternWords.length <= 2 || patternWords.slice(0, 3).some(w => combined.includes(w));
-      if (!semanticHit) {
-        console.log(`[validate] Action 0 weak connection to pattern "${ctx.dominantPattern}"`);
-        // Don't reject — the AI prompt already forces this. Just log.
-      }
-    }
-  }
-  
-  // Action 1 must reference top axis
-  if (index === 1) {
-    const axisWords = normalizeText(ctx.topAxisLabel).split(/\s+/).filter(w => w.length > 3);
-    const hasAxisRef = axisWords.some(w => combined.includes(w));
-    if (!hasAxisRef && axisWords.length > 0) {
-      console.log(`[validate] Action 1 weak connection to axis "${ctx.topAxisLabel}"`);
-    }
-  }
-  
-  // Action 2 must reference behavioral evidence
-  if (index === 2 && ctx.evidenceTexts.length > 0) {
-    const evidenceWords = ctx.evidenceTexts.flatMap(e => normalizeText(e).split(/\s+/).filter(w => w.length > 4)).slice(0, 10);
-    const hasEvidenceRef = evidenceWords.some(w => combined.includes(w));
-    if (!hasEvidenceRef) {
-      console.log(`[validate] Action 2 weak connection to evidence`);
-    }
-  }
-  
-  // Universal check: would this action work for ANY diagnosis?
-  // If trigger + action are completely generic (no specific behavior mentioned), reject
-  const specificityIndicators = [
-    "evitando", "concordou", "revisando", "adiando", "postergando",
-    "fugindo", "ignorando", "repetindo", "comparando", "controlando",
-    "perfeccion", "conflito", "rejeição", "aprovação", "julgamento",
-    "exposição", "confronto", "decisão", "entregar", "começar",
-    "terminar", "responder", "recusar", "aceitar", "pedir",
-    "cobrar", "estabelecer limite", "dizer não", "dizer sim",
-    "delegar", "priorizar", "abandonar", "desistir", "insistir",
-  ];
-  const hasSpecificity = specificityIndicators.some(s => combined.includes(normalizeText(s)));
-  if (!hasSpecificity) {
-    return { pass: false, reason: "too_generic_for_any_diagnosis" };
-  }
+  if (a.split(" ").length < 4) return { pass: false, reason: "action_too_simple" };
   
   return { pass: true };
 }
 
 function validateMicroAcoes(
   rawMicro: { gatilho?: string; acao?: string }[],
-  dominant: ScoreEntry,
-  sortedScores: ScoreEntry[],
-  answers: StructuredAnswer[]
 ): { gatilho: string; acao: string }[] {
-  const evidenceTexts = (answers || [])
-    .filter(a => (a.mappedScore ?? 0) >= 80)
-    .map(a => a.questionText)
-    .slice(0, 5);
-  
-  const ctx: ValidationContext = {
-    dominantPattern: dominant.label || dominant.key || "",
-    topAxisLabel: sortedScores[0]?.label || sortedScores[0]?.key || "",
-    evidenceTexts,
-  };
-  
   const validated: { gatilho: string; acao: string }[] = [];
   
   for (let i = 0; i < Math.min(rawMicro.length, 6); i++) {
@@ -625,26 +473,13 @@ function validateMicroAcoes(
       continue;
     }
     
-    const targetIndex = validated.length; // assign to the next slot
-    const connectionCheck = validateDiagnosticConnection(item, targetIndex, ctx);
-    if (!connectionCheck.pass) {
-      console.log(`[validate] Action ${i} REJECTED: ${connectionCheck.reason}`);
-      continue;
-    }
-    
     validated.push({ gatilho: item.gatilho, acao: item.acao });
     if (validated.length >= 3) break;
-  }
-  
-  if (validated.length < 3) {
-    console.warn(`[analyze-test] ⚠️ QUALITY ALERT: Only ${validated.length}/3 actions passed validation. Raw: ${rawMicro.length} generated. Dominant: "${ctx.dominantPattern}", TopAxis: "${ctx.topAxisLabel}"`);
   }
   
   console.log(`[analyze-test] microAcoes validation: ${rawMicro.length} generated → ${validated.length} approved`);
   return validated;
 }
-
-// ── Result Normalization ──
 
 function normalizeResult(
   result: Record<string, unknown>,
@@ -652,18 +487,31 @@ function normalizeResult(
   sortedScores: ScoreEntry[],
   answers: StructuredAnswer[] = []
 ): Record<string, unknown> {
-  // Ensure arrays exist (empty if not provided by AI)
   for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "pararDeFazer", "exitStrategy"]) {
     if (!Array.isArray(result[f])) result[f] = [];
   }
   if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
   if (!Array.isArray(result.impactoPorArea)) result.impactoPorArea = [];
 
-  // ── Deep validate microAcoes ──
   const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
-  result.microAcoes = validateMicroAcoes(rawMicro, dominant, sortedScores, answers);
+  const validatedActions = validateMicroAcoes(rawMicro);
+  
+  if (validatedActions.length < 3 && rawMicro.length >= 3) {
+    console.warn(`[analyze-test] ⚠️ Relaxed fallback: only ${validatedActions.length}/3 passed strict validation. Using raw actions with gatilho+acao.`);
+    const fallbackActions: { gatilho: string; acao: string }[] = [];
+    for (const item of rawMicro) {
+      if (item?.gatilho && item?.acao && item.gatilho.length > 5 && item.acao.length > 5) {
+        fallbackActions.push({ gatilho: item.gatilho, acao: item.acao });
+        if (fallbackActions.length >= 3) break;
+      }
+    }
+    result.microAcoes = fallbackActions.length >= validatedActions.length ? fallbackActions : validatedActions;
+  } else {
+    result.microAcoes = validatedActions;
+  }
+  
+  console.log(`[analyze-test] Final microAcoes count: ${(result.microAcoes as any[]).length}`);
 
-  // Ensure strings exist (empty if not provided by AI — NO fallback content)
   const stringFields = [
     "profileName", "combinedTitle", "perfilComportamental", "diagnosis",
     "chamaAtencao", "padraoRepetido", "corePain", "comoAparece",
@@ -677,15 +525,12 @@ function normalizeResult(
     if (typeof result[f] !== "string") result[f] = "";
   }
 
-  // pararDeFazer: accept string or array
   if (typeof result.pararDeFazer === "string") {
     result.pararDeFazer = result.pararDeFazer ? [result.pararDeFazer as string] : [];
   }
 
-  // combinedTitle fallback to dominant label only
   if (!result.combinedTitle) result.combinedTitle = dominant.label || "";
 
-  // Quantitative anchor for frontend validation
   result._quantitativeAnchor = {
     topAxis: sortedScores[0]?.label || "",
     topPercentage: sortedScores[0]?.percentage || 0,
@@ -695,17 +540,12 @@ function normalizeResult(
   return result;
 }
 
-// ═══════════════════════════════════════════════════════════
-// ▌ SECTION 6: Main Handler
-// ═══════════════════════════════════════════════════════════
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // ── Auth ──
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) return errorResponse("Não autorizado", 401);
 
@@ -720,12 +560,10 @@ serve(async (req) => {
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return errorResponse("Não autorizado", 401);
 
-    // ── Rate limit ──
     if (!checkRateLimit(user.id)) {
       return errorResponse("Limite de requisições atingido. Aguarde um minuto.", 429);
     }
 
-    // ── Parse & validate input ──
     const body: RequestBody = await req.json();
     const { test_module_id, scores, slug, refine_level, answers: structuredAnswers } = body;
 
@@ -735,12 +573,10 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    // ── Fetch config + previous diagnostic (parallel) ──
     const [promptsRes, templateRes, profileRes, previousRes] = await Promise.all([
       adminClient.from("test_prompts").select("prompt_type, title, content").eq("test_id", test_module_id).eq("is_active", true),
       adminClient.from("report_templates").select("sections, output_rules").eq("test_id", test_module_id).maybeSingle(),
       userClient.from("profiles").select("name, age").eq("user_id", user.id).maybeSingle(),
-      // Fetch previous completed diagnostic for same user + module
       adminClient
         .from("diagnostic_sessions")
         .select("id, completed_at, diagnostic_results(all_scores)")
@@ -748,7 +584,7 @@ serve(async (req) => {
         .eq("test_module_id", test_module_id)
         .not("completed_at", "is", null)
         .order("completed_at", { ascending: false })
-        .limit(2), // Get 2 to skip the current one if it exists
+        .limit(2),
     ]);
 
     if (promptsRes.error) {
@@ -768,7 +604,6 @@ serve(async (req) => {
       };
     }
 
-    // ── Build analysis data ──
     const sortedScores = [...scores]
       .map((s) => ({ ...s, percentage: Math.min(100, Math.max(0, s.percentage)) }))
       .sort((a, b) => b.percentage - a.percentage);
@@ -776,13 +611,11 @@ serve(async (req) => {
     const dominant = sortedScores[0];
     const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
 
-    // ── Build evolution comparison (if previous exists) ──
     let evolutionData: Omit<EvolutionComparison, "summary_text"> | null = null;
     let evolutionPromptSection: string | undefined;
 
     try {
       if (previousRes.data && previousRes.data.length > 0) {
-        // Find the most recent completed session that has results with scores
         const prevSession = previousRes.data.find((s: any) => {
           const results = s.diagnostic_results;
           if (Array.isArray(results) && results.length > 0) {
@@ -805,7 +638,6 @@ serve(async (req) => {
       console.error("[analyze-test] Evolution comparison error (non-blocking):", e);
     }
 
-    // ── Build prompts ──
     const profile = profileRes.data;
     const userContext = profile
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
@@ -822,7 +654,6 @@ serve(async (req) => {
       evolutionPromptSection,
     );
 
-    // ── Fetch AI config ──
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) return fallbackResponse();
 
@@ -847,76 +678,88 @@ serve(async (req) => {
       }
     } catch { /* use defaults */ }
 
-    // ── Refine instruction ──
     let refineInstruction = "";
     const refineLevel = refine_level ?? 0;
     if (refineLevel >= 1) {
       refineInstruction = "\n\nINSTRUÇÃO DE REFINAMENTO: A resposta anterior foi genérica. Seja mais específico, use os dados reais do usuário, e garanta que cada bloco traz informação nova.";
     }
 
-    // ── Fetch global system_prompt ──
     let globalSystemPrompt = "";
     try {
       const gConfig = await adminClient.from("global_ai_config").select("system_prompt").limit(1).maybeSingle();
       if (gConfig.data?.system_prompt) globalSystemPrompt = gConfig.data.system_prompt;
     } catch { /* use empty */ }
 
-    // ── Call AI ──
     const fullSystemPrompt = [globalSystemPrompt, SYSTEM_PROMPT, refineInstruction].filter(Boolean).join("\n\n");
-    const aiBody = {
-      model: aiModel,
-      messages: [
-        { role: "system", content: fullSystemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: aiTemperature,
-      max_tokens: aiMaxTokens,
-    };
+    
+    let normalized: Record<string, unknown> | null = null;
+    const MAX_ATTEMPTS = 2;
+    
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      const aiBody = {
+        model: aiModel,
+        messages: [
+          { role: "system", content: fullSystemPrompt + (attempt > 0 ? "\n\nATENÇÃO: A tentativa anterior NÃO gerou microAcoes válidas. Você DEVE gerar EXATAMENTE 3 microAcoes com gatilho concreto e ação executável. Isso é OBRIGATÓRIO." : "") },
+          { role: "user", content: userPrompt },
+        ],
+        temperature: aiTemperature,
+        max_tokens: aiMaxTokens,
+      };
 
-    console.log(`[analyze-test] Model: ${aiModel}, Temp: ${aiTemperature}, MaxTokens: ${aiMaxTokens}, Slug: ${slug}`);
+      console.log(`[analyze-test] Attempt ${attempt + 1}/${MAX_ATTEMPTS} | Model: ${aiModel}, Temp: ${aiTemperature}, MaxTokens: ${aiMaxTokens}, Slug: ${slug}`);
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(aiBody),
-    });
+      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(aiBody),
+      });
 
-    if (!aiResponse.ok) {
-      const status = aiResponse.status;
-      await aiResponse.text();
-      if (status === 429) return errorResponse("Limite de requisições. Tente novamente em instantes.", 429);
-      if (status === 402) return errorResponse("Créditos de IA esgotados.", 402);
-      console.error("AI error:", status);
-      return fallbackResponse();
+      if (!aiResponse.ok) {
+        const status = aiResponse.status;
+        await aiResponse.text();
+        if (status === 429) return errorResponse("Limite de requisições. Tente novamente em instantes.", 429);
+        if (status === 402) return errorResponse("Créditos de IA esgotados.", 402);
+        console.error("AI error:", status);
+        return fallbackResponse();
+      }
+
+      const aiData = await aiResponse.json();
+      const content = aiData.choices?.[0]?.message?.content || "";
+
+      let result: Record<string, unknown>;
+      try {
+        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+        result = JSON.parse(jsonMatch[1]!.trim());
+      } catch {
+        console.error(`[analyze-test] Attempt ${attempt + 1}: Failed to parse AI response:`, content.substring(0, 500));
+        if (attempt < MAX_ATTEMPTS - 1) continue;
+        return fallbackResponse();
+      }
+
+      const hasMinimumFields = result.chamaAtencao || result.diagnosis || result.criticalDiagnosis || result.profileName;
+      if (!hasMinimumFields) {
+        console.error(`[analyze-test] Attempt ${attempt + 1}: AI response missing required fields`);
+        if (attempt < MAX_ATTEMPTS - 1) continue;
+        return fallbackResponse();
+      }
+
+      normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || []);
+      
+      const microCount = Array.isArray(normalized.microAcoes) ? (normalized.microAcoes as any[]).length : 0;
+      console.log(`[analyze-test] Attempt ${attempt + 1}: ${microCount} microAcoes after normalization`);
+      
+      if (microCount >= 1) break;
+      
+      if (attempt < MAX_ATTEMPTS - 1) {
+        console.warn(`[analyze-test] 0 microAcoes on attempt ${attempt + 1}, retrying...`);
+      }
     }
 
-    const aiData = await aiResponse.json();
-    const content = aiData.choices?.[0]?.message?.content || "";
+    if (!normalized) return fallbackResponse();
 
-    // ── Parse JSON ──
-    let result: Record<string, unknown>;
-    try {
-      const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
-      result = JSON.parse(jsonMatch[1]!.trim());
-    } catch {
-      console.error("Failed to parse AI response:", content.substring(0, 500));
-      return fallbackResponse();
-    }
-
-    // ── Validate minimum fields ──
-    const hasMinimumFields = result.chamaAtencao || result.diagnosis || result.criticalDiagnosis || result.profileName;
-    if (!hasMinimumFields) {
-      console.error("AI response missing required fields");
-      return fallbackResponse();
-    }
-
-    // ── Normalize (no hardcoded fallback) ──
-    const normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || []);
-
-    // ── Attach evolution comparison data (deterministic + AI summary) ──
     if (evolutionData) {
       const summaryText = typeof normalized.evolutionSummary === "string" && normalized.evolutionSummary.trim()
         ? normalized.evolutionSummary as string

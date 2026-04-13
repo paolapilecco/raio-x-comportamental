@@ -367,11 +367,13 @@ const Diagnostic = () => {
 
       await updateCentralProfile(user.id);
 
-      // Create action plan tracking from AI-generated microAcoes (non-blocking)
+      // Create action plan tracking from AI-generated microAcoes
       if (savedResult?.id) {
         try {
           const aiResult = analysisResult as any;
           const microAcoes = Array.isArray(aiResult.microAcoes) ? aiResult.microAcoes : [];
+          console.log(`[Diagnostic] microAcoes from AI: ${microAcoes.length}`, microAcoes);
+          
           const actions: string[] = microAcoes
             .filter((a: any) => a?.gatilho && a?.acao)
             .slice(0, 3)
@@ -380,9 +382,12 @@ const Diagnostic = () => {
           if (actions.length > 0) {
             await createActionPlanTracking(user.id, savedResult.id, actions);
             trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: actions.length } });
+            console.log(`[Diagnostic] ✅ Action plan created: ${actions.length} actions`);
+          } else {
+            console.error(`[Diagnostic] ❌ CRITICAL: No valid microAcoes to save. Raw microAcoes: ${JSON.stringify(microAcoes)}`);
           }
         } catch (e) {
-          console.error('Action plan creation failed (non-blocking):', e);
+          console.error('[Diagnostic] ❌ Action plan creation failed:', e);
         }
       }
 

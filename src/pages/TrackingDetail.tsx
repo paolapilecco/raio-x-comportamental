@@ -480,7 +480,7 @@ export default function TrackingDetail() {
         )}
 
         {/* BLOCO C — Ações de Execução */}
-        {hasActions && (
+        {hasActions ? (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             <Card>
               <CardHeader className="pb-3">
@@ -588,6 +588,30 @@ export default function TrackingDetail() {
                     </div>
                   );
                 })}
+              </CardContent>
+            </Card>
+          </motion.div>
+        ) : (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <Card className="border-destructive/30">
+              <CardContent className="py-8 text-center space-y-3">
+                <AlertTriangle className="w-10 h-10 text-destructive/60 mx-auto" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Nenhuma ação gerada para este ciclo</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Isso pode acontecer se o diagnóstico foi realizado antes da atualização do sistema de ações.
+                    Refaça o teste para gerar suas ações personalizadas.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/diagnostic/${testModuleId}`)}
+                  className="text-xs"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
+                  Refazer teste para gerar ações
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
