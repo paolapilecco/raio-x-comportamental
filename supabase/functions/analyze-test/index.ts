@@ -267,9 +267,9 @@ Retorne APENAS este JSON, sem markdown, sem texto adicional:
   "acaoInicial": "ação concreta dos próximos 7 dias + gancho reteste",
   "selfSabotageCycle": ["passo 1", "passo 2", "passo 3", "passo 4"],
   "microAcoes": [
-    {"gatilho": "situação específica que ativa o padrão", "acao": "ação concreta com verbo claro, tempo definido e instrução física ou mental"},
-    {"gatilho": "outro gatilho real do diagnóstico", "acao": "outra ação executável imediata"},
-    {"gatilho": "terceiro gatilho identificado", "acao": "terceira ação prática com prazo ou medida"}
+    {"gatilho": "situação específica derivada do PADRÃO DOMINANTE do usuário", "acao": "ação que ataca diretamente esse padrão — verbo claro + tempo + instrução concreta"},
+    {"gatilho": "situação derivada do EIXO COM MAIOR SCORE do usuário", "acao": "ação que neutraliza esse eixo — verbo claro + tempo + instrução concreta"},
+    {"gatilho": "comportamento recorrente detectado nas EVIDÊNCIAS COMPORTAMENTAIS (respostas com score >= 80)", "acao": "ação que interrompe esse comportamento — verbo claro + tempo + instrução concreta"}
   ],
   "exitStrategy": ["passo 1", "passo 2", "passo 3"],
   "blindSpot": "ponto cego em 1 frase",
@@ -293,12 +293,31 @@ Retorne APENAS este JSON, sem markdown, sem texto adicional:
 }
 
 REGRAS OBRIGATÓRIAS PARA microAcoes:
-- Cada ação DEVE ter "gatilho" (situação específica real) e "acao" (instrução executável)
-- Formato obrigatório: "Quando [gatilho] → [ação com verbo claro + tempo + instrução concreta]"
-- Cada ação DEVE ter: verbo claro, tempo definido (agora, por 5 minutos, hoje), contexto específico (gatilho real), instrução física ou mental concreta
-- PROIBIDO: frases genéricas como "observe seus padrões", "mude seu comportamento", "reflita sobre isso"
-- Exemplo válido: {"gatilho": "perceber que está evitando um conflito", "acao": "pare, conte até 5 e diga em voz alta o que está evitando. Faça isso antes de sair da situação"}
-- Exemplo inválido: {"gatilho": "situações difíceis", "acao": "observe seus padrões"}`;
+VINCULAÇÃO AO DIAGNÓSTICO:
+- microAcoes[0] → DEVE atacar diretamente o PADRÃO DOMINANTE identificado nos scores. O gatilho deve descrever a situação concreta onde esse padrão se manifesta.
+- microAcoes[1] → DEVE atacar o EIXO COM MAIOR SCORE (%). O gatilho deve referenciar um comportamento real associado a esse eixo.
+- microAcoes[2] → DEVE atacar um COMPORTAMENTO RECORRENTE detectado nas EVIDÊNCIAS COMPORTAMENTAIS (respostas com score >= 80). O gatilho deve citar o comportamento específico revelado.
+
+QUALIDADE OBRIGATÓRIA:
+- Cada gatilho DEVE ser uma situação concreta e específica — nunca genérico (ex: "situações difíceis", "momentos de estresse")
+- Cada ação DEVE ter: verbo de ação claro, tempo definido (agora, por 5 minutos, hoje, antes de sair), instrução física ou mental concreta
+- Cada ação deve fazer o usuário sentir "isso foi feito para mim" — se poderia servir para qualquer pessoa, está ERRADA
+
+PROIBIDO:
+- "respire fundo", "observe seus padrões", "reflita sobre isso", "tenha consciência", "mude seu comportamento"
+- Gatilhos vagos: "quando se sentir mal", "em situações difíceis", "quando estiver estressada"
+- Ações genéricas que funcionariam para qualquer perfil
+
+VALIDAÇÃO:
+- Se a ação não referencia implicitamente o padrão dominante, o eixo mais alto ou uma evidência comportamental → DESCARTAR e gerar outra
+- Teste mental: "essa ação faz sentido APENAS para esse diagnóstico específico?" — se não, reescreva
+
+Exemplo CORRETO (padrão dominante = evitação de conflito):
+{"gatilho": "perceber que está escolhendo ficar quieta para não criar conflito com alguém próximo", "acao": "pare, diga em voz alta 'eu estou evitando' e formule uma frase honesta sobre o que você quer. Diga antes de sair do ambiente"}
+
+Exemplo ERRADO:
+{"gatilho": "quando se sentir insegura", "acao": "respire fundo e observe o que está sentindo"}`;
+
 
 function buildUserPrompt(
   userContext: string,
