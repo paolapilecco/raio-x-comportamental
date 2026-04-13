@@ -138,9 +138,8 @@ export async function createActionPlanTracking(
 ): Promise<void> {
   console.log(`[ActionPlan] Creating tracking: userId=${userId}, resultId=${diagnosticResultId}, actions=${actions.length}`);
   
-  if (!actions || actions.length === 0) {
-    console.warn('[ActionPlan] No actions provided — skipping tracking creation');
-    return;
+  if (!actions || actions.length !== 3) {
+    throw new Error(`[ActionPlan] Invalid action count: expected 3, received ${actions?.length || 0}`);
   }
 
   // Check if plan already exists
@@ -151,25 +150,44 @@ export async function createActionPlanTracking(
     .limit(1);
 
   if (existing && existing.length > 0) {
-    console.log(`[ActionPlan] Tracking already exists for ${diagnosticResultId} — skipping`);
+    console.log(`[ActionPlan] Tracking already exists for ${diagnosticResultId} — skipping duplicate creation`);
     return;
   }
 
-  // Store exactly 1 row per action (max 3) with structured gatilho/acao
-  const rows = actions.slice(0, 3).map((action, i) => ({
+  const TOTAL_DAYS = 15;
+  const rows = Array.from({ length: TOTAL_DAYS }, (_, i) => {
+    const action = actions[i % 3];
+    return {
     user_id: userId,
     diagnostic_result_id: diagnosticResultId,
     day_number: i + 1,
     action_text: `Quando ${action.gatilho} → ${action.acao}`,
     gatilho: action.gatilho,
     acao: action.acao,
-  }));
+    };
+  });
 
   const { error } = await supabase.from('action_plan_tracking').insert(rows);
   
   if (error) {
     console.error('[ActionPlan] Failed to insert tracking rows:', error);
+    throw error;
   } else {
     console.log(`[ActionPlan] ✅ Successfully created ${rows.length} tracking rows for ${diagnosticResultId}`);
+  }
+
+  const { count, error: countError } = await supabase
+    .from('action_plan_tracking')
+    .select('*', { count: 'exact', head: true })
+    .eq('diagnostic_result_id', diagnosticResultId)
+    .eq('user_id', userId);
+
+  if (countError) {
+    console.error('[ActionPlan] Failed to verify tracking rows:', countError);
+    throw countError;
+  }
+
+  if ((count || 0) < TOTAL_DAYS) {
+    throw new Error(`[ActionPlan] Incomplete tracking creation: expected ${TOTAL_DAYS}, found ${count || 0}`);
   }
 }
