@@ -434,7 +434,7 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
 // LEGACY SECTIONS (backwards compatibility)
 // ═══════════════════════════════════════════════════════════════
 
-function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
+function LegacySections({ result, moduleSlug: _moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
   const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
   const comoAparece = ai.comoAparece || result.mentalState;
