@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { buildActionPreviews } from '@/lib/buildActionPreview';
+import { buildActionPreviews, parseActionString } from '@/lib/buildActionPreview';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
@@ -836,18 +836,12 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
         for (const row of data) {
           if (!seen.has(row.action_text) && unique.length < 3) {
             seen.add(row.action_text);
-            // Parse "Se x → y" format
-            const match = row.action_text.match(/^Se\s+(.+?)\s+→\s+(.+)$/i);
-            if (match) {
-              unique.push({ trigger: match[1], action: match[2] });
-            } else {
-              unique.push({ trigger: 'O padrão se ativar', action: row.action_text });
-            }
+            unique.push(parseActionString(row.action_text));
           }
         }
         setActions(unique);
       } else {
-        // No persisted actions — fallback to client-side generation
+        // No persisted actions — fallback to client-side generation (first render before save)
         const previews = buildActionPreviews(result);
         setActions(previews);
       }
