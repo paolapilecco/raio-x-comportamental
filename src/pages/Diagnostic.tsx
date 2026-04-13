@@ -4,9 +4,6 @@ import Questionnaire from '@/components/diagnostic/Questionnaire';
 import AnalyzingScreen from '@/components/diagnostic/AnalyzingScreen';
 import Report from '@/components/diagnostic/Report';
 import { Answer, DiagnosticResult, PatternScore } from '@/types/diagnostic';
-import { analyzeAnswers } from '@/lib/analysis';
-import { analyzePurposeAnswers } from '@/lib/purposeAnalysis';
-import { analyzeGenericTest } from '@/lib/genericAnalysis';
 import { getTestEngine } from '@/lib/testEngineRegistry';
 import { updateCentralProfile } from '@/lib/centralProfile';
 import { assembleReport } from '@/lib/reportAssembler';
@@ -21,7 +18,6 @@ import { UserCircle, ChevronRight } from 'lucide-react';
 
 type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
-const PURPOSE_SLUG = 'proposito-sentido';
 const BEHAVIORAL_SLUG = 'padrao-comportamental';
 
 interface DbQuestion {
@@ -431,54 +427,11 @@ const Diagnostic = () => {
   }, [user, moduleId, selectedPersonId, isRetest, retestOrigin, previousSessionId, previousResultId]);
 
   /**
-   * Local fallback analysis (hardcoded patterns).
-   * Used when AI prompts aren't configured or AI call fails.
-   */
-  const runLocalAnalysis = useCallback((answers: Answer[]): DiagnosticResult => {
-    if (slug === PURPOSE_SLUG) {
-      const r = analyzePurposeAnswers(answers);
-      return {
-        dominantPattern: { ...r.dominantPattern, key: r.dominantPattern.key as any },
-        secondaryPatterns: r.secondaryPatterns.map(p => ({ ...p, key: p.key as any })),
-        intensity: r.intensity,
-        allScores: r.allScores as any,
-        summary: r.summary,
-        mechanism: r.mechanism,
-        contradiction: r.contradiction,
-        impact: r.impact,
-        direction: r.direction,
-        combinedTitle: r.combinedTitle,
-        profileName: r.profileName,
-        mentalState: r.mentalState,
-        triggers: r.triggers,
-        mentalTraps: r.mentalTraps,
-        selfSabotageCycle: r.selfSabotageCycle,
-        blockingPoint: r.blockingPoint,
-        lifeImpact: r.lifeImpact,
-        exitStrategy: r.exitStrategy,
-        corePain: r.corePain,
-        keyUnlockArea: r.keyUnlockArea,
-        criticalDiagnosis: r.criticalDiagnosis,
-        whatNotToDo: r.whatNotToDo,
-      };
-    }
-
-    const engine = getTestEngine(slug);
-    if (engine) {
-      return analyzeGenericTest(answers, dbQuestions, engine.axes, engine.definitions, slug);
-    }
-
-    // Fallback — should not happen since all modules are registered
-    console.warn(`No engine found for slug "${slug}", falling back to legacy analysis`);
-    return analyzeAnswers(answers);
-  }, [slug, dbQuestions]);
-
-  /**
    * Try AI-powered analysis using admin-configured prompts.
-   * Returns null if AI is unavailable or fails.
+   * Returns DiagnosticResult or throws on failure.
    */
-  const runAIAnalysis = useCallback(async (answers: Answer[]): Promise<DiagnosticResult | null> => {
-    if (!moduleId) return null;
+  const runAIAnalysis = useCallback(async (answers: Answer[]): Promise<DiagnosticResult> => {
+    if (!moduleId) throw new Error('Module ID not available');
 
     try {
       // Calculate raw scores to send to the AI
@@ -557,7 +510,7 @@ const Diagnostic = () => {
       }
 
       const ai = data?.analysis;
-      if (!ai) return null;
+      if (!ai) throw new Error('AI returned empty analysis');
 
       // Build DiagnosticResult from AI response
       const dominant = scores[0];
@@ -665,6 +618,10 @@ const Diagnostic = () => {
 
     try {
       let analysisResult = await runAIAnalysis(answers);
+
+      if (!analysisResult) {
+        throw new Error('AI analysis returned null');
+      }
 
       console.log('[Diagnostic] Using AI-powered analysis from admin prompts');
       // Apply structured block assembly + quality validation to AI output
