@@ -18,6 +18,8 @@ export interface PdfEvolutionData {
     execution_rate: number;
     current_streak: number;
   };
+  /** Persisted action texts from action_plan_tracking (unique, max 3) */
+  actionTexts?: string[];
 }
 
 // ── Layout constants ──
