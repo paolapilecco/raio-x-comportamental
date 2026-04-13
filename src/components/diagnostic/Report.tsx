@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { parseActionString } from '@/lib/buildActionPreview';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, TrendingDown, TrendingUp, Minus, Lock, Crown } from 'lucide-react';
+import { Download, ChevronRight, ArrowRight, XCircle, CheckCircle2, TrendingDown, TrendingUp, Minus, Lock, Crown } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { trackEvent } from '@/lib/trackEvent';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
@@ -32,7 +32,6 @@ const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg
   alto: { label: 'Alto', color: 'text-destructive', bg: 'bg-destructive', ring: 'ring-destructive/20' },
 };
 
-// Determine visual style for a section based on key patterns
 function getSectionAccent(key: string): string | undefined {
   if (key.match(/diagnostico|chamaAtencao|dorCentral|corePain/i)) return 'destructive';
   if (key.match(/futureConsequence|consequencia/i)) return 'destructive';
@@ -42,12 +41,10 @@ function getSectionAccent(key: string): string | undefined {
   return undefined;
 }
 
-// Check if a section key represents a list field
 function isListSection(key: string): boolean {
   return /gatilho|parar|oQue|whatNot|mentalTrap/i.test(key);
 }
 
-// Get header title based on slug
 function getHeaderTitle(slug?: string): string {
   if (!slug) return 'Sua leitura';
   if (slug.includes('execucao') || slug.includes('produtividade')) return 'Sua leitura de execução';
@@ -73,25 +70,12 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const axisLabels = useAxisLabels();
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
 
-  // Fetch template sections for this test module
   useEffect(() => {
     if (!moduleSlug || moduleSlug === 'mapa-de-vida') return;
-
     const fetchTemplate = async () => {
-      const { data: modules } = await supabase
-        .from('test_modules')
-        .select('id')
-        .eq('slug', moduleSlug)
-        .limit(1);
-
+      const { data: modules } = await supabase.from('test_modules').select('id').eq('slug', moduleSlug).limit(1);
       if (!modules?.[0]) return;
-
-      const { data: templates } = await supabase
-        .from('report_templates')
-        .select('sections')
-        .eq('test_id', modules[0].id)
-        .limit(1);
-
+      const { data: templates } = await supabase.from('report_templates').select('sections').eq('test_id', modules[0].id).limit(1);
       if (templates?.[0]?.sections) {
         const sections = templates[0].sections as unknown as TemplateSection[];
         if (Array.isArray(sections) && sections.length > 0) {
@@ -99,11 +83,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         }
       }
     };
-
     fetchTemplate();
   }, [moduleSlug]);
 
-  // Track report_viewed event
   useEffect(() => {
     if (user) {
       trackEvent({ userId: user.id, event: 'report_viewed', metadata: { moduleSlug } });
@@ -117,9 +99,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const headerTitle = getHeaderTitle(moduleSlug);
   const ai = (result as any);
 
-  // Legacy field resolution (used for QuickRead and fallback)
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const focoMudanca = ai.focoMudanca || result.keyUnlockArea || ai.blockingPoint || result.blockingPoint || corrigirPrimeiro;
+  const profileName = result.interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '');
 
   const handleDownloadPdf = async () => {
     if (moduleSlug === 'mapa-de-vida') {
@@ -167,7 +149,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
     }
   };
 
-  // Resolve the value for a custom section key from the AI result
   const resolveValue = (key: string): string | string[] | null => {
     const v = ai[key];
     if (Array.isArray(v) && v.length > 0) return v;
@@ -177,11 +158,14 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
   const hasCustomTemplate = templateSections.length >= 5;
 
+  // Resolve dominant axis for diagnostic-action link
+  const dominantAxisLabel = result.allScores?.[0]?.label || result.allScores?.[0]?.key || '';
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 md:px-10 py-16 md:py-28">
 
-        {/* ── Header — editorial, no numbers ── */}
+        {/* ── Header — editorial ── */}
         <motion.header {...fade} transition={{ duration: 0.6 }} className="mb-16">
           <p className="text-[10px] text-muted-foreground/35 uppercase tracking-[0.35em] font-light mb-6">
             {headerTitle}
@@ -197,43 +181,42 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           </div>
         </motion.header>
 
-        {/* ── Quick-read — refined card ── */}
+        {/* ── Editorial Opening — replaces mechanical Síntese card ── */}
         <motion.div {...fade} transition={{ delay: 0.1, duration: 0.5 }} className="mb-20">
-          <div className="rounded-2xl border border-border/20 overflow-hidden">
-            <div className="bg-secondary/30 px-6 py-3.5 border-b border-border/15">
-              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.25em] font-medium">
-                Síntese
+          <div className="space-y-6">
+            {/* Profile identity — the mirror */}
+            <div className="border-l-[3px] border-primary/30 pl-6">
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.3em] font-medium mb-3">
+                O padrão identificado
+              </p>
+              <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-snug">
+                {profileName}
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2">
-              <QuickReadCell
-                icon={<Zap className="w-3 h-3 text-primary/40" />}
-                label="Padrão identificado"
-                value={result.interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '')}
-                bold
-              />
-              <QuickReadCell
-                icon={<span className={`w-2 h-2 rounded-full ${info.bg}`} />}
-                label="Nível"
-                value={info.label}
-                colorClass={info.color}
-                bold
-              />
-              <QuickReadCell
-                icon={<AlertTriangle className="w-3 h-3 text-destructive/30" />}
-                label="O que trava"
-                value={ai.blockingPoint || result.blockingPoint || 'Não identificado'}
-              />
-              <QuickReadCell
-                icon={<Target className="w-3 h-3 text-primary/30" />}
-                label="Onde agir"
-                value={focoMudanca || 'Não identificado'}
-              />
+
+            {/* Core reading — editorial prose, not a dashboard grid */}
+            <div className="rounded-2xl border border-border/15 bg-card/30 px-7 py-6 space-y-4">
+              {(ai.blockingPoint || result.blockingPoint) && (
+                <div>
+                  <p className="text-[9px] text-destructive/40 uppercase tracking-[0.25em] font-medium mb-2">O que trava você</p>
+                  <p className="text-[15px] text-foreground/85 leading-[1.85]">
+                    {ai.blockingPoint || result.blockingPoint}
+                  </p>
+                </div>
+              )}
+              {focoMudanca && (
+                <div>
+                  <p className="text-[9px] text-primary/40 uppercase tracking-[0.25em] font-medium mb-2">Onde concentrar energia</p>
+                  <p className="text-[15px] text-foreground/85 leading-[1.85]">
+                    {focoMudanca}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>
 
-        {/* ── Sections — editorial flow, NO numbers ── */}
+        {/* ── Sections — editorial flow ── */}
         <div className="space-y-20">
           {hasCustomTemplate ? (
             <>
@@ -245,7 +228,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 const isList = isListSection(section.key) || Array.isArray(value);
                 const delay = 0.05 + idx * 0.04;
 
-                // Special: impactoPorArea rendering
+                // Impact areas
                 if (section.key === 'impactoPorArea' || section.key === 'impactoDecisoes' || section.key === 'impactoReal' || section.key === 'impactoRelacoes' || section.key === 'impactoVinculos') {
                   const impacto = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
                   const textValue = typeof value === 'string' ? value : null;
@@ -268,7 +251,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   );
                 }
 
-                // List sections
+                // List sections — NO numbers
                 if (isList && Array.isArray(value)) {
                   const isStop = /parar|oQue/i.test(section.key);
                   return (
@@ -296,7 +279,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   );
                 }
 
-                // Action/direction sections
+                // Direction sections
                 if (/direcao|corrigir|ajuste/i.test(section.key)) {
                   return (
                     <Section key={section.key} title={section.label} delay={delay} accent="primary">
@@ -310,7 +293,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   );
                 }
 
-                // Action immediate sections
+                // Action/immediate sections
                 if (/acao|proximo|imediata/i.test(section.key)) {
                   return (
                     <Section key={section.key} title={section.label} delay={delay} accent="green">
@@ -343,7 +326,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   );
                 }
 
-                // Future consequence section
+                // Future consequence
                 if (/futureConsequence|consequencia/i.test(section.key)) {
                   return (
                     <Section key={section.key} title={section.label} delay={delay} accent="destructive">
@@ -357,7 +340,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   );
                 }
 
-                // Default text section
+                // Default text
                 return (
                   <Section key={section.key} title={section.label} delay={delay} accent={accent}>
                     <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : (value || 'Não identificado')}</p>
@@ -365,10 +348,8 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 );
               })}
 
-              {/* Evolution comparison */}
               <EvolutionComparisonSection ai={ai} delay={0.04 + templateSections.length * 0.04} />
 
-              {/* Blind spot */}
               {result.interpretation?.blindSpot?.realProblem && (
                 <motion.div {...fade} transition={{ delay: 0.07 }}>
                   <CardBlock variant="muted">
@@ -388,8 +369,8 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             <LegacySections result={result} moduleSlug={moduleSlug} ai={ai} />
           )}
 
-          {/* ── Actions ── */}
-          <ActionPreviewSection result={result} ai={ai} />
+          {/* ── Actions with diagnostic connection ── */}
+          <ActionPreviewSection result={result} ai={ai} dominantAxisLabel={dominantAxisLabel} profileName={profileName} />
 
           {/* ── Intensity bars ── */}
           <motion.section {...fade} transition={{ delay: 0.42 }}>
@@ -424,7 +405,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           </motion.section>
         </div>
 
-        {/* ── Gamification ── */}
         <ReportGamification />
 
         {/* ── Footer ── */}
@@ -455,7 +435,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 };
 
 
-/* ── Legacy sections fallback — NO NUMBERING ── */
+/* ── Legacy sections — NO NUMBERING anywhere ── */
 function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
   const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
@@ -465,8 +445,8 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
   const impactoPorArea: { area: string; efeito: string }[] = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
-  const acaoInicialRaw = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
   const microAcoes: { gatilho?: string; acao: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
+  const acaoInicialRaw = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
   const acaoInicial = typeof acaoInicialRaw === 'string' ? acaoInicialRaw : '';
 
   const titles = getLegacySectionTitles(moduleSlug);
@@ -505,11 +485,12 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
 
       <Section title={titles.comoAparece} delay={0.14}>
         <p className="text-[15px] text-muted-foreground leading-[1.85]">{comoAparece}</p>
+        {/* Self-sabotage cycle — editorial flow, NO numbers */}
         {result.selfSabotageCycle?.length > 0 && (
           <div className="mt-6 space-y-2">
             {result.selfSabotageCycle.map((step, i) => (
               <div key={i} className="flex items-start gap-3 py-2">
-                <span className="w-5 h-5 rounded-full bg-secondary/60 flex items-center justify-center text-[10px] font-medium text-muted-foreground/60 shrink-0 mt-0.5">{i + 1}</span>
+                <span className="mt-[9px] w-1.5 h-1.5 rounded-full bg-muted-foreground/25 shrink-0" />
                 <p className="text-[15px] text-muted-foreground leading-[1.8]">{step}</p>
               </div>
             ))}
@@ -545,7 +526,6 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         )}
       </Section>
 
-      {/* Future consequence */}
       {ai.futureConsequence && (
         <Section title="Se nada mudar" delay={0.25} accent="destructive">
           <CardBlock variant="alert">
@@ -557,7 +537,6 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      {/* Evolution comparison */}
       <EvolutionComparisonSection ai={ai} delay={0.255} />
 
       <Section title={titles.corrigirPrimeiro} delay={0.26} accent="primary">
@@ -589,12 +568,13 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
             <p className="text-base font-medium text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
           </div>
         )}
+        {/* microAcoes — editorial blocks, NO number badges */}
         {microAcoes.length > 0 ? (
           <div className="space-y-3">
             {microAcoes.map((item: any, i: number) => (
               <div key={i} className="border border-green-500/15 bg-green-500/[0.03] rounded-xl px-6 py-5">
                 <div className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center text-[11px] font-medium text-green-600 shrink-0 mt-0.5">{i + 1}</span>
+                  <span className="mt-[9px] w-1.5 h-1.5 rounded-full bg-green-500/50 shrink-0" />
                   <div className="flex-1">
                     {item.gatilho && (
                       <p className="text-xs text-muted-foreground/60 mb-1.5 leading-relaxed">Quando {item.gatilho} →</p>
@@ -618,7 +598,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
   );
 }
 
-/* ── Premium editorial section titles — NO numbering ── */
+/* ── Editorial section titles ── */
 interface SectionTitles {
   chamaAtencao: string;
   padraoRepetido: string;
@@ -673,7 +653,6 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
         <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">Comparação com diagnóstico anterior</h2>
       </div>
       <div className="space-y-5">
-        {/* Score comparison */}
         <div className="rounded-2xl border border-border/20 bg-card/50 px-6 py-6">
           <div className="flex items-center justify-between mb-5">
             <div className="text-center flex-1">
@@ -768,8 +747,8 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
   );
 }
 
-/* ── Action Preview Section — NO numbering in section header ── */
-function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any }) {
+/* ── Action Preview — NO numbering, with diagnostic connection ── */
+function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { result: DiagnosticResult; ai: any; dominantAxisLabel: string; profileName: string }) {
   const { user, isPremium, isSuperAdmin } = useAuth();
   const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
 
@@ -811,6 +790,17 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
           Ações para começar a mudar esse padrão
         </h2>
       </div>
+
+      {/* Diagnostic-action connection — editorial, explicit */}
+      {(profileName || dominantAxisLabel) && (
+        <div className="mb-5 rounded-xl border border-border/15 bg-secondary/20 px-5 py-4">
+          <p className="text-[13px] text-muted-foreground/70 leading-relaxed italic">
+            Estas ações foram desenhadas com base no padrão <span className="font-semibold text-foreground not-italic">{profileName}</span>
+            {dominantAxisLabel && <> e no eixo <span className="font-semibold text-foreground not-italic">{dominantAxisLabel}</span>, que concentra sua maior intensidade</>}.
+          </p>
+        </div>
+      )}
+
       <div className="space-y-3">
         {actions.slice(0, 3).map((action, i) => {
           const isLocked = !showFull && i > 0;
@@ -821,11 +811,10 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
                 : 'border-green-500/15 bg-green-500/[0.03]'
             }`}>
               <div className="flex items-start gap-3">
-                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-medium shrink-0 mt-0.5 ${
-                  isLocked ? 'bg-muted/30 text-muted-foreground/30' : 'bg-green-500/10 text-green-600'
-                }`}>
-                  {i + 1}
-                </span>
+                {/* Dot instead of number badge */}
+                <span className={`mt-[9px] w-1.5 h-1.5 rounded-full shrink-0 ${
+                  isLocked ? 'bg-muted-foreground/20' : 'bg-green-500/50'
+                }`} />
                 <div className="flex-1">
                   <p className={`text-xs font-medium leading-relaxed ${isLocked ? 'text-muted-foreground/30' : 'text-muted-foreground/60'}`}>
                     Quando <span className={`font-semibold ${isLocked ? 'text-muted-foreground/40' : 'text-foreground'}`}>
@@ -848,7 +837,6 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
           );
         })}
 
-        {/* Paywall */}
         {!showFull && (
           <div className="mt-6 border border-destructive/15 bg-destructive/[0.02] rounded-2xl px-6 py-6 space-y-5">
             <div className="space-y-2 text-center">
@@ -862,11 +850,9 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
                 Sem execução, nada muda.
               </p>
             </div>
-
             <p className="text-[11px] text-muted-foreground/50 text-center">
               +32.847 mulheres já estão executando esse plano
             </p>
-
             <div className="border-t border-destructive/8 pt-5">
               <p className="text-xs text-destructive/70 text-center font-medium leading-relaxed mb-4">
                 Se você não fizer isso, daqui 30 dias você ainda vai estar no mesmo padrão.
@@ -886,7 +872,7 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
   );
 }
 
-/* ── Sub-components — Section WITHOUT numbering ── */
+/* ── Sub-components ── */
 
 function Section({ title, delay = 0, accent, children }: { title: string; delay?: number; accent?: string; children: React.ReactNode }) {
   const accentClass = accent === 'destructive' ? 'bg-destructive/40' 
@@ -918,18 +904,5 @@ function CardBlock({ variant = 'default', children }: { variant?: 'default' | 'a
   return <div className={`border rounded-2xl px-6 py-5 ${styles[variant]}`}>{children}</div>;
 }
 
-function QuickReadCell({ icon, label, value, bold, colorClass }: { icon: React.ReactNode; label: string; value: string; bold?: boolean; colorClass?: string }) {
-  return (
-    <div className="bg-background px-6 py-5 border-b border-r border-border/10 last:border-r-0 sm:[&:nth-child(odd):last-child]:col-span-2">
-      <div className="flex items-center gap-1.5 mb-2.5">
-        {icon}
-        <p className="text-[9px] text-muted-foreground/35 uppercase tracking-[0.2em]">{label}</p>
-      </div>
-      <p className={`text-sm leading-relaxed break-words hyphens-auto ${bold ? 'font-semibold' : 'font-medium'} ${colorClass || 'text-foreground'}`}>
-        {value}
-      </p>
-    </div>
-  );
-}
 
 export default memo(Report);

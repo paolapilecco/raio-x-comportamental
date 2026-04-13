@@ -22,19 +22,19 @@ export interface PdfEvolutionData {
 }
 
 // ── Layout constants ──
-const M = 24;        // margin — generous
-const PW = 210;      // page width
-const PH = 297;      // page height
-const CW = PW - M * 2; // content width
-const LH = 5.8;      // line height — more breathing room
+const M = 24;
+const PW = 210;
+const PH = 297;
+const CW = PW - M * 2;
+const LH = 5.8;
 
-// ── Color palette — premium, muted, sophisticated ──
+// ── Color palette ──
 const C = {
   dark:       [28, 32, 36]   as const,
-  accent:     [31, 61, 58]   as const,  // Verde Profundo #1F3D3A
+  accent:     [31, 61, 58]   as const,
   accentSoft: [240, 245, 244] as const,
   accentLight:[100, 140, 135] as const,
-  gold:       [198, 169, 105] as const,  // Dourado Suave #C6A969
+  gold:       [198, 169, 105] as const,
   goldSoft:   [252, 248, 240] as const,
   red:        [170, 60, 60]  as const,
   redSoft:    [252, 242, 242] as const,
@@ -54,7 +54,6 @@ type RGB = readonly [number, number, number];
 
 interface Ctx { doc: jsPDF; y: number; pageNum: number; }
 
-// ── Page break helper ──
 function pb(ctx: Ctx, need = 14) {
   if (ctx.y + need > PH - M - 10) {
     ctx.doc.addPage();
@@ -63,23 +62,18 @@ function pb(ctx: Ctx, need = 14) {
   }
 }
 
-// ── Primitives — NO numbering anywhere ──
+// ── Primitives — NO numbering ──
 
 function sectionTitle(ctx: Ctx, title: string, accentColor: RGB = C.accent) {
   pb(ctx, 22);
   ctx.y += 12;
   const { doc } = ctx;
-  
-  // Thin accent bar — elegant vertical mark
   doc.setFillColor(...accentColor);
   doc.roundedRect(M, ctx.y - 4, 2, 10, 1, 1, 'F');
-  
-  // Title — serif-style feel (helvetica bold, slightly larger)
   doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.dark);
   doc.text(title, M + 8, ctx.y + 1.5);
-  
   ctx.y += 14;
 }
 
@@ -137,12 +131,10 @@ function alertBox(ctx: Ctx, t: string, borderColor: RGB = C.red, bgColor: RGB = 
   const lines = doc.splitTextToSize(t, CW - 18);
   const h = lines.length * LH + 12;
   pb(ctx, h + 2);
-  
   doc.setFillColor(...bgColor);
   doc.roundedRect(M, ctx.y, CW, h, 3, 3, 'F');
   doc.setFillColor(...borderColor);
   doc.roundedRect(M, ctx.y, 2.5, h, 1, 1, 'F');
-  
   ctx.y += 7;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.text);
@@ -160,12 +152,10 @@ function accentBox(ctx: Ctx, t: string, borderColor: RGB = C.accent, bgColor: RG
   const lines = doc.splitTextToSize(t, CW - 18);
   const h = lines.length * LH + 12;
   pb(ctx, h + 2);
-  
   doc.setFillColor(...bgColor);
   doc.roundedRect(M, ctx.y, CW, h, 3, 3, 'F');
   doc.setFillColor(...borderColor);
   doc.roundedRect(M, ctx.y, 2.5, h, 1, 1, 'F');
-  
   ctx.y += 7;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.text);
@@ -197,16 +187,12 @@ function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) 
     const left = validItems[i];
     const right = validItems[i + 1];
     const colW = (CW - 6) / 2;
-    
     const { doc } = ctx;
     doc.setFontSize(9.5);
     const leftLines = doc.splitTextToSize(safe(left.efeito), colW - 12);
     const rightLines = right ? doc.splitTextToSize(safe(right.efeito), colW - 12) : [];
     const maxH = Math.max(leftLines.length, rightLines.length) * LH + 14;
-    
     pb(ctx, maxH + 2);
-    
-    // Left card
     doc.setFillColor(...C.cardBg);
     doc.setDrawColor(...C.border);
     doc.roundedRect(M, ctx.y, colW, maxH, 3, 3, 'FD');
@@ -219,8 +205,6 @@ function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) 
     doc.setTextColor(...C.text);
     let ly = ctx.y + 10;
     for (const l of leftLines) { doc.text(l, M + 6, ly); ly += LH; }
-    
-    // Right card
     if (right) {
       const rx = M + colW + 6;
       doc.setFillColor(...C.cardBg);
@@ -236,7 +220,6 @@ function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) 
       let ry = ctx.y + 10;
       for (const l of rightLines) { doc.text(l, rx + 6, ry); ry += LH; }
     }
-    
     ctx.y += maxH + 4;
   }
 }
@@ -250,6 +233,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const ai = result as any;
   
   // ── Resolve all fields ──
+  const profileName = safe(ai.interpretation?.behavioralProfile?.name) || safe(result.profileName) || safe(result.dominantPattern) || '';
   const chamaAtencao = safe(ai.chamaAtencao) || safe(ai.resumoPrincipal) || safe(result.criticalDiagnosis);
   const padraoRepetido = safe(ai.padraoRepetido) || safe(ai.padraoIdentificado) || safe(result.mechanism);
   const comoAparece = safe(ai.comoAparece) || safe(result.mentalState);
@@ -264,32 +248,25 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
   const actionPlan: { area: string; score: number; actions: string[] }[] = Array.isArray(ai.actionPlan) ? ai.actionPlan : [];
   const focoMudanca = ai.focoMudanca || result.keyUnlockArea || '';
+  const blockingPoint = safe(ai.blockingPoint) || safe(result.blockingPoint);
+  const dominantAxisLabel = result.allScores?.[0]?.label || result.allScores?.[0]?.key || '';
 
   // ═══════════════════════════════════════════
-  // COVER — Premium, clean, editorial
+  // COVER
   // ═══════════════════════════════════════════
   
-  // Dark header band
   doc.setFillColor(...C.dark);
   doc.rect(0, 0, PW, 52, 'F');
-  
-  // Gold accent stripe
   doc.setFillColor(...C.gold);
   doc.rect(0, 52, PW, 1.5, 'F');
-  
-  // Title
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.white);
   doc.text('Raio-X Mental', M, 24);
-  
-  // Subtitle
   doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(180, 182, 188);
   doc.text('Leitura Comportamental Completa', M, 34);
-  
-  // User name & date
   if (userName) {
     doc.setFontSize(8);
     doc.setTextColor(150, 155, 160);
@@ -323,62 +300,66 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   ctx.y += 8;
 
   // ═══════════════════════════════════════════
-  // SYNTHESIS CARD
+  // EDITORIAL OPENING — replaces mechanical SINTESE grid
   // ═══════════════════════════════════════════
-  pb(ctx, 38);
+  pb(ctx, 40);
+  ctx.y += 6;
+
+  // Profile identity — accent bar + name
+  if (profileName) {
+    doc.setFillColor(...C.accent);
+    doc.roundedRect(M, ctx.y - 3, 2.5, 10, 1, 1, 'F');
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.muted);
+    doc.text('PADRAO IDENTIFICADO', M + 8, ctx.y - 1);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(...C.dark);
+    const pnLines = doc.splitTextToSize(profileName, CW - 12);
+    pnLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, M + 8, ctx.y + 5 + i * 5));
+    ctx.y += 5 + pnLines.length * 5 + 4;
+  }
+
+  // Blocking point + focus — editorial prose
+  
+  const openingData: { label: string; text: string }[] = [];
+  if (blockingPoint) openingData.push({ label: 'O QUE TRAVA VOCE', text: blockingPoint });
+  if (focoMudanca) openingData.push({ label: 'ONDE CONCENTRAR ENERGIA', text: focoMudanca });
+
+  if (openingData.length > 0) {
+    // Soft card background
+    const estimatedH = openingData.length * 22 + 8;
+    doc.setFillColor(...C.bg);
+    doc.setDrawColor(...C.border);
+    doc.roundedRect(M, ctx.y, CW, estimatedH, 3, 3, 'FD');
+    ctx.y += 6;
+
+    for (const item of openingData) {
+      doc.setFontSize(6.5);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C.muted);
+      doc.text(item.label, M + 6, ctx.y);
+      ctx.y += 4;
+      doc.setFontSize(9.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...C.text);
+      const lines = doc.splitTextToSize(item.text, CW - 12);
+      for (const l of lines) { doc.text(l, M + 6, ctx.y); ctx.y += LH; }
+      ctx.y += 4;
+    }
+    ctx.y += 2;
+  }
+
   ctx.y += 4;
-  const qrY = ctx.y;
-  const qrH = 40;
-  
-  doc.setFillColor(...C.bg);
-  doc.setDrawColor(...C.border);
-  doc.roundedRect(M, qrY, CW, qrH, 3, 3, 'FD');
-  
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.muted);
-  doc.text('SINTESE', M + 6, qrY + 6);
-  
-  const halfW = (CW - 10) / 2;
-  const col1 = M + 6;
-  const col2 = M + 6 + halfW + 6;
-  const row1 = qrY + 12;
-  const row2 = qrY + 27;
-  
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(...C.light);
-  doc.text('Padrao identificado', col1, row1);
-  doc.text('Nivel', col2, row1);
-  doc.text('O que trava', col1, row2);
-  doc.text('Onde agir', col2, row2);
-  
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.dark);
-  const pName = safe((result as any).interpretation?.behavioralProfile?.name) || safe(result.profileName) || safe(result.dominantPattern) || 'N/A';
-  const pNameLines = doc.splitTextToSize(pName, halfW - 4);
-  pNameLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row1 + 5 + i * 4.5));
-  doc.setTextColor(...intColor);
-  doc.text(intLabel, col2, row1 + 5);
-  doc.setTextColor(...C.dark);
-  const bp = safe(ai.blockingPoint) || safe(result.blockingPoint) || 'Nao identificado';
-  const bpLines = doc.splitTextToSize(bp, halfW - 4);
-  bpLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row2 + 5 + i * 4.5));
-  const fm = safe(focoMudanca) || safe(corrigirPrimeiro) || 'Nao identificado';
-  const fmLines = doc.splitTextToSize(fm, halfW - 4);
-  fmLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col2, row2 + 5 + i * 4.5));
-  
-  ctx.y = qrY + qrH + 8;
 
   // ═══════════════════════════════════════════
-  // SECTIONS — NO numbering, editorial titles
+  // SECTIONS
   // ═══════════════════════════════════════════
   
   sectionTitle(ctx, 'O que seu resultado revela', C.red);
   alertBox(ctx, chamaAtencao);
 
-  // Blind Spot
   if (blindSpot?.realProblem) {
     pb(ctx, 20);
     labelAbove(ctx, 'Ponto cego', C.muted);
@@ -399,14 +380,12 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   sectionTitle(ctx, 'O padrao que te define');
   if (result.interpretation?.behavioralProfile?.name) {
     pb(ctx, 12);
-    const profName = result.interpretation.behavioralProfile.name;
-    // Left border accent instead of box
     doc.setFillColor(...C.accent);
     doc.roundedRect(M + 2, ctx.y - 4, 2, 9, 1, 1, 'F');
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...C.accent);
-    doc.text(profName, M + 8, ctx.y + 0.5);
+    doc.text(result.interpretation.behavioralProfile.name, M + 8, ctx.y + 0.5);
     ctx.y += 9;
   }
   textBlock(ctx, padraoRepetido);
@@ -433,14 +412,12 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     textBlock(ctx, comoAtrapalha);
   }
 
-  // Future consequence
   const fc = extras?.futureConsequence || (ai as any).futureConsequence;
   if (fc) {
     sectionTitle(ctx, 'Se nada mudar', C.red);
     alertBox(ctx, fc);
   }
 
-  // Evolution comparison
   const evo = extras?.evolutionComparison || (ai as any).evolutionComparison;
   if (evo && (evo.previous_score != null || evo.improved_axes?.length || evo.worsened_axes?.length)) {
     sectionTitle(ctx, 'Comparacao com diagnostico anterior', C.accent);
@@ -449,7 +426,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       pb(ctx, 28);
       const { doc: d } = ctx;
       const barW = (CW - 10) / 2;
-
       d.setFontSize(7);
       d.setFont('helvetica', 'bold');
       d.setTextColor(...C.muted);
@@ -457,7 +433,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       d.setFontSize(14);
       d.setTextColor(...C.light);
       d.text(`${evo.previous_score}%`, M + 4, ctx.y + 8);
-
       d.setFontSize(7);
       d.setFont('helvetica', 'bold');
       d.setTextColor(...C.muted);
@@ -466,14 +441,12 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       d.setFontSize(14);
       d.setTextColor(...curColor);
       d.text(`${evo.current_score}%`, M + 4 + barW + 6, ctx.y + 8);
-
       const delta = evo.current_score - evo.previous_score;
       const deltaStr = delta > 0 ? `+${delta}%` : `${delta}%`;
       d.setFontSize(9);
       d.setFont('helvetica', 'bold');
       d.setTextColor(...curColor);
       d.text(deltaStr, M + CW - d.getTextWidth(deltaStr) - 4, ctx.y + 8);
-
       ctx.y += 16;
     }
 
@@ -509,7 +482,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     pararDeFazer.forEach((item: string) => bulletItem(ctx, item, C.red, '✗'));
   }
 
-  // ── Actions ──
+  // ── Actions — NO number badges ──
   sectionTitle(ctx, 'Seu proximo passo', C.green);
   
   if (mentalCommand) {
@@ -527,29 +500,38 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     ctx.y += 6;
   }
 
+  // Diagnostic-action connection in PDF
+  if (profileName || dominantAxisLabel) {
+    pb(ctx, 16);
+    const connectionText = `Acoes desenhadas com base no padrao "${profileName}"${dominantAxisLabel ? ` e no eixo "${dominantAxisLabel}"` : ''}.`;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(...C.muted);
+    const connLines = doc.splitTextToSize(connectionText, CW - 8);
+    for (const l of connLines) { doc.text(l, M + 4, ctx.y); ctx.y += 4.5; }
+    ctx.y += 3;
+  }
+
   const persistedActions = extras?.actionTexts || [];
   
   if (persistedActions.length > 0) {
-    persistedActions.forEach((actionText, i) => {
-      const lines = doc.splitTextToSize(actionText, CW - 20);
-      const h = lines.length * LH + 14;
+    persistedActions.forEach((actionText) => {
+      const lines = doc.splitTextToSize(actionText, CW - 16);
+      const h = lines.length * LH + 12;
       pb(ctx, h + 2);
       
       doc.setFillColor(...C.greenSoft);
       doc.roundedRect(M, ctx.y, CW, h, 3, 3, 'F');
       
+      // Accent dot instead of number badge
       doc.setFillColor(...C.green);
-      doc.roundedRect(M + 5, ctx.y + 5, 6, 6, 1.5, 1.5, 'F');
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...C.white);
-      doc.text(String(i + 1), M + 6.8, ctx.y + 9.2);
+      doc.circle(M + 8, ctx.y + h / 2, 1.5, 'F');
       
       let ay = ctx.y + 7;
       doc.setFontSize(9.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...C.text);
-      for (const l of lines) { doc.text(l, M + 16, ay); ay += LH; }
+      for (const l of lines) { doc.text(l, M + 14, ay); ay += LH; }
       
       ctx.y += h + 4;
     });
@@ -560,19 +542,16 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   // ── Neural Mechanism ──
   if (mecanismoNeural && (mecanismoNeural.neurotransmissor || mecanismoNeural.cicloNeural || mecanismoNeural.neuroplasticidade)) {
     sectionTitle(ctx, 'Mecanismo neural', C.accent);
-    
     if (mecanismoNeural.neurotransmissor) {
       pb(ctx, 14);
       labelAbove(ctx, 'Neurotransmissor envolvido', C.accent);
       accentBox(ctx, mecanismoNeural.neurotransmissor);
     }
-    
     if (mecanismoNeural.cicloNeural) {
       pb(ctx, 14);
       labelAbove(ctx, 'Como o circuito se formou', C.muted);
       textBlock(ctx, mecanismoNeural.cicloNeural, C.muted);
     }
-    
     if (mecanismoNeural.neuroplasticidade) {
       pb(ctx, 14);
       labelAbove(ctx, 'Neuroplasticidade', C.green);
@@ -583,23 +562,19 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   // ── Action Plan by area ──
   if (actionPlan.length > 0) {
     sectionTitle(ctx, 'Plano de acao por area', C.green);
-    
     actionPlan.forEach((plan) => {
       pb(ctx, 16);
       const { doc: d } = ctx;
-      
       d.setFontSize(9.5);
       d.setFont('helvetica', 'bold');
       d.setTextColor(...C.accent);
       d.text(plan.area, M + 4, ctx.y);
-      
       const scoreLabel = `${plan.score}/10`;
       const scoreColor: RGB = plan.score < 4 ? C.red : plan.score < 7 ? C.yellow : C.green;
       d.setFontSize(8);
       d.setTextColor(...scoreColor);
       d.text(scoreLabel, M + CW - d.getTextWidth(scoreLabel) - 4, ctx.y);
       ctx.y += 6;
-      
       plan.actions.forEach((action: string) => {
         bulletItem(ctx, action, C.green, '→');
       });
@@ -611,14 +586,12 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const aps = extras?.actionPlanStatus;
   if (aps && aps.total_days > 0) {
     sectionTitle(ctx, 'Status de execucao', C.accent);
-
     pb(ctx, 30);
     const { doc: d } = ctx;
     const cardH = 28;
     d.setFillColor(...C.bg);
     d.setDrawColor(...C.border);
     d.roundedRect(M, ctx.y, CW, cardH, 3, 3, 'FD');
-
     const colW = CW / 4;
     const metrics = [
       { label: 'TOTAL', value: `${aps.total_days} dias` },
@@ -626,7 +599,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       { label: 'EXECUCAO', value: `${aps.execution_rate}%` },
       { label: 'SEQUENCIA', value: `${aps.current_streak} dias` },
     ];
-
     metrics.forEach((m, i) => {
       const x = M + colW * i + 5;
       d.setFontSize(6.5);
@@ -641,7 +613,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       d.setTextColor(...vColor);
       d.text(m.value, x, ctx.y + 17);
     });
-
     const barY = ctx.y + cardH - 5;
     d.setFillColor(...C.border);
     d.roundedRect(M + 5, barY, CW - 10, 3, 1.5, 1.5, 'F');
@@ -649,7 +620,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     d.setFillColor(...pctColor);
     const fw = (aps.execution_rate / 100) * (CW - 10);
     if (fw > 0) d.roundedRect(M + 5, barY, Math.max(fw, 2), 3, 1.5, 1.5, 'F');
-
     ctx.y += cardH + 8;
   }
 
@@ -663,8 +633,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   doc.setTextColor(...C.muted);
   doc.text('INTENSIDADE POR EIXO', M, ctx.y);
   ctx.y += 6;
-  
-  // Legend
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   doc.setFillColor(...C.green);
@@ -716,7 +684,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     ctx.y += 4;
   });
 
-  // Page numbers
   const totalPages = ctx.pageNum;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
