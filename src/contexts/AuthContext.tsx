@@ -21,9 +21,9 @@ interface SubscriptionInfo {
 
 // Plan limits configuration
 export const PLAN_LIMITS = {
-  standard: { maxPersons: 1, testsPerMonth: 1, allTests: false, label: 'Padrão' },
-  pessoal: { maxPersons: 3, testsPerMonth: 2, allTests: true, label: 'Pessoal', guestTestsPerMonth: 1, guestAllTests: false },
-  profissional: { maxPersons: 15, testsPerMonth: 2, allTests: true, label: 'Profissional' },
+  standard: { maxPersons: 1, testsPerMonth: 1, allTests: false, label: 'Padrão', individual: true },
+  pessoal: { maxPersons: 1, testsPerMonth: 2, allTests: true, label: 'Pessoal', individual: true },
+  profissional: { maxPersons: 15, testsPerMonth: 2, allTests: true, label: 'Profissional', individual: false },
 } as const;
 
 interface AuthContextType {

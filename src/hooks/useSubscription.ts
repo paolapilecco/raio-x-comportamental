@@ -11,7 +11,8 @@ export function useSubscription() {
   const isStandard = planType === 'standard';
   const isPessoal = planType === 'pessoal';
   const isProfissional = planType === 'profissional';
-  const hasMultiplePersons = !isStandard || isSuperAdmin;
+  const isIndividual = limits.individual && !isSuperAdmin;
+  const hasMultiplePersons = !isIndividual;
   const hasAllTests = limits.allTests || isSuperAdmin;
   const maxPersons = isSuperAdmin ? 999 : limits.maxPersons;
 

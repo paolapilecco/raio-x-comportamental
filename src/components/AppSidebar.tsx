@@ -14,7 +14,14 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-const navItems = [
+const baseNavItems = [
+  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Catálogo', url: '/tests', icon: Activity },
+  { title: 'Relatórios', url: '/central-report', icon: FileText },
+  { title: 'Acompanhamento', url: '/acompanhamento', icon: Activity },
+];
+
+const professionalNavItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Pessoas', url: '/pessoas', icon: Users },
   { title: 'Catálogo', url: '/tests', icon: Activity },
@@ -50,7 +57,7 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navItems.map((item) => (
+              {(planType === 'profissional' || isSuperAdmin ? professionalNavItems : baseNavItems).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink

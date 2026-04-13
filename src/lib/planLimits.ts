@@ -19,22 +19,23 @@ export function getPersonLimit(planType: PlanType, isSuperAdmin: boolean): numbe
 }
 
 /**
+ * Check if a plan is individual (no multi-person management).
+ */
+export function isIndividualPlan(planType: PlanType): boolean {
+  return PLAN_LIMITS[planType].individual;
+}
+
+/**
  * Check if a specific test module is accessible for a given plan.
  * 
- * For 'pessoal' plan:
- * - Owner (isOwner=true) can access ALL tests
- * - Guests (isOwner=false) can only access behavioral test
- * 
- * For 'profissional' plan:
- * - Everyone can access ALL tests
- * 
- * For 'standard' (free):
- * - Only behavioral test
+ * For 'standard' (free): Only behavioral test
+ * For 'pessoal': All tests (individual use only)
+ * For 'profissional': All tests for all persons
  */
 export function canAccessModule(
   planType: PlanType,
   moduleSlug: string,
-  isOwner: boolean,
+  _isOwner: boolean,
   isSuperAdmin: boolean
 ): boolean {
   if (isSuperAdmin) return true;
@@ -43,13 +44,8 @@ export function canAccessModule(
     return moduleSlug === BEHAVIORAL_SLUG;
   }
   
-  if (planType === 'profissional') {
-    return true; // all tests for all persons
-  }
-  
-  // pessoal
-  if (isOwner) return true; // owner gets all tests
-  return moduleSlug === BEHAVIORAL_SLUG; // guests only behavioral
+  // pessoal and profissional have all tests
+  return true;
 }
 
 /**
@@ -57,8 +53,8 @@ export function canAccessModule(
  */
 export function getMonthlyTestLimit(
   planType: PlanType,
-  isOwner: boolean,
-  moduleSlug: string,
+  _isOwner: boolean,
+  _moduleSlug: string,
   isSuperAdmin: boolean
 ): number {
   if (isSuperAdmin) return 999;
@@ -67,14 +63,6 @@ export function getMonthlyTestLimit(
     return 1; // 1 test per month for free plan
   }
   
-  if (planType === 'profissional') {
-    return 2; // 2 tests per month per category for everyone
-  }
-  
-  // pessoal
-  if (isOwner) {
-    return 2; // owner: 2 per category per month
-  }
-  // guest on pessoal plan: 1 behavioral test only
-  return moduleSlug === BEHAVIORAL_SLUG ? 1 : 0;
+  // pessoal and profissional: 2 per category per month
+  return 2;
 }

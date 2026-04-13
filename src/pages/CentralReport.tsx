@@ -43,7 +43,7 @@ import {
 } from '@/components/central-report/types';
 
 const CentralReport = () => {
-  const { user, isPremium, isSuperAdmin } = useAuth();
+  const { user, isPremium, isSuperAdmin, planType } = useAuth();
   const navigate = useNavigate();
   const { data: patternDefinitions } = usePatternDefinitions();
   const radarAxisLabels = useAxisLabels();
@@ -75,6 +75,12 @@ const CentralReport = () => {
 
         if (!persons || persons.length === 0) { setLoading(false); return; }
         setManagedPersons(persons);
+
+        // Auto-select for individual plans (standard/pessoal)
+        const isIndividual = planType !== 'profissional' && !isSuperAdmin;
+        if (isIndividual && persons.length >= 1) {
+          setSelectedPersonId(persons[0].id);
+        }
 
         const { data: sessions } = await supabase
           .from('diagnostic_sessions')
