@@ -289,6 +289,12 @@ const Diagnostic = () => {
   const saveToDatabase = useCallback(async (answers: Answer[], analysisResult: DiagnosticResult) => {
     if (!user) return;
     try {
+      const aiResult = analysisResult as any;
+      const microAcoes = Array.isArray(aiResult.microAcoes) ? aiResult.microAcoes : [];
+      if (microAcoes.length !== 3) {
+        throw new Error(`[Diagnostic] HARD FAIL: expected 3 microAcoes before save, received ${microAcoes.length}`);
+      }
+
       const sessionInsert: any = { user_id: user.id };
       if (moduleId) sessionInsert.test_module_id = moduleId;
       if (selectedPersonId) sessionInsert.person_id = selectedPersonId;
@@ -370,8 +376,6 @@ const Diagnostic = () => {
       // Create action plan tracking from AI-generated microAcoes
       if (savedResult?.id) {
         try {
-          const aiResult = analysisResult as any;
-          const microAcoes = Array.isArray(aiResult.microAcoes) ? aiResult.microAcoes : [];
           console.log(`[Diagnostic] microAcoes from AI: ${microAcoes.length}`, microAcoes);
           
           // Save structured actions (gatilho + acao as separate fields)
@@ -380,16 +384,19 @@ const Diagnostic = () => {
             .slice(0, 3)
             .map((a: any) => ({ gatilho: a.gatilho, acao: a.acao }));
 
-          if (structuredActions.length > 0) {
+          if (structuredActions.length === 3) {
             await createActionPlanTracking(user.id, savedResult.id, structuredActions);
             trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: structuredActions.length } });
             console.log(`[Diagnostic] ✅ Action plan created: ${structuredActions.length} structured actions`);
           } else {
-            console.error(`[Diagnostic] ❌ CRITICAL: No valid microAcoes to save. Raw microAcoes: ${JSON.stringify(microAcoes)}`);
+            throw new Error(`[Diagnostic] ❌ CRITICAL: Invalid structuredActions length: ${structuredActions.length}`);
           }
         } catch (e) {
           console.error('[Diagnostic] ❌ Action plan creation failed:', e);
+          throw e;
         }
+      } else {
+        throw new Error('[Diagnostic] ❌ CRITICAL: diagnostic_result_id not found after save');
       }
 
       // Send report-ready email (non-blocking)
@@ -419,7 +426,7 @@ const Diagnostic = () => {
       }
     } catch (err) {
       console.error('Error saving diagnostic:', err);
-      toast.error('Erro ao salvar diagnóstico, mas seu resultado está disponível.');
+      throw err;
     }
   }, [user, moduleId, selectedPersonId, isRetest, retestOrigin, previousSessionId, previousResultId]);
 
@@ -536,22 +543,17 @@ const Diagnostic = () => {
       });
 
       if (error) {
-        console.warn('[AI Analysis] Edge function error:', error);
-        return null;
+        console.error('[AI Analysis] Edge function error:', error);
+        throw new Error('ACTION_PLAN_GENERATION_FAILED');
       }
 
-      // Check if AI told us to use fallback
       if (data?.useFallback) {
-        console.log('[AI Analysis] No prompts configured, using local fallback');
-        return null;
+        throw new Error('ACTION_PLAN_CONFIG_MISSING');
       }
 
       if (data?.error) {
-        console.warn('[AI Analysis] Error:', data.error);
-        if (data.error.includes('Limite') || data.error.includes('429')) {
-          toast.error('Análise IA temporariamente indisponível. Usando análise local.');
-        }
-        return null;
+        console.error('[AI Analysis] Error:', data.error);
+        throw new Error(String(data.error));
       }
 
       const ai = data?.analysis;
@@ -638,8 +640,8 @@ const Diagnostic = () => {
 
       return resultObj as DiagnosticResult;
     } catch (err) {
-      console.warn('[AI Analysis] Unexpected error:', err);
-      return null;
+      console.error('[AI Analysis] Unexpected error:', err);
+      throw err;
     }
   }, [moduleId, slug, dbQuestions]);
 
@@ -661,23 +663,23 @@ const Diagnostic = () => {
       });
     }
 
-    // Try AI-powered analysis first, fall back to local
-    let analysisResult = await runAIAnalysis(answers);
-    
-    if (!analysisResult) {
-      console.log('[Diagnostic] Using local analysis fallback');
-      analysisResult = runLocalAnalysis(answers);
-    } else {
+    try {
+      let analysisResult = await runAIAnalysis(answers);
+
       console.log('[Diagnostic] Using AI-powered analysis from admin prompts');
       // Apply structured block assembly + quality validation to AI output
       analysisResult = assembleReport(analysisResult);
-    }
 
-    setResult(analysisResult);
-    setStep('report');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    saveToDatabase(answers, analysisResult);
-  }, [saveToDatabase, runAIAnalysis, runLocalAnalysis, isRetest, user, moduleId, retestOrigin, previousSessionId, previousResultId]);
+      await saveToDatabase(answers, analysisResult);
+      setResult(analysisResult);
+      setStep('report');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (error) {
+      console.error('[Diagnostic] Hard fail in end-to-end action flow:', error);
+      toast.error('Falha técnica: o diagnóstico não foi concluído porque o plano de ação não atingiu o padrão exigido.');
+      setStep('questionnaire');
+    }
+  }, [saveToDatabase, runAIAnalysis, isRetest, user, moduleId, retestOrigin, previousSessionId, previousResultId]);
 
   const handleGoToDashboard = useCallback(() => {
     navigate('/dashboard');
