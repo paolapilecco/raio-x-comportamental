@@ -579,7 +579,6 @@ function validateMicroAcoes(
   sortedScores: ScoreEntry[],
   answers: StructuredAnswer[]
 ): { gatilho: string; acao: string }[] {
-  // Build validation context
   const evidenceTexts = (answers || [])
     .filter(a => (a.mappedScore ?? 0) >= 80)
     .map(a => a.questionText)
@@ -593,35 +592,38 @@ function validateMicroAcoes(
   
   const validated: { gatilho: string; acao: string }[] = [];
   
-  for (let i = 0; i < Math.min(rawMicro.length, 3); i++) {
+  for (let i = 0; i < Math.min(rawMicro.length, 6); i++) {
     const item = rawMicro[i];
     if (!item?.gatilho || !item?.acao) {
       console.log(`[validate] Action ${i} REJECTED: missing gatilho or acao`);
       continue;
     }
     
-    // Step 1: Trigger quality
     const triggerCheck = validateTriggerQuality(item.gatilho);
     if (!triggerCheck.pass) {
       console.log(`[validate] Action ${i} REJECTED: ${triggerCheck.reason} | gatilho: "${item.gatilho.substring(0, 50)}..."`);
       continue;
     }
     
-    // Step 2: Action quality  
     const actionCheck = validateActionQuality(item.acao);
     if (!actionCheck.pass) {
       console.log(`[validate] Action ${i} REJECTED: ${actionCheck.reason} | acao: "${item.acao.substring(0, 50)}..."`);
       continue;
     }
     
-    // Step 3: Diagnostic connection
-    const connectionCheck = validateDiagnosticConnection(item, i, ctx);
+    const targetIndex = validated.length; // assign to the next slot
+    const connectionCheck = validateDiagnosticConnection(item, targetIndex, ctx);
     if (!connectionCheck.pass) {
       console.log(`[validate] Action ${i} REJECTED: ${connectionCheck.reason}`);
       continue;
     }
     
     validated.push({ gatilho: item.gatilho, acao: item.acao });
+    if (validated.length >= 3) break;
+  }
+  
+  if (validated.length < 3) {
+    console.warn(`[analyze-test] ⚠️ QUALITY ALERT: Only ${validated.length}/3 actions passed validation. Raw: ${rawMicro.length} generated. Dominant: "${ctx.dominantPattern}", TopAxis: "${ctx.topAxisLabel}"`);
   }
   
   console.log(`[analyze-test] microAcoes validation: ${rawMicro.length} generated → ${validated.length} approved`);
