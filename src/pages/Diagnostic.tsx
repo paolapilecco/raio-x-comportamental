@@ -374,15 +374,16 @@ const Diagnostic = () => {
           const microAcoes = Array.isArray(aiResult.microAcoes) ? aiResult.microAcoes : [];
           console.log(`[Diagnostic] microAcoes from AI: ${microAcoes.length}`, microAcoes);
           
-          const actions: string[] = microAcoes
+          // Save structured actions (gatilho + acao as separate fields)
+          const structuredActions = microAcoes
             .filter((a: any) => a?.gatilho && a?.acao)
             .slice(0, 3)
-            .map((a: any) => `Quando ${a.gatilho} → ${a.acao}`);
+            .map((a: any) => ({ gatilho: a.gatilho, acao: a.acao }));
 
-          if (actions.length > 0) {
-            await createActionPlanTracking(user.id, savedResult.id, actions);
-            trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: actions.length } });
-            console.log(`[Diagnostic] ✅ Action plan created: ${actions.length} actions`);
+          if (structuredActions.length > 0) {
+            await createActionPlanTracking(user.id, savedResult.id, structuredActions);
+            trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: structuredActions.length } });
+            console.log(`[Diagnostic] ✅ Action plan created: ${structuredActions.length} structured actions`);
           } else {
             console.error(`[Diagnostic] ❌ CRITICAL: No valid microAcoes to save. Raw microAcoes: ${JSON.stringify(microAcoes)}`);
           }

@@ -16,34 +16,40 @@ export type Database = {
     Tables: {
       action_plan_tracking: {
         Row: {
+          acao: string
           action_text: string
           completed: boolean
           completed_at: string | null
           created_at: string
           day_number: number
           diagnostic_result_id: string
+          gatilho: string
           id: string
           notes: string
           user_id: string
         }
         Insert: {
+          acao?: string
           action_text?: string
           completed?: boolean
           completed_at?: string | null
           created_at?: string
           day_number: number
           diagnostic_result_id: string
+          gatilho?: string
           id?: string
           notes?: string
           user_id: string
         }
         Update: {
+          acao?: string
           action_text?: string
           completed?: boolean
           completed_at?: string | null
           created_at?: string
           day_number?: number
           diagnostic_result_id?: string
+          gatilho?: string
           id?: string
           notes?: string
           user_id?: string

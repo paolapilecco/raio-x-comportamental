@@ -6,6 +6,8 @@ export interface ActionPlanDay {
   id: string;
   day_number: number;
   action_text: string;
+  gatilho: string;
+  acao: string;
   completed: boolean;
   completed_at: string | null;
   notes: string;
@@ -61,7 +63,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
         // Fetch action plan tracking for this result
         const { data: tracking } = await supabase
           .from('action_plan_tracking')
-          .select('id, day_number, action_text, completed, completed_at, notes')
+          .select('id, day_number, action_text, gatilho, acao, completed, completed_at, notes')
           .eq('diagnostic_result_id', results.id)
           .eq('user_id', userId)
           .order('day_number');
@@ -132,7 +134,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
 export async function createActionPlanTracking(
   userId: string,
   diagnosticResultId: string,
-  actions: string[]
+  actions: { gatilho: string; acao: string }[]
 ): Promise<void> {
   console.log(`[ActionPlan] Creating tracking: userId=${userId}, resultId=${diagnosticResultId}, actions=${actions.length}`);
   
@@ -153,12 +155,14 @@ export async function createActionPlanTracking(
     return;
   }
 
-  // Store exactly 1 row per action (max 3)
-  const rows = actions.slice(0, 3).map((actionText, i) => ({
+  // Store exactly 1 row per action (max 3) with structured gatilho/acao
+  const rows = actions.slice(0, 3).map((action, i) => ({
     user_id: userId,
     diagnostic_result_id: diagnosticResultId,
     day_number: i + 1,
-    action_text: actionText,
+    action_text: `Quando ${action.gatilho} → ${action.acao}`,
+    gatilho: action.gatilho,
+    acao: action.acao,
   }));
 
   const { error } = await supabase.from('action_plan_tracking').insert(rows);

@@ -496,16 +496,26 @@ function normalizeResult(
   const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
   const validatedActions = validateMicroAcoes(rawMicro);
   
-  if (validatedActions.length < 3 && rawMicro.length >= 3) {
-    console.warn(`[analyze-test] ⚠️ Relaxed fallback: only ${validatedActions.length}/3 passed strict validation. Using raw actions with gatilho+acao.`);
-    const fallbackActions: { gatilho: string; acao: string }[] = [];
+  // HARD RULE: We need exactly 3 validated actions. No relaxed fallback.
+  if (validatedActions.length < 3) {
+    console.warn(`[analyze-test] ⚠️ Only ${validatedActions.length}/3 actions passed validation. Attempting structured rescue...`);
+    
+    // Try to rescue remaining actions from raw pool with minimal validation (gatilho+acao must exist and be non-trivial)
+    const rescued: { gatilho: string; acao: string }[] = [...validatedActions];
+    const usedGatilhos = new Set(rescued.map(a => normalizeText(a.gatilho)));
+    
     for (const item of rawMicro) {
-      if (item?.gatilho && item?.acao && item.gatilho.length > 5 && item.acao.length > 5) {
-        fallbackActions.push({ gatilho: item.gatilho, acao: item.acao });
-        if (fallbackActions.length >= 3) break;
-      }
+      if (rescued.length >= 3) break;
+      if (!item?.gatilho || !item?.acao) continue;
+      if (item.gatilho.length < 10 || item.acao.length < 10) continue;
+      const normG = normalizeText(item.gatilho);
+      if (usedGatilhos.has(normG)) continue;
+      usedGatilhos.add(normG);
+      rescued.push({ gatilho: item.gatilho, acao: item.acao });
     }
-    result.microAcoes = fallbackActions.length >= validatedActions.length ? fallbackActions : validatedActions;
+    
+    result.microAcoes = rescued;
+    console.log(`[analyze-test] After rescue: ${rescued.length}/3 microAcoes`);
   } else {
     result.microAcoes = validatedActions;
   }
@@ -749,12 +759,20 @@ serve(async (req) => {
       normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || []);
       
       const microCount = Array.isArray(normalized.microAcoes) ? (normalized.microAcoes as any[]).length : 0;
-      console.log(`[analyze-test] Attempt ${attempt + 1}: ${microCount} microAcoes after normalization`);
+      console.log(`[analyze-test] Attempt ${attempt + 1}: ${microCount}/3 microAcoes after normalization`);
       
-      if (microCount >= 1) break;
+      // HARD RULE: require exactly 3 actions
+      if (microCount >= 3) break;
       
       if (attempt < MAX_ATTEMPTS - 1) {
-        console.warn(`[analyze-test] 0 microAcoes on attempt ${attempt + 1}, retrying...`);
+        console.warn(`[analyze-test] Only ${microCount}/3 microAcoes on attempt ${attempt + 1}, retrying...`);
+      } else {
+        console.error(`[analyze-test] ❌ HARD FAIL: Only ${microCount}/3 microAcoes after ${MAX_ATTEMPTS} attempts. Returning error.`);
+        if (microCount === 0) {
+          return errorResponse("Não foi possível gerar o plano de ação completo. Tente novamente.", 500);
+        }
+        // If we got 1-2, still return them but log the failure
+        console.warn(`[analyze-test] Proceeding with ${microCount} actions (incomplete but better than nothing)`);
       }
     }
 
