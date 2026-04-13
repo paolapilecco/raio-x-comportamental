@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { buildActionPreviews } from '@/lib/buildActionPreview';
+import { buildActionPreviews, parseActionString } from '@/lib/buildActionPreview';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
@@ -131,17 +131,26 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         try {
           const { data: tracking } = await supabase
             .from('action_plan_tracking')
-            .select('completed')
+            .select('completed, day_number, action_text')
             .eq('user_id', user.id)
-            .eq('diagnostic_result_id', (result as any).id || '');
+            .eq('diagnostic_result_id', (result as any).id || '')
+            .order('day_number');
           if (tracking && tracking.length > 0) {
             const completed = tracking.filter(t => t.completed).length;
-            // Calculate streak
-            const sortedDays = tracking.sort((a: any, b: any) => a.day_number - b.day_number);
+            const sortedDays = [...tracking].sort((a: any, b: any) => a.day_number - b.day_number);
             let streak = 0;
             for (let i = sortedDays.length - 1; i >= 0; i--) {
               if ((sortedDays[i] as any).completed) streak++;
               else break;
+            }
+            // Extract unique action texts for PDF
+            const seen = new Set<string>();
+            const uniqueTexts: string[] = [];
+            for (const row of tracking) {
+              if (!seen.has(row.action_text) && uniqueTexts.length < 3) {
+                seen.add(row.action_text);
+                uniqueTexts.push(row.action_text);
+              }
             }
             extras = {
               actionPlanStatus: {
@@ -150,6 +159,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 execution_rate: Math.round((completed / tracking.length) * 100),
                 current_streak: streak,
               },
+              actionTexts: uniqueTexts,
             };
           }
         } catch { /* ignore - extras remain undefined */ }
@@ -836,18 +846,12 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
         for (const row of data) {
           if (!seen.has(row.action_text) && unique.length < 3) {
             seen.add(row.action_text);
-            // Parse "Se x → y" format
-            const match = row.action_text.match(/^Se\s+(.+?)\s+→\s+(.+)$/i);
-            if (match) {
-              unique.push({ trigger: match[1], action: match[2] });
-            } else {
-              unique.push({ trigger: 'O padrão se ativar', action: row.action_text });
-            }
+            unique.push(parseActionString(row.action_text));
           }
         }
         setActions(unique);
       } else {
-        // No persisted actions — fallback to client-side generation
+        // No persisted actions — fallback to client-side generation (first render before save)
         const previews = buildActionPreviews(result);
         setActions(previews);
       }
@@ -876,7 +880,7 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
               </span>
               <div className="flex-1">
                 <p className="text-xs font-medium text-muted-foreground/70 leading-relaxed">
-                  Se <span className="text-foreground font-semibold">{action.trigger.toLowerCase()}</span>
+                  Quando <span className="text-foreground font-semibold">{action.trigger}</span>
                 </p>
                 <p className="text-sm font-semibold text-green-700 dark:text-green-400 leading-[1.7] mt-1">
                   → {action.action}
@@ -886,11 +890,14 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
           </div>
         ))}
         <div className="mt-4 border border-destructive/15 bg-destructive/[0.03] rounded-xl px-5 py-4">
-          <p className="text-xs text-foreground/80 font-medium text-center leading-relaxed">
-            Você já sabe o que precisa mudar. Cada dia sem agir reforça o padrão.
+          <p className="text-[13px] text-foreground font-semibold text-center leading-relaxed">
+            Você já sabe o que está errado.
           </p>
-          <p className="text-[10px] text-destructive/60 text-center mt-1 font-semibold">
-            Acompanhamento de execução disponível no premium — R$9,99
+          <p className="text-xs text-muted-foreground text-center mt-0.5 leading-relaxed">
+            Mas continua fazendo igual. Sem execução, nada muda.
+          </p>
+          <p className="text-[10px] text-destructive/70 text-center mt-2 font-bold">
+            Desbloquear acompanhamento — R$9,99
           </p>
         </div>
       </div>

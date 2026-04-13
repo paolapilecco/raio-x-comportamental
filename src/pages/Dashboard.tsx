@@ -290,9 +290,10 @@ const Dashboard = () => {
       try {
         const { data: tracking } = await supabase
           .from('action_plan_tracking')
-          .select('completed, day_number')
+          .select('completed, day_number, action_text')
           .eq('user_id', user.id)
-          .eq('diagnostic_result_id', latestResult.id);
+          .eq('diagnostic_result_id', latestResult.id)
+          .order('day_number');
         if (tracking && tracking.length > 0) {
           const completed = tracking.filter(t => t.completed).length;
           let streak = 0;
@@ -301,6 +302,15 @@ const Dashboard = () => {
             if (sorted[i].completed) streak++;
             else break;
           }
+          // Extract unique action texts for PDF
+          const seen = new Set<string>();
+          const uniqueTexts: string[] = [];
+          for (const row of tracking) {
+            if (!seen.has(row.action_text) && uniqueTexts.length < 3) {
+              seen.add(row.action_text);
+              uniqueTexts.push(row.action_text);
+            }
+          }
           extras = {
             actionPlanStatus: {
               total_days: tracking.length,
@@ -308,6 +318,7 @@ const Dashboard = () => {
               execution_rate: Math.round((completed / tracking.length) * 100),
               current_streak: streak,
             },
+            actionTexts: uniqueTexts,
           };
         }
       } catch { /* ignore */ }
@@ -534,26 +545,21 @@ const Dashboard = () => {
                       <Lock className="w-[18px] h-[18px] text-destructive" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-foreground">Você sabe o que precisa mudar.</h3>
-                      <p className="text-[0.65rem] text-destructive/80 font-medium">Mas saber sem agir é só enganar a si mesma.</p>
+                      <h3 className="text-base font-semibold text-foreground">Você já sabe o que está errado.</h3>
+                      <p className="text-[0.65rem] text-destructive/80 font-medium">Mas continua fazendo igual.</p>
                     </div>
                   </div>
                 </div>
                 <div className="px-6 py-5 space-y-4">
-                  <div className="space-y-2">
-                    <p className="text-sm text-foreground/90 font-medium leading-relaxed">
-                      Seu diagnóstico já revelou o padrão. As 3 ações já estão prontas.
-                    </p>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      Cada dia que passa sem executar, o padrão se fortalece. O acompanhamento premium mostra exatamente se você está mudando — ou só adiando.
-                    </p>
-                  </div>
+                  <p className="text-sm text-foreground/90 font-medium leading-relaxed">
+                    Sem execução, nada muda. Seu diagnóstico já revelou o padrão. As ações já estão prontas. Cada dia sem agir fortalece exatamente o que te trava.
+                  </p>
                   <button
                     onClick={() => navigate('/premium')}
                     className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
                   >
                     <Crown className="w-4 h-4" />
-                    Parar de adiar — R$9,99
+                    Desbloquear acompanhamento — R$9,99
                   </button>
                   <p className="text-[10px] text-muted-foreground/50 text-center">
                     Você já tem o diagnóstico. Falta a ação.
