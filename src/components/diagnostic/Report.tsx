@@ -319,7 +319,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
                 // Action immediate sections
                 if (/acao|proximo|imediata/i.test(section.key)) {
-                  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
+                  const microAcoes: { gatilho?: string; acao: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
                   return (
                     <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent="green">
                       {ai.mentalCommand && (
@@ -499,7 +499,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
   const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
   const pararDeFazer = ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo;
   const acaoInicialRaw = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
-  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
+  const microAcoes: { gatilho?: string; acao: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
   const acaoInicial = typeof acaoInicialRaw === 'string' ? acaoInicialRaw : '';
   
 
