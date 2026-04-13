@@ -76,6 +76,12 @@ const CentralReport = () => {
         if (!persons || persons.length === 0) { setLoading(false); return; }
         setManagedPersons(persons);
 
+        // Auto-select for individual plans (standard/pessoal)
+        const isIndividual = planType !== 'profissional' && !isSuperAdmin;
+        if (isIndividual && persons.length >= 1) {
+          setSelectedPersonId(persons[0].id);
+        }
+
         const { data: sessions } = await supabase
           .from('diagnostic_sessions')
           .select('id, completed_at, test_module_id, person_id')
