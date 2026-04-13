@@ -808,52 +808,91 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 
 /* ── Action Preview Section (3 actions) ── */
 function ActionPreviewSection({ result, ai }: { result: DiagnosticResult; ai: any }) {
-  // Build 3 actions from the diagnosis data
-  const actions: { title: string; description: string }[] = [];
+  // Build 3 practical "Se X → faça Y" actions from diagnosis data
+  type Action = { trigger: string; action: string };
+  const actions: Action[] = [];
 
-  // 1. From microAcoes (AI)
+  // Helper: extract trigger-action pair from AI microAcoes
   if (Array.isArray(ai.microAcoes)) {
     ai.microAcoes.forEach((a: any) => {
       if (actions.length >= 3) return;
-      if (typeof a === 'string') actions.push({ title: a, description: '' });
-      else if (a?.acao) actions.push({ title: a.acao, description: a.detalhe || '' });
-    });
-  }
-
-  // 2. From exitStrategy
-  if (actions.length < 3 && Array.isArray(result.exitStrategy)) {
-    result.exitStrategy.forEach((s: any) => {
-      if (actions.length >= 3) return;
-      const text = s.action || s.title || '';
-      if (text && !actions.some(a => a.title === text)) {
-        actions.push({ title: text, description: s.detail || s.detalhe || '' });
+      if (typeof a === 'object' && a?.gatilho && a?.acao) {
+        actions.push({ trigger: a.gatilho, action: a.acao });
+      } else if (typeof a === 'object' && a?.acao) {
+        actions.push({ trigger: 'O padrão se ativar', action: a.acao });
+      } else if (typeof a === 'string' && a.length > 5) {
+        actions.push({ trigger: 'O padrão se repetir', action: a });
       }
     });
   }
 
-  // 3. Fallbacks from diagnosis fields
-  const fallbackSources = [
-    { title: ai.acaoInicial || ai.proximoPasso || '', description: 'Ação prática derivada do seu diagnóstico' },
-    { title: result.direction || '', description: 'Direção de ajuste para o seu padrão' },
-    { title: result.keyUnlockArea ? `Foque em: ${result.keyUnlockArea}` : '', description: 'Área-chave de desbloqueio identificada' },
-    { title: ai.mentalCommand ? `Repita diariamente: "${ai.mentalCommand}"` : '', description: 'Comando mental de reprogramação' },
-    { title: result.blockingPoint ? `Identifique quando "${result.blockingPoint.length > 50 ? result.blockingPoint.slice(0, 47) + '...' : result.blockingPoint}" aparecer e pause` : '', description: 'Consciência do ponto de travamento' },
-    ...(Array.isArray(result.triggers) ? result.triggers.slice(0, 2).map((t: string) => ({
-      title: `Observe o gatilho "${t.length > 50 ? t.slice(0, 47) + '...' : t}" e registre`,
-      description: 'Mapeamento de gatilhos comportamentais',
-    })) : []),
-  ];
+  // From exitStrategy — convert to trigger-action format
+  if (actions.length < 3 && Array.isArray(result.exitStrategy)) {
+    result.exitStrategy.forEach((s: any) => {
+      if (actions.length >= 3) return;
+      const text = s.action || s.title || '';
+      if (text && !actions.some(a => a.action === text)) {
+        actions.push({ trigger: s.trigger || s.gatilho || 'O comportamento aparecer', action: text });
+      }
+    });
+  }
 
-  for (const fb of fallbackSources) {
+  // Build concrete trigger-action fallbacks from diagnosis fields
+  const triggers = Array.isArray(result.triggers) ? result.triggers : [];
+  const traps = Array.isArray(result.mentalTraps) ? result.mentalTraps : [];
+  const gatilhos = Array.isArray(ai.gatilhos) ? ai.gatilhos : [];
+  const allTriggers = [...gatilhos, ...triggers].filter(Boolean);
+
+  const fallbacks: Action[] = [];
+
+  // Trigger 1: blockingPoint → direction
+  if (result.blockingPoint && result.direction) {
+    const bp = result.blockingPoint.length > 60 ? result.blockingPoint.slice(0, 57) + '...' : result.blockingPoint;
+    const dir = result.direction.split('.')[0];
+    fallbacks.push({ trigger: `Você perceber que "${bp}"`, action: dir });
+  }
+
+  // Trigger 2: first trigger → concrete pause action
+  if (allTriggers[0]) {
+    const t = allTriggers[0].length > 60 ? allTriggers[0].slice(0, 57) + '...' : allTriggers[0];
+    fallbacks.push({ trigger: `"${t}" acontecer`, action: 'Pare por 10 segundos, respire fundo e pergunte: "eu escolhi isso ou estou reagindo?"' });
+  }
+
+  // Trigger 3: mental trap → opposite action
+  if (traps[0]) {
+    const trap = traps[0].length > 60 ? traps[0].slice(0, 57) + '...' : traps[0];
+    fallbacks.push({ trigger: `A armadilha "${trap}" se ativar`, action: 'Anote o que você estava pensando e faça o oposto por 5 minutos como teste' });
+  }
+
+  // Trigger 4: second trigger → register pattern
+  if (allTriggers[1]) {
+    const t = allTriggers[1].length > 60 ? allTriggers[1].slice(0, 57) + '...' : allTriggers[1];
+    fallbacks.push({ trigger: `Você notar "${t}"`, action: 'Registre em uma nota: situação, emoção e o que fez. Revise no fim do dia' });
+  }
+
+  // Trigger 5: corePain → keyUnlockArea
+  if (result.corePain && result.keyUnlockArea) {
+    const pain = result.corePain.split('.')[0];
+    fallbacks.push({ trigger: `Sentir "${pain.length > 50 ? pain.slice(0, 47) + '...' : pain}"`, action: `Foque em: ${result.keyUnlockArea}` });
+  }
+
+  // Fill from fallbacks
+  for (const fb of fallbacks) {
     if (actions.length >= 3) break;
-    if (fb.title && !actions.some(a => a.title === fb.title)) {
+    if (!actions.some(a => a.action === fb.action)) {
       actions.push(fb);
     }
   }
 
-  // Ensure exactly 3
-  while (actions.length < 3) {
-    actions.push({ title: 'Registre suas reações emocionais diariamente', description: 'Autoconhecimento começa pela observação' });
+  // Last resort — generic but still trigger→action
+  const lastResort: Action[] = [
+    { trigger: 'Você querer desistir de algo importante', action: 'Escreva 1 motivo real para continuar e releia antes de decidir' },
+    { trigger: 'Sentir que está no automático', action: 'Pare, olhe ao redor e descreva em voz alta o que está fazendo e por quê' },
+    { trigger: 'Um padrão negativo se repetir', action: 'Anote: "isso já aconteceu antes?" — se sim, mude uma variável da situação' },
+  ];
+  for (const lr of lastResort) {
+    if (actions.length >= 3) break;
+    actions.push(lr);
   }
 
   if (actions.length === 0) return null;
@@ -876,10 +915,12 @@ function ActionPreviewSection({ result, ai }: { result: DiagnosticResult; ai: an
                 {i + 1}
               </span>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground leading-[1.7]">{action.title}</p>
-                {action.description && (
-                  <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{action.description}</p>
-                )}
+                <p className="text-xs font-medium text-muted-foreground/70 leading-relaxed">
+                  Se <span className="text-foreground font-semibold">{action.trigger.toLowerCase()}</span>
+                </p>
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400 leading-[1.7] mt-1">
+                  → {action.action}
+                </p>
               </div>
             </div>
           </div>
