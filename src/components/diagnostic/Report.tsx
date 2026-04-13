@@ -131,17 +131,26 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         try {
           const { data: tracking } = await supabase
             .from('action_plan_tracking')
-            .select('completed')
+            .select('completed, day_number, action_text')
             .eq('user_id', user.id)
-            .eq('diagnostic_result_id', (result as any).id || '');
+            .eq('diagnostic_result_id', (result as any).id || '')
+            .order('day_number');
           if (tracking && tracking.length > 0) {
             const completed = tracking.filter(t => t.completed).length;
-            // Calculate streak
-            const sortedDays = tracking.sort((a: any, b: any) => a.day_number - b.day_number);
+            const sortedDays = [...tracking].sort((a: any, b: any) => a.day_number - b.day_number);
             let streak = 0;
             for (let i = sortedDays.length - 1; i >= 0; i--) {
               if ((sortedDays[i] as any).completed) streak++;
               else break;
+            }
+            // Extract unique action texts for PDF
+            const seen = new Set<string>();
+            const uniqueTexts: string[] = [];
+            for (const row of tracking) {
+              if (!seen.has(row.action_text) && uniqueTexts.length < 3) {
+                seen.add(row.action_text);
+                uniqueTexts.push(row.action_text);
+              }
             }
             extras = {
               actionPlanStatus: {
@@ -150,6 +159,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 execution_rate: Math.round((completed / tracking.length) * 100),
                 current_streak: streak,
               },
+              actionTexts: uniqueTexts,
             };
           }
         } catch { /* ignore - extras remain undefined */ }

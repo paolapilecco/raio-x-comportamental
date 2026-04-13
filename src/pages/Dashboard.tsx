@@ -290,9 +290,10 @@ const Dashboard = () => {
       try {
         const { data: tracking } = await supabase
           .from('action_plan_tracking')
-          .select('completed, day_number')
+          .select('completed, day_number, action_text')
           .eq('user_id', user.id)
-          .eq('diagnostic_result_id', latestResult.id);
+          .eq('diagnostic_result_id', latestResult.id)
+          .order('day_number');
         if (tracking && tracking.length > 0) {
           const completed = tracking.filter(t => t.completed).length;
           let streak = 0;
@@ -301,6 +302,15 @@ const Dashboard = () => {
             if (sorted[i].completed) streak++;
             else break;
           }
+          // Extract unique action texts for PDF
+          const seen = new Set<string>();
+          const uniqueTexts: string[] = [];
+          for (const row of tracking) {
+            if (!seen.has(row.action_text) && uniqueTexts.length < 3) {
+              seen.add(row.action_text);
+              uniqueTexts.push(row.action_text);
+            }
+          }
           extras = {
             actionPlanStatus: {
               total_days: tracking.length,
@@ -308,6 +318,7 @@ const Dashboard = () => {
               execution_rate: Math.round((completed / tracking.length) * 100),
               current_streak: streak,
             },
+            actionTexts: uniqueTexts,
           };
         }
       } catch { /* ignore */ }
