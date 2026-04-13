@@ -69,9 +69,44 @@ interface OutputRules {
   emotionalArchitecture?: string;
 }
 
+// ─── STORYBOARD 3-ACT TYPES ───
+
+interface StoryboardSlot {
+  key: string;
+  label: string;
+  format: "prose" | "list" | "cards" | "quote" | "alert";
+  maxSentences: number;
+  instruction: string;
+  example: string;
+  enabled: boolean;
+}
+
+interface StoryboardAct {
+  id: "espelho" | "confronto" | "direcao";
+  title: string;
+  subtitle: string;
+  tone: string;
+  slots: StoryboardSlot[];
+}
+
+interface CompositionRules {
+  maxTotalWords: number;
+  proportions: { espelho: number; confronto: number; direcao: number };
+  forbiddenTerms: string[];
+  mandatoryElements: string[];
+  narrativeVoice: string;
+}
+
+interface StoryboardTemplate {
+  acts: StoryboardAct[];
+  rules: CompositionRules;
+}
+
 interface ReportTemplate {
   sections: TemplateSection[];
   output_rules: OutputRules;
+  // New storyboard format
+  storyboard?: StoryboardTemplate;
 }
 
 interface StructuredAnswer {
