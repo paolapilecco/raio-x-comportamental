@@ -870,7 +870,7 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
               </span>
               <div className="flex-1">
                 <p className="text-xs font-medium text-muted-foreground/70 leading-relaxed">
-                  Se <span className="text-foreground font-semibold">{action.trigger.toLowerCase()}</span>
+                  Quando <span className="text-foreground font-semibold">{action.trigger}</span>
                 </p>
                 <p className="text-sm font-semibold text-green-700 dark:text-green-400 leading-[1.7] mt-1">
                   → {action.action}
@@ -880,11 +880,14 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
           </div>
         ))}
         <div className="mt-4 border border-destructive/15 bg-destructive/[0.03] rounded-xl px-5 py-4">
-          <p className="text-xs text-foreground/80 font-medium text-center leading-relaxed">
-            Você já sabe o que precisa mudar. Cada dia sem agir reforça o padrão.
+          <p className="text-[13px] text-foreground font-semibold text-center leading-relaxed">
+            Você já sabe o que está errado.
           </p>
-          <p className="text-[10px] text-destructive/60 text-center mt-1 font-semibold">
-            Acompanhamento de execução disponível no premium — R$9,99
+          <p className="text-xs text-muted-foreground text-center mt-0.5 leading-relaxed">
+            Mas continua fazendo igual. Sem execução, nada muda.
+          </p>
+          <p className="text-[10px] text-destructive/70 text-center mt-2 font-bold">
+            Desbloquear acompanhamento — R$9,99
           </p>
         </div>
       </div>
