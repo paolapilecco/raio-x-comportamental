@@ -421,14 +421,124 @@ const VAGUE_TRIGGER_PHRASES = [
   "em situações de pressão", "quando se sentir vulnerável",
 ];
 
+const STOPWORDS = new Set([
+  "quando", "você", "voce", "para", "com", "sem", "sobre", "porque", "como", "isso",
+  "essa", "esse", "este", "esta", "mais", "menos", "muito", "pouco", "dele", "dela",
+  "eles", "elas", "umas", "uns", "uma", "um", "dos", "das", "nos", "nas", "por",
+  "pra", "que", "seu", "sua", "seus", "suas", "esta", "está", "estar", "ficar",
+  "depois", "antes", "durante", "então", "entao", "ainda", "mesmo", "toda", "todo",
+  "cada", "algo", "alguem", "alguém", "onde", "entre", "desde", "apenas", "sempre",
+]);
+
+const STRONG_ACTION_VERBS = new Set([
+  "pare", "interrompa", "responda", "envie", "entregue", "diga", "faça", "faca",
+  "anote", "corte", "recuse", "finalize", "publique", "apague", "reescreva", "bloqueie",
+  "cronometre", "defina", "assuma", "avise", "saia", "volte", "retome", "cancele",
+  "feche", "abra", "grave", "marque", "combine", "delegue", "pergunte", "exponha",
+]);
+
+const ACTION_TIME_OR_CONDITION_REGEX = /\b(agora|hoje|amanh[ãa]|imediatamente|na hora|assim que|antes de|depois de|durante|em at[eé]|dentro de|por \d+|por [a-z]+ minutos?|por [a-z]+ horas?|\d+\s*(minuto|minutos|hora|horas|dia|dias))\b/i;
+
+interface ActionValidationContext {
+  dominant: { tokens: Set<string>; reference: string };
+  topAxis: { tokens: Set<string>; reference: string };
+  evidence: { tokens: Set<string>; reference: string };
+}
+
 function normalizeText(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
+function sanitizeTrigger(text: string): string {
+  return text.replace(/^quando\s+/i, "").trim().replace(/[.\s]+$/, "");
+}
+
+function sanitizeAction(text: string): string {
+  return text.replace(/^→\s*/i, "").trim().replace(/[.\s]+$/, "");
+}
+
+function tokenizeSignificant(text: string): string[] {
+  return normalizeText(text)
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4 && !STOPWORDS.has(token));
+}
+
+function buildAnchorTokenSet(parts: Array<string | null | undefined>): Set<string> {
+  const tokens = new Set<string>();
+  parts.filter(Boolean).forEach((part) => {
+    tokenizeSignificant(part as string).forEach((token) => tokens.add(token));
+  });
+  return tokens;
+}
+
+function pickEvidenceAnswers(
+  answers: StructuredAnswer[],
+  axisKey?: string,
+  minimumScore = 70,
+  limit = 3,
+): StructuredAnswer[] {
+  return [...answers]
+    .filter((answer) => {
+      const mappedScore = answer.mappedScore ?? 0;
+      if (mappedScore < minimumScore) return false;
+      if (!axisKey) return true;
+      return Array.isArray(answer.axes) && answer.axes.includes(axisKey);
+    })
+    .sort((a, b) => (b.mappedScore ?? 0) - (a.mappedScore ?? 0))
+    .slice(0, limit);
+}
+
+function buildActionValidationContext(
+  dominant: ScoreEntry,
+  sortedScores: ScoreEntry[],
+  answers: StructuredAnswer[] = [],
+): ActionValidationContext {
+  const topAxis = sortedScores[0] ?? dominant;
+  const dominantEvidence = pickEvidenceAnswers(answers, dominant.key, 65, 3);
+  const topAxisEvidence = pickEvidenceAnswers(answers, topAxis.key, 65, 3);
+  const strongestEvidence = pickEvidenceAnswers(answers, undefined, 80, 1)[0] || pickEvidenceAnswers(answers, undefined, 65, 1)[0];
+
+  return {
+    dominant: {
+      reference: dominantEvidence[0]?.questionText || dominant.label || dominant.key,
+      tokens: buildAnchorTokenSet([
+        dominant.key,
+        dominant.label,
+        ...dominantEvidence.flatMap((answer) => [answer.questionText, answer.chosenOption, answer.axes.join(" ")]),
+      ]),
+    },
+    topAxis: {
+      reference: topAxisEvidence[0]?.questionText || topAxis.label || topAxis.key,
+      tokens: buildAnchorTokenSet([
+        topAxis.key,
+        topAxis.label,
+        ...topAxisEvidence.flatMap((answer) => [answer.questionText, answer.chosenOption, answer.axes.join(" ")]),
+      ]),
+    },
+    evidence: {
+      reference: strongestEvidence
+        ? `${strongestEvidence.questionText} | ${strongestEvidence.chosenOption || strongestEvidence.value}`
+        : dominant.label || dominant.key,
+      tokens: buildAnchorTokenSet(
+        strongestEvidence
+          ? [strongestEvidence.questionText, strongestEvidence.chosenOption, strongestEvidence.axes.join(" ")]
+          : [dominant.key, dominant.label],
+      ),
+    },
+  };
+}
+
+function hasAnchorMatch(text: string, anchors: Set<string>): boolean {
+  if (anchors.size === 0) return false;
+  return tokenizeSignificant(text).some((token) => anchors.has(token));
+}
+
 function validateTriggerQuality(gatilho: string): { pass: boolean; reason?: string } {
-  const g = normalizeText(gatilho);
+  const sanitized = sanitizeTrigger(gatilho);
+  const g = normalizeText(sanitized);
   
-  if (g.length < 15) return { pass: false, reason: "trigger_too_short" };
+  if (g.length < 24) return { pass: false, reason: "trigger_too_short" };
+  if (g.split(" ").length < 5) return { pass: false, reason: "trigger_too_generic" };
   
   for (const vague of VAGUE_TRIGGER_PHRASES) {
     if (g.includes(normalizeText(vague))) return { pass: false, reason: `vague_trigger: ${vague}` };
@@ -438,47 +548,102 @@ function validateTriggerQuality(gatilho: string): { pass: boolean; reason?: stri
 }
 
 function validateActionQuality(acao: string): { pass: boolean; reason?: string } {
-  const a = normalizeText(acao);
+  const sanitized = sanitizeAction(acao);
+  const a = normalizeText(sanitized);
   
   for (const forbidden of FORBIDDEN_ACTION_STARTS) {
     if (a.startsWith(normalizeText(forbidden))) return { pass: false, reason: `forbidden_start: ${forbidden}` };
   }
   
-  if (a.split(" ").length < 4) return { pass: false, reason: "action_too_simple" };
+  if (a.length < 28) return { pass: false, reason: "action_too_short" };
+  if (a.split(" ").length < 6) return { pass: false, reason: "action_too_simple" };
+  if (!tokenizeSignificant(sanitized).some((token) => STRONG_ACTION_VERBS.has(token))) {
+    return { pass: false, reason: "missing_strong_verb" };
+  }
+  if (!ACTION_TIME_OR_CONDITION_REGEX.test(sanitized)) {
+    return { pass: false, reason: "missing_time_or_condition" };
+  }
   
+  return { pass: true };
+}
+
+function validateActionConnection(
+  index: number,
+  gatilho: string,
+  acao: string,
+  context: ActionValidationContext,
+): { pass: boolean; reason?: string } {
+  const combined = `${sanitizeTrigger(gatilho)} ${sanitizeAction(acao)}`;
+  const target = index === 0 ? context.dominant : index === 1 ? context.topAxis : context.evidence;
+  if (!hasAnchorMatch(combined, target.tokens)) {
+    return { pass: false, reason: `missing_diagnostic_link: ${target.reference}` };
+  }
   return { pass: true };
 }
 
 function validateMicroAcoes(
   rawMicro: { gatilho?: string; acao?: string }[],
-): { gatilho: string; acao: string }[] {
+  context: ActionValidationContext,
+): { actions: { gatilho: string; acao: string }[]; errors: string[] } {
+  const errors: string[] = [];
+  if (rawMicro.length !== 3) {
+    errors.push(`count_mismatch:${rawMicro.length}`);
+    console.log(`[validate] REJECTED: expected exactly 3 actions, received ${rawMicro.length}`);
+    return { actions: [], errors };
+  }
+
   const validated: { gatilho: string; acao: string }[] = [];
+  const seenPairs = new Set<string>();
   
-  for (let i = 0; i < Math.min(rawMicro.length, 6); i++) {
+  for (let i = 0; i < rawMicro.length; i++) {
     const item = rawMicro[i];
     if (!item?.gatilho || !item?.acao) {
+      const reason = `action_${i + 1}:missing_fields`;
+      errors.push(reason);
       console.log(`[validate] Action ${i} REJECTED: missing gatilho or acao`);
       continue;
     }
+
+    const gatilho = sanitizeTrigger(item.gatilho);
+    const acao = sanitizeAction(item.acao);
+    const pairKey = `${normalizeText(gatilho)}::${normalizeText(acao)}`;
+    if (seenPairs.has(pairKey)) {
+      const reason = `action_${i + 1}:duplicate_pair`;
+      errors.push(reason);
+      console.log(`[validate] Action ${i} REJECTED: duplicate_pair`);
+      continue;
+    }
+    seenPairs.add(pairKey);
     
-    const triggerCheck = validateTriggerQuality(item.gatilho);
+    const triggerCheck = validateTriggerQuality(gatilho);
     if (!triggerCheck.pass) {
-      console.log(`[validate] Action ${i} REJECTED: ${triggerCheck.reason} | gatilho: "${item.gatilho.substring(0, 50)}..."`);
+      const reason = `action_${i + 1}:${triggerCheck.reason}`;
+      errors.push(reason);
+      console.log(`[validate] Action ${i} REJECTED: ${triggerCheck.reason} | gatilho: "${gatilho.substring(0, 80)}..."`);
       continue;
     }
     
-    const actionCheck = validateActionQuality(item.acao);
+    const actionCheck = validateActionQuality(acao);
     if (!actionCheck.pass) {
-      console.log(`[validate] Action ${i} REJECTED: ${actionCheck.reason} | acao: "${item.acao.substring(0, 50)}..."`);
+      const reason = `action_${i + 1}:${actionCheck.reason}`;
+      errors.push(reason);
+      console.log(`[validate] Action ${i} REJECTED: ${actionCheck.reason} | acao: "${acao.substring(0, 80)}..."`);
+      continue;
+    }
+
+    const connectionCheck = validateActionConnection(i, gatilho, acao, context);
+    if (!connectionCheck.pass) {
+      const reason = `action_${i + 1}:${connectionCheck.reason}`;
+      errors.push(reason);
+      console.log(`[validate] Action ${i} REJECTED: ${connectionCheck.reason}`);
       continue;
     }
     
-    validated.push({ gatilho: item.gatilho, acao: item.acao });
-    if (validated.length >= 3) break;
+    validated.push({ gatilho, acao });
   }
   
   console.log(`[analyze-test] microAcoes validation: ${rawMicro.length} generated → ${validated.length} approved`);
-  return validated;
+  return { actions: validated, errors };
 }
 
 function normalizeResult(
@@ -494,32 +659,15 @@ function normalizeResult(
   if (!Array.isArray(result.impactoPorArea)) result.impactoPorArea = [];
 
   const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
-  const validatedActions = validateMicroAcoes(rawMicro);
-  
-  // HARD RULE: We need exactly 3 validated actions. No relaxed fallback.
-  if (validatedActions.length < 3) {
-    console.warn(`[analyze-test] ⚠️ Only ${validatedActions.length}/3 actions passed validation. Attempting structured rescue...`);
-    
-    // Try to rescue remaining actions from raw pool with minimal validation (gatilho+acao must exist and be non-trivial)
-    const rescued: { gatilho: string; acao: string }[] = [...validatedActions];
-    const usedGatilhos = new Set(rescued.map(a => normalizeText(a.gatilho)));
-    
-    for (const item of rawMicro) {
-      if (rescued.length >= 3) break;
-      if (!item?.gatilho || !item?.acao) continue;
-      if (item.gatilho.length < 10 || item.acao.length < 10) continue;
-      const normG = normalizeText(item.gatilho);
-      if (usedGatilhos.has(normG)) continue;
-      usedGatilhos.add(normG);
-      rescued.push({ gatilho: item.gatilho, acao: item.acao });
-    }
-    
-    result.microAcoes = rescued;
-    console.log(`[analyze-test] After rescue: ${rescued.length}/3 microAcoes`);
-  } else {
-    result.microAcoes = validatedActions;
-  }
-  
+  const actionValidationContext = buildActionValidationContext(dominant, sortedScores, answers);
+  const validatedMicroAcoes = validateMicroAcoes(rawMicro, actionValidationContext);
+  result.microAcoes = validatedMicroAcoes.actions;
+  result.microAcoesValidation = {
+    dominantPatternReference: actionValidationContext.dominant.reference,
+    topAxisReference: actionValidationContext.topAxis.reference,
+    evidenceReference: actionValidationContext.evidence.reference,
+    errors: validatedMicroAcoes.errors,
+  };
   console.log(`[analyze-test] Final microAcoes count: ${(result.microAcoes as any[]).length}`);
 
   const stringFields = [
@@ -703,13 +851,14 @@ serve(async (req) => {
     const fullSystemPrompt = [globalSystemPrompt, SYSTEM_PROMPT, refineInstruction].filter(Boolean).join("\n\n");
     
     let normalized: Record<string, unknown> | null = null;
-    const MAX_ATTEMPTS = 2;
+    const MAX_ATTEMPTS = 4;
+    let lastMicroActionErrors: string[] = [];
     
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const aiBody = {
         model: aiModel,
         messages: [
-          { role: "system", content: fullSystemPrompt + (attempt > 0 ? "\n\nATENÇÃO: A tentativa anterior NÃO gerou microAcoes válidas. Você DEVE gerar EXATAMENTE 3 microAcoes com gatilho concreto e ação executável. Isso é OBRIGATÓRIO." : "") },
+          { role: "system", content: fullSystemPrompt + (attempt > 0 ? `\n\nATENÇÃO: A tentativa anterior NÃO gerou microAcoes válidas. Você DEVE gerar EXATAMENTE 3 microAcoes com gatilho concreto, ação executável e conexão direta com o diagnóstico. REJEIÇÕES ANTERIORES: ${lastMicroActionErrors.join(" | ") || "sem detalhes"}.` : "") },
           { role: "user", content: userPrompt },
         ],
         temperature: aiTemperature,
@@ -759,20 +908,19 @@ serve(async (req) => {
       normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || []);
       
       const microCount = Array.isArray(normalized.microAcoes) ? (normalized.microAcoes as any[]).length : 0;
+      lastMicroActionErrors = Array.isArray((normalized as any).microAcoesValidation?.errors)
+        ? (normalized as any).microAcoesValidation.errors as string[]
+        : [];
       console.log(`[analyze-test] Attempt ${attempt + 1}: ${microCount}/3 microAcoes after normalization`);
       
       // HARD RULE: require exactly 3 actions
       if (microCount >= 3) break;
       
       if (attempt < MAX_ATTEMPTS - 1) {
-        console.warn(`[analyze-test] Only ${microCount}/3 microAcoes on attempt ${attempt + 1}, retrying...`);
+        console.warn(`[analyze-test] Only ${microCount}/3 microAcoes on attempt ${attempt + 1}, retrying...`, lastMicroActionErrors);
       } else {
         console.error(`[analyze-test] ❌ HARD FAIL: Only ${microCount}/3 microAcoes after ${MAX_ATTEMPTS} attempts. Returning error.`);
-        if (microCount === 0) {
-          return errorResponse("Não foi possível gerar o plano de ação completo. Tente novamente.", 500);
-        }
-        // If we got 1-2, still return them but log the failure
-        console.warn(`[analyze-test] Proceeding with ${microCount} actions (incomplete but better than nothing)`);
+        return errorResponse("Não foi possível gerar 3 ações válidas para este diagnóstico. Tente novamente.", 500);
       }
     }
 
