@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { parseActionString } from '@/lib/buildActionPreview';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown } from 'lucide-react';
+import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown, Lock, Crown } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { trackEvent } from '@/lib/trackEvent';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
@@ -821,7 +821,7 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any }) {
   const { user, isPremium, isSuperAdmin } = useAuth();
   const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
-  const navigate = (window as any).__navigate; // will use useNavigate below
+  
 
   useEffect(() => {
     const resultId = (result as any).id;
