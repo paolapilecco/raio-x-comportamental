@@ -412,43 +412,230 @@ function buildUserPrompt(
 }
 
 // ═══════════════════════════════════════════════════════════
-// ▌ SECTION 5: Result Normalization + microAcoes Validation
+// ▌ SECTION 5: microAcoes Deep Validation + Result Normalization
 // ═══════════════════════════════════════════════════════════
 
-const FORBIDDEN_ACTIONS = [
-  "respire fundo", "observe seus padrões", "reflita sobre", "tenha consciência",
-  "mude seu comportamento", "preste atenção", "tente melhorar", "busque ajuda",
-  "aceite seus sentimentos", "seja mais", "tente ser", "procure entender",
+// ── Blacklists ──
+
+const FORBIDDEN_ACTION_STARTS = [
+  "respire", "observe", "reflita", "tenha consciência", "mude seu",
+  "preste atenção", "tente melhorar", "busque ajuda", "aceite",
+  "seja mais", "tente ser", "procure entender", "procure perceber",
+  "tome consciência", "pense sobre", "analise", "considere",
+  "lembre-se", "permita-se", "abra-se", "confie", "acredite",
+  "mantenha a calma", "fique tranquil", "não se preocupe",
+  "tenha paciência", "cuide de", "valorize", "pratique",
 ];
 
-const VAGUE_TRIGGERS = [
-  "quando se sentir mal", "em situações difíceis", "quando estiver estressada",
+const VAGUE_TRIGGER_PHRASES = [
+  "quando se sentir mal", "em situações difíceis", "quando estiver estressad",
   "quando sentir desconforto", "em momentos de crise", "quando tiver problema",
-  "quando se sentir insegura", "em situações de estresse",
+  "quando se sentir insegur", "em situações de estresse", "quando sentir ansiedade",
+  "quando se sentir trist", "quando ficar nervos", "quando sentir medo",
+  "quando se sentir sobrecarregad", "em momentos difíceis", "quando tiver dúvida",
+  "quando se sentir frustad", "quando sentir raiva", "quando estiver confus",
+  "em situações de pressão", "quando se sentir vulnerável",
 ];
 
-function validateMicroAcao(item: { gatilho?: string; acao?: string }): boolean {
-  if (!item.gatilho || !item.acao) return false;
-  const g = (item.gatilho || "").toLowerCase().trim();
-  const a = (item.acao || "").toLowerCase().trim();
-  
-  // Reject vague triggers
-  for (const vague of VAGUE_TRIGGERS) {
-    if (g.includes(vague) || g.length < 20) return false;
-  }
-  
-  // Reject forbidden generic actions
-  for (const forbidden of FORBIDDEN_ACTIONS) {
-    if (a.startsWith(forbidden) || a === forbidden) return false;
-  }
-  
-  // Must have a verb-like start (at least 2 words)
-  if (a.split(" ").length < 4) return false;
-  
-  return true;
+const STRONG_VERBS = [
+  "diga", "fale", "pare", "faça", "escreva", "bloqueie", "responda",
+  "inicie", "entregue", "levante", "volte", "apague", "cronometre",
+  "formule", "execute", "abra", "feche", "mande", "envie", "delete",
+  "cancele", "saia", "entre", "sente", "pegue", "anote", "liste",
+  "recuse", "aceite", "repita", "conte", "leia", "grave", "marque",
+  "desative", "silencie", "coloque", "tire", "troque", "defina",
+  "programe", "agende", "estabeleça", "interrompa", "corte",
+];
+
+const TIME_CONTEXT_MARKERS = [
+  "minuto", "segundo", "hora", "agora", "hoje", "antes de",
+  "depois de", "imediatamente", "já", "neste momento", "por ",
+  "durante ", "até ", "em até", "no máximo", "sem parar",
+  "antes que", "ainda", "primeiro",
+];
+
+// ── Validation Engine ──
+
+interface ValidationContext {
+  dominantPattern: string;
+  topAxisLabel: string;
+  evidenceTexts: string[];     // from behavioral evidences (score >= 80)
 }
 
-function normalizeResult(result: Record<string, unknown>, dominant: ScoreEntry, sortedScores: ScoreEntry[]): Record<string, unknown> {
+function normalizeText(text: string): string {
+  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+}
+
+function validateTriggerQuality(gatilho: string): { pass: boolean; reason?: string } {
+  const g = normalizeText(gatilho);
+  
+  // Too short = too vague
+  if (g.length < 25) return { pass: false, reason: "trigger_too_short" };
+  
+  // Check against vague phrases
+  for (const vague of VAGUE_TRIGGER_PHRASES) {
+    if (g.includes(normalizeText(vague))) return { pass: false, reason: `vague_trigger: ${vague}` };
+  }
+  
+  // Must describe a situation (should contain a verb or context indicator)
+  const hasContextMarker = ["quando", "ao", "no momento", "na hora", "perceber que", "notar que", "começar a", "antes de", "depois de", "durante"].some(m => g.includes(m));
+  if (!hasContextMarker) return { pass: false, reason: "no_situational_context" };
+  
+  return { pass: true };
+}
+
+function validateActionQuality(acao: string): { pass: boolean; reason?: string } {
+  const a = normalizeText(acao);
+  
+  // Check forbidden action starts
+  for (const forbidden of FORBIDDEN_ACTION_STARTS) {
+    if (a.startsWith(normalizeText(forbidden))) return { pass: false, reason: `forbidden_start: ${forbidden}` };
+  }
+  
+  // Must start with or contain a strong verb
+  const firstWord = a.split(/[\s,]/)[0];
+  const hasStrongVerb = STRONG_VERBS.some(v => firstWord.startsWith(normalizeText(v)) || a.includes(normalizeText(v)));
+  if (!hasStrongVerb) return { pass: false, reason: "no_strong_verb" };
+  
+  // Must have time/condition/context
+  const hasTimeContext = TIME_CONTEXT_MARKERS.some(m => a.includes(normalizeText(m)));
+  if (!hasTimeContext) return { pass: false, reason: "no_time_context" };
+  
+  // Minimum complexity (at least 6 words for real instruction)
+  if (a.split(" ").length < 6) return { pass: false, reason: "action_too_simple" };
+  
+  // Must not be just advice (check for imperative + concrete instruction)
+  const advicePatterns = ["tente ", "procure ", "busque ", "lembre ", "permita ", "confie "];
+  for (const adv of advicePatterns) {
+    if (a.startsWith(normalizeText(adv))) return { pass: false, reason: `advice_pattern: ${adv}` };
+  }
+  
+  return { pass: true };
+}
+
+function validateDiagnosticConnection(
+  item: { gatilho?: string; acao?: string },
+  index: number,
+  ctx: ValidationContext
+): { pass: boolean; reason?: string } {
+  const g = normalizeText(item.gatilho || "");
+  const a = normalizeText(item.acao || "");
+  const combined = g + " " + a;
+  
+  // Action 0 must reference dominant pattern
+  if (index === 0) {
+    const patternWords = normalizeText(ctx.dominantPattern).split(/\s+/).filter(w => w.length > 3);
+    const hasPatternRef = patternWords.some(w => combined.includes(w));
+    if (!hasPatternRef && patternWords.length > 0) {
+      // Looser check: at least one semantic keyword from the pattern
+      const semanticHit = patternWords.length <= 2 || patternWords.slice(0, 3).some(w => combined.includes(w));
+      if (!semanticHit) {
+        console.log(`[validate] Action 0 weak connection to pattern "${ctx.dominantPattern}"`);
+        // Don't reject — the AI prompt already forces this. Just log.
+      }
+    }
+  }
+  
+  // Action 1 must reference top axis
+  if (index === 1) {
+    const axisWords = normalizeText(ctx.topAxisLabel).split(/\s+/).filter(w => w.length > 3);
+    const hasAxisRef = axisWords.some(w => combined.includes(w));
+    if (!hasAxisRef && axisWords.length > 0) {
+      console.log(`[validate] Action 1 weak connection to axis "${ctx.topAxisLabel}"`);
+    }
+  }
+  
+  // Action 2 must reference behavioral evidence
+  if (index === 2 && ctx.evidenceTexts.length > 0) {
+    const evidenceWords = ctx.evidenceTexts.flatMap(e => normalizeText(e).split(/\s+/).filter(w => w.length > 4)).slice(0, 10);
+    const hasEvidenceRef = evidenceWords.some(w => combined.includes(w));
+    if (!hasEvidenceRef) {
+      console.log(`[validate] Action 2 weak connection to evidence`);
+    }
+  }
+  
+  // Universal check: would this action work for ANY diagnosis?
+  // If trigger + action are completely generic (no specific behavior mentioned), reject
+  const specificityIndicators = [
+    "evitando", "concordou", "revisando", "adiando", "postergando",
+    "fugindo", "ignorando", "repetindo", "comparando", "controlando",
+    "perfeccion", "conflito", "rejeição", "aprovação", "julgamento",
+    "exposição", "confronto", "decisão", "entregar", "começar",
+    "terminar", "responder", "recusar", "aceitar", "pedir",
+    "cobrar", "estabelecer limite", "dizer não", "dizer sim",
+    "delegar", "priorizar", "abandonar", "desistir", "insistir",
+  ];
+  const hasSpecificity = specificityIndicators.some(s => combined.includes(normalizeText(s)));
+  if (!hasSpecificity) {
+    return { pass: false, reason: "too_generic_for_any_diagnosis" };
+  }
+  
+  return { pass: true };
+}
+
+function validateMicroAcoes(
+  rawMicro: { gatilho?: string; acao?: string }[],
+  dominant: ScoreEntry,
+  sortedScores: ScoreEntry[],
+  answers: StructuredAnswer[]
+): { gatilho: string; acao: string }[] {
+  // Build validation context
+  const evidenceTexts = (answers || [])
+    .filter(a => (a.mappedScore ?? 0) >= 80)
+    .map(a => a.questionText)
+    .slice(0, 5);
+  
+  const ctx: ValidationContext = {
+    dominantPattern: dominant.label || dominant.key || "",
+    topAxisLabel: sortedScores[0]?.label || sortedScores[0]?.key || "",
+    evidenceTexts,
+  };
+  
+  const validated: { gatilho: string; acao: string }[] = [];
+  
+  for (let i = 0; i < Math.min(rawMicro.length, 3); i++) {
+    const item = rawMicro[i];
+    if (!item?.gatilho || !item?.acao) {
+      console.log(`[validate] Action ${i} REJECTED: missing gatilho or acao`);
+      continue;
+    }
+    
+    // Step 1: Trigger quality
+    const triggerCheck = validateTriggerQuality(item.gatilho);
+    if (!triggerCheck.pass) {
+      console.log(`[validate] Action ${i} REJECTED: ${triggerCheck.reason} | gatilho: "${item.gatilho.substring(0, 50)}..."`);
+      continue;
+    }
+    
+    // Step 2: Action quality  
+    const actionCheck = validateActionQuality(item.acao);
+    if (!actionCheck.pass) {
+      console.log(`[validate] Action ${i} REJECTED: ${actionCheck.reason} | acao: "${item.acao.substring(0, 50)}..."`);
+      continue;
+    }
+    
+    // Step 3: Diagnostic connection
+    const connectionCheck = validateDiagnosticConnection(item, i, ctx);
+    if (!connectionCheck.pass) {
+      console.log(`[validate] Action ${i} REJECTED: ${connectionCheck.reason}`);
+      continue;
+    }
+    
+    validated.push({ gatilho: item.gatilho, acao: item.acao });
+  }
+  
+  console.log(`[analyze-test] microAcoes validation: ${rawMicro.length} generated → ${validated.length} approved`);
+  return validated;
+}
+
+// ── Result Normalization ──
+
+function normalizeResult(
+  result: Record<string, unknown>,
+  dominant: ScoreEntry,
+  sortedScores: ScoreEntry[],
+  answers: StructuredAnswer[] = []
+): Record<string, unknown> {
   // Ensure arrays exist (empty if not provided by AI)
   for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "pararDeFazer", "exitStrategy"]) {
     if (!Array.isArray(result[f])) result[f] = [];
@@ -456,14 +643,9 @@ function normalizeResult(result: Record<string, unknown>, dominant: ScoreEntry, 
   if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
   if (!Array.isArray(result.impactoPorArea)) result.impactoPorArea = [];
 
-  // ── Validate microAcoes quality ──
+  // ── Deep validate microAcoes ──
   const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
-  const validMicro = rawMicro.filter(validateMicroAcao);
-  result.microAcoes = validMicro.slice(0, 3);
-  
-  if (validMicro.length < rawMicro.length) {
-    console.log(`[analyze-test] microAcoes validation: ${rawMicro.length} generated, ${validMicro.length} passed quality check`);
-  }
+  result.microAcoes = validateMicroAcoes(rawMicro, dominant, sortedScores, answers);
 
   // Ensure strings exist (empty if not provided by AI — NO fallback content)
   const stringFields = [
@@ -716,7 +898,7 @@ serve(async (req) => {
     }
 
     // ── Normalize (no hardcoded fallback) ──
-    const normalized = normalizeResult(result, dominant, sortedScores);
+    const normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || []);
 
     // ── Attach evolution comparison data (deterministic + AI summary) ──
     if (evolutionData) {
