@@ -18,34 +18,35 @@ export interface PdfEvolutionData {
     execution_rate: number;
     current_streak: number;
   };
-  /** Persisted action texts from action_plan_tracking (unique, max 3) */
   actionTexts?: string[];
 }
 
 // ── Layout constants ──
-const M = 20;        // margin
+const M = 24;        // margin — generous
 const PW = 210;      // page width
 const PH = 297;      // page height
 const CW = PW - M * 2; // content width
-const LH = 5.5;      // line height
+const LH = 5.8;      // line height — more breathing room
 
-// ── Color palette ──
+// ── Color palette — premium, muted, sophisticated ──
 const C = {
-  dark:       [22, 22, 28]   as const,
-  accent:     [82, 62, 170]  as const,
-  accentSoft: [237, 233, 255] as const,
-  accentLight:[120, 100, 200] as const,
-  red:        [190, 50, 50]  as const,
-  redSoft:    [255, 240, 240] as const,
-  yellow:     [190, 150, 30] as const,
-  green:      [40, 140, 70]  as const,
-  greenSoft:  [235, 250, 240] as const,
-  text:       [35, 35, 40]   as const,
-  muted:      [110, 110, 120] as const,
-  light:      [155, 155, 165] as const,
-  border:     [210, 210, 218] as const,
-  bg:         [245, 245, 248] as const,
-  cardBg:     [250, 250, 253] as const,
+  dark:       [28, 32, 36]   as const,
+  accent:     [31, 61, 58]   as const,  // Verde Profundo #1F3D3A
+  accentSoft: [240, 245, 244] as const,
+  accentLight:[100, 140, 135] as const,
+  gold:       [198, 169, 105] as const,  // Dourado Suave #C6A969
+  goldSoft:   [252, 248, 240] as const,
+  red:        [170, 60, 60]  as const,
+  redSoft:    [252, 242, 242] as const,
+  yellow:     [175, 140, 40] as const,
+  green:      [50, 130, 80]  as const,
+  greenSoft:  [238, 248, 242] as const,
+  text:       [40, 44, 48]   as const,
+  muted:      [120, 125, 130] as const,
+  light:      [165, 168, 172] as const,
+  border:     [218, 220, 224] as const,
+  bg:         [248, 248, 250] as const,
+  cardBg:     [252, 252, 254] as const,
   white:      [255, 255, 255] as const,
 };
 
@@ -55,41 +56,31 @@ interface Ctx { doc: jsPDF; y: number; pageNum: number; }
 
 // ── Page break helper ──
 function pb(ctx: Ctx, need = 14) {
-  if (ctx.y + need > PH - M - 8) {
+  if (ctx.y + need > PH - M - 10) {
     ctx.doc.addPage();
     ctx.pageNum++;
-    ctx.y = M + 4;
-    // subtle top line on continuation pages
-    ctx.doc.setDrawColor(...C.border);
-    ctx.doc.setLineWidth(0.3);
-    ctx.doc.line(M, ctx.y - 2, M + CW, ctx.y - 2);
+    ctx.y = M + 6;
   }
 }
 
-// ── Primitives ──
+// ── Primitives — NO numbering anywhere ──
 
-function sectionHeader(ctx: Ctx, _num: number, title: string, accentColor: RGB = C.accent) {
-  pb(ctx, 18);
-  ctx.y += 8;
+function sectionTitle(ctx: Ctx, title: string, accentColor: RGB = C.accent) {
+  pb(ctx, 22);
+  ctx.y += 12;
   const { doc } = ctx;
   
-  // Accent bar (no number badge)
+  // Thin accent bar — elegant vertical mark
   doc.setFillColor(...accentColor);
-  doc.roundedRect(M, ctx.y - 4, 3, 8, 1, 1, 'F');
+  doc.roundedRect(M, ctx.y - 4, 2, 10, 1, 1, 'F');
   
-  // Title
-  doc.setFontSize(11.5);
+  // Title — serif-style feel (helvetica bold, slightly larger)
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.dark);
-  doc.text(title, M + 7, ctx.y + 0.8);
+  doc.text(title, M + 8, ctx.y + 1.5);
   
-  // Underline accent
-  const tw = doc.getTextWidth(title);
-  doc.setDrawColor(...accentColor);
-  doc.setLineWidth(0.6);
-  doc.line(M + 7, ctx.y + 3, M + 7 + Math.min(tw, CW - 9), ctx.y + 3);
-  
-  ctx.y += 10;
+  ctx.y += 14;
 }
 
 function safe(v: any): string {
@@ -101,7 +92,7 @@ function safe(v: any): string {
 function textBlock(ctx: Ctx, t: string, color: RGB = C.text, indent = 0) {
   if (!safe(t)) return;
   const { doc } = ctx;
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...color);
   const lines = doc.splitTextToSize(t, CW - indent);
@@ -110,15 +101,15 @@ function textBlock(ctx: Ctx, t: string, color: RGB = C.text, indent = 0) {
     doc.text(l, M + indent, ctx.y);
     ctx.y += LH;
   }
-  ctx.y += 2;
+  ctx.y += 3;
 }
 
 function bulletItem(ctx: Ctx, t: string, dotColor: RGB = C.accent, icon?: string) {
   const { doc } = ctx;
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.text);
-  const lines = doc.splitTextToSize(t, CW - 10);
+  const lines = doc.splitTextToSize(t, CW - 12);
   pb(ctx, lines.length * LH + 2);
   
   if (icon) {
@@ -127,64 +118,62 @@ function bulletItem(ctx: Ctx, t: string, dotColor: RGB = C.accent, icon?: string
     doc.text(icon, M + 2, ctx.y);
   } else {
     doc.setFillColor(...dotColor);
-    doc.circle(M + 3, ctx.y - 1.2, 1, 'F');
+    doc.circle(M + 3, ctx.y - 1.2, 0.8, 'F');
   }
   
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
   doc.setTextColor(...C.text);
   for (const l of lines) {
-    doc.text(l, M + 8, ctx.y);
+    doc.text(l, M + 10, ctx.y);
     ctx.y += LH;
   }
-  ctx.y += 1.5;
+  ctx.y += 2;
 }
 
 function alertBox(ctx: Ctx, t: string, borderColor: RGB = C.red, bgColor: RGB = C.redSoft) {
   if (!safe(t)) return;
   const { doc } = ctx;
-  doc.setFontSize(9);
-  const lines = doc.splitTextToSize(t, CW - 16);
-  const h = lines.length * LH + 10;
+  doc.setFontSize(9.5);
+  const lines = doc.splitTextToSize(t, CW - 18);
+  const h = lines.length * LH + 12;
   pb(ctx, h + 2);
   
-  // Background
   doc.setFillColor(...bgColor);
-  doc.roundedRect(M, ctx.y, CW, h, 2.5, 2.5, 'F');
-  // Left accent bar
+  doc.roundedRect(M, ctx.y, CW, h, 3, 3, 'F');
   doc.setFillColor(...borderColor);
-  doc.roundedRect(M, ctx.y, 3, h, 1.5, 1.5, 'F');
+  doc.roundedRect(M, ctx.y, 2.5, h, 1, 1, 'F');
   
-  ctx.y += 6;
+  ctx.y += 7;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.text);
   for (const l of lines) {
-    doc.text(l, M + 9, ctx.y);
+    doc.text(l, M + 10, ctx.y);
     ctx.y += LH;
   }
-  ctx.y += 6;
+  ctx.y += 7;
 }
 
 function accentBox(ctx: Ctx, t: string, borderColor: RGB = C.accent, bgColor: RGB = C.accentSoft) {
   if (!safe(t)) return;
   const { doc } = ctx;
-  doc.setFontSize(9);
-  const lines = doc.splitTextToSize(t, CW - 16);
-  const h = lines.length * LH + 10;
+  doc.setFontSize(9.5);
+  const lines = doc.splitTextToSize(t, CW - 18);
+  const h = lines.length * LH + 12;
   pb(ctx, h + 2);
   
   doc.setFillColor(...bgColor);
-  doc.roundedRect(M, ctx.y, CW, h, 2.5, 2.5, 'F');
+  doc.roundedRect(M, ctx.y, CW, h, 3, 3, 'F');
   doc.setFillColor(...borderColor);
-  doc.roundedRect(M, ctx.y, 3, h, 1.5, 1.5, 'F');
+  doc.roundedRect(M, ctx.y, 2.5, h, 1, 1, 'F');
   
-  ctx.y += 6;
+  ctx.y += 7;
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.text);
   for (const l of lines) {
-    doc.text(l, M + 9, ctx.y);
+    doc.text(l, M + 10, ctx.y);
     ctx.y += LH;
   }
-  ctx.y += 6;
+  ctx.y += 7;
 }
 
 function greenBox(ctx: Ctx, t: string) {
@@ -198,60 +187,57 @@ function labelAbove(ctx: Ctx, label: string, color: RGB = C.light) {
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...color);
   doc.text(label.toUpperCase(), M + 4, ctx.y);
-  ctx.y += 4;
+  ctx.y += 5;
 }
 
-
 function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) {
-  // Filter out items with undefined/null values
   const validItems = items.filter(i => safe(i.area) && safe(i.efeito));
   if (validItems.length === 0) return;
-  // Render as 2-column cards
   for (let i = 0; i < validItems.length; i += 2) {
     const left = validItems[i];
     const right = validItems[i + 1];
-    const colW = (CW - 4) / 2;
+    const colW = (CW - 6) / 2;
     
     const { doc } = ctx;
-    doc.setFontSize(9);
-    const leftLines = doc.splitTextToSize(safe(left.efeito), colW - 10);
-    const rightLines = right ? doc.splitTextToSize(safe(right.efeito), colW - 10) : [];
-    const maxH = Math.max(leftLines.length, rightLines.length) * LH + 12;
+    doc.setFontSize(9.5);
+    const leftLines = doc.splitTextToSize(safe(left.efeito), colW - 12);
+    const rightLines = right ? doc.splitTextToSize(safe(right.efeito), colW - 12) : [];
+    const maxH = Math.max(leftLines.length, rightLines.length) * LH + 14;
     
     pb(ctx, maxH + 2);
     
     // Left card
     doc.setFillColor(...C.cardBg);
     doc.setDrawColor(...C.border);
-    doc.roundedRect(M, ctx.y, colW, maxH, 2, 2, 'FD');
+    doc.roundedRect(M, ctx.y, colW, maxH, 3, 3, 'FD');
     doc.setFontSize(6.5);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...C.accent);
-    doc.text(left.area.toUpperCase(), M + 5, ctx.y + 5);
-    doc.setFontSize(8.5);
+    doc.text(left.area.toUpperCase(), M + 6, ctx.y + 6);
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...C.text);
-    let ly = ctx.y + 9;
-    for (const l of leftLines) { doc.text(l, M + 5, ly); ly += LH; }
+    let ly = ctx.y + 10;
+    for (const l of leftLines) { doc.text(l, M + 6, ly); ly += LH; }
     
     // Right card
     if (right) {
-      const rx = M + colW + 4;
+      const rx = M + colW + 6;
       doc.setFillColor(...C.cardBg);
       doc.setDrawColor(...C.border);
-      doc.roundedRect(rx, ctx.y, colW, maxH, 2, 2, 'FD');
+      doc.roundedRect(rx, ctx.y, colW, maxH, 3, 3, 'FD');
       doc.setFontSize(6.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...C.accent);
-      doc.text(right.area.toUpperCase(), rx + 5, ctx.y + 5);
-      doc.setFontSize(8.5);
+      doc.text(right.area.toUpperCase(), rx + 6, ctx.y + 6);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...C.text);
-      let ry = ctx.y + 9;
-      for (const l of rightLines) { doc.text(l, rx + 5, ry); ry += LH; }
+      let ry = ctx.y + 10;
+      for (const l of rightLines) { doc.text(l, rx + 6, ry); ry += LH; }
     }
     
-    ctx.y += maxH + 3;
+    ctx.y += maxH + 4;
   }
 }
 
@@ -263,7 +249,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
 
   const ai = result as any;
   
-  // ── Resolve all fields (with null safety) ──
+  // ── Resolve all fields ──
   const chamaAtencao = safe(ai.chamaAtencao) || safe(ai.resumoPrincipal) || safe(result.criticalDiagnosis);
   const padraoRepetido = safe(ai.padraoRepetido) || safe(ai.padraoIdentificado) || safe(result.mechanism);
   const comoAparece = safe(ai.comoAparece) || safe(result.mentalState);
@@ -273,7 +259,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const corrigirPrimeiro = safe(ai.corrigirPrimeiro) || safe(ai.direcaoAjuste) || safe(result.keyUnlockArea);
   const pararDeFazer: string[] = (ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo || []).filter((t: any) => safe(t));
   const acaoInicial = safe(ai.acaoInicial) || safe(ai.proximoPasso) || safe(result.exitStrategy?.[0]?.action) || safe(result.direction);
-  // microAcoes removed — actions come exclusively from action_plan_tracking (persisted actions)
   const mentalCommand: string = safe(ai.mentalCommand);
   const blindSpot = result.interpretation?.blindSpot;
   const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
@@ -281,131 +266,129 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const focoMudanca = ai.focoMudanca || result.keyUnlockArea || '';
 
   // ═══════════════════════════════════════════
-  // COVER
+  // COVER — Premium, clean, editorial
   // ═══════════════════════════════════════════
   
   // Dark header band
   doc.setFillColor(...C.dark);
-  doc.rect(0, 0, PW, 58, 'F');
+  doc.rect(0, 0, PW, 52, 'F');
   
-  // Accent stripe
-  doc.setFillColor(...C.accent);
-  doc.rect(0, 58, PW, 2, 'F');
+  // Gold accent stripe
+  doc.setFillColor(...C.gold);
+  doc.rect(0, 52, PW, 1.5, 'F');
   
   // Title
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.white);
-  doc.text('Raio-X Comportamental', M, 26);
+  doc.text('Raio-X Mental', M, 24);
   
   // Subtitle
-  doc.setFontSize(9.5);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(170, 170, 185);
-  doc.text('Relatório Completo de Leitura', M, 36);
+  doc.setTextColor(180, 182, 188);
+  doc.text('Leitura Comportamental Completa', M, 34);
   
   // User name & date
   if (userName) {
     doc.setFontSize(8);
-    doc.setTextColor(145, 145, 160);
-    doc.text(userName, M, 46);
+    doc.setTextColor(150, 155, 160);
+    doc.text(userName, M, 44);
   }
   const date = new Date().toLocaleDateString('pt-BR');
   doc.setFontSize(8);
   doc.setTextColor(...C.light);
-  doc.text(date, PW - M - doc.getTextWidth(date), 46);
+  doc.text(date, PW - M - doc.getTextWidth(date), 44);
 
-  ctx.y = 68;
+  ctx.y = 62;
 
   // ── Combined Title + Intensity ──
-  doc.setFontSize(13);
+  doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.dark);
   const titleLines = doc.splitTextToSize(result.combinedTitle, CW);
-  for (const l of titleLines) { doc.text(l, M, ctx.y); ctx.y += 7; }
-  ctx.y += 3;
+  for (const l of titleLines) { doc.text(l, M, ctx.y); ctx.y += 7.5; }
+  ctx.y += 4;
   
   const intLabel = result.intensity === 'alto' ? 'Alta' : result.intensity === 'moderado' ? 'Moderada' : 'Leve';
   const intColor: RGB = result.intensity === 'alto' ? C.red : result.intensity === 'moderado' ? C.yellow : C.green;
   doc.setFillColor(...intColor);
-  const badge = `Intensidade: ${intLabel}`;
+  const badge = `Intensidade ${intLabel}`;
   doc.setFontSize(7.5);
-  const bw = doc.getTextWidth(badge) + 8;
-  doc.roundedRect(M, ctx.y - 3.5, bw, 6, 3, 3, 'F');
+  const bw = doc.getTextWidth(badge) + 10;
+  doc.roundedRect(M, ctx.y - 3.5, bw, 6.5, 3, 3, 'F');
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.white);
-  doc.text(badge, M + 4, ctx.y);
-  ctx.y += 6;
+  doc.text(badge, M + 5, ctx.y + 0.5);
+  ctx.y += 8;
 
   // ═══════════════════════════════════════════
-  // QUICK-READ CARD
+  // SYNTHESIS CARD
   // ═══════════════════════════════════════════
-  pb(ctx, 36);
-  ctx.y += 3;
+  pb(ctx, 38);
+  ctx.y += 4;
   const qrY = ctx.y;
-  const qrH = 38;
+  const qrH = 40;
   
   doc.setFillColor(...C.bg);
   doc.setDrawColor(...C.border);
-  doc.roundedRect(M, qrY, CW, qrH, 2.5, 2.5, 'FD');
+  doc.roundedRect(M, qrY, CW, qrH, 3, 3, 'FD');
   
-  // Header
-  doc.setFontSize(7);
+  doc.setFontSize(6.5);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.muted);
-  doc.text('LEITURA RAPIDA', M + 5, qrY + 5.5);
+  doc.text('SINTESE', M + 6, qrY + 6);
   
-  const halfW = (CW - 8) / 2;
-  const col1 = M + 5;
-  const col2 = M + 5 + halfW + 4;
-  const row1 = qrY + 11;
-  const row2 = qrY + 25;
+  const halfW = (CW - 10) / 2;
+  const col1 = M + 6;
+  const col2 = M + 6 + halfW + 6;
+  const row1 = qrY + 12;
+  const row2 = qrY + 27;
   
-  // Cell labels
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(...C.light);
-  doc.text('Padrao principal', col1, row1);
-  doc.text('Intensidade', col2, row1);
-  doc.text('Ponto de travamento', col1, row2);
-  doc.text('Foco de mudanca', col2, row2);
+  doc.text('Padrao identificado', col1, row1);
+  doc.text('Nivel', col2, row1);
+  doc.text('O que trava', col1, row2);
+  doc.text('Onde agir', col2, row2);
   
-  // Cell values - use splitTextToSize for wrapping
-  doc.setFontSize(8);
+  doc.setFontSize(8.5);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.dark);
   const pName = safe((result as any).interpretation?.behavioralProfile?.name) || safe(result.profileName) || safe(result.dominantPattern) || 'N/A';
   const pNameLines = doc.splitTextToSize(pName, halfW - 4);
-  pNameLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row1 + 4.5 + i * 4));
+  pNameLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row1 + 5 + i * 4.5));
   doc.setTextColor(...intColor);
-  doc.text(intLabel, col2, row1 + 4.5);
+  doc.text(intLabel, col2, row1 + 5);
   doc.setTextColor(...C.dark);
   const bp = safe(ai.blockingPoint) || safe(result.blockingPoint) || 'Nao identificado';
   const bpLines = doc.splitTextToSize(bp, halfW - 4);
-  bpLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row2 + 4.5 + i * 4));
+  bpLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col1, row2 + 5 + i * 4.5));
   const fm = safe(focoMudanca) || safe(corrigirPrimeiro) || 'Nao identificado';
   const fmLines = doc.splitTextToSize(fm, halfW - 4);
-  fmLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col2, row2 + 4.5 + i * 4));
+  fmLines.slice(0, 2).forEach((l: string, i: number) => doc.text(l, col2, row2 + 5 + i * 4.5));
   
-  ctx.y = qrY + qrH + 6;
+  ctx.y = qrY + qrH + 8;
 
   // ═══════════════════════════════════════════
-  // SECTION 1: O que mais chama atenção
+  // SECTIONS — NO numbering, editorial titles
   // ═══════════════════════════════════════════
-  sectionHeader(ctx, 1, 'O que mais chama atenção no seu resultado', C.red);
+  
+  sectionTitle(ctx, 'O que seu resultado revela', C.red);
   alertBox(ctx, chamaAtencao);
 
-  // ── Blind Spot (if available) ──
+  // Blind Spot
   if (blindSpot?.realProblem) {
     pb(ctx, 20);
-    labelAbove(ctx, 'Ponto Cego', C.muted);
+    labelAbove(ctx, 'Ponto cego', C.muted);
     const { doc: d } = ctx;
     d.setFontSize(8);
     d.setFont('helvetica', 'italic');
     d.setTextColor(...C.muted);
-    d.text(`O que você acredita: ${blindSpot.perceivedProblem || ''}`, M + 4, ctx.y);
+    d.text(`O que voce acredita: ${blindSpot.perceivedProblem || ''}`, M + 4, ctx.y);
     ctx.y += 5;
-    d.setFontSize(9);
+    d.setFontSize(9.5);
     d.setFont('helvetica', 'normal');
     d.setTextColor(...C.text);
     const bsLines = d.splitTextToSize(`→ ${blindSpot.realProblem}`, CW - 8);
@@ -413,98 +396,60 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     ctx.y += 3;
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION 2: O padrão que mais se repete
-  // ═══════════════════════════════════════════
-  sectionHeader(ctx, 2, 'O padrão que mais se repete em você');
-  
-  // Profile name highlight
+  sectionTitle(ctx, 'O padrao que te define');
   if (result.interpretation?.behavioralProfile?.name) {
     pb(ctx, 12);
     const profName = result.interpretation.behavioralProfile.name;
-    doc.setFillColor(...C.bg);
-    doc.setDrawColor(...C.border);
-    const pnW = doc.getTextWidth(profName) * 1.1 + 14;
-    doc.roundedRect(M + 2, ctx.y - 3.5, Math.min(pnW, CW - 4), 8, 2, 2, 'FD');
-    doc.setFontSize(9);
+    // Left border accent instead of box
+    doc.setFillColor(...C.accent);
+    doc.roundedRect(M + 2, ctx.y - 4, 2, 9, 1, 1, 'F');
+    doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(...C.accent);
     doc.text(profName, M + 8, ctx.y + 0.5);
-    ctx.y += 8;
+    ctx.y += 9;
   }
   textBlock(ctx, padraoRepetido);
 
-  // ═══════════════════════════════════════════
-  // SECTION 3: Como isso aparece na sua rotina
-  // ═══════════════════════════════════════════
-  sectionHeader(ctx, 3, 'Como isso aparece na sua rotina');
+  sectionTitle(ctx, 'Como isso vive em voce');
   textBlock(ctx, comoAparece, C.muted);
   
   if (result.selfSabotageCycle?.length > 0) {
     labelAbove(ctx, 'Ciclo de autossabotagem', C.muted);
-    result.selfSabotageCycle.forEach((step, i) => {
-      bulletItem(ctx, `${i + 1}. ${step}`, C.muted);
+    result.selfSabotageCycle.forEach((step) => {
+      bulletItem(ctx, step, C.muted);
     });
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION 4: Gatilhos
-  // ═══════════════════════════════════════════
   if (gatilhos.length > 0) {
-    sectionHeader(ctx, 4, 'O que geralmente dispara esse padrão', C.red);
-    gatilhos.forEach((t: string) => bulletItem(ctx, t, C.red, '⚡'));
+    sectionTitle(ctx, 'O que ativa esse ciclo', C.red);
+    gatilhos.forEach((t: string) => bulletItem(ctx, t, C.red, '·'));
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION 5: Como isso te atrapalha
-  // ═══════════════════════════════════════════
-  sectionHeader(ctx, 5, 'Como isso te atrapalha');
+  sectionTitle(ctx, 'O custo real desse padrao');
   if (impactoPorArea.length > 0) {
     renderImpactCards(ctx, impactoPorArea);
   } else {
     textBlock(ctx, comoAtrapalha);
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION 6: Direção de ajuste
-  // ═══════════════════════════════════════════
-  sectionHeader(ctx, 6, 'Direção de ajuste', C.accent);
-  labelAbove(ctx, 'O que precisa mudar', C.accent);
-  accentBox(ctx, corrigirPrimeiro);
-
-  // ═══════════════════════════════════════════
-  // SECTION 7: O que parar de fazer
-  // ═══════════════════════════════════════════
-  if (pararDeFazer.length > 0) {
-    sectionHeader(ctx, 7, 'O que parar de fazer agora', C.red);
-    pararDeFazer.forEach((item: string) => bulletItem(ctx, item, C.red, '✗'));
-  }
-
-  // ═══════════════════════════════════════════
-  // SECTION 8: Consequência Futura
-  // ═══════════════════════════════════════════
-  let sectionNum = 8;
+  // Future consequence
   const fc = extras?.futureConsequence || (ai as any).futureConsequence;
   if (fc) {
-    sectionHeader(ctx, sectionNum, 'Consequência Futura', C.red);
+    sectionTitle(ctx, 'Se nada mudar', C.red);
     alertBox(ctx, fc);
-    sectionNum++;
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION 9: Comparação de Evolução
-  // ═══════════════════════════════════════════
+  // Evolution comparison
   const evo = extras?.evolutionComparison || (ai as any).evolutionComparison;
   if (evo && (evo.previous_score != null || evo.improved_axes?.length || evo.worsened_axes?.length)) {
-    sectionHeader(ctx, sectionNum, 'Comparação de Evolução', C.accent);
+    sectionTitle(ctx, 'Comparacao com diagnostico anterior', C.accent);
 
-    // Score comparison bar
     if (evo.previous_score != null && evo.current_score != null) {
       pb(ctx, 28);
       const { doc: d } = ctx;
       const barW = (CW - 10) / 2;
 
-      // Previous score
       d.setFontSize(7);
       d.setFont('helvetica', 'bold');
       d.setTextColor(...C.muted);
@@ -513,7 +458,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       d.setTextColor(...C.light);
       d.text(`${evo.previous_score}%`, M + 4, ctx.y + 8);
 
-      // Current score
       d.setFontSize(7);
       d.setFont('helvetica', 'bold');
       d.setTextColor(...C.muted);
@@ -523,7 +467,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       d.setTextColor(...curColor);
       d.text(`${evo.current_score}%`, M + 4 + barW + 6, ctx.y + 8);
 
-      // Delta
       const delta = evo.current_score - evo.previous_score;
       const deltaStr = delta > 0 ? `+${delta}%` : `${delta}%`;
       d.setFontSize(9);
@@ -534,7 +477,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       ctx.y += 16;
     }
 
-    // Improved axes
     if (evo.improved_axes?.length > 0) {
       labelAbove(ctx, 'Eixos que melhoraram', C.green);
       evo.improved_axes.forEach((a: any) => {
@@ -542,7 +484,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       });
     }
 
-    // Worsened axes
     if (evo.worsened_axes?.length > 0) {
       labelAbove(ctx, 'Eixos que pioraram', C.red);
       evo.worsened_axes.forEach((a: any) => {
@@ -550,79 +491,75 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       });
     }
 
-    // Evolution summary
     const evoSummary = extras?.evolutionSummary || evo.summary_text;
     if (evoSummary) {
       pb(ctx, 14);
-      labelAbove(ctx, 'Resumo da evolução', C.accent);
+      labelAbove(ctx, 'Resumo da evolucao', C.accent);
       accentBox(ctx, evoSummary);
     }
-
-    sectionNum++;
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION: Ações práticas
-  // ═══════════════════════════════════════════
-  sectionHeader(ctx, sectionNum, 'Ações práticas', C.green);
-  sectionNum++;
+  // ── Direction ──
+  sectionTitle(ctx, 'A mudanca que importa', C.accent);
+  accentBox(ctx, corrigirPrimeiro);
+
+  // ── What to stop ──
+  if (pararDeFazer.length > 0) {
+    sectionTitle(ctx, 'O que abandonar agora', C.red);
+    pararDeFazer.forEach((item: string) => bulletItem(ctx, item, C.red, '✗'));
+  }
+
+  // ── Actions ──
+  sectionTitle(ctx, 'Seu proximo passo', C.green);
   
-  // Mental Command (reprogramming phrase)
   if (mentalCommand) {
     pb(ctx, 18);
     labelAbove(ctx, 'Repita antes de agir', C.accent);
-    const mcLines = doc.splitTextToSize(`"${mentalCommand}"`, CW - 14);
-    const mcH = mcLines.length * LH + 8;
+    const mcLines = doc.splitTextToSize(`"${mentalCommand}"`, CW - 16);
+    const mcH = mcLines.length * LH + 10;
     doc.setFillColor(...C.accentSoft);
-    doc.setDrawColor(...C.accentLight);
-    doc.roundedRect(M, ctx.y, CW, mcH, 2.5, 2.5, 'FD');
-    ctx.y += 5;
+    doc.roundedRect(M, ctx.y, CW, mcH, 3, 3, 'F');
+    ctx.y += 6;
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bolditalic');
     doc.setTextColor(...C.accent);
-    for (const l of mcLines) { doc.text(l, M + 7, ctx.y); ctx.y += LH; }
-    ctx.y += 5;
+    for (const l of mcLines) { doc.text(l, M + 8, ctx.y); ctx.y += LH; }
+    ctx.y += 6;
   }
 
-  // Use persisted action texts from DB (single source of truth)
   const persistedActions = extras?.actionTexts || [];
   
   if (persistedActions.length > 0) {
     persistedActions.forEach((actionText, i) => {
-      const lines = doc.splitTextToSize(actionText, CW - 18);
-      const h = lines.length * LH + 12;
+      const lines = doc.splitTextToSize(actionText, CW - 20);
+      const h = lines.length * LH + 14;
       pb(ctx, h + 2);
       
       doc.setFillColor(...C.greenSoft);
-      doc.setDrawColor(180, 220, 195);
-      doc.roundedRect(M, ctx.y, CW, h, 2.5, 2.5, 'FD');
+      doc.roundedRect(M, ctx.y, CW, h, 3, 3, 'F');
       
       doc.setFillColor(...C.green);
-      doc.roundedRect(M + 4, ctx.y + 4, 6, 6, 1.5, 1.5, 'F');
+      doc.roundedRect(M + 5, ctx.y + 5, 6, 6, 1.5, 1.5, 'F');
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...C.white);
-      doc.text(String(i + 1), M + 5.8, ctx.y + 8.2);
+      doc.text(String(i + 1), M + 6.8, ctx.y + 9.2);
       
-      let ay = ctx.y + 6;
-      doc.setFontSize(9);
+      let ay = ctx.y + 7;
+      doc.setFontSize(9.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...C.text);
-      for (const l of lines) { doc.text(l, M + 14, ay); ay += LH; }
+      for (const l of lines) { doc.text(l, M + 16, ay); ay += LH; }
       
-      ctx.y += h + 3;
+      ctx.y += h + 4;
     });
   } else if (acaoInicial) {
-    labelAbove(ctx, 'Faça isso agora', C.green);
     greenBox(ctx, acaoInicial);
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION 9: Mecanismo Neural
-  // ═══════════════════════════════════════════
+  // ── Neural Mechanism ──
   if (mecanismoNeural && (mecanismoNeural.neurotransmissor || mecanismoNeural.cicloNeural || mecanismoNeural.neuroplasticidade)) {
-    sectionHeader(ctx, sectionNum, 'Mecanismo Neural', C.accent);
-    sectionNum++;
+    sectionTitle(ctx, 'Mecanismo neural', C.accent);
     
     if (mecanismoNeural.neurotransmissor) {
       pb(ctx, 14);
@@ -638,24 +575,20 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     
     if (mecanismoNeural.neuroplasticidade) {
       pb(ctx, 14);
-      labelAbove(ctx, 'Neuroplasticidade — a boa notícia', C.green);
+      labelAbove(ctx, 'Neuroplasticidade', C.green);
       greenBox(ctx, mecanismoNeural.neuroplasticidade);
     }
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION 10: Plano de Ação (if available)
-  // ═══════════════════════════════════════════
+  // ── Action Plan by area ──
   if (actionPlan.length > 0) {
-    sectionHeader(ctx, sectionNum, 'Plano de Ação por Área', C.green);
-    sectionNum++;
+    sectionTitle(ctx, 'Plano de acao por area', C.green);
     
     actionPlan.forEach((plan) => {
       pb(ctx, 16);
       const { doc: d } = ctx;
       
-      // Area header with score
-      d.setFontSize(9);
+      d.setFontSize(9.5);
       d.setFont('helvetica', 'bold');
       d.setTextColor(...C.accent);
       d.text(plan.area, M + 4, ctx.y);
@@ -665,9 +598,8 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       d.setFontSize(8);
       d.setTextColor(...scoreColor);
       d.text(scoreLabel, M + CW - d.getTextWidth(scoreLabel) - 4, ctx.y);
-      ctx.y += 5;
+      ctx.y += 6;
       
-      // Actions
       plan.actions.forEach((action: string) => {
         bulletItem(ctx, action, C.green, '→');
       });
@@ -675,27 +607,24 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     });
   }
 
-  // ═══════════════════════════════════════════
-  // SECTION: Status do Plano de Ação
-  // ═══════════════════════════════════════════
+  // ── Action Plan Status ──
   const aps = extras?.actionPlanStatus;
   if (aps && aps.total_days > 0) {
-    sectionHeader(ctx, sectionNum, 'Status de Execução do Plano', C.accent);
-    sectionNum++;
+    sectionTitle(ctx, 'Status de execucao', C.accent);
 
     pb(ctx, 30);
     const { doc: d } = ctx;
     const cardH = 28;
     d.setFillColor(...C.bg);
     d.setDrawColor(...C.border);
-    d.roundedRect(M, ctx.y, CW, cardH, 2.5, 2.5, 'FD');
+    d.roundedRect(M, ctx.y, CW, cardH, 3, 3, 'FD');
 
     const colW = CW / 4;
     const metrics = [
       { label: 'TOTAL', value: `${aps.total_days} dias` },
-      { label: 'CONCLUÍDOS', value: `${aps.completed_days} dias` },
-      { label: 'EXECUÇÃO', value: `${aps.execution_rate}%` },
-      { label: 'SEQUÊNCIA', value: `${aps.current_streak} dias` },
+      { label: 'CONCLUIDOS', value: `${aps.completed_days} dias` },
+      { label: 'EXECUCAO', value: `${aps.execution_rate}%` },
+      { label: 'SEQUENCIA', value: `${aps.current_streak} dias` },
     ];
 
     metrics.forEach((m, i) => {
@@ -713,7 +642,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       d.text(m.value, x, ctx.y + 17);
     });
 
-    // Progress bar
     const barY = ctx.y + cardH - 5;
     d.setFillColor(...C.border);
     d.roundedRect(M + 5, barY, CW - 10, 3, 1.5, 1.5, 'F');
@@ -722,73 +650,73 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     const fw = (aps.execution_rate / 100) * (CW - 10);
     if (fw > 0) d.roundedRect(M + 5, barY, Math.max(fw, 2), 3, 1.5, 1.5, 'F');
 
-    ctx.y += cardH + 6;
+    ctx.y += cardH + 8;
   }
 
   // ═══════════════════════════════════════════
   // INTENSITY BARS
   // ═══════════════════════════════════════════
-  ctx.y += 4;
+  ctx.y += 6;
   pb(ctx, 24);
   doc.setFontSize(8.5);
   doc.setFont('helvetica', 'bold');
   doc.setTextColor(...C.muted);
   doc.text('INTENSIDADE POR EIXO', M, ctx.y);
-  ctx.y += 5;
+  ctx.y += 6;
   
   // Legend
   doc.setFontSize(6.5);
   doc.setFont('helvetica', 'normal');
   doc.setFillColor(...C.green);
-  doc.circle(M + 2, ctx.y - 0.8, 1, 'F');
+  doc.circle(M + 2, ctx.y - 0.8, 0.8, 'F');
   doc.setTextColor(...C.light);
   doc.text('< 40%', M + 5, ctx.y);
   doc.setFillColor(...C.yellow);
-  doc.circle(M + 22, ctx.y - 0.8, 1, 'F');
+  doc.circle(M + 22, ctx.y - 0.8, 0.8, 'F');
   doc.text('40-65%', M + 25, ctx.y);
   doc.setFillColor(...C.red);
-  doc.circle(M + 48, ctx.y - 0.8, 1, 'F');
+  doc.circle(M + 48, ctx.y - 0.8, 0.8, 'F');
   doc.text('> 65%', M + 51, ctx.y);
-  ctx.y += 5;
+  ctx.y += 6;
 
   result.allScores.slice(0, 8).forEach(score => {
-    pb(ctx, 11);
-    doc.setFontSize(8);
+    pb(ctx, 12);
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(...C.text);
     doc.text(score.label, M + 2, ctx.y);
     doc.setFont('helvetica', 'bold');
     const p = `${score.percentage}%`;
     doc.text(p, M + CW - doc.getTextWidth(p), ctx.y);
-    const by = ctx.y + 2.5;
+    const by = ctx.y + 3;
     doc.setFillColor(...C.border);
-    doc.roundedRect(M + 2, by, CW - 4, 3, 1.5, 1.5, 'F');
+    doc.roundedRect(M + 2, by, CW - 4, 2.5, 1.2, 1.2, 'F');
     const bc: RGB = score.percentage > 65 ? C.red : score.percentage >= 40 ? C.yellow : C.green;
     doc.setFillColor(...bc);
-    const fw = (score.percentage / 100) * (CW - 4);
-    if (fw > 0) doc.roundedRect(M + 2, by, Math.max(fw, 2), 3, 1.5, 1.5, 'F');
-    ctx.y += 10;
+    const barWidth = (score.percentage / 100) * (CW - 4);
+    if (barWidth > 0) doc.roundedRect(M + 2, by, Math.max(barWidth, 2), 2.5, 1.2, 1.2, 'F');
+    ctx.y += 11;
   });
 
   // ═══════════════════════════════════════════
   // FOOTER
   // ═══════════════════════════════════════════
-  pb(ctx, 20);
-  ctx.y += 6;
+  pb(ctx, 22);
+  ctx.y += 8;
   doc.setDrawColor(...C.border);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.2);
   doc.line(M, ctx.y, M + CW, ctx.y);
-  ctx.y += 5;
+  ctx.y += 6;
   doc.setFontSize(7);
   doc.setFont('helvetica', 'italic');
   doc.setTextColor(...C.light);
-  const disclaimer = 'Este relatório oferece uma leitura comportamental baseada em suas respostas e não substitui avaliação profissional.';
+  const disclaimer = 'Esta leitura comportamental e baseada em suas respostas e nao substitui avaliacao profissional.';
   doc.splitTextToSize(disclaimer, CW).forEach((l: string) => {
     doc.text(l, M, ctx.y);
     ctx.y += 4;
   });
 
-  // Page numbers on all pages
+  // Page numbers
   const totalPages = ctx.pageNum;
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
@@ -799,5 +727,5 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     doc.text(pageText, PW - M - doc.getTextWidth(pageText), PH - 8);
   }
 
-  doc.save(`raio-x-comportamental-${new Date().toISOString().slice(0, 10)}.pdf`);
+  doc.save(`raio-x-mental-${new Date().toISOString().slice(0, 10)}.pdf`);
 }

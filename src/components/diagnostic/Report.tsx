@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { parseActionString } from '@/lib/buildActionPreview';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown, Lock, Crown } from 'lucide-react';
+import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, TrendingDown, TrendingUp, Minus, Lock, Crown } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { trackEvent } from '@/lib/trackEvent';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
@@ -125,7 +125,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
     if (moduleSlug === 'mapa-de-vida') {
       generateLifeMapPdf(result.allScores, profile?.name);
     } else {
-      // Fetch action plan tracking if available
       let extras: PdfEvolutionData | undefined;
       if (user) {
         try {
@@ -143,7 +142,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
               if ((sortedDays[i] as any).completed) streak++;
               else break;
             }
-            // Extract unique action texts for PDF
             const seen = new Set<string>();
             const uniqueTexts: string[] = [];
             for (const row of tracking) {
@@ -162,7 +160,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
               actionTexts: uniqueTexts,
             };
           }
-        } catch { /* ignore - extras remain undefined */ }
+        } catch { /* ignore */ }
       }
       generateDiagnosticPdf(result, profile?.name, extras);
       if (user) trackEvent({ userId: user.id, event: 'pdf_downloaded', metadata: { moduleSlug } });
@@ -177,69 +175,67 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
     return null;
   };
 
-  // Check if we have custom template sections to render
   const hasCustomTemplate = templateSections.length >= 5;
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="max-w-3xl mx-auto px-6 md:px-12 py-14 md:py-24">
+      <div className="max-w-2xl mx-auto px-6 md:px-10 py-16 md:py-28">
 
-        {/* ── Header ── */}
-        <motion.header {...fade} transition={{ duration: 0.5 }} className="mb-12">
-          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-[0.3em] font-light mb-5">
+        {/* ── Header — editorial, no numbers ── */}
+        <motion.header {...fade} transition={{ duration: 0.6 }} className="mb-16">
+          <p className="text-[10px] text-muted-foreground/35 uppercase tracking-[0.35em] font-light mb-6">
             {headerTitle}
           </p>
-          <h1 className="text-2xl md:text-[2rem] font-extrabold tracking-tight text-foreground leading-[1.2]">
+          <h1 className="text-2xl md:text-[2.2rem] font-serif font-bold tracking-tight text-foreground leading-[1.15] mb-6">
             {result.combinedTitle}
           </h1>
-          <div className="flex items-center gap-2.5 mt-5">
-            <span className={`w-2.5 h-2.5 rounded-full ${info.bg} ring-4 ${info.ring}`} />
-            <span className={`text-xs font-semibold ${info.color}`}>
+          <div className="flex items-center gap-3">
+            <span className={`w-2 h-2 rounded-full ${info.bg}`} />
+            <span className={`text-[11px] font-medium ${info.color} tracking-wide`}>
               Intensidade {info.label.toLowerCase()}
             </span>
           </div>
         </motion.header>
 
-        {/* ── Quick-read card ── */}
-        <motion.div {...fade} transition={{ delay: 0.12, duration: 0.45 }} className="mb-16">
-          <div className="rounded-2xl border border-border/30 overflow-hidden shadow-md">
-            <div className="bg-secondary/50 px-6 py-4 border-b border-border/25">
-              <p className="text-[10px] text-muted-foreground/60 uppercase tracking-[0.2em] font-semibold">
-                Leitura rápida
+        {/* ── Quick-read — refined card ── */}
+        <motion.div {...fade} transition={{ delay: 0.1, duration: 0.5 }} className="mb-20">
+          <div className="rounded-2xl border border-border/20 overflow-hidden">
+            <div className="bg-secondary/30 px-6 py-3.5 border-b border-border/15">
+              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.25em] font-medium">
+                Síntese
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2">
               <QuickReadCell
-                icon={<Zap className="w-3.5 h-3.5 text-primary/50" />}
-                label="Padrão principal"
+                icon={<Zap className="w-3 h-3 text-primary/40" />}
+                label="Padrão identificado"
                 value={result.interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '')}
                 bold
               />
               <QuickReadCell
-                icon={<span className={`w-2.5 h-2.5 rounded-full ${info.bg}`} />}
-                label="Intensidade"
+                icon={<span className={`w-2 h-2 rounded-full ${info.bg}`} />}
+                label="Nível"
                 value={info.label}
                 colorClass={info.color}
                 bold
               />
               <QuickReadCell
-                icon={<AlertTriangle className="w-3.5 h-3.5 text-destructive/40" />}
-                label="Ponto de travamento"
+                icon={<AlertTriangle className="w-3 h-3 text-destructive/30" />}
+                label="O que trava"
                 value={ai.blockingPoint || result.blockingPoint || 'Não identificado'}
               />
               <QuickReadCell
-                icon={<Target className="w-3.5 h-3.5 text-primary/40" />}
-                label="Foco de mudança"
+                icon={<Target className="w-3 h-3 text-primary/30" />}
+                label="Onde agir"
                 value={focoMudanca || 'Não identificado'}
               />
             </div>
           </div>
         </motion.div>
 
-        {/* ── Sections ── */}
-        <div className="space-y-16">
+        {/* ── Sections — editorial flow, NO numbers ── */}
+        <div className="space-y-20">
           {hasCustomTemplate ? (
-            /* ── Dynamic custom sections from template ── */
             <>
               {templateSections.map((section, idx) => {
                 const value = resolveValue(section.key);
@@ -255,43 +251,43 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   const textValue = typeof value === 'string' ? value : null;
                   
                   return (
-                    <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent={accent}>
+                    <Section key={section.key} title={section.label} delay={delay} accent={accent}>
                       {impacto.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           {impacto.map((item: any, i: number) => (
-                            <div key={i} className="rounded-xl border border-border/40 bg-card px-4 py-3.5 shadow-sm">
-                              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.15em] font-semibold mb-1.5">{item.area}</p>
-                              <p className="text-sm text-foreground/85 leading-snug">{item.efeito}</p>
+                            <div key={i} className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+                              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">{item.area}</p>
+                              <p className="text-sm text-foreground/80 leading-relaxed">{item.efeito}</p>
                             </div>
                           ))}
                         </div>
                       ) : textValue ? (
-                        <p className="text-sm text-muted-foreground leading-[1.8]">{textValue}</p>
+                        <p className="text-[15px] text-muted-foreground leading-[1.85]">{textValue}</p>
                       ) : null}
                     </Section>
                   );
                 }
 
-                // List sections (gatilhos, parar de fazer, etc.)
+                // List sections
                 if (isList && Array.isArray(value)) {
                   const isStop = /parar|oQue/i.test(section.key);
                   return (
-                    <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent={accent}>
+                    <Section key={section.key} title={section.label} delay={delay} accent={accent}>
                       {isStop ? (
-                        <div className="space-y-2">
+                        <div className="space-y-2.5">
                           {value.map((item: string, i: number) => (
-                            <div key={i} className="flex items-start gap-3 py-1.5 px-3.5 rounded-lg bg-destructive/[0.03] border border-destructive/10">
-                              <XCircle className="w-3.5 h-3.5 text-destructive/50 mt-0.5 shrink-0" />
-                              <p className="text-sm text-muted-foreground leading-[1.7]">{item}</p>
+                            <div key={i} className="flex items-start gap-3 py-2 px-4 rounded-lg bg-destructive/[0.02] border border-destructive/8">
+                              <XCircle className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
+                              <p className="text-[15px] text-muted-foreground leading-[1.8]">{item}</p>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <ul className="space-y-2.5">
+                        <ul className="space-y-3">
                           {value.map((item: string, i: number) => (
                             <li key={i} className="flex items-start gap-3">
-                              <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-destructive/50 shrink-0" />
-                              <p className="text-sm text-muted-foreground leading-[1.8]">{item}</p>
+                              <span className="mt-[9px] w-1 h-1 rounded-full bg-destructive/40 shrink-0" />
+                              <p className="text-[15px] text-muted-foreground leading-[1.85]">{item}</p>
                             </li>
                           ))}
                         </ul>
@@ -303,38 +299,32 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 // Action/direction sections
                 if (/direcao|corrigir|ajuste/i.test(section.key)) {
                   return (
-                    <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent="primary">
+                    <Section key={section.key} title={section.label} delay={delay} accent="primary">
                       <CardBlock variant="primary">
                         <div className="flex items-start gap-3">
-                          <ArrowRight className="w-4 h-4 text-primary/60 mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-[9px] text-primary/50 uppercase tracking-widest font-semibold mb-1.5">O que precisa mudar</p>
-                            <p className="text-sm text-foreground leading-[1.8]">{typeof value === 'string' ? value : ''}</p>
-                          </div>
+                          <ArrowRight className="w-4 h-4 text-primary/50 mt-0.5 shrink-0" />
+                          <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
                         </div>
                       </CardBlock>
                     </Section>
                   );
                 }
 
-                // Action immediate sections — delegate to ActionPreviewSection below (skip inline rendering to avoid duplicates)
+                // Action immediate sections
                 if (/acao|proximo|imediata/i.test(section.key)) {
                   return (
-                    <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent="green">
+                    <Section key={section.key} title={section.label} delay={delay} accent="green">
                       {ai.mentalCommand && (
-                        <div className="mb-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
-                          <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold mb-2">Repita antes de agir</p>
-                          <p className="text-base font-semibold text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
+                        <div className="mb-5 rounded-xl border border-primary/15 bg-primary/[0.02] px-6 py-5">
+                          <p className="text-[9px] text-primary/40 uppercase tracking-[0.25em] font-medium mb-3">Repita antes de agir</p>
+                          <p className="text-base font-medium text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
                         </div>
                       )}
                       {ai.acaoInicial && (
                         <CardBlock variant="success">
                           <div className="flex items-start gap-3">
-                            <CheckCircle2 className="w-4 h-4 text-green-600/60 mt-0.5 shrink-0" />
-                            <div>
-                              <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-widest font-semibold mb-1.5">Próximos 7 dias</p>
-                              <p className="text-sm font-medium text-foreground leading-[1.8]">{ai.acaoInicial}</p>
-                            </div>
+                            <CheckCircle2 className="w-4 h-4 text-green-600/50 mt-0.5 shrink-0" />
+                            <p className="text-[15px] font-medium text-foreground leading-[1.85]">{ai.acaoInicial}</p>
                           </div>
                         </CardBlock>
                       )}
@@ -345,9 +335,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 // Diagnostic/alert sections
                 if (/diagnostico|chamaAtencao|dorCentral|corePain/i.test(section.key)) {
                   return (
-                    <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent="destructive">
+                    <Section key={section.key} title={section.label} delay={delay} accent="destructive">
                       <CardBlock variant="alert">
-                        <p className="text-sm text-foreground leading-[1.8]">{typeof value === 'string' ? value : ''}</p>
+                        <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
                       </CardBlock>
                     </Section>
                   );
@@ -356,14 +346,11 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                 // Future consequence section
                 if (/futureConsequence|consequencia/i.test(section.key)) {
                   return (
-                    <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent="destructive">
+                    <Section key={section.key} title={section.label} delay={delay} accent="destructive">
                       <CardBlock variant="alert">
                         <div className="flex items-start gap-3">
-                          <TrendingDown className="w-4 h-4 text-destructive/60 mt-0.5 shrink-0" />
-                          <div>
-                            <p className="text-[9px] text-destructive/50 uppercase tracking-widest font-semibold mb-1.5">Se nada mudar</p>
-                            <p className="text-sm text-foreground leading-[1.8]">{typeof value === 'string' ? value : ''}</p>
-                          </div>
+                          <TrendingDown className="w-4 h-4 text-destructive/50 mt-0.5 shrink-0" />
+                          <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
                         </div>
                       </CardBlock>
                     </Section>
@@ -372,60 +359,57 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
                 // Default text section
                 return (
-                  <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent={accent}>
-                    <p className="text-sm text-muted-foreground leading-[1.8]">{typeof value === 'string' ? value : (value || 'Não identificado')}</p>
+                  <Section key={section.key} title={section.label} delay={delay} accent={accent}>
+                    <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : (value || 'Não identificado')}</p>
                   </Section>
                 );
               })}
 
-              {/* Evolution comparison (if available) */}
+              {/* Evolution comparison */}
               <EvolutionComparisonSection ai={ai} delay={0.04 + templateSections.length * 0.04} />
 
-              {/* Blind spot (always show if available) */}
+              {/* Blind spot */}
               {result.interpretation?.blindSpot?.realProblem && (
                 <motion.div {...fade} transition={{ delay: 0.07 }}>
                   <CardBlock variant="muted">
-                    <p className="text-[10px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-2.5">Ponto cego</p>
-                    <p className="text-xs text-muted-foreground/70 italic mb-2">
+                    <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-3">Ponto cego</p>
+                    <p className="text-xs text-muted-foreground/60 italic mb-2.5">
                       O que você acredita: {result.interpretation.blindSpot.perceivedProblem}
                     </p>
                     <div className="flex items-start gap-2">
-                      <ChevronRight className="w-3.5 h-3.5 text-destructive/50 mt-0.5 shrink-0" />
-                      <p className="text-sm text-foreground leading-[1.7]">{result.interpretation.blindSpot.realProblem}</p>
+                      <ChevronRight className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
+                      <p className="text-[15px] text-foreground leading-[1.8]">{result.interpretation.blindSpot.realProblem}</p>
                     </div>
                   </CardBlock>
                 </motion.div>
               )}
-
             </>
           ) : (
-            /* ── Legacy 8-section fallback ── */
             <LegacySections result={result} moduleSlug={moduleSlug} ai={ai} />
           )}
 
-          {/* ── 3 Ações para mudar esse padrão ── */}
+          {/* ── Actions ── */}
           <ActionPreviewSection result={result} ai={ai} />
 
           {/* ── Intensity bars ── */}
           <motion.section {...fade} transition={{ delay: 0.42 }}>
-            <div className="flex items-center gap-2.5 mb-5">
-              <BarChart3 className="w-4 h-4 text-muted-foreground/40" />
-              <p className="text-[10px] text-muted-foreground/50 uppercase tracking-[0.2em] font-semibold">
+            <div className="mb-6">
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.25em] font-medium">
                 Intensidade por eixo
               </p>
             </div>
-            <div className="space-y-4 bg-card border border-border/40 rounded-2xl px-5 py-5 shadow-sm">
+            <div className="space-y-5 bg-card/50 border border-border/20 rounded-2xl px-6 py-6">
               {result.allScores.slice(0, 8).map((score) => {
                 const pct = Math.min(100, score.percentage);
-                const barColor = pct > 65 ? 'bg-destructive/70' : pct >= 40 ? 'bg-yellow-500/70' : 'bg-green-500/70';
+                const barColor = pct > 65 ? 'bg-destructive/60' : pct >= 40 ? 'bg-yellow-500/60' : 'bg-green-500/60';
                 const textColor = pct > 65 ? 'text-destructive' : pct >= 40 ? 'text-yellow-600' : 'text-green-600';
                 return (
                   <div key={score.key}>
-                    <div className="flex justify-between text-xs mb-1.5">
-                      <span className="text-muted-foreground font-medium">{axisLabels[score.key] || score.label || score.key}</span>
+                    <div className="flex justify-between text-xs mb-2">
+                      <span className="text-muted-foreground/70 font-medium">{axisLabels[score.key] || score.label || score.key}</span>
                       <span className={`tabular-nums font-semibold ${textColor}`}>{pct}%</span>
                     </div>
-                    <div className="h-2 rounded-full bg-border/30 overflow-hidden">
+                    <div className="h-1.5 rounded-full bg-border/20 overflow-hidden">
                       <motion.div
                         className={`h-full rounded-full ${barColor}`}
                         initial={{ width: 0 }}
@@ -444,22 +428,22 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         <ReportGamification />
 
         {/* ── Footer ── */}
-        <div className="mt-20 space-y-8">
-          <div className="w-12 h-px bg-border/40 mx-auto" />
-          <p className="text-[10px] text-muted-foreground/30 text-center font-light leading-relaxed max-w-sm mx-auto">
+        <div className="mt-24 space-y-10">
+          <div className="w-8 h-px bg-border/30 mx-auto" />
+          <p className="text-[10px] text-muted-foreground/25 text-center font-light leading-relaxed max-w-xs mx-auto">
             Leitura comportamental baseada em suas respostas. Não substitui avaliação profissional.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-16">
             <button
               onClick={handleDownloadPdf}
-              className="inline-flex items-center gap-2 px-7 py-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-90 transition-all active:scale-[0.97] shadow-md"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-90 transition-all active:scale-[0.97] shadow-sm"
             >
               <Download className="w-4 h-4" />
               Baixar PDF
             </button>
             <button
               onClick={onRestart}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors px-6 py-3 rounded-lg hover:bg-secondary/50"
+              className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors px-6 py-3 rounded-lg hover:bg-secondary/30"
             >
               Ir para o Dashboard
             </button>
@@ -471,7 +455,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 };
 
 
-/* ── Legacy sections fallback ── */
+/* ── Legacy sections fallback — NO NUMBERING ── */
 function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
   const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
@@ -484,50 +468,49 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
   const acaoInicialRaw = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
   const microAcoes: { gatilho?: string; acao: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
   const acaoInicial = typeof acaoInicialRaw === 'string' ? acaoInicialRaw : '';
-  
 
-  const sectionTitles = getLegacySectionTitles(moduleSlug);
+  const titles = getLegacySectionTitles(moduleSlug);
 
   return (
     <>
-      <Section num={1} title={sectionTitles.chamaAtencao} delay={0.05} accent="destructive">
+      <Section title={titles.chamaAtencao} delay={0.05} accent="destructive">
         <CardBlock variant="alert">
-          <p className="text-sm text-foreground leading-[1.8]">{chamaAtencao}</p>
+          <p className="text-[15px] text-foreground leading-[1.85]">{chamaAtencao}</p>
         </CardBlock>
       </Section>
 
       {result.interpretation?.blindSpot?.realProblem && (
-        <motion.div {...fade} transition={{ delay: 0.07 }} className="-mt-6">
+        <motion.div {...fade} transition={{ delay: 0.07 }} className="-mt-8">
           <CardBlock variant="muted">
-            <p className="text-[10px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-2.5">Ponto cego</p>
-            <p className="text-xs text-muted-foreground/70 italic mb-2">
+            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-3">Ponto cego</p>
+            <p className="text-xs text-muted-foreground/60 italic mb-2.5">
               O que você acredita: {result.interpretation.blindSpot.perceivedProblem}
             </p>
             <div className="flex items-start gap-2">
-              <ChevronRight className="w-3.5 h-3.5 text-destructive/50 mt-0.5 shrink-0" />
-              <p className="text-sm text-foreground leading-[1.7]">{result.interpretation.blindSpot.realProblem}</p>
+              <ChevronRight className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
+              <p className="text-[15px] text-foreground leading-[1.8]">{result.interpretation.blindSpot.realProblem}</p>
             </div>
           </CardBlock>
         </motion.div>
       )}
 
-      <Section num={2} title={sectionTitles.padraoRepetido} delay={0.1}>
+      <Section title={titles.padraoRepetido} delay={0.1}>
         {result.interpretation?.behavioralProfile && (
-          <div className="bg-secondary/50 border border-border/40 rounded-xl px-4 py-3 mb-4">
-            <p className="text-sm font-bold text-foreground">{result.interpretation.behavioralProfile.name}</p>
+          <div className="border-l-2 border-primary/20 pl-5 mb-5">
+            <p className="text-base font-semibold text-foreground">{result.interpretation.behavioralProfile.name}</p>
           </div>
         )}
-        <p className="text-sm text-muted-foreground leading-[1.8]">{padraoRepetido}</p>
+        <p className="text-[15px] text-muted-foreground leading-[1.85]">{padraoRepetido}</p>
       </Section>
 
-      <Section num={3} title={sectionTitles.comoAparece} delay={0.14}>
-        <p className="text-sm text-muted-foreground leading-[1.8]">{comoAparece}</p>
+      <Section title={titles.comoAparece} delay={0.14}>
+        <p className="text-[15px] text-muted-foreground leading-[1.85]">{comoAparece}</p>
         {result.selfSabotageCycle?.length > 0 && (
-          <div className="mt-4 space-y-1.5">
+          <div className="mt-6 space-y-2">
             {result.selfSabotageCycle.map((step, i) => (
-              <div key={i} className="flex items-start gap-3 py-1.5">
-                <span className="w-5 h-5 rounded-full bg-secondary/80 border border-border/50 flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0 mt-0.5">{i + 1}</span>
-                <p className="text-sm text-muted-foreground leading-[1.7]">{step}</p>
+              <div key={i} className="flex items-start gap-3 py-2">
+                <span className="w-5 h-5 rounded-full bg-secondary/60 flex items-center justify-center text-[10px] font-medium text-muted-foreground/60 shrink-0 mt-0.5">{i + 1}</span>
+                <p className="text-[15px] text-muted-foreground leading-[1.8]">{step}</p>
               </div>
             ))}
           </div>
@@ -535,94 +518,88 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
       </Section>
 
       {gatilhos?.length > 0 && (
-        <Section num={4} title={sectionTitles.gatilhos} delay={0.18} accent="destructive">
-          <ul className="space-y-2.5">
+        <Section title={titles.gatilhos} delay={0.18} accent="destructive">
+          <ul className="space-y-3">
             {gatilhos.map((t: string, i: number) => (
               <li key={i} className="flex items-start gap-3">
-                <span className="mt-[7px] w-1.5 h-1.5 rounded-full bg-destructive/50 shrink-0" />
-                <p className="text-sm text-muted-foreground leading-[1.8]">{t}</p>
+                <span className="mt-[9px] w-1 h-1 rounded-full bg-destructive/40 shrink-0" />
+                <p className="text-[15px] text-muted-foreground leading-[1.85]">{t}</p>
               </li>
             ))}
           </ul>
         </Section>
       )}
 
-      <Section num={5} title={sectionTitles.comoAtrapalha} delay={0.22}>
+      <Section title={titles.comoAtrapalha} delay={0.22}>
         {impactoPorArea.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {impactoPorArea.map((item, i) => (
-              <div key={i} className="rounded-xl border border-border/40 bg-card px-4 py-3.5 shadow-sm">
-                <p className="text-[9px] text-muted-foreground/50 uppercase tracking-[0.15em] font-semibold mb-1.5">{item.area}</p>
-                <p className="text-sm text-foreground/85 leading-snug">{item.efeito}</p>
+              <div key={i} className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">{item.area}</p>
+                <p className="text-sm text-foreground/80 leading-relaxed">{item.efeito}</p>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-foreground/80 leading-[1.8]">{comoAtrapalha}</p>
+          <p className="text-[15px] text-foreground/75 leading-[1.85]">{comoAtrapalha}</p>
         )}
       </Section>
 
-      {/* Future consequence — after diagnosis, before action */}
+      {/* Future consequence */}
       {ai.futureConsequence && (
-        <Section num={6} title="Se nada mudar nos próximos meses" delay={0.25} accent="destructive">
+        <Section title="Se nada mudar" delay={0.25} accent="destructive">
           <CardBlock variant="alert">
             <div className="flex items-start gap-3">
-              <TrendingDown className="w-4 h-4 text-destructive/60 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[9px] text-destructive/50 uppercase tracking-widest font-semibold mb-1.5">Consequência futura</p>
-                <p className="text-sm text-foreground leading-[1.8]">{ai.futureConsequence}</p>
-              </div>
+              <TrendingDown className="w-4 h-4 text-destructive/50 mt-0.5 shrink-0" />
+              <p className="text-[15px] text-foreground leading-[1.85]">{ai.futureConsequence}</p>
             </div>
           </CardBlock>
         </Section>
       )}
 
-      {/* Evolution comparison — after futureConsequence, before action */}
+      {/* Evolution comparison */}
       <EvolutionComparisonSection ai={ai} delay={0.255} />
 
-      <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 8 : 7) : 6} title={sectionTitles.corrigirPrimeiro} delay={0.26} accent="primary">
+      <Section title={titles.corrigirPrimeiro} delay={0.26} accent="primary">
         <CardBlock variant="primary">
           <div className="flex items-start gap-3">
-            <ArrowRight className="w-4 h-4 text-primary/60 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-[9px] text-primary/50 uppercase tracking-widest font-semibold mb-1.5">O que precisa mudar</p>
-              <p className="text-sm text-foreground leading-[1.8]">{corrigirPrimeiro}</p>
-            </div>
+            <ArrowRight className="w-4 h-4 text-primary/50 mt-0.5 shrink-0" />
+            <p className="text-[15px] text-foreground leading-[1.85]">{corrigirPrimeiro}</p>
           </div>
         </CardBlock>
       </Section>
 
       {pararDeFazer?.length > 0 && (
-        <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 9 : 8) : 7} title={sectionTitles.pararDeFazer} delay={0.3} accent="destructive">
-          <div className="space-y-2">
+        <Section title={titles.pararDeFazer} delay={0.3} accent="destructive">
+          <div className="space-y-2.5">
             {pararDeFazer.map((item: string, i: number) => (
-              <div key={i} className="flex items-start gap-3 py-1.5 px-3.5 rounded-lg bg-destructive/[0.03] border border-destructive/10">
-                <XCircle className="w-3.5 h-3.5 text-destructive/50 mt-0.5 shrink-0" />
-                <p className="text-sm text-muted-foreground leading-[1.7]">{item}</p>
+              <div key={i} className="flex items-start gap-3 py-2 px-4 rounded-lg bg-destructive/[0.02] border border-destructive/8">
+                <XCircle className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
+                <p className="text-[15px] text-muted-foreground leading-[1.8]">{item}</p>
               </div>
             ))}
           </div>
         </Section>
       )}
 
-      <Section num={ai.futureConsequence ? (ai.evolutionComparison ? 10 : 9) : 8} title={sectionTitles.acaoInicial} delay={0.34} accent="green">
+      <Section title={titles.acaoInicial} delay={0.34} accent="green">
         {ai.mentalCommand && (
-          <div className="mb-4 rounded-xl border border-primary/20 bg-primary/[0.04] px-5 py-4">
-            <p className="text-[9px] text-primary/50 uppercase tracking-[0.2em] font-semibold mb-2">Repita antes de agir</p>
-            <p className="text-base font-semibold text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
+          <div className="mb-5 rounded-xl border border-primary/15 bg-primary/[0.02] px-6 py-5">
+            <p className="text-[9px] text-primary/40 uppercase tracking-[0.25em] font-medium mb-3">Repita antes de agir</p>
+            <p className="text-base font-medium text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
           </div>
         )}
         {microAcoes.length > 0 ? (
           <div className="space-y-3">
             {microAcoes.map((item: any, i: number) => (
-              <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
+              <div key={i} className="border border-green-500/15 bg-green-500/[0.03] rounded-xl px-6 py-5">
                 <div className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">{i + 1}</span>
+                  <span className="w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center text-[11px] font-medium text-green-600 shrink-0 mt-0.5">{i + 1}</span>
                   <div className="flex-1">
                     {item.gatilho && (
-                      <p className="text-xs text-muted-foreground/70 mb-1 leading-relaxed">Quando {item.gatilho} →</p>
+                      <p className="text-xs text-muted-foreground/60 mb-1.5 leading-relaxed">Quando {item.gatilho} →</p>
                     )}
-                    <p className="text-sm font-semibold text-foreground leading-[1.7]">{item.acao}</p>
+                    <p className="text-[15px] font-medium text-foreground leading-[1.8]">{item.acao}</p>
                   </div>
                 </div>
               </div>
@@ -631,21 +608,17 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         ) : (
           <CardBlock variant="success">
             <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-4 h-4 text-green-600/60 mt-0.5 shrink-0" />
-              <div>
-                <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-widest font-semibold mb-1.5">Faça isso agora</p>
-                <p className="text-sm font-medium text-foreground leading-[1.8]">{acaoInicial}</p>
-              </div>
+              <CheckCircle2 className="w-4 h-4 text-green-600/50 mt-0.5 shrink-0" />
+              <p className="text-[15px] font-medium text-foreground leading-[1.85]">{acaoInicial}</p>
             </div>
           </CardBlock>
         )}
       </Section>
-
     </>
   );
 }
 
-/* ── Legacy section titles ── */
+/* ── Premium editorial section titles — NO numbering ── */
 interface SectionTitles {
   chamaAtencao: string;
   padraoRepetido: string;
@@ -659,24 +632,24 @@ interface SectionTitles {
 
 function getLegacySectionTitles(slug?: string): SectionTitles {
   const base: SectionTitles = {
-    chamaAtencao: 'O que mais chama atenção',
-    padraoRepetido: 'O padrão que mais se repete',
-    comoAparece: 'Como isso aparece na rotina',
-    gatilhos: 'O que dispara esse padrão',
-    comoAtrapalha: 'Como isso te atrapalha',
-    corrigirPrimeiro: 'Direção de ajuste',
-    pararDeFazer: 'O que parar de fazer',
-    acaoInicial: 'Próxima ação prática',
+    chamaAtencao: 'O que seu resultado revela',
+    padraoRepetido: 'O padrão que te define',
+    comoAparece: 'Como isso vive em você',
+    gatilhos: 'O que ativa esse ciclo',
+    comoAtrapalha: 'O custo real desse padrão',
+    corrigirPrimeiro: 'A mudança que importa',
+    pararDeFazer: 'O que abandonar agora',
+    acaoInicial: 'Seu próximo passo',
   };
   if (!slug) return base;
-  if (slug.includes('execucao') || slug.includes('produtividade')) return { ...base, chamaAtencao: 'Onde sua execução trava', padraoRepetido: 'Seu tipo de bloqueio', comoAparece: 'Como isso aparece nos projetos', gatilhos: 'O que ativa a procrastinação', comoAtrapalha: 'O que isso causa no trabalho', corrigirPrimeiro: 'O que precisa mudar na execução', acaoInicial: 'Faça isso nos próximos 3 dias' };
-  if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) return { ...base, chamaAtencao: 'O que domina suas reações', padraoRepetido: 'Seu tipo de reatividade', comoAparece: 'Situações de reação excessiva', gatilhos: 'O que dispara suas reações', comoAtrapalha: 'Onde você perde o controle', corrigirPrimeiro: 'O que mudar nas reações', acaoInicial: 'Pratique isso na próxima vez' };
-  if (slug.includes('relacionamento') || slug.includes('apego')) return { ...base, chamaAtencao: 'Como você se conecta', padraoRepetido: 'Seu padrão nos relacionamentos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa o modo defensivo', comoAtrapalha: 'O que isso causa nos vínculos', corrigirPrimeiro: 'O que mudar nos vínculos', acaoInicial: 'Teste isso na próxima conversa difícil' };
-  if (slug.includes('autoimagem') || slug.includes('identidade')) return { ...base, chamaAtencao: 'Como você se enxerga', padraoRepetido: 'Sua distorção principal', comoAparece: 'Decisões que você evita', gatilhos: 'O que ativa sua autocrítica', comoAtrapalha: 'Onde essa visão te limita', corrigirPrimeiro: 'O que mudar na autoimagem', acaoInicial: 'Desafie isso esta semana' };
-  if (slug.includes('dinheiro') || slug.includes('financ')) return { ...base, chamaAtencao: 'Sua relação real com dinheiro', padraoRepetido: 'Seu perfil financeiro', comoAparece: 'Onde perde dinheiro sem perceber', gatilhos: 'O que ativa impulsos financeiros', comoAtrapalha: 'Como afeta suas decisões', corrigirPrimeiro: 'O que mudar com dinheiro', acaoInicial: 'Faça isso na próxima compra' };
+  if (slug.includes('execucao') || slug.includes('produtividade')) return { ...base, chamaAtencao: 'Onde sua execução trava', padraoRepetido: 'Seu tipo de bloqueio', comoAparece: 'Onde isso aparece nos projetos', gatilhos: 'O que ativa a procrastinação', comoAtrapalha: 'O que isso custa no trabalho', corrigirPrimeiro: 'O que precisa mudar na execução', acaoInicial: 'Faça isso nos próximos 3 dias' };
+  if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) return { ...base, chamaAtencao: 'O que domina suas reações', padraoRepetido: 'Seu tipo de reatividade', comoAparece: 'Quando você perde o controle', gatilhos: 'O que dispara suas reações', comoAtrapalha: 'O que você perde com isso', corrigirPrimeiro: 'O que mudar nas reações', acaoInicial: 'Na próxima vez, faça isso' };
+  if (slug.includes('relacionamento') || slug.includes('apego')) return { ...base, chamaAtencao: 'Como você se conecta', padraoRepetido: 'Seu padrão nos vínculos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa o modo defensivo', comoAtrapalha: 'O que isso custa nos vínculos', corrigirPrimeiro: 'O que mudar nos relacionamentos', acaoInicial: 'Teste isso na próxima conversa difícil' };
+  if (slug.includes('autoimagem') || slug.includes('identidade')) return { ...base, chamaAtencao: 'Como você se enxerga', padraoRepetido: 'Sua distorção principal', comoAparece: 'As decisões que você evita', gatilhos: 'O que ativa sua autocrítica', comoAtrapalha: 'Onde essa visão te limita', corrigirPrimeiro: 'O que mudar na autoimagem', acaoInicial: 'Desafie isso esta semana' };
+  if (slug.includes('dinheiro') || slug.includes('financ')) return { ...base, chamaAtencao: 'Sua relação real com dinheiro', padraoRepetido: 'Seu perfil financeiro', comoAparece: 'Onde perde dinheiro sem perceber', gatilhos: 'O que ativa impulsos financeiros', comoAtrapalha: 'O impacto nas suas decisões', corrigirPrimeiro: 'O que mudar com dinheiro', acaoInicial: 'Faça isso na próxima compra' };
   if (slug.includes('oculto') || slug.includes('hidden')) return { ...base, chamaAtencao: 'O que você não vê em si', padraoRepetido: 'O mecanismo escondido', comoAparece: 'Onde você sabota sem perceber', gatilhos: 'O que ativa o padrão', comoAtrapalha: 'As consequências invisíveis', corrigirPrimeiro: 'O que mudar nos padrões ocultos', acaoInicial: 'Observe isso nos próximos dias' };
   if (slug.includes('proposito') || slug.includes('sentido')) return { ...base, chamaAtencao: 'Seu nível de conexão', padraoRepetido: 'Seu tipo de desconexão', comoAparece: 'Sinais de piloto automático', gatilhos: 'O que ativa a sensação de vazio', comoAtrapalha: 'Onde a falta de rumo aparece', corrigirPrimeiro: 'O que mudar na busca de propósito', acaoInicial: 'Reflexão para esta semana' };
-  if (slug === 'padrao-comportamental') return { ...base, chamaAtencao: 'Seu padrão dominante', padraoRepetido: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa', comoAtrapalha: 'O que esse padrão causa', corrigirPrimeiro: 'O comportamento a mudar primeiro', acaoInicial: 'Faça isso nos próximos 3 dias' };
+  if (slug === 'padrao-comportamental') return { ...base, chamaAtencao: 'Seu padrão dominante', padraoRepetido: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa', comoAtrapalha: 'O que esse padrão custa', corrigirPrimeiro: 'O comportamento a mudar primeiro', acaoInicial: 'Faça isso nos próximos 3 dias' };
   return base;
 }
 
@@ -696,35 +669,30 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 
   return (
     <motion.section {...fade} transition={{ delay, duration: 0.4 }}>
-      <div className="flex items-center gap-3.5 mb-5">
-        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-primary/10 text-primary">
-          <ArrowUpDown className="w-4 h-4" />
-        </span>
-        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">Comparação com diagnóstico anterior</h2>
+      <div className="mb-6">
+        <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">Comparação com diagnóstico anterior</h2>
       </div>
-      <div className="pl-[42px] space-y-5">
-        {/* Score comparison bar */}
-        <div className="rounded-2xl border border-border/40 bg-card px-5 py-5 shadow-sm">
-          <div className="flex items-center justify-between mb-4">
+      <div className="space-y-5">
+        {/* Score comparison */}
+        <div className="rounded-2xl border border-border/20 bg-card/50 px-6 py-6">
+          <div className="flex items-center justify-between mb-5">
             <div className="text-center flex-1">
-              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-1">Anterior</p>
-              <p className="text-2xl font-bold text-muted-foreground">{evo.previous_score}%</p>
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-1">Anterior</p>
+              <p className="text-2xl font-serif font-bold text-muted-foreground">{evo.previous_score}%</p>
             </div>
             <div className="px-4">
-              <span className={`text-lg font-bold ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>
-                →
-              </span>
+              <span className={`text-lg font-light ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>→</span>
             </div>
             <div className="text-center flex-1">
-              <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-1">Atual</p>
-              <p className={`text-2xl font-bold ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-foreground'}`}>{evo.current_score}%</p>
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-1">Atual</p>
+              <p className={`text-2xl font-serif font-bold ${scoreDelta < 0 ? 'text-green-600' : scoreDelta > 0 ? 'text-destructive' : 'text-foreground'}`}>{evo.current_score}%</p>
             </div>
           </div>
           <div className="text-center">
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
-              scoreDirection === 'melhorou' ? 'bg-green-500/10 text-green-600' :
-              scoreDirection === 'piorou' ? 'bg-destructive/10 text-destructive' :
-              'bg-secondary text-muted-foreground'
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+              scoreDirection === 'melhorou' ? 'bg-green-500/8 text-green-600' :
+              scoreDirection === 'piorou' ? 'bg-destructive/8 text-destructive' :
+              'bg-secondary/50 text-muted-foreground'
             }`}>
               {scoreDirection === 'melhorou' && <TrendingDown className="w-3 h-3" />}
               {scoreDirection === 'piorou' && <TrendingUp className="w-3 h-3" />}
@@ -734,15 +702,14 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
           </div>
         </div>
 
-        {/* Improved axes */}
         {improved.length > 0 && (
           <div>
-            <p className="text-[9px] text-green-600/70 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+            <p className="text-[9px] text-green-600/60 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5">
               <TrendingDown className="w-3 h-3" /> Eixos que melhoraram
             </p>
             <div className="space-y-2">
               {improved.map((axis: any) => (
-                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-green-500/20 bg-green-500/[0.04] px-4 py-3">
+                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-green-500/15 bg-green-500/[0.03] px-5 py-3">
                   <span className="text-sm font-medium text-foreground">{axis.label}</span>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-muted-foreground">{axis.previous}%</span>
@@ -755,15 +722,14 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
           </div>
         )}
 
-        {/* Worsened axes */}
         {worsened.length > 0 && (
           <div>
-            <p className="text-[9px] text-destructive/70 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+            <p className="text-[9px] text-destructive/60 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5">
               <TrendingUp className="w-3 h-3" /> Eixos que pioraram
             </p>
             <div className="space-y-2">
               {worsened.map((axis: any) => (
-                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-destructive/20 bg-destructive/[0.04] px-4 py-3">
+                <div key={axis.key} className="flex items-center justify-between rounded-xl border border-destructive/15 bg-destructive/[0.03] px-5 py-3">
                   <span className="text-sm font-medium text-foreground">{axis.label}</span>
                   <div className="flex items-center gap-2 text-xs">
                     <span className="text-muted-foreground">{axis.previous}%</span>
@@ -776,15 +742,14 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
           </div>
         )}
 
-        {/* Unchanged axes */}
         {unchanged.length > 0 && (
           <div>
-            <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-3 flex items-center gap-1.5">
+            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5">
               <Minus className="w-3 h-3" /> Sem alteração significativa
             </p>
             <div className="flex flex-wrap gap-2">
               {unchanged.map((axis: any) => (
-                <span key={axis.key} className="text-xs px-3 py-1.5 rounded-lg border border-border/40 bg-secondary/50 text-muted-foreground font-medium">
+                <span key={axis.key} className="text-xs px-3 py-1.5 rounded-lg border border-border/25 bg-secondary/30 text-muted-foreground font-medium">
                   {axis.label}: {axis.value}%
                 </span>
               ))}
@@ -792,11 +757,10 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
           </div>
         )}
 
-        {/* AI summary text */}
         {evo.summary_text && (
-          <div className="rounded-2xl border border-border/30 bg-card px-5 py-4 shadow-sm">
-            <p className="text-[9px] text-muted-foreground/50 uppercase tracking-widest font-semibold mb-2">Análise da evolução</p>
-            <p className="text-sm text-muted-foreground leading-[1.8]">{evo.summary_text}</p>
+          <div className="rounded-2xl border border-border/20 bg-card/50 px-6 py-5">
+            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2.5">Análise da evolução</p>
+            <p className="text-[15px] text-muted-foreground leading-[1.85]">{evo.summary_text}</p>
           </div>
         )}
       </div>
@@ -804,11 +768,10 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
   );
 }
 
-/* ── Action Preview Section (3 actions) — reads from DB only, no frontend generation ── */
+/* ── Action Preview Section — NO numbering in section header ── */
 function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any }) {
   const { user, isPremium, isSuperAdmin } = useAuth();
   const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
-  
 
   useEffect(() => {
     const resultId = (result as any).id;
@@ -833,7 +796,6 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
         }
         setActions(unique);
       }
-      // No fallback — if no actions in DB, show nothing
     };
     fetchActions();
   }, [(result as any).id, user?.id]);
@@ -844,77 +806,74 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
 
   return (
     <motion.section {...fade} transition={{ delay: 0.38, duration: 0.4 }}>
-      <div className="flex items-center gap-3.5 mb-5">
-        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-green-500/10 text-green-600">
-          <Target className="w-4 h-4" />
-        </span>
-        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">
-          3 ações para começar a mudar esse padrão
+      <div className="mb-6">
+        <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">
+          Ações para começar a mudar esse padrão
         </h2>
       </div>
-      <div className="pl-[42px] space-y-3">
+      <div className="space-y-3">
         {actions.slice(0, 3).map((action, i) => {
           const isLocked = !showFull && i > 0;
           return (
-            <div key={i} className={`border rounded-xl px-5 py-4 shadow-sm relative overflow-hidden ${
+            <div key={i} className={`border rounded-xl px-6 py-5 relative overflow-hidden ${
               isLocked 
-                ? 'border-border/30 bg-secondary/30' 
-                : 'border-green-500/20 bg-green-500/[0.04]'
+                ? 'border-border/20 bg-secondary/20' 
+                : 'border-green-500/15 bg-green-500/[0.03]'
             }`}>
               <div className="flex items-start gap-3">
-                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
-                  isLocked ? 'bg-muted/50 text-muted-foreground/40' : 'bg-green-500/15 text-green-600'
+                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-medium shrink-0 mt-0.5 ${
+                  isLocked ? 'bg-muted/30 text-muted-foreground/30' : 'bg-green-500/10 text-green-600'
                 }`}>
                   {i + 1}
                 </span>
                 <div className="flex-1">
-                  <p className={`text-xs font-medium leading-relaxed ${isLocked ? 'text-muted-foreground/40' : 'text-muted-foreground/70'}`}>
-                    Quando <span className={`font-semibold ${isLocked ? 'text-muted-foreground/50' : 'text-foreground'}`}>
+                  <p className={`text-xs font-medium leading-relaxed ${isLocked ? 'text-muted-foreground/30' : 'text-muted-foreground/60'}`}>
+                    Quando <span className={`font-semibold ${isLocked ? 'text-muted-foreground/40' : 'text-foreground'}`}>
                       {isLocked ? action.trigger.slice(0, 25) + '...' : action.trigger}
                     </span>
                   </p>
-                  <p className={`text-sm font-semibold leading-[1.7] mt-1 ${
-                    isLocked ? 'text-muted-foreground/30' : 'text-green-700 dark:text-green-400'
+                  <p className={`text-[15px] font-medium leading-[1.8] mt-1.5 ${
+                    isLocked ? 'text-muted-foreground/20' : 'text-green-700 dark:text-green-400'
                   }`}>
                     → {isLocked ? action.action.slice(0, 30) + '...' : action.action}
                   </p>
                 </div>
               </div>
               {isLocked && (
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/60 to-background/90 flex items-center justify-end pr-4">
-                  <Lock className="w-4 h-4 text-muted-foreground/40" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/50 to-background/80 flex items-center justify-end pr-4">
+                  <Lock className="w-4 h-4 text-muted-foreground/30" />
                 </div>
               )}
             </div>
           );
         })}
 
-        {/* Paywall — only for free users */}
+        {/* Paywall */}
         {!showFull && (
-          <div className="mt-5 border border-destructive/20 bg-destructive/[0.03] rounded-2xl px-6 py-6 space-y-4">
-            <div className="space-y-1.5 text-center">
-              <p className="text-[15px] text-foreground font-bold leading-snug">
+          <div className="mt-6 border border-destructive/15 bg-destructive/[0.02] rounded-2xl px-6 py-6 space-y-5">
+            <div className="space-y-2 text-center">
+              <p className="text-[15px] text-foreground font-semibold leading-snug">
                 Você já sabe o que está errado.
               </p>
-              <p className="text-sm text-foreground/80 font-medium">
+              <p className="text-sm text-foreground/70 font-medium">
                 Mas continua fazendo igual.
               </p>
-              <p className="text-sm text-destructive font-bold">
+              <p className="text-sm text-destructive font-semibold">
                 Sem execução, nada muda.
               </p>
             </div>
 
-            <p className="text-[11px] text-muted-foreground text-center">
+            <p className="text-[11px] text-muted-foreground/50 text-center">
               +32.847 mulheres já estão executando esse plano
             </p>
 
-            <div className="border-t border-destructive/10 pt-4">
-              <p className="text-xs text-destructive/80 text-center font-medium leading-relaxed mb-4">
+            <div className="border-t border-destructive/8 pt-5">
+              <p className="text-xs text-destructive/70 text-center font-medium leading-relaxed mb-4">
                 Se você não fizer isso, daqui 30 dias você ainda vai estar no mesmo padrão.
               </p>
               <button
                 onClick={() => window.location.href = '/premium'}
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-semibold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-sm"
               >
                 <Crown className="w-4 h-4" />
                 Desbloquear acompanhamento — R$9,99
@@ -927,23 +886,21 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
   );
 }
 
-/* ── Sub-components ── */
+/* ── Sub-components — Section WITHOUT numbering ── */
 
-function Section({ num, title, delay = 0, accent, children }: { num: number; title: string; delay?: number; accent?: string; children: React.ReactNode }) {
-  const accentBg = accent === 'destructive' ? 'bg-destructive/10 text-destructive' 
-    : accent === 'green' ? 'bg-green-500/10 text-green-600'
-    : accent === 'primary' ? 'bg-primary/10 text-primary'
-    : 'bg-primary/10 text-primary';
+function Section({ title, delay = 0, accent, children }: { title: string; delay?: number; accent?: string; children: React.ReactNode }) {
+  const accentClass = accent === 'destructive' ? 'bg-destructive/40' 
+    : accent === 'green' ? 'bg-green-500/40'
+    : accent === 'primary' ? 'bg-primary/40'
+    : 'bg-primary/20';
 
   return (
     <motion.section {...fade} transition={{ delay, duration: 0.4 }}>
-      <div className="flex items-center gap-3.5 mb-5">
-        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold ${accentBg}`}>
-          {num}
-        </span>
-        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">{title}</h2>
+      <div className="flex items-center gap-3 mb-6">
+        <span className={`w-1 h-5 rounded-full ${accentClass}`} />
+        <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">{title}</h2>
       </div>
-      <div className="pl-[42px]">
+      <div className="pl-4">
         {children}
       </div>
     </motion.section>
@@ -952,23 +909,23 @@ function Section({ num, title, delay = 0, accent, children }: { num: number; tit
 
 function CardBlock({ variant = 'default', children }: { variant?: 'default' | 'alert' | 'primary' | 'success' | 'muted'; children: React.ReactNode }) {
   const styles = {
-    default: 'border-border/40 bg-card shadow-sm',
-    alert: 'border-destructive/15 bg-destructive/[0.03] shadow-sm',
-    primary: 'border-primary/15 bg-primary/[0.03] shadow-sm',
-    success: 'border-green-500/20 bg-green-500/[0.04] shadow-sm',
-    muted: 'border-border/25 bg-secondary/20',
+    default: 'border-border/25 bg-card/50',
+    alert: 'border-destructive/10 bg-destructive/[0.02]',
+    primary: 'border-primary/10 bg-primary/[0.02]',
+    success: 'border-green-500/15 bg-green-500/[0.03]',
+    muted: 'border-border/15 bg-secondary/15',
   };
   return <div className={`border rounded-2xl px-6 py-5 ${styles[variant]}`}>{children}</div>;
 }
 
 function QuickReadCell({ icon, label, value, bold, colorClass }: { icon: React.ReactNode; label: string; value: string; bold?: boolean; colorClass?: string }) {
   return (
-    <div className="bg-background px-5 py-5 border-b border-r border-border/15 last:border-r-0 sm:[&:nth-child(odd):last-child]:col-span-2">
-      <div className="flex items-center gap-1.5 mb-2">
+    <div className="bg-background px-6 py-5 border-b border-r border-border/10 last:border-r-0 sm:[&:nth-child(odd):last-child]:col-span-2">
+      <div className="flex items-center gap-1.5 mb-2.5">
         {icon}
-        <p className="text-[9px] text-muted-foreground/45 uppercase tracking-widest">{label}</p>
+        <p className="text-[9px] text-muted-foreground/35 uppercase tracking-[0.2em]">{label}</p>
       </div>
-      <p className={`text-sm leading-relaxed break-words hyphens-auto ${bold ? 'font-bold' : 'font-medium'} ${colorClass || 'text-foreground'}`}>
+      <p className={`text-sm leading-relaxed break-words hyphens-auto ${bold ? 'font-semibold' : 'font-medium'} ${colorClass || 'text-foreground'}`}>
         {value}
       </p>
     </div>
