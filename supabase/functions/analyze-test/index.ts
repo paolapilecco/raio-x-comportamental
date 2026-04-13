@@ -762,7 +762,24 @@ function normalizeResult(
   // Trim sections exceeding maxSentences
   const trimmed: string[] = [];
   const violations: string[] = [];
-  if (template?.sections) {
+
+  // Storyboard mode: trim based on slots
+  if (template?.storyboard?.acts?.length) {
+    for (const act of template.storyboard.acts) {
+      for (const slot of act.slots) {
+        if (!slot.enabled || slot.maxSentences <= 0) continue;
+        const val = result[slot.key];
+        if (typeof val !== "string" || !val) continue;
+        if (countSentences(val) > slot.maxSentences) {
+          violations.push(`${slot.label}: ${countSentences(val)}/${slot.maxSentences}`);
+          result[slot.key] = trimSentences(val, slot.maxSentences);
+          trimmed.push(slot.key);
+        }
+      }
+    }
+  }
+  // Legacy mode: flat sections
+  else if (template?.sections) {
     for (const section of template.sections) {
       const max = section.maxSentences ?? section.maxSize ?? 0;
       if (max <= 0) continue;
