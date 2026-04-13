@@ -6,6 +6,8 @@ export interface ActionPlanDay {
   id: string;
   day_number: number;
   action_text: string;
+  gatilho: string;
+  acao: string;
   completed: boolean;
   completed_at: string | null;
   notes: string;
