@@ -13,7 +13,6 @@ import { assembleReport } from '@/lib/reportAssembler';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { createActionPlanTracking } from '@/hooks/useActionPlan';
-import { buildActionPreviews, actionPreviewsToStrings } from '@/lib/buildActionPreview';
 import { trackEvent, RetestOrigin } from '@/lib/trackEvent';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -366,11 +365,15 @@ const Diagnostic = () => {
 
       await updateCentralProfile(user.id);
 
-      // Create action plan tracking (non-blocking)
+      // Create action plan tracking from AI-generated microAcoes (non-blocking)
       if (savedResult?.id) {
         try {
-          const previews = buildActionPreviews(analysisResult);
-          const actions = actionPreviewsToStrings(previews);
+          const aiResult = analysisResult as any;
+          const microAcoes = Array.isArray(aiResult.microAcoes) ? aiResult.microAcoes : [];
+          const actions: string[] = microAcoes
+            .filter((a: any) => a?.gatilho && a?.acao)
+            .slice(0, 3)
+            .map((a: any) => `Quando ${a.gatilho} → ${a.acao}`);
 
           if (actions.length > 0) {
             await createActionPlanTracking(user.id, savedResult.id, actions);

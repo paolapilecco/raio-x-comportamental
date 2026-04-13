@@ -266,7 +266,11 @@ Retorne APENAS este JSON, sem markdown, sem texto adicional:
   "pararDeFazer": "comportamento a parar em 1 frase",
   "acaoInicial": "ação concreta dos próximos 7 dias + gancho reteste",
   "selfSabotageCycle": ["passo 1", "passo 2", "passo 3", "passo 4"],
-  "microAcoes": ["ação 1", "ação 2", "ação 3"],
+  "microAcoes": [
+    {"gatilho": "situação específica que ativa o padrão", "acao": "ação concreta com verbo claro, tempo definido e instrução física ou mental"},
+    {"gatilho": "outro gatilho real do diagnóstico", "acao": "outra ação executável imediata"},
+    {"gatilho": "terceiro gatilho identificado", "acao": "terceira ação prática com prazo ou medida"}
+  ],
   "exitStrategy": ["passo 1", "passo 2", "passo 3"],
   "blindSpot": "ponto cego em 1 frase",
   "mentalCommand": "comando mental em 1 frase curta",
@@ -286,7 +290,15 @@ Retorne APENAS este JSON, sem markdown, sem texto adicional:
   "whatNotToDo": ["o que não fazer 1", "o que não fazer 2"],
   "lifeImpact": [{"pillar": "área", "impact": "impacto"}],
   "focoMudanca": "foco da mudança em 1 frase curta"
-}`;
+}
+
+REGRAS OBRIGATÓRIAS PARA microAcoes:
+- Cada ação DEVE ter "gatilho" (situação específica real) e "acao" (instrução executável)
+- Formato obrigatório: "Quando [gatilho] → [ação com verbo claro + tempo + instrução concreta]"
+- Cada ação DEVE ter: verbo claro, tempo definido (agora, por 5 minutos, hoje), contexto específico (gatilho real), instrução física ou mental concreta
+- PROIBIDO: frases genéricas como "observe seus padrões", "mude seu comportamento", "reflita sobre isso"
+- Exemplo válido: {"gatilho": "perceber que está evitando um conflito", "acao": "pare, conte até 5 e diga em voz alta o que está evitando. Faça isso antes de sair da situação"}
+- Exemplo inválido: {"gatilho": "situações difíceis", "acao": "observe seus padrões"}`;
 
 function buildUserPrompt(
   userContext: string,
