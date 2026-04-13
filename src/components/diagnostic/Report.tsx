@@ -7,8 +7,7 @@ import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect, memo, useCallback } from 'react';
-import { Flame, Circle } from 'lucide-react';
+import { useState, useEffect, memo } from 'react';
 import LifeMapReport from './LifeMapReport';
 import { ReportGamification } from './ReportGamification';
 
