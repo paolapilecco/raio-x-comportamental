@@ -1,11 +1,34 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
+// ═══════════════════════════════════════════════════════════════
+// CORS & UTILITIES
+// ═══════════════════════════════════════════════════════════════
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function errorResponse(message: string, status: number): Response {
+  return jsonResponse({ error: message }, status);
+}
+
+function fallbackResponse(): Response {
+  return jsonResponse({ useFallback: true });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════
 
 interface ScoreEntry {
   key: string;
@@ -19,11 +42,6 @@ interface PromptRecord {
   prompt_type: string;
   content: string;
   title: string;
-}
-
-interface ReportTemplate {
-  sections: TemplateSection[];
-  output_rules: OutputRules;
 }
 
 interface TemplateSection {
@@ -49,6 +67,11 @@ interface OutputRules {
   requiredBlocks?: string[];
   forbiddenLanguage?: string[];
   emotionalArchitecture?: string;
+}
+
+interface ReportTemplate {
+  sections: TemplateSection[];
+  output_rules: OutputRules;
 }
 
 interface StructuredAnswer {
@@ -79,36 +102,27 @@ interface EvolutionComparison {
   summary_text: string;
 }
 
-function jsonResponse(body: Record<string, unknown>, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-function errorResponse(message: string, status: number): Response {
-  return jsonResponse({ error: message }, status);
-}
-
-function fallbackResponse(): Response {
-  return jsonResponse({ useFallback: true });
-}
+// ═══════════════════════════════════════════════════════════════
+// RATE LIMITER
+// ═══════════════════════════════════════════════════════════════
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 10;
 
 function checkRateLimit(userId: string): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(userId);
   if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(userId, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    rateLimitMap.set(userId, { count: 1, resetAt: now + 60_000 });
     return true;
   }
-  if (entry.count >= RATE_LIMIT_MAX) return false;
+  if (entry.count >= 10) return false;
   entry.count++;
   return true;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE 1: SCORE ANALYSIS
+// ═══════════════════════════════════════════════════════════════
 
 function classifyIntensity(pct: number): string {
   if (pct >= 75) return "ALTO";
@@ -116,57 +130,90 @@ function classifyIntensity(pct: number): string {
   return "LEVE";
 }
 
-function buildScoresSummary(sortedScores: ScoreEntry[]): string {
-  return sortedScores
-    .map((s) => `${s.key}: ${s.percentage}% — ${classifyIntensity(s.percentage)}`)
-    .join("\n");
-}
+function buildDataBlock(sortedScores: ScoreEntry[], answers: StructuredAnswer[]): string {
+  const lines: string[] = ["═══ DADOS QUANTITATIVOS DO USUÁRIO ═══"];
 
-function buildDominantSection(dominant: ScoreEntry): string {
-  return `PADRÃO DOMINANTE: ${dominant.key} (${dominant.percentage}%)`;
-}
+  // Scores por eixo
+  lines.push("\nSCORES POR EIXO (ordem decrescente):");
+  sortedScores.forEach((s) => {
+    lines.push(`  ${s.key}: ${s.percentage}% — ${classifyIntensity(s.percentage)}`);
+  });
 
-function buildSecondarySection(secondary: ScoreEntry[]): string {
-  if (secondary.length === 0) return "PADRÕES SECUNDÁRIOS ATIVOS (score ≥ 40%): NENHUM";
-  return `PADRÕES SECUNDÁRIOS ATIVOS (score ≥ 40%):\n${secondary
-    .map((s) => `- ${s.key}: ${s.percentage}%`)
-    .join("\n")}`;
-}
+  // Padrão dominante
+  const dominant = sortedScores[0];
+  lines.push(`\nPADRÃO DOMINANTE: ${dominant.key} (${dominant.percentage}%)`);
 
-function buildConflictsSection(scores: ScoreEntry[]): string {
-  const highScores = scores.filter((s) => s.percentage >= 50);
-  const conflicts: string[] = [];
-
-  for (let i = 0; i < highScores.length; i++) {
-    for (let j = i + 1; j < highScores.length; j++) {
-      conflicts.push(
-        `CONFLITO DETECTADO: ${highScores[i].key} (${highScores[i].percentage}%) × ${highScores[j].key} (${highScores[j].percentage}%)`
-      );
-    }
+  // Secundários ativos
+  const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
+  if (secondary.length > 0) {
+    lines.push("PADRÕES SECUNDÁRIOS ATIVOS (score ≥ 40%):");
+    secondary.forEach((s) => lines.push(`  - ${s.key}: ${s.percentage}%`));
+  } else {
+    lines.push("PADRÕES SECUNDÁRIOS ATIVOS: NENHUM");
   }
 
-  if (conflicts.length === 0) return "CONFLITOS DETECTADOS (dois eixos ≥ 50%): NENHUM";
-  return `CONFLITOS DETECTADOS (dois eixos ≥ 50%):\n${conflicts.join("\n")}`;
+  // Conflitos
+  const highScores = sortedScores.filter((s) => s.percentage >= 50);
+  const conflicts: string[] = [];
+  for (let i = 0; i < highScores.length; i++) {
+    for (let j = i + 1; j < highScores.length; j++) {
+      conflicts.push(`  ${highScores[i].key} (${highScores[i].percentage}%) × ${highScores[j].key} (${highScores[j].percentage}%)`);
+    }
+  }
+  if (conflicts.length > 0) {
+    lines.push("CONFLITOS DETECTADOS (dois eixos ≥ 50%):");
+    conflicts.forEach((c) => lines.push(c));
+  }
+
+  // Evidências comportamentais
+  if (answers && answers.length > 0) {
+    const extremes = answers.filter((a) => (a.mappedScore ?? 0) >= 80);
+    if (extremes.length > 0) {
+      lines.push("\nEVIDÊNCIAS COMPORTAMENTAIS (respostas com score ≥ 80):");
+      extremes.forEach((a) => {
+        const score = a.mappedScore ?? 0;
+        const opt = a.chosenOption ? `"${a.chosenOption}"` : `score ${score}`;
+        lines.push(`  - "${a.questionText}" → ${opt} (score: ${score})`);
+      });
+    }
+
+    // NOVO: evidências moderadas para enriquecer contexto
+    const moderates = answers.filter((a) => {
+      const s = a.mappedScore ?? 0;
+      return s >= 60 && s < 80;
+    }).slice(0, 5);
+    if (moderates.length > 0) {
+      lines.push("\nPADRÕES MODERADOS (score 60-79 — contexto adicional):");
+      moderates.forEach((a) => {
+        lines.push(`  - "${a.questionText}" → score ${a.mappedScore ?? 0} [eixos: ${a.axes.join(", ")}]`);
+      });
+    }
+
+    // NOVO: distribuição de respostas por eixo
+    const axisAnswerCount: Record<string, { high: number; moderate: number; low: number }> = {};
+    answers.forEach((a) => {
+      const s = a.mappedScore ?? 0;
+      a.axes.forEach((axis) => {
+        if (!axisAnswerCount[axis]) axisAnswerCount[axis] = { high: 0, moderate: 0, low: 0 };
+        if (s >= 80) axisAnswerCount[axis].high++;
+        else if (s >= 50) axisAnswerCount[axis].moderate++;
+        else axisAnswerCount[axis].low++;
+      });
+    });
+    lines.push("\nDISTRIBUIÇÃO DE RESPOSTAS POR EIXO:");
+    Object.entries(axisAnswerCount)
+      .sort((a, b) => b[1].high - a[1].high)
+      .forEach(([axis, counts]) => {
+        lines.push(`  ${axis}: ${counts.high} alta | ${counts.moderate} moderada | ${counts.low} baixa`);
+      });
+  }
+
+  return lines.join("\n");
 }
 
-function buildEvidencesSection(answers: StructuredAnswer[]): string {
-  if (!answers || answers.length === 0) return "EVIDÊNCIAS COMPORTAMENTAIS: Dados não disponíveis";
-
-  const extremes = answers.filter((a) => {
-    const score = a.mappedScore ?? 0;
-    return score >= 80;
-  });
-
-  if (extremes.length === 0) return "EVIDÊNCIAS COMPORTAMENTAIS (respostas com score ≥ 80): NENHUMA";
-
-  const lines = extremes.map((a) => {
-    const score = a.mappedScore ?? 0;
-    const optionText = a.chosenOption ? `"${a.chosenOption}"` : `score ${score}`;
-    return `- "${a.questionText}" → ${optionText} (score: ${score})`;
-  });
-
-  return `EVIDÊNCIAS COMPORTAMENTAIS (respostas com score ≥ 80):\n${lines.join("\n")}`;
-}
+// ═══════════════════════════════════════════════════════════════
+// MODULE 2: EVOLUTION COMPARISON
+// ═══════════════════════════════════════════════════════════════
 
 function buildEvolutionComparison(
   currentScores: ScoreEntry[],
@@ -177,248 +224,180 @@ function buildEvolutionComparison(
   const improved: EvolutionComparison["improved_axes"] = [];
   const worsened: EvolutionComparison["worsened_axes"] = [];
   const unchanged: EvolutionComparison["unchanged_axes"] = [];
-
   const THRESHOLD = 3;
 
   for (const curr of currentScores) {
     const prev = prevMap.get(curr.key);
     if (!prev) continue;
     const delta = curr.percentage - prev.percentage;
-    if (delta <= -THRESHOLD) {
-      improved.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
-    } else if (delta >= THRESHOLD) {
-      worsened.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
-    } else {
-      unchanged.push({ key: curr.key, label: curr.label, value: curr.percentage });
-    }
+    if (delta <= -THRESHOLD) improved.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
+    else if (delta >= THRESHOLD) worsened.push({ key: curr.key, label: curr.label, previous: prev.percentage, current: curr.percentage, delta });
+    else unchanged.push({ key: curr.key, label: curr.label, value: curr.percentage });
   }
 
-  const prevAvg = previousScores.length > 0 ? Math.round(previousScores.reduce((a, b) => a + b.percentage, 0) / previousScores.length) : 0;
-  const currAvg = currentScores.length > 0 ? Math.round(currentScores.reduce((a, b) => a + b.percentage, 0) / currentScores.length) : 0;
+  const avg = (arr: ScoreEntry[]) => arr.length > 0 ? Math.round(arr.reduce((a, b) => a + b.percentage, 0) / arr.length) : 0;
 
   return {
     improved_axes: improved,
     worsened_axes: worsened,
     unchanged_axes: unchanged,
-    previous_score: prevAvg,
-    current_score: currAvg,
+    previous_score: avg(previousScores),
+    current_score: avg(currentScores),
     previous_date: previousDate,
   };
 }
 
-function buildEvolutionPromptSection(comparison: Omit<EvolutionComparison, "summary_text">): string {
-  const lines: string[] = ["--- COMPARAÇÃO COM DIAGNÓSTICO ANTERIOR ---"];
-  lines.push(`Score médio anterior: ${comparison.previous_score}% | Score médio atual: ${comparison.current_score}%`);
-  lines.push(`Data do diagnóstico anterior: ${comparison.previous_date}`);
+function buildEvolutionBlock(comparison: Omit<EvolutionComparison, "summary_text">): string {
+  const lines: string[] = ["═══ COMPARAÇÃO COM DIAGNÓSTICO ANTERIOR ═══"];
+  lines.push(`Score médio anterior: ${comparison.previous_score}% | Atual: ${comparison.current_score}%`);
+  lines.push(`Data anterior: ${comparison.previous_date}`);
 
   if (comparison.improved_axes.length > 0) {
-    lines.push(`\nEIXOS QUE MELHORARAM (score diminuiu):`);
-    comparison.improved_axes.forEach((a) => lines.push(`- ${a.label}: ${a.previous}% → ${a.current}% (${a.delta}%)`));
+    lines.push("\nMELHORARAM:");
+    comparison.improved_axes.forEach((a) => lines.push(`  - ${a.label}: ${a.previous}% → ${a.current}% (${a.delta}%)`));
   }
   if (comparison.worsened_axes.length > 0) {
-    lines.push(`\nEIXOS QUE PIORARAM (score aumentou):`);
-    comparison.worsened_axes.forEach((a) => lines.push(`- ${a.label}: ${a.previous}% → ${a.current}% (+${a.delta}%)`));
+    lines.push("\nPIORARAM:");
+    comparison.worsened_axes.forEach((a) => lines.push(`  - ${a.label}: ${a.previous}% → ${a.current}% (+${a.delta}%)`));
   }
   if (comparison.unchanged_axes.length > 0) {
-    lines.push(`\nEIXOS SEM ALTERAÇÃO SIGNIFICATIVA:`);
-    comparison.unchanged_axes.forEach((a) => lines.push(`- ${a.label}: ${a.value}%`));
+    lines.push("\nINALTERADOS:");
+    comparison.unchanged_axes.forEach((a) => lines.push(`  - ${a.label}: ${a.value}%`));
   }
 
-  lines.push(`\nGere o campo "evolutionSummary" com base nesses dados. Direto, sem motivacional, mostrando claramente o que melhorou, piorou e permanece igual.`);
-
+  lines.push(`\nGere "evolutionSummary" direto, sem motivacional, mostrando o que mudou.`);
   return lines.join("\n");
 }
 
-const SYSTEM_PROMPT = `Você é um especialista em análise comportamental e Terapia Neurocientífica. Gere um relatório diagnóstico baseado exclusivamente nos dados reais do usuário fornecidos abaixo.
+// ═══════════════════════════════════════════════════════════════
+// MODULE 3: PROMPT BUILDER
+// ═══════════════════════════════════════════════════════════════
 
-REGRAS DE PROFUNDIDADE PSICOLÓGICA:
-1. NUNCA use linguagem genérica, motivacional ou de autoajuda.
-2. NUNCA escreva frases que poderiam servir para qualquer pessoa — cada frase deve ser impossível de aplicar a outro perfil.
-3. O diagnóstico deve revelar algo que a pessoa NÃO sabe sobre si mesma — não repetir o que ela já sabe.
-4. Cada bloco deve trazer INFORMAÇÃO NOVA — nunca reformular o que já foi dito em outro campo.
-5. Use linguagem direta, psicológica, precisa — sem rodeios, sem amenizar, sem psicologuês vazio.
-6. O "chamaAtencao" deve ser o insight mais REVELADOR — algo que cause impacto real de reconhecimento.
-7. O "padraoRepetido" deve descrever o MECANISMO exato — como o ciclo se instala, não apenas nomeá-lo.
-8. O "corePain" deve ir na CAUSA por trás dos sintomas — não no sintoma em si.
-9. O "comoAparece" deve descrever situações CONCRETAS e observáveis — não abstrações.
-10. PROIBIDO: "busque equilíbrio", "tenha mais consciência", "acredite em si", "saia da zona de conforto", "pratique o autoconhecimento".
+const SYSTEM_PROMPT = `Você é um analista comportamental de alta precisão. Seu trabalho é revelar o que a pessoa NÃO sabe sobre si mesma.
+
+PRINCÍPIOS INEGOCIÁVEIS:
+1. Cada frase deve ser IMPOSSÍVEL de aplicar a outro perfil — se serve para qualquer pessoa, está errada
+2. O diagnóstico revela algo que a pessoa NÃO sabe — nunca repita o que ela já disse
+3. Cada bloco traz INFORMAÇÃO NOVA — zero reformulação do que já foi dito
+4. Linguagem direta, precisa, sem rodeios — sem amenizar, sem "psicologuês" vazio
+5. PROIBIDO: "busque equilíbrio", "tenha consciência", "acredite em si", "saia da zona de conforto", "pratique autoconhecimento", "talvez", "pode ser que"
 
 REGRA CRÍTICA PARA microAcoes:
-Você DEVE gerar EXATAMENTE 3 microAcoes. Cada uma DEVE ter "gatilho" (situação concreta e específica) e "acao" (comportamento executável com verbo forte, contexto e tempo).
-Se você gerar menos de 3, o sistema REJEITARÁ sua resposta inteira e você será chamado novamente.
-As microAcoes são a parte MAIS IMPORTANTE do relatório — sem elas, o produto não funciona.
+Gere EXATAMENTE 3 microAcoes. Cada uma com "gatilho" (situação concreta) e "acao" (verbo forte + contexto + tempo).
+Se gerar menos de 3, será REJEITADO.
+microAcoes[0] → ataca PADRÃO DOMINANTE
+microAcoes[1] → ataca EIXO COM MAIOR SCORE (%)
+microAcoes[2] → ataca COMPORTAMENTO RECORRENTE das evidências (score ≥ 80)
 
-Retorne exclusivamente um JSON válido sem nenhum texto antes ou depois.`;
+QUALIDADE DO GATILHO:
+- CORRETO: "quando estiver adiando uma conversa difícil com alguém do trabalho por medo de rejeição"
+- ERRADO: "quando se sentir mal", "em situações difíceis", "quando estiver estressada"
 
-// ═══════════════════════════════════════════════════════════════
-// UNIFIED SCHEMA — duplicates eliminated
-// ═══════════════════════════════════════════════════════════════
+QUALIDADE DA AÇÃO:
+- CORRETO: "pare, diga em voz alta 'estou evitando isso por medo, não por estratégia' e envie a mensagem em até 3 minutos"
+- ERRADO: "respire fundo", "observe seus padrões", "reflita sobre isso"
 
-function buildDynamicOutputSchema(template: ReportTemplate | null): string {
-  // Unified fields — NO duplicates. Each concept appears exactly once.
-  const FIXED_FIELDS: Record<string, string> = {
-    // === Quick Read (resumo executivo) ===
-    leituraRapida: '"resumo executivo do diagnóstico em 2-3 frases — deve ser compreensível por leigos e capturar a essência do relatório inteiro"',
-    // === Profile & Identity ===
+Retorne APENAS JSON válido. Sem markdown, sem texto antes ou depois.`;
+
+function buildOutputSchema(template: ReportTemplate | null): string {
+  const schema: Record<string, string> = {
+    leituraRapida: '"resumo executivo do diagnóstico em 2-3 frases"',
     profileName: '"nome do perfil comportamental"',
-    combinedTitle: '"título do relatório que captura o padrão central"',
+    combinedTitle: '"título que captura o padrão central"',
     perfilComportamental: '"descrição do perfil em 3 frases"',
     mentalState: '"estado mental atual em 1 frase"',
-    // === Diagnosis Core ===
     diagnosis: '"diagnóstico central em 3 frases"',
     criticalDiagnosis: '"diagnóstico crítico em 2 frases"',
-    corePain: '"dor central em 2 frases"',
-    mechanism: '"mecanismo central em 2 frases"',
+    corePain: '"dor central — causa raiz, não o sintoma"',
+    mechanism: '"mecanismo de como o padrão se instala"',
     contradiction: '"contradição interna em 1 frase"',
-    blindSpot: '"ponto cego em 1 frase"',
-    // === Patterns & Behaviors ===
-    triggers: '["gatilho concreto 1", "gatilho concreto 2", "gatilho concreto 3"]',
-    mentalTraps: '["armadilha mental 1", "armadilha mental 2"]',
-    selfSabotageCycle: '["passo 1 do ciclo", "passo 2", "passo 3", "passo 4"]',
-    comoAparece: '"como o padrão aparece na rotina — 2 frases com situações concretas"',
-    // === Impact ===
-    lifeImpact: '[{"pillar": "área da vida", "impact": "impacto concreto"}]',
-    futureConsequence: '"o que acontece se esse padrão continuar — 3 frases diretas"',
-    // === Direction & Action ===
-    direction: '"direção de mudança resumida"',
+    blindSpot: '"ponto cego revelador"',
+    chamaAtencao: '"insight mais impactante — algo que cause reconhecimento"',
+    padraoRepetido: '"mecanismo exato do ciclo — como se instala, não apenas o nome"',
+    comoAparece: '"2 situações CONCRETAS e observáveis na rotina"',
+    triggers: '["gatilho concreto 1", "gatilho 2", "gatilho 3"]',
+    mentalTraps: '["armadilha 1", "armadilha 2"]',
+    selfSabotageCycle: '["passo 1", "passo 2", "passo 3", "passo 4"]',
+    lifeImpact: '[{"pillar": "área", "impact": "impacto concreto"}]',
+    futureConsequence: '"consequência real se o padrão continuar — 3 frases"',
+    direction: '"direção de mudança"',
     keyUnlockArea: '"área chave de desbloqueio"',
-    blockingPoint: '"ponto de travamento em 1 frase"',
-    focoMudanca: '"foco da mudança em 1 frase curta"',
-    whatNotToDo: '["o que não fazer 1", "o que não fazer 2"]',
+    blockingPoint: '"ponto de travamento"',
+    focoMudanca: '"próxima ação prática"',
+    whatNotToDo: '["não fazer 1", "não fazer 2"]',
     exitStrategy: '["passo 1", "passo 2", "passo 3"]',
-    mentalCommand: '"comando mental em 1 frase curta"',
-    // === Micro Actions (always 3) ===
+    mentalCommand: '"comando mental curto"',
     microAcoes: `[
-    {"gatilho": "situação específica derivada do PADRÃO DOMINANTE do usuário", "acao": "ação que ataca diretamente esse padrão — verbo claro + tempo + instrução concreta"},
-    {"gatilho": "situação derivada do EIXO COM MAIOR SCORE do usuário", "acao": "ação que neutraliza esse eixo — verbo claro + tempo + instrução concreta"},
-    {"gatilho": "comportamento recorrente detectado nas EVIDÊNCIAS COMPORTAMENTAIS (respostas com score >= 80)", "acao": "ação que interrompe esse comportamento — verbo claro + tempo + instrução concreta"}
-  ]`,
-    // === Evolution ===
-    evolutionSummary: '"resumo da comparação com diagnóstico anterior (string vazia se não houver dados)"',
-    // === Legacy compat (kept for Report.tsx rendering) ===
+      {"gatilho": "situação do PADRÃO DOMINANTE", "acao": "verbo + contexto + tempo"},
+      {"gatilho": "situação do EIXO MAIS ALTO", "acao": "verbo + contexto + tempo"},
+      {"gatilho": "comportamento das EVIDÊNCIAS (score ≥ 80)", "acao": "verbo + contexto + tempo"}
+    ]`,
+    evolutionSummary: '"comparação com diagnóstico anterior (vazio se não houver)"',
     summary: '"resumo geral em 2 frases"',
     impact: '"impacto na vida em 1 frase"',
   };
 
-  // Add dynamic sections from template (only if not already in fixed fields)
-  const dynamicFields: Record<string, string> = {};
-  if (template?.sections && template.sections.length > 0) {
+  // Add dynamic sections from template
+  if (template?.sections) {
     for (const section of template.sections) {
-      const maxSentences = section.maxSentences ?? section.maxSize ?? 2;
+      if (schema[section.key]) continue;
+      const max = section.maxSentences ?? section.maxSize ?? 2;
       const label = section.label || section.name || section.key;
-      if (FIXED_FIELDS[section.key]) continue;
-      const contentTypeHint = section.contentType === "list" ? " (formato: array de strings)" :
-                              section.contentType === "table" ? ' (formato: array de objetos {"col1": "val1", "col2": "val2"})' :
-                              "";
-      dynamicFields[section.key] = `"${label} — máximo ${maxSentences} frases${contentTypeHint}"`;
+      const typeHint = section.contentType === "list" ? " (array de strings)" :
+                       section.contentType === "table" ? ' (array de objetos)' : "";
+      schema[section.key] = `"${label} — máx ${max} frases${typeHint}"`;
     }
   }
 
-  const allFields = { ...FIXED_FIELDS, ...dynamicFields };
-  const fieldLines = Object.entries(allFields)
-    .map(([key, value]) => `  "${key}": ${value}`)
-    .join(",\n");
+  const fieldLines = Object.entries(schema).map(([k, v]) => `  "${k}": ${v}`).join(",\n");
+  let output = `═══ SCHEMA DE SAÍDA ═══\n\nRetorne APENAS este JSON:\n\n{\n${fieldLines}\n}`;
 
-  let schema = `--- SCHEMA DE SAÍDA ---\n\nRetorne APENAS este JSON, sem markdown, sem texto adicional:\n\n{\n${fieldLines}\n}`;
-
-  // Section instructions with contentType, emotionalWeight, and exampleOutput
+  // Section-specific instructions
   if (template?.sections && template.sections.length > 0) {
-    const sectionConstraints = template.sections
-      .map((s) => {
-        const maxSentences = s.maxSentences ?? s.maxSize ?? 2;
-        const label = s.label || s.name || s.key;
-        const requiredTag = s.required ? "[OBRIGATÓRIO]" : "[OPCIONAL]";
-        const contentTag = s.contentType ? ` [formato: ${s.contentType}]` : "";
-        const emotionTag = s.emotionalWeight ? ` [peso emocional: ${s.emotionalWeight}]` : "";
-        let line = `- "${s.key}" ${requiredTag}${contentTag}${emotionTag}: "${label}" — máximo ${maxSentences} frases`;
-        if (s.aiInstructions && s.aiInstructions.trim().length > 0) {
-          line += `\n  INSTRUÇÃO ESPECÍFICA: ${s.aiInstructions.trim()}`;
-        }
-        if (s.exampleOutput && s.exampleOutput.trim().length > 0) {
-          line += `\n  EXEMPLO DE SAÍDA IDEAL: ${s.exampleOutput.trim()}`;
-        }
-        return line;
-      })
-      .join("\n");
+    output += "\n\n═══ INSTRUÇÕES POR SEÇÃO ═══";
+    for (const s of template.sections) {
+      const max = s.maxSentences ?? s.maxSize ?? 2;
+      const label = s.label || s.name || s.key;
+      const tags = [
+        s.required ? "[OBRIGATÓRIO]" : "[OPCIONAL]",
+        s.contentType ? `[${s.contentType}]` : "",
+        s.emotionalWeight ? `[tom: ${s.emotionalWeight}]` : "",
+      ].filter(Boolean).join(" ");
 
-    schema += `\n\n--- INSTRUÇÕES POR SEÇÃO DO TEMPLATE ---\nCada seção abaixo tem regras específicas. Respeite o limite de frases, o formato de conteúdo e as instruções:\n${sectionConstraints}`;
+      output += `\n\n"${s.key}" ${tags}: "${label}" — máx ${max} frases`;
+      if (s.aiInstructions?.trim()) output += `\n  → ${s.aiInstructions.trim()}`;
+      if (s.exampleOutput?.trim()) output += `\n  EXEMPLO: ${s.exampleOutput.trim()}`;
+    }
   }
 
   // Emotional weight guide
-  schema += `\n
-GUIA DE PESO EMOCIONAL:
-- "impacto": tom forte e revelador — deve causar surpresa e reconhecimento imediato
-- "validacao": tom empático — o leitor deve sentir que foi compreendido
-- "desconforto": tom provocativo — deve gerar leve incômodo produtivo que motiva mudança
-- "esperanca": tom construtivo — deve mostrar caminho claro e acessível
-- "neutro": tom informativo — dados e fatos sem carga emocional`;
+  output += `\n
+PESOS EMOCIONAIS:
+- impacto: forte e revelador — surpresa e reconhecimento
+- validação: empático — leitor se sente compreendido
+- desconforto: provocativo — incômodo que motiva mudança
+- esperança: construtivo — caminho claro e acessível
+- neutro: informativo — dados sem carga emocional`;
 
-  // microAcoes rules (always included)
-  schema += `\n
-REGRAS OBRIGATÓRIAS PARA microAcoes:
-
-═══ 1. VINCULAÇÃO AO DIAGNÓSTICO (INEGOCIÁVEL) ═══
-- microAcoes[0] → ataca o PADRÃO DOMINANTE. O gatilho descreve a situação concreta onde esse padrão aparece na vida real.
-- microAcoes[1] → ataca o EIXO COM MAIOR SCORE (%). O gatilho referencia um comportamento real desse eixo.
-- microAcoes[2] → ataca um COMPORTAMENTO RECORRENTE das EVIDÊNCIAS COMPORTAMENTAIS (respostas score >= 80). O gatilho cita o comportamento específico revelado.
-
-═══ 2. GATILHO CONCRETO (OBRIGATÓRIO) ═══
-O gatilho DEVE incluir pelo menos um: contexto real, situação específica, tipo de interação, comportamento observável, pessoa/ambiente/canal.
-CORRETO: "quando estiver evitando responder alguém no WhatsApp para não entrar em conflito"
-ERRADO: "quando se sentir mal", "em situações difíceis", "quando estiver estressada"
-
-═══ 3. AÇÃO FORTE (OBRIGATÓRIO) ═══
-Cada ação DEVE ter: verbo claro + contexto + tempo definido + instrução concreta + interrupção real do padrão.
-CORRETO: "pare, conte até 5 e diga em voz alta o que você está evitando antes de sair da situação"
-ERRADO: "respire fundo", "observe seus padrões", "reflita sobre isso"
-
-═══ 4. FORMATO ═══
-- 1 frase executável por ação (curta, direta)
-- Sem texto longo, sem explicação teórica, sem linguagem motivacional
-
-═══ 5. VALIDAÇÃO MENTAL (antes de aceitar cada ação) ═══
-Teste 1: "essa ação faz sentido APENAS para esse diagnóstico específico?" → se não, DESCARTAR
-Teste 2: "essa ação tem gatilho concreto e execução real?" → se não, DESCARTAR
-Teste 3: "essa ação interrompe o padrão ou é só conselho bonito?" → se não, DESCARTAR
-
-═══ 6. PROIBIÇÕES ABSOLUTAS ═══
-- Gatilhos vagos ou abstratos
-- Conselhos genéricos que serviriam para qualquer pessoa
-- Ações sem verbo forte, sem tempo ou sem condição`;
-
-  return schema;
+  return output;
 }
-
 
 function buildUserPrompt(
   userContext: string,
-  sortedScores: ScoreEntry[],
-  dominant: ScoreEntry,
-  secondary: ScoreEntry[],
-  answers: StructuredAnswer[],
+  dataBlock: string,
   prompts: PromptRecord[],
   template: ReportTemplate | null,
-  evolutionSection?: string,
+  evolutionBlock?: string,
 ): string {
-  const promptMap: Record<string, string> = {};
-  prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
-
   const sections: string[] = [];
 
   sections.push(userContext);
+  sections.push(dataBlock);
 
-  sections.push("--- DADOS DO USUÁRIO ---");
-  sections.push(`SCORES POR EIXO (ordem decrescente):\n${buildScoresSummary(sortedScores)}`);
-  sections.push(buildDominantSection(dominant));
-  sections.push(buildSecondarySection(secondary));
-  sections.push(buildConflictsSection(sortedScores));
-  sections.push(buildEvidencesSection(answers));
+  if (evolutionBlock) sections.push(evolutionBlock);
 
-  if (evolutionSection) {
-    sections.push(evolutionSection);
-  }
-
-  const promptTypes: [string, string][] = [
+  // Inject admin prompts in order
+  const promptOrder: [string, string][] = [
     ["interpretation", "INSTRUÇÕES DE ANÁLISE"],
     ["diagnosis", "INSTRUÇÕES DE DIAGNÓSTICO"],
     ["profile", "INSTRUÇÕES DE PERFIL"],
@@ -428,321 +407,225 @@ function buildUserPrompt(
     ["restrictions", "RESTRIÇÕES ABSOLUTAS"],
   ];
 
-  for (const [key, title] of promptTypes) {
-    if (promptMap[key] && promptMap[key].trim().length > 0) {
-      sections.push(`--- ${title} ---\n${promptMap[key]}`);
+  const promptMap: Record<string, string> = {};
+  prompts.forEach((p) => { promptMap[p.prompt_type] = p.content; });
+
+  for (const [key, title] of promptOrder) {
+    if (promptMap[key]?.trim()) {
+      sections.push(`═══ ${title} ═══\n${promptMap[key]}`);
     }
   }
 
+  // Output rules
   if (template?.output_rules) {
     const rules = template.output_rules;
     const ruleLines: string[] = [];
-    if (rules.tone) ruleLines.push(`- TOM OBRIGATÓRIO: ${rules.tone}`);
-    if (rules.maxSentencesPerBlock) ruleLines.push(`- MÁXIMO ${rules.maxSentencesPerBlock} frases por bloco`);
+    if (rules.tone) ruleLines.push(`- TOM: ${rules.tone}`);
+    if (rules.maxSentencesPerBlock) ruleLines.push(`- MÁX ${rules.maxSentencesPerBlock} frases/bloco`);
     if (rules.repetitionProhibited) ruleLines.push(`- REPETIÇÃO PROIBIDA entre seções`);
-    if (rules.forbiddenLanguage?.length) ruleLines.push(`- TERMOS PROIBIDOS: ${rules.forbiddenLanguage.map((t) => `"${t}"`).join(", ")}`);
-    if (rules.emotionalArchitecture && rules.emotionalArchitecture.trim().length > 0) {
-      ruleLines.push(`\n--- ARQUITETURA EMOCIONAL DO RELATÓRIO ---\n${rules.emotionalArchitecture.trim()}\nSiga essa jornada emocional na ordem e tom de cada seção.`);
+    if (rules.forbiddenLanguage?.length) ruleLines.push(`- PROIBIDO: ${rules.forbiddenLanguage.map((t) => `"${t}"`).join(", ")}`);
+    if (rules.emotionalArchitecture?.trim()) {
+      ruleLines.push(`\n═══ ARQUITETURA EMOCIONAL ═══\n${rules.emotionalArchitecture.trim()}\nSiga essa jornada emocional na ordem de cada seção.`);
     }
     if (ruleLines.length > 0) {
-      sections.push(`--- REGRAS DE SAÍDA ---\n${ruleLines.join("\n")}`);
+      sections.push(`═══ REGRAS DE SAÍDA ═══\n${ruleLines.join("\n")}`);
     }
   }
 
-  sections.push(buildDynamicOutputSchema(template));
+  sections.push(buildOutputSchema(template));
 
   return sections.join("\n\n");
 }
 
-const FORBIDDEN_ACTION_STARTS = [
-  "respire", "observe", "reflita", "tenha consciência", "mude seu",
-  "preste atenção", "tente melhorar", "busque ajuda", "aceite",
+// ═══════════════════════════════════════════════════════════════
+// MODULE 4: ACTION VALIDATION (microAcoes)
+// ═══════════════════════════════════════════════════════════════
+
+const FORBIDDEN_STARTS = new Set([
+  "respire", "observe", "reflita", "tenha consciencia", "mude seu",
+  "preste atencao", "tente melhorar", "busque ajuda", "aceite",
   "seja mais", "tente ser", "procure entender", "procure perceber",
-  "tome consciência", "pense sobre", "considere",
+  "tome consciencia", "pense sobre", "considere",
   "lembre-se", "permita-se", "abra-se", "confie", "acredite",
-  "mantenha a calma", "fique tranquil", "não se preocupe",
-  "tenha paciência", "cuide de", "valorize", "pratique",
-];
-
-const VAGUE_TRIGGER_PHRASES = [
-  "quando se sentir mal", "em situações difíceis", "quando estiver estressad",
-  "quando sentir desconforto", "em momentos de crise", "quando tiver problema",
-  "quando se sentir insegur", "em situações de estresse", "quando sentir ansiedade",
-  "quando se sentir trist", "quando ficar nervos", "quando sentir medo",
-  "quando se sentir sobrecarregad", "em momentos difíceis", "quando tiver dúvida",
-  "quando se sentir frustad", "quando sentir raiva", "quando estiver confus",
-  "em situações de pressão", "quando se sentir vulnerável",
-];
-
-const STOPWORDS = new Set([
-  "quando", "você", "voce", "para", "com", "sem", "sobre", "porque", "como", "isso",
-  "essa", "esse", "este", "esta", "mais", "menos", "muito", "pouco", "dele", "dela",
-  "eles", "elas", "umas", "uns", "uma", "um", "dos", "das", "nos", "nas", "por",
-  "pra", "que", "seu", "sua", "seus", "suas", "esta", "está", "estar", "ficar",
-  "depois", "antes", "durante", "então", "entao", "ainda", "mesmo", "toda", "todo",
-  "cada", "algo", "alguem", "alguém", "onde", "entre", "desde", "apenas", "sempre",
+  "mantenha a calma", "fique tranquil", "nao se preocupe",
+  "tenha paciencia", "cuide de", "valorize", "pratique",
 ]);
 
-const STRONG_ACTION_VERBS = new Set([
-  "pare", "interrompa", "responda", "envie", "entregue", "diga", "faça", "faca",
+const VAGUE_TRIGGERS = [
+  "quando se sentir mal", "em situacoes dificeis", "quando estiver estressad",
+  "quando sentir desconforto", "em momentos de crise", "quando tiver problema",
+  "quando se sentir insegur", "em situacoes de estresse", "quando sentir ansiedade",
+  "quando se sentir trist", "quando ficar nervos", "quando sentir medo",
+  "quando se sentir sobrecarregad", "em momentos dificeis", "quando tiver duvida",
+  "quando se sentir frustad", "quando sentir raiva", "quando estiver confus",
+  "em situacoes de pressao", "quando se sentir vulneravel",
+];
+
+const STRONG_VERBS = new Set([
+  "pare", "interrompa", "responda", "envie", "entregue", "diga", "faca",
   "anote", "corte", "recuse", "finalize", "publique", "apague", "reescreva", "bloqueie",
   "cronometre", "defina", "assuma", "avise", "saia", "volte", "retome", "cancele",
   "feche", "abra", "grave", "marque", "combine", "delegue", "pergunte", "exponha",
+  "escreva", "liste", "elimine", "substitua", "confronte", "declare", "mude",
 ]);
 
-const ACTION_TIME_OR_CONDITION_REGEX = /\b(agora|hoje|amanh[ãa]|imediatamente|na hora|assim que|antes de|depois de|durante|em at[eé]|dentro de|por \d+|por [a-z]+ minutos?|por [a-z]+ horas?|\d+\s*(minuto|minutos|hora|horas|dia|dias))\b/i;
+const TIME_REGEX = /\b(agora|hoje|amanh[ãa]|imediatamente|na hora|assim que|antes de|depois de|durante|em at[eé]|dentro de|por \d+|por [a-z]+ minutos?|por [a-z]+ horas?|\d+\s*(minuto|minutos|hora|horas|dia|dias))\b/i;
 
-interface ActionValidationContext {
-  dominant: { tokens: Set<string>; reference: string };
-  topAxis: { tokens: Set<string>; reference: string };
-  evidence: { tokens: Set<string>; reference: string };
-}
+const STOPWORDS = new Set([
+  "quando", "voce", "para", "com", "sem", "sobre", "porque", "como", "isso",
+  "essa", "esse", "este", "esta", "mais", "menos", "muito", "pouco", "uma", "um",
+  "dos", "das", "nos", "nas", "por", "que", "seu", "sua", "seus", "suas",
+  "esta", "estar", "ficar", "depois", "antes", "durante", "entao", "ainda",
+  "mesmo", "toda", "todo", "cada", "algo", "onde", "entre", "desde", "apenas", "sempre",
+]);
 
-function normalizeText(text: string): string {
+function norm(text: string): string {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
 }
 
-function sanitizeTrigger(text: string): string {
-  return text.replace(/^quando\s+/i, "").trim().replace(/[.\s]+$/, "");
+function tokenize(text: string): string[] {
+  return norm(text).split(/[^a-z0-9]+/).filter((t) => t.length >= 4 && !STOPWORDS.has(t));
 }
 
-function sanitizeAction(text: string): string {
-  return text.replace(/^→\s*/i, "").trim().replace(/[.\s]+$/, "");
-}
-
-function tokenizeSignificant(text: string): string[] {
-  return normalizeText(text)
-    .split(/[^a-z0-9]+/)
-    .filter((token) => token.length >= 4 && !STOPWORDS.has(token));
-}
-
-function buildAnchorTokenSet(parts: Array<string | null | undefined>): Set<string> {
+function buildAnchorTokens(parts: (string | null | undefined)[]): Set<string> {
   const tokens = new Set<string>();
-  parts.filter(Boolean).forEach((part) => {
-    tokenizeSignificant(part as string).forEach((token) => tokens.add(token));
-  });
+  parts.filter(Boolean).forEach((p) => tokenize(p as string).forEach((t) => tokens.add(t)));
   return tokens;
 }
 
-function pickEvidenceAnswers(
-  answers: StructuredAnswer[],
-  axisKey?: string,
-  minimumScore = 70,
-  limit = 3,
-): StructuredAnswer[] {
-  return [...answers]
-    .filter((answer) => {
-      const mappedScore = answer.mappedScore ?? 0;
-      if (mappedScore < minimumScore) return false;
-      if (!axisKey) return true;
-      return Array.isArray(answer.axes) && answer.axes.includes(axisKey);
-    })
-    .sort((a, b) => (b.mappedScore ?? 0) - (a.mappedScore ?? 0))
-    .slice(0, limit);
+interface ValidationContext {
+  dominant: { tokens: Set<string>; ref: string };
+  topAxis: { tokens: Set<string>; ref: string };
+  evidence: { tokens: Set<string>; ref: string };
 }
 
-function buildActionValidationContext(
+function buildValidationContext(
   dominant: ScoreEntry,
   sortedScores: ScoreEntry[],
   answers: StructuredAnswer[] = [],
-): ActionValidationContext {
+): ValidationContext {
   const topAxis = sortedScores[0] ?? dominant;
-  const dominantEvidence = pickEvidenceAnswers(answers, dominant.key, 65, 3);
-  const topAxisEvidence = pickEvidenceAnswers(answers, topAxis.key, 65, 3);
-  const strongestEvidence = pickEvidenceAnswers(answers, undefined, 80, 1)[0] || pickEvidenceAnswers(answers, undefined, 65, 1)[0];
+
+  const getTopAnswers = (axisKey?: string, minScore = 65, limit = 3) =>
+    [...answers]
+      .filter((a) => (a.mappedScore ?? 0) >= minScore && (!axisKey || a.axes.includes(axisKey)))
+      .sort((a, b) => (b.mappedScore ?? 0) - (a.mappedScore ?? 0))
+      .slice(0, limit);
+
+  const domEvidence = getTopAnswers(dominant.key);
+  const topEvidence = getTopAnswers(topAxis.key);
+  const strongEvidence = getTopAnswers(undefined, 80, 1)[0] || getTopAnswers(undefined, 65, 1)[0];
 
   return {
     dominant: {
-      reference: dominantEvidence[0]?.questionText || dominant.label || dominant.key,
-      tokens: buildAnchorTokenSet([
-        dominant.key,
-        dominant.label,
-        ...dominantEvidence.flatMap((answer) => [answer.questionText, answer.chosenOption, answer.axes.join(" ")]),
-      ]),
+      ref: domEvidence[0]?.questionText || dominant.label || dominant.key,
+      tokens: buildAnchorTokens([dominant.key, dominant.label, ...domEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
     },
     topAxis: {
-      reference: topAxisEvidence[0]?.questionText || topAxis.label || topAxis.key,
-      tokens: buildAnchorTokenSet([
-        topAxis.key,
-        topAxis.label,
-        ...topAxisEvidence.flatMap((answer) => [answer.questionText, answer.chosenOption, answer.axes.join(" ")]),
-      ]),
+      ref: topEvidence[0]?.questionText || topAxis.label || topAxis.key,
+      tokens: buildAnchorTokens([topAxis.key, topAxis.label, ...topEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
     },
     evidence: {
-      reference: strongestEvidence
-        ? `${strongestEvidence.questionText} | ${strongestEvidence.chosenOption || strongestEvidence.value}`
-        : dominant.label || dominant.key,
-      tokens: buildAnchorTokenSet(
-        strongestEvidence
-          ? [strongestEvidence.questionText, strongestEvidence.chosenOption, strongestEvidence.axes.join(" ")]
-          : [dominant.key, dominant.label],
-      ),
+      ref: strongEvidence ? `${strongEvidence.questionText} | ${strongEvidence.chosenOption || strongEvidence.value}` : dominant.label || dominant.key,
+      tokens: buildAnchorTokens(strongEvidence ? [strongEvidence.questionText, strongEvidence.chosenOption] : [dominant.key, dominant.label]),
     },
   };
 }
 
-function hasAnchorMatch(text: string, anchors: Set<string>): boolean {
+function hasMatch(text: string, anchors: Set<string>): boolean {
   if (anchors.size === 0) return false;
-  return tokenizeSignificant(text).some((token) => anchors.has(token));
+  return tokenize(text).some((t) => anchors.has(t));
 }
 
-function validateTriggerQuality(gatilho: string): { pass: boolean; reason?: string } {
-  const sanitized = sanitizeTrigger(gatilho);
-  const g = normalizeText(sanitized);
-  
-  if (g.length < 24) return { pass: false, reason: "trigger_too_short" };
-  if (g.split(" ").length < 5) return { pass: false, reason: "trigger_too_generic" };
-  
-  for (const vague of VAGUE_TRIGGER_PHRASES) {
-    if (g.includes(normalizeText(vague))) return { pass: false, reason: `vague_trigger: ${vague}` };
-  }
-  
-  return { pass: true };
-}
-
-function validateActionQuality(acao: string): { pass: boolean; reason?: string } {
-  const sanitized = sanitizeAction(acao);
-  const a = normalizeText(sanitized);
-  
-  for (const forbidden of FORBIDDEN_ACTION_STARTS) {
-    if (a.startsWith(normalizeText(forbidden))) return { pass: false, reason: `forbidden_start: ${forbidden}` };
-  }
-  
-  if (a.length < 28) return { pass: false, reason: "action_too_short" };
-  if (a.split(" ").length < 6) return { pass: false, reason: "action_too_simple" };
-  if (!tokenizeSignificant(sanitized).some((token) => STRONG_ACTION_VERBS.has(token))) {
-    return { pass: false, reason: "missing_strong_verb" };
-  }
-  if (!ACTION_TIME_OR_CONDITION_REGEX.test(sanitized)) {
-    return { pass: false, reason: "missing_time_or_condition" };
-  }
-  
-  return { pass: true };
-}
-
-function validateActionConnection(
+function validateAction(
   index: number,
   gatilho: string,
   acao: string,
-  context: ActionValidationContext,
+  ctx: ValidationContext,
 ): { pass: boolean; reason?: string } {
-  const combined = `${sanitizeTrigger(gatilho)} ${sanitizeAction(acao)}`;
-  const target = index === 0 ? context.dominant : index === 1 ? context.topAxis : context.evidence;
-  if (!hasAnchorMatch(combined, target.tokens)) {
-    return { pass: false, reason: `missing_diagnostic_link: ${target.reference}` };
+  const g = norm(gatilho.replace(/^quando\s+/i, "").trim());
+  const a = norm(acao.replace(/^→\s*/i, "").trim());
+
+  // Trigger checks
+  if (g.length < 20) return { pass: false, reason: `action_${index + 1}:trigger_too_short` };
+  if (g.split(" ").length < 4) return { pass: false, reason: `action_${index + 1}:trigger_too_generic` };
+  for (const vague of VAGUE_TRIGGERS) {
+    if (g.includes(norm(vague))) return { pass: false, reason: `action_${index + 1}:vague_trigger` };
   }
+
+  // Action checks
+  for (const forbidden of FORBIDDEN_STARTS) {
+    if (a.startsWith(norm(forbidden))) return { pass: false, reason: `action_${index + 1}:forbidden_start` };
+  }
+  if (a.length < 25) return { pass: false, reason: `action_${index + 1}:action_too_short` };
+  if (a.split(" ").length < 5) return { pass: false, reason: `action_${index + 1}:action_too_simple` };
+  if (!tokenize(acao).some((t) => STRONG_VERBS.has(t))) {
+    return { pass: false, reason: `action_${index + 1}:no_strong_verb` };
+  }
+  if (!TIME_REGEX.test(acao)) {
+    return { pass: false, reason: `action_${index + 1}:no_time_condition` };
+  }
+
+  // Connection to diagnosis
+  const combined = `${g} ${a}`;
+  const target = index === 0 ? ctx.dominant : index === 1 ? ctx.topAxis : ctx.evidence;
+  if (!hasMatch(combined, target.tokens)) {
+    return { pass: false, reason: `action_${index + 1}:no_diagnostic_link` };
+  }
+
   return { pass: true };
 }
 
 function validateMicroAcoes(
-  rawMicro: { gatilho?: string; acao?: string }[],
-  context: ActionValidationContext,
+  raw: { gatilho?: string; acao?: string }[],
+  ctx: ValidationContext,
 ): { actions: { gatilho: string; acao: string }[]; errors: string[] } {
   const errors: string[] = [];
-  if (rawMicro.length !== 3) {
-    errors.push(`count_mismatch:${rawMicro.length}`);
-    console.log(`[validate] REJECTED: expected exactly 3 actions, received ${rawMicro.length}`);
+  if (raw.length !== 3) {
+    errors.push(`count:${raw.length}`);
     return { actions: [], errors };
   }
 
   const validated: { gatilho: string; acao: string }[] = [];
-  const seenPairs = new Set<string>();
-  
-  for (let i = 0; i < rawMicro.length; i++) {
-    const item = rawMicro[i];
+  const seen = new Set<string>();
+
+  for (let i = 0; i < raw.length; i++) {
+    const item = raw[i];
     if (!item?.gatilho || !item?.acao) {
-      const reason = `action_${i + 1}:missing_fields`;
-      errors.push(reason);
-      console.log(`[validate] Action ${i} REJECTED: missing gatilho or acao`);
+      errors.push(`action_${i + 1}:missing_fields`);
       continue;
     }
 
-    const gatilho = sanitizeTrigger(item.gatilho);
-    const acao = sanitizeAction(item.acao);
-    const pairKey = `${normalizeText(gatilho)}::${normalizeText(acao)}`;
-    if (seenPairs.has(pairKey)) {
-      const reason = `action_${i + 1}:duplicate_pair`;
-      errors.push(reason);
-      console.log(`[validate] Action ${i} REJECTED: duplicate_pair`);
-      continue;
-    }
-    seenPairs.add(pairKey);
-    
-    const triggerCheck = validateTriggerQuality(gatilho);
-    if (!triggerCheck.pass) {
-      const reason = `action_${i + 1}:${triggerCheck.reason}`;
-      errors.push(reason);
-      console.log(`[validate] Action ${i} REJECTED: ${triggerCheck.reason} | gatilho: "${gatilho.substring(0, 80)}..."`);
-      continue;
-    }
-    
-    const actionCheck = validateActionQuality(acao);
-    if (!actionCheck.pass) {
-      const reason = `action_${i + 1}:${actionCheck.reason}`;
-      errors.push(reason);
-      console.log(`[validate] Action ${i} REJECTED: ${actionCheck.reason} | acao: "${acao.substring(0, 80)}..."`);
-      continue;
-    }
+    const gatilho = item.gatilho.replace(/^quando\s+/i, "").trim().replace(/[.\s]+$/, "");
+    const acao = item.acao.replace(/^→\s*/i, "").trim().replace(/[.\s]+$/, "");
+    const key = `${norm(gatilho)}::${norm(acao)}`;
+    if (seen.has(key)) { errors.push(`action_${i + 1}:duplicate`); continue; }
+    seen.add(key);
 
-    const connectionCheck = validateActionConnection(i, gatilho, acao, context);
-    if (!connectionCheck.pass) {
-      const reason = `action_${i + 1}:${connectionCheck.reason}`;
-      errors.push(reason);
-      console.log(`[validate] Action ${i} REJECTED: ${connectionCheck.reason}`);
-      continue;
-    }
-    
+    const check = validateAction(i, gatilho, acao, ctx);
+    if (!check.pass) { errors.push(check.reason!); continue; }
+
     validated.push({ gatilho, acao });
   }
-  
-  console.log(`[analyze-test] microAcoes validation: ${rawMicro.length} generated → ${validated.length} approved`);
+
+  console.log(`[pipeline] microAcoes: ${raw.length} → ${validated.length} approved`);
   return { actions: validated, errors };
 }
 
 // ═══════════════════════════════════════════════════════════════
-// maxSentences VALIDATION — trims AI output per section
+// MODULE 5: RESULT NORMALIZER
 // ═══════════════════════════════════════════════════════════════
 
 function countSentences(text: string): number {
   if (!text || typeof text !== "string") return 0;
-  // Split by sentence-ending punctuation
-  const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 5);
-  return sentences.length;
+  return text.split(/[.!?]+/).filter((s) => s.trim().length > 5).length;
 }
 
-function trimToMaxSentences(text: string, max: number): string {
-  if (!text || typeof text !== "string" || max <= 0) return text;
+function trimSentences(text: string, max: number): string {
+  if (!text || max <= 0) return text;
   const sentences = text.match(/[^.!?]+[.!?]+/g);
   if (!sentences || sentences.length <= max) return text;
   return sentences.slice(0, max).join("").trim();
-}
-
-function validateAndTrimSections(
-  result: Record<string, unknown>,
-  template: ReportTemplate | null,
-): { trimmed: string[]; violations: string[] } {
-  const trimmed: string[] = [];
-  const violations: string[] = [];
-  
-  if (!template?.sections) return { trimmed, violations };
-
-  for (const section of template.sections) {
-    const maxSentences = section.maxSentences ?? section.maxSize ?? 0;
-    if (maxSentences <= 0) continue;
-    
-    const value = result[section.key];
-    if (typeof value !== "string" || !value) continue;
-    
-    const sentenceCount = countSentences(value);
-    if (sentenceCount > maxSentences) {
-      const label = section.label || section.key;
-      violations.push(`${label}: ${sentenceCount}/${maxSentences} frases`);
-      result[section.key] = trimToMaxSentences(value, maxSentences);
-      trimmed.push(section.key);
-    }
-  }
-
-  return { trimmed, violations };
 }
 
 function normalizeResult(
@@ -752,71 +635,52 @@ function normalizeResult(
   answers: StructuredAnswer[] = [],
   template: ReportTemplate | null = null,
 ): Record<string, unknown> {
+  // Ensure arrays
   for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "exitStrategy"]) {
     if (!Array.isArray(result[f])) result[f] = [];
   }
   if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
 
-  // === Unify duplicates: merge legacy fields into canonical ones ===
-  // gatilhos → triggers (if triggers is empty)
-  if (Array.isArray(result.gatilhos) && (result.gatilhos as any[]).length > 0 && (!Array.isArray(result.triggers) || (result.triggers as any[]).length === 0)) {
-    result.triggers = result.gatilhos;
+  // Merge legacy duplicates
+  const legacyMerge: [string, string, (v: unknown) => unknown][] = [
+    ["gatilhos", "triggers", (v) => v],
+    ["impactoPorArea", "lifeImpact", (v) => Array.isArray(v) ? (v as any[]).map((i: any) => ({ pillar: i.area || i.pillar || "", impact: i.impacto || i.impact || "" })) : v],
+    ["corrigirPrimeiro", "direction", (v) => v],
+    ["acaoInicial", "focoMudanca", (v) => v],
+  ];
+  for (const [old, canonical, transform] of legacyMerge) {
+    if (result[old] && (!result[canonical] || (Array.isArray(result[canonical]) && (result[canonical] as any[]).length === 0) || (typeof result[canonical] === "string" && !(result[canonical] as string)))) {
+      result[canonical] = transform(result[old]);
+    }
+    delete result[old];
   }
-  delete result.gatilhos;
-
-  // impactoPorArea → lifeImpact (if lifeImpact is empty)
-  if (Array.isArray(result.impactoPorArea) && (result.impactoPorArea as any[]).length > 0 && (!Array.isArray(result.lifeImpact) || (result.lifeImpact as any[]).length === 0)) {
-    // Map { area, impacto } to { pillar, impact }
-    result.lifeImpact = (result.impactoPorArea as any[]).map((item: any) => ({
-      pillar: item.area || item.pillar || "",
-      impact: item.impacto || item.impact || "",
-    }));
-  }
-  delete result.impactoPorArea;
-
-  // corrigirPrimeiro → direction (if direction is empty)
-  if (typeof result.corrigirPrimeiro === "string" && result.corrigirPrimeiro && (!result.direction || (result.direction as string).length === 0)) {
-    result.direction = result.corrigirPrimeiro;
-  }
-  delete result.corrigirPrimeiro;
-
-  // acaoInicial → focoMudanca (if focoMudanca is empty)
-  if (typeof result.acaoInicial === "string" && result.acaoInicial && (!result.focoMudanca || (result.focoMudanca as string).length === 0)) {
-    result.focoMudanca = result.acaoInicial;
-  }
-  delete result.acaoInicial;
 
   // pararDeFazer → whatNotToDo
   if (result.pararDeFazer) {
-    const pararArr = typeof result.pararDeFazer === "string"
-      ? (result.pararDeFazer ? [result.pararDeFazer as string] : [])
-      : (Array.isArray(result.pararDeFazer) ? result.pararDeFazer : []);
-    if (pararArr.length > 0 && (!Array.isArray(result.whatNotToDo) || (result.whatNotToDo as any[]).length === 0)) {
-      result.whatNotToDo = pararArr;
+    const arr = typeof result.pararDeFazer === "string" ? [result.pararDeFazer] : Array.isArray(result.pararDeFazer) ? result.pararDeFazer : [];
+    if (arr.length > 0 && (!Array.isArray(result.whatNotToDo) || (result.whatNotToDo as any[]).length === 0)) {
+      result.whatNotToDo = arr;
     }
     delete result.pararDeFazer;
   }
 
-  // chamaAtencao → diagnosis (supplement)
-  // Keep chamaAtencao as its own field for Report.tsx rendering
-  
+  // Validate microAcoes
   const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
-  const actionValidationContext = buildActionValidationContext(dominant, sortedScores, answers);
-  const validatedMicroAcoes = validateMicroAcoes(rawMicro, actionValidationContext);
-  result.microAcoes = validatedMicroAcoes.actions;
+  const ctx = buildValidationContext(dominant, sortedScores, answers);
+  const validatedActions = validateMicroAcoes(rawMicro, ctx);
+  result.microAcoes = validatedActions.actions;
   result.microAcoesValidation = {
-    dominantPatternReference: actionValidationContext.dominant.reference,
-    topAxisReference: actionValidationContext.topAxis.reference,
-    evidenceReference: actionValidationContext.evidence.reference,
-    errors: validatedMicroAcoes.errors,
+    dominantPatternReference: ctx.dominant.ref,
+    topAxisReference: ctx.topAxis.ref,
+    evidenceReference: ctx.evidence.ref,
+    errors: validatedActions.errors,
   };
-  console.log(`[analyze-test] Final microAcoes count: ${(result.microAcoes as any[]).length}`);
 
+  // Ensure string fields
   const stringFields = [
     "profileName", "combinedTitle", "perfilComportamental", "diagnosis",
     "chamaAtencao", "padraoRepetido", "corePain", "comoAparece",
-    "blindSpot", "mentalCommand",
-    "futureConsequence", "evolutionSummary",
+    "blindSpot", "mentalCommand", "futureConsequence", "evolutionSummary",
     "summary", "mechanism", "contradiction", "impact", "direction",
     "keyUnlockArea", "criticalDiagnosis", "mentalState", "blockingPoint",
     "focoMudanca", "leituraRapida",
@@ -824,16 +688,28 @@ function normalizeResult(
   for (const f of stringFields) {
     if (typeof result[f] !== "string") result[f] = "";
   }
-
   if (!result.combinedTitle) result.combinedTitle = dominant.label || "";
 
-  // === maxSentences validation ===
-  const { trimmed, violations } = validateAndTrimSections(result, template);
-  if (violations.length > 0) {
-    console.log(`[analyze-test] maxSentences violations trimmed: ${violations.join(", ")}`);
+  // Trim sections exceeding maxSentences
+  const trimmed: string[] = [];
+  const violations: string[] = [];
+  if (template?.sections) {
+    for (const section of template.sections) {
+      const max = section.maxSentences ?? section.maxSize ?? 0;
+      if (max <= 0) continue;
+      const val = result[section.key];
+      if (typeof val !== "string" || !val) continue;
+      if (countSentences(val) > max) {
+        violations.push(`${section.label || section.key}: ${countSentences(val)}/${max}`);
+        result[section.key] = trimSentences(val, max);
+        trimmed.push(section.key);
+      }
+    }
   }
+  if (violations.length > 0) console.log(`[pipeline] trimmed: ${violations.join(", ")}`);
   result._sectionTrimming = { trimmed, violations };
 
+  // Quantitative anchor
   result._quantitativeAnchor = {
     topAxis: sortedScores[0]?.label || "",
     topPercentage: sortedScores[0]?.percentage || 0,
@@ -842,6 +718,88 @@ function normalizeResult(
 
   return result;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE 6: DATA FETCHER (parallel queries)
+// ═══════════════════════════════════════════════════════════════
+
+async function fetchAllData(
+  adminClient: ReturnType<typeof createClient>,
+  userClient: ReturnType<typeof createClient>,
+  userId: string,
+  testModuleId: string,
+) {
+  const [promptsRes, templateRes, profileRes, previousRes, testConfigRes, globalConfigRes] = await Promise.all([
+    adminClient.from("test_prompts").select("prompt_type, title, content").eq("test_id", testModuleId).eq("is_active", true),
+    adminClient.from("report_templates").select("sections, output_rules").eq("test_id", testModuleId).maybeSingle(),
+    userClient.from("profiles").select("name, age").eq("user_id", userId).maybeSingle(),
+    adminClient
+      .from("diagnostic_sessions")
+      .select("id, completed_at, diagnostic_results(all_scores)")
+      .eq("user_id", userId)
+      .eq("test_module_id", testModuleId)
+      .not("completed_at", "is", null)
+      .order("completed_at", { ascending: false })
+      .limit(2),
+    adminClient.from("test_ai_config").select("use_global_defaults, ai_enabled, temperature, max_tokens").eq("test_id", testModuleId).maybeSingle(),
+    adminClient.from("global_ai_config").select("ai_model, temperature, max_tokens, system_prompt").limit(1).maybeSingle(),
+  ]);
+
+  return { promptsRes, templateRes, profileRes, previousRes, testConfigRes, globalConfigRes };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MODULE 7: AI CALLER
+// ═══════════════════════════════════════════════════════════════
+
+async function callAI(
+  systemPrompt: string,
+  userPrompt: string,
+  model: string,
+  temperature: number,
+  maxTokens: number,
+  apiKey: string,
+): Promise<{ result: Record<string, unknown> | null; error?: string }> {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature,
+      max_tokens: maxTokens,
+    }),
+  });
+
+  if (!response.ok) {
+    const status = response.status;
+    await response.text();
+    if (status === 429) return { result: null, error: "rate_limit" };
+    if (status === 402) return { result: null, error: "credits_exhausted" };
+    return { result: null, error: `ai_error_${status}` };
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content || "";
+
+  try {
+    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
+    return { result: JSON.parse(jsonMatch[1]!.trim()) };
+  } catch {
+    console.error("[pipeline] JSON parse error:", content.substring(0, 300));
+    return { result: null, error: "parse_error" };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN HANDLER
+// ═══════════════════════════════════════════════════════════════
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -855,6 +813,9 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+    if (!LOVABLE_API_KEY) return fallbackResponse();
 
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -862,10 +823,7 @@ serve(async (req) => {
 
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     if (authError || !user) return errorResponse("Não autorizado", 401);
-
-    if (!checkRateLimit(user.id)) {
-      return errorResponse("Limite de requisições atingido. Aguarde um minuto.", 429);
-    }
+    if (!checkRateLimit(user.id)) return errorResponse("Limite de requisições. Aguarde um minuto.", 429);
 
     const body: RequestBody = await req.json();
     const { test_module_id, scores, slug, refine_level, answers: structuredAnswers } = body;
@@ -876,29 +834,17 @@ serve(async (req) => {
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
-    const [promptsRes, templateRes, profileRes, previousRes] = await Promise.all([
-      adminClient.from("test_prompts").select("prompt_type, title, content").eq("test_id", test_module_id).eq("is_active", true),
-      adminClient.from("report_templates").select("sections, output_rules").eq("test_id", test_module_id).maybeSingle(),
-      userClient.from("profiles").select("name, age").eq("user_id", user.id).maybeSingle(),
-      adminClient
-        .from("diagnostic_sessions")
-        .select("id, completed_at, diagnostic_results(all_scores)")
-        .eq("user_id", user.id)
-        .eq("test_module_id", test_module_id)
-        .not("completed_at", "is", null)
-        .order("completed_at", { ascending: false })
-        .limit(2),
-    ]);
+    // ─── FETCH ALL DATA IN PARALLEL ───
+    const { promptsRes, templateRes, profileRes, previousRes, testConfigRes, globalConfigRes } = 
+      await fetchAllData(adminClient, userClient, user.id, test_module_id);
 
     if (promptsRes.error) {
-      console.error("Error fetching prompts:", promptsRes.error);
-      return errorResponse("Erro ao carregar configuração do diagnóstico", 500);
+      console.error("Prompts error:", promptsRes.error);
+      return errorResponse("Erro ao carregar configuração", 500);
     }
+    if (!promptsRes.data?.length) return fallbackResponse();
 
-    if (!promptsRes.data || promptsRes.data.length === 0) {
-      return fallbackResponse();
-    }
-
+    // Parse template
     let reportTemplate: ReportTemplate | null = null;
     if (templateRes.data) {
       reportTemplate = {
@@ -907,184 +853,122 @@ serve(async (req) => {
       };
     }
 
+    // Prepare scores
     const sortedScores = [...scores]
       .map((s) => ({ ...s, percentage: Math.min(100, Math.max(0, s.percentage)) }))
       .sort((a, b) => b.percentage - a.percentage);
-
     const dominant = sortedScores[0];
-    const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
 
+    // ─── EVOLUTION COMPARISON ───
     let evolutionData: Omit<EvolutionComparison, "summary_text"> | null = null;
-    let evolutionPromptSection: string | undefined;
-
+    let evolutionBlock: string | undefined;
     try {
-      if (previousRes.data && previousRes.data.length > 0) {
+      if (previousRes.data?.length) {
         const prevSession = previousRes.data.find((s: any) => {
           const results = s.diagnostic_results;
-          if (Array.isArray(results) && results.length > 0) {
-            return results[0]?.all_scores && Array.isArray(results[0].all_scores) && results[0].all_scores.length > 0;
-          }
-          return false;
+          return Array.isArray(results) && results.length > 0 && Array.isArray(results[0]?.all_scores) && results[0].all_scores.length > 0;
         });
-
         if (prevSession) {
           const prevResults = Array.isArray(prevSession.diagnostic_results) ? prevSession.diagnostic_results[0] : prevSession.diagnostic_results;
           const prevScores: ScoreEntry[] = (prevResults as any)?.all_scores || [];
           if (prevScores.length > 0) {
             evolutionData = buildEvolutionComparison(sortedScores, prevScores, prevSession.completed_at || "");
-            evolutionPromptSection = buildEvolutionPromptSection(evolutionData);
-            console.log(`[analyze-test] Evolution comparison: improved=${evolutionData.improved_axes.length}, worsened=${evolutionData.worsened_axes.length}, unchanged=${evolutionData.unchanged_axes.length}`);
+            evolutionBlock = buildEvolutionBlock(evolutionData);
           }
         }
       }
     } catch (e) {
-      console.error("[analyze-test] Evolution comparison error (non-blocking):", e);
+      console.error("[pipeline] Evolution error (non-blocking):", e);
     }
 
+    // ─── AI CONFIG ───
+    let aiModel = "google/gemini-3-flash-preview";
+    let aiTemp = 0.55;
+    let aiMaxTokens = 6000;
+
+    if (globalConfigRes.data?.ai_model) aiModel = globalConfigRes.data.ai_model;
+    if (testConfigRes.data && !testConfigRes.data.use_global_defaults) {
+      if (testConfigRes.data.temperature != null) aiTemp = Number(testConfigRes.data.temperature);
+      if (testConfigRes.data.max_tokens != null) aiMaxTokens = Number(testConfigRes.data.max_tokens);
+    } else if (globalConfigRes.data) {
+      if (globalConfigRes.data.temperature != null) aiTemp = Number(globalConfigRes.data.temperature);
+      if (globalConfigRes.data.max_tokens != null) aiMaxTokens = Number(globalConfigRes.data.max_tokens);
+    }
+
+    // ─── BUILD PROMPTS ───
     const profile = profileRes.data;
     const userContext = profile
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
       : "Usuário anônimo";
 
-    const userPrompt = buildUserPrompt(
-      userContext,
-      sortedScores,
-      dominant,
-      secondary,
-      structuredAnswers || [],
-      promptsRes.data as PromptRecord[],
-      reportTemplate,
-      evolutionPromptSection,
-    );
+    const dataBlock = buildDataBlock(sortedScores, structuredAnswers || []);
+    const userPrompt = buildUserPrompt(userContext, dataBlock, promptsRes.data as PromptRecord[], reportTemplate, evolutionBlock);
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return fallbackResponse();
-
-    let aiModel = "google/gemini-3-flash-preview";
-    let aiTemperature = 0.55;
-    let aiMaxTokens = 6000;
-
-    try {
-      const [testConfigRes, globalConfigRes] = await Promise.all([
-        adminClient.from("test_ai_config").select("use_global_defaults, ai_enabled, temperature, max_tokens").eq("test_id", test_module_id).maybeSingle(),
-        adminClient.from("global_ai_config").select("ai_model, temperature, max_tokens, system_prompt").limit(1).maybeSingle(),
-      ]);
-
-      if (globalConfigRes.data?.ai_model) aiModel = globalConfigRes.data.ai_model;
-
-      if (testConfigRes.data && !testConfigRes.data.use_global_defaults) {
-        if (testConfigRes.data.temperature != null) aiTemperature = Number(testConfigRes.data.temperature);
-        if (testConfigRes.data.max_tokens != null) aiMaxTokens = Number(testConfigRes.data.max_tokens);
-      } else if (globalConfigRes.data) {
-        if (globalConfigRes.data.temperature != null) aiTemperature = Number(globalConfigRes.data.temperature);
-        if (globalConfigRes.data.max_tokens != null) aiMaxTokens = Number(globalConfigRes.data.max_tokens);
-      }
-    } catch { /* use defaults */ }
-
-    let refineInstruction = "";
+    let globalSystemPrompt = globalConfigRes.data?.system_prompt || "";
     const refineLevel = refine_level ?? 0;
+    let refineNote = "";
     if (refineLevel >= 1) {
-      refineInstruction = "\n\nINSTRUÇÃO DE REFINAMENTO: A resposta anterior foi genérica. Seja mais específico, use os dados reais do usuário, e garanta que cada bloco traz informação nova.";
+      refineNote = "\n\nINSTRUÇÃO: A resposta anterior foi genérica. Seja mais específico, use dados reais, cada bloco com informação nova.";
     }
 
-    let globalSystemPrompt = "";
-    try {
-      const gConfig = await adminClient.from("global_ai_config").select("system_prompt").limit(1).maybeSingle();
-      if (gConfig.data?.system_prompt) globalSystemPrompt = gConfig.data.system_prompt;
-    } catch { /* use empty */ }
-
-    const fullSystemPrompt = [globalSystemPrompt, SYSTEM_PROMPT, refineInstruction].filter(Boolean).join("\n\n");
-    
+    // ─── RETRY LOOP ───
     let normalized: Record<string, unknown> | null = null;
     const MAX_ATTEMPTS = 4;
-    let lastMicroActionErrors: string[] = [];
-    
+    let lastErrors: string[] = [];
+
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const aiBody = {
-        model: aiModel,
-        messages: [
-          { role: "system", content: fullSystemPrompt + (attempt > 0 ? `\n\nATENÇÃO: A tentativa anterior NÃO gerou microAcoes válidas. Você DEVE gerar EXATAMENTE 3 microAcoes com gatilho concreto, ação executável e conexão direta com o diagnóstico. REJEIÇÕES ANTERIORES: ${lastMicroActionErrors.join(" | ") || "sem detalhes"}.` : "") },
-          { role: "user", content: userPrompt },
-        ],
-        temperature: aiTemperature,
-        max_tokens: aiMaxTokens,
-      };
+      const retryContext = attempt > 0
+        ? `\n\nATENÇÃO: Tentativa ${attempt + 1}. As microAcoes anteriores foram REJEITADAS: ${lastErrors.join(" | ")}. Corrija os problemas.`
+        : "";
 
-      console.log(`[analyze-test] Attempt ${attempt + 1}/${MAX_ATTEMPTS} | Model: ${aiModel}, Temp: ${aiTemperature}, MaxTokens: ${aiMaxTokens}, Slug: ${slug}`);
+      const fullSystem = [globalSystemPrompt, SYSTEM_PROMPT, refineNote, retryContext].filter(Boolean).join("\n\n");
 
-      const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(aiBody),
-      });
+      console.log(`[pipeline] Attempt ${attempt + 1}/${MAX_ATTEMPTS} | Model: ${aiModel}, Slug: ${slug}`);
 
-      if (!aiResponse.ok) {
-        const status = aiResponse.status;
-        await aiResponse.text();
-        if (status === 429) return errorResponse("Limite de requisições. Tente novamente em instantes.", 429);
-        if (status === 402) return errorResponse("Créditos de IA esgotados.", 402);
-        console.error("AI error:", status);
-        return fallbackResponse();
-      }
+      const { result, error } = await callAI(fullSystem, userPrompt, aiModel, aiTemp, aiMaxTokens, LOVABLE_API_KEY);
 
-      const aiData = await aiResponse.json();
-      const content = aiData.choices?.[0]?.message?.content || "";
-
-      let result: Record<string, unknown>;
-      try {
-        const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
-        result = JSON.parse(jsonMatch[1]!.trim());
-      } catch {
-        console.error(`[analyze-test] Attempt ${attempt + 1}: Failed to parse AI response:`, content.substring(0, 500));
+      if (error === "rate_limit") return errorResponse("Limite de requisições. Tente novamente.", 429);
+      if (error === "credits_exhausted") return errorResponse("Créditos de IA esgotados.", 402);
+      if (!result) {
         if (attempt < MAX_ATTEMPTS - 1) continue;
         return fallbackResponse();
       }
 
-      const hasMinimumFields = result.chamaAtencao || result.diagnosis || result.criticalDiagnosis || result.profileName;
-      if (!hasMinimumFields) {
-        console.error(`[analyze-test] Attempt ${attempt + 1}: AI response missing required fields`);
+      // Check minimum fields
+      if (!(result.chamaAtencao || result.diagnosis || result.criticalDiagnosis || result.profileName)) {
         if (attempt < MAX_ATTEMPTS - 1) continue;
         return fallbackResponse();
       }
 
       normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || [], reportTemplate);
-      
+
       const microCount = Array.isArray(normalized.microAcoes) ? (normalized.microAcoes as any[]).length : 0;
-      lastMicroActionErrors = Array.isArray((normalized as any).microAcoesValidation?.errors)
-        ? (normalized as any).microAcoesValidation.errors as string[]
-        : [];
-      console.log(`[analyze-test] Attempt ${attempt + 1}: ${microCount}/3 microAcoes after normalization`);
-      
-      // HARD RULE: require exactly 3 actions
+      lastErrors = (normalized as any).microAcoesValidation?.errors || [];
+
+      console.log(`[pipeline] Attempt ${attempt + 1}: ${microCount}/3 microAcoes`);
+
       if (microCount >= 3) break;
-      
-      if (attempt < MAX_ATTEMPTS - 1) {
-        console.warn(`[analyze-test] Only ${microCount}/3 microAcoes on attempt ${attempt + 1}, retrying...`, lastMicroActionErrors);
-      } else {
-        console.error(`[analyze-test] ❌ HARD FAIL: Only ${microCount}/3 microAcoes after ${MAX_ATTEMPTS} attempts. Returning error.`);
-        return errorResponse("Não foi possível gerar 3 ações válidas para este diagnóstico. Tente novamente.", 500);
+
+      if (attempt >= MAX_ATTEMPTS - 1) {
+        console.error(`[pipeline] HARD FAIL: ${microCount}/3 after ${MAX_ATTEMPTS} attempts`);
+        return errorResponse("Não foi possível gerar 3 ações válidas. Tente novamente.", 500);
       }
     }
 
     if (!normalized) return fallbackResponse();
 
+    // Add evolution data
     if (evolutionData) {
-      const summaryText = typeof normalized.evolutionSummary === "string" && normalized.evolutionSummary.trim()
-        ? normalized.evolutionSummary as string
-        : "";
-
       normalized.evolutionComparison = {
         ...evolutionData,
-        summary_text: summaryText,
+        summary_text: (typeof normalized.evolutionSummary === "string" && normalized.evolutionSummary.trim()) 
+          ? normalized.evolutionSummary as string : "",
       };
     }
 
     return jsonResponse({ analysis: normalized });
   } catch (e) {
-    console.error("analyze-test error:", e);
+    console.error("pipeline error:", e);
     return errorResponse("Erro interno do servidor", 500);
   }
 });
