@@ -612,41 +612,6 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       
       ctx.y += h + 3;
     });
-  } else if (microAcoes.length > 0) {
-    // Fallback to AI microAcoes if no persisted actions
-    microAcoes.forEach((item, i) => {
-      const lines = doc.splitTextToSize(item.acao, CW - 18);
-      const detLines = item.detalhe ? doc.splitTextToSize(item.detalhe, CW - 18) : [];
-      const h = (lines.length + detLines.length) * LH + 12;
-      pb(ctx, h + 2);
-      
-      doc.setFillColor(...C.greenSoft);
-      doc.setDrawColor(180, 220, 195);
-      doc.roundedRect(M, ctx.y, CW, h, 2.5, 2.5, 'FD');
-      
-      doc.setFillColor(...C.green);
-      doc.roundedRect(M + 4, ctx.y + 4, 6, 6, 1.5, 1.5, 'F');
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...C.white);
-      doc.text(String(i + 1), M + 5.8, ctx.y + 8.2);
-      
-      let ay = ctx.y + 6;
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(...C.text);
-      for (const l of lines) { doc.text(l, M + 14, ay); ay += LH; }
-      
-      if (detLines.length > 0) {
-        ay += 1;
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...C.muted);
-        for (const l of detLines) { doc.text(l, M + 14, ay); ay += LH; }
-      }
-      
-      ctx.y += h + 3;
-    });
   } else if (acaoInicial) {
     labelAbove(ctx, 'Faça isso agora', C.green);
     greenBox(ctx, acaoInicial);
