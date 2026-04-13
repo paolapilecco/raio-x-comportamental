@@ -809,7 +809,51 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 
 /* ── Action Preview Section (3 actions) ── */
 function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any }) {
-  const actions = buildActionPreviews(result);
+  const { user } = useAuth();
+  const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
+
+  useEffect(() => {
+    const resultId = (result as any).id;
+    if (!user || !resultId) {
+      // Fallback: generate client-side if no DB data available
+      const previews = buildActionPreviews(result);
+      setActions(previews);
+      return;
+    }
+
+    const fetchActions = async () => {
+      const { data } = await supabase
+        .from('action_plan_tracking')
+        .select('action_text, day_number')
+        .eq('diagnostic_result_id', resultId)
+        .eq('user_id', user.id)
+        .order('day_number');
+
+      if (data && data.length > 0) {
+        // Get unique action texts (they repeat across 15 days)
+        const seen = new Set<string>();
+        const unique: { trigger: string; action: string }[] = [];
+        for (const row of data) {
+          if (!seen.has(row.action_text) && unique.length < 3) {
+            seen.add(row.action_text);
+            // Parse "Se x → y" format
+            const match = row.action_text.match(/^Se\s+(.+?)\s+→\s+(.+)$/i);
+            if (match) {
+              unique.push({ trigger: match[1], action: match[2] });
+            } else {
+              unique.push({ trigger: 'O padrão se ativar', action: row.action_text });
+            }
+          }
+        }
+        setActions(unique);
+      } else {
+        // No persisted actions — fallback to client-side generation
+        const previews = buildActionPreviews(result);
+        setActions(previews);
+      }
+    };
+    fetchActions();
+  }, [(result as any).id, user?.id]);
 
   if (actions.length === 0) return null;
 
