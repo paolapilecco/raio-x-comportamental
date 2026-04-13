@@ -607,7 +607,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
 // ═══════════════════════════════════════════════════════════════
 
 function SlotEditor({
-  slot, actId, index, totalSlots, isExpanded, onToggleExpand, onUpdate, onRemove, onMove,
+  slot, actId: _actId, index, totalSlots, isExpanded, onToggleExpand, onUpdate, onRemove, onMove,
 }: {
   slot: Slot; actId: string; index: number; totalSlots: number; isExpanded: boolean;
   onToggleExpand: () => void; onUpdate: (field: keyof Slot, value: any) => void;
