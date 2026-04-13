@@ -35,7 +35,7 @@ export function isIndividualPlan(planType: PlanType): boolean {
 export function canAccessModule(
   planType: PlanType,
   moduleSlug: string,
-  isOwner: boolean,
+  _isOwner: boolean,
   isSuperAdmin: boolean
 ): boolean {
   if (isSuperAdmin) return true;
