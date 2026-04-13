@@ -71,6 +71,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const { profile, user } = useAuth();
   const axisLabels = useAxisLabels();
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
+  const [actionPlanItems, setActionPlanItems] = useState<{ id: string; day_number: number; action_text: string; completed: boolean }[]>([]);
 
   // Fetch template sections for this test module
   useEffect(() => {
@@ -101,6 +102,23 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
     fetchTemplate();
   }, [moduleSlug]);
+
+  // Fetch action plan items for this result
+  useEffect(() => {
+    if (!user) return;
+    const resultId = (result as any).id;
+    if (!resultId) return;
+    const fetchPlan = async () => {
+      const { data } = await supabase
+        .from('action_plan_tracking')
+        .select('id, day_number, action_text, completed')
+        .eq('diagnostic_result_id', resultId)
+        .eq('user_id', user.id)
+        .order('day_number');
+      if (data) setActionPlanItems(data);
+    };
+    fetchPlan();
+  }, [user, result]);
 
   // Track report_viewed event
   useEffect(() => {
@@ -405,6 +423,50 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           ) : (
             /* ── Legacy 8-section fallback ── */
             <LegacySections result={result} moduleSlug={moduleSlug} ai={ai} />
+          )}
+
+          {/* ── Action Plan (15 days) ── */}
+          {actionPlanItems.length > 0 && (
+            <motion.section {...fade} transition={{ delay: 0.40 }}>
+              <div className="flex items-center gap-3.5 mb-5">
+                <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-green-500/10 text-green-600">
+                  <Target className="w-4 h-4" />
+                </span>
+                <div>
+                  <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">Seu plano de ação — 15 dias</h2>
+                  <p className="text-[10px] text-muted-foreground/50 mt-0.5">Ações específicas baseadas no seu padrão</p>
+                </div>
+              </div>
+              <div className="pl-[42px]">
+                <div className="rounded-2xl border border-border/30 overflow-hidden shadow-sm bg-card">
+                  <div className="bg-green-500/[0.04] border-b border-green-500/10 px-5 py-3">
+                    <p className="text-[9px] text-green-700/60 dark:text-green-400/60 uppercase tracking-[0.2em] font-semibold">
+                      {actionPlanItems.length} ações para os próximos 15 dias
+                    </p>
+                  </div>
+                  <div className="divide-y divide-border/15">
+                    {actionPlanItems.map((item, i) => (
+                      <div key={item.id} className="flex items-start gap-3 px-5 py-4">
+                        <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">
+                          {i + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground/40 uppercase tracking-widest font-semibold mb-1">
+                            Dia {item.day_number}
+                          </p>
+                          <p className="text-sm text-foreground leading-[1.7]">{item.action_text}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-secondary/30 border-t border-border/20 px-5 py-3">
+                    <p className="text-[10px] text-muted-foreground/50 text-center">
+                      Acompanhe sua execução diária no Dashboard
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.section>
           )}
 
           {/* ── Intensity bars ── */}
