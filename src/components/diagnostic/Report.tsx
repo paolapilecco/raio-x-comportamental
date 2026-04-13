@@ -71,6 +71,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const { profile, user } = useAuth();
   const axisLabels = useAxisLabels();
   const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
+  const [actionPlanItems, setActionPlanItems] = useState<{ id: string; day_number: number; action_text: string; completed: boolean }[]>([]);
 
   // Fetch template sections for this test module
   useEffect(() => {
