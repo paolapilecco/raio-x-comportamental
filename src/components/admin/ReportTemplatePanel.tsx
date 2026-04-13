@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Save, Plus, Trash2, ChevronDown, ChevronUp, RotateCcw, Copy, Sparkles, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Save, Plus, Trash2, ChevronDown, ChevronUp, RotateCcw, Copy, Sparkles, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
+
+type ContentType = 'text' | 'list' | 'table';
+type EmotionalWeight = 'impacto' | 'validacao' | 'desconforto' | 'esperanca' | 'neutro';
 
 interface ReportSection {
   key: string;
@@ -12,17 +15,35 @@ interface ReportSection {
   required: boolean;
   order: number;
   aiInstructions: string;
+  contentType: ContentType;
+  emotionalWeight: EmotionalWeight;
+  exampleOutput: string;
 }
 
+const EMOTIONAL_LABELS: Record<EmotionalWeight, { label: string; color: string }> = {
+  impacto: { label: '💥 Impacto', color: 'bg-red-500/10 text-red-400' },
+  validacao: { label: '🤝 Validação', color: 'bg-blue-500/10 text-blue-400' },
+  desconforto: { label: '⚡ Desconforto', color: 'bg-amber-500/10 text-amber-400' },
+  esperanca: { label: '🌱 Esperança', color: 'bg-emerald-500/10 text-emerald-400' },
+  neutro: { label: '📊 Neutro', color: 'bg-muted/30 text-muted-foreground' },
+};
+
+const CONTENT_TYPE_LABELS: Record<ContentType, string> = {
+  text: '📝 Texto',
+  list: '📋 Lista',
+  table: '📊 Tabela',
+};
+
 const DEFAULT_SECTIONS: ReportSection[] = [
-  { key: 'chamaAtencao', slug: 'chama-atencao', label: 'O que mais chama atenção', maxSentences: 2, required: true, order: 1, aiInstructions: '' },
-  { key: 'padraoRepetido', slug: 'padrao-repetido', label: 'Padrão que se repete', maxSentences: 2, required: true, order: 2, aiInstructions: '' },
-  { key: 'comoAparece', slug: 'como-aparece', label: 'Como aparece na rotina', maxSentences: 2, required: true, order: 3, aiInstructions: '' },
-  { key: 'gatilhos', slug: 'gatilhos', label: 'Gatilhos principais', maxSentences: 1, required: true, order: 4, aiInstructions: '' },
-  { key: 'impactoPorArea', slug: 'impacto-por-area', label: 'Impacto por área', maxSentences: 1, required: true, order: 5, aiInstructions: '' },
-  { key: 'corrigirPrimeiro', slug: 'corrigir-primeiro', label: 'Direção de ajuste', maxSentences: 2, required: true, order: 6, aiInstructions: '' },
-  { key: 'pararDeFazer', slug: 'parar-de-fazer', label: 'O que parar de fazer', maxSentences: 1, required: false, order: 7, aiInstructions: '' },
-  { key: 'acaoInicial', slug: 'acao-inicial', label: 'Próxima ação prática', maxSentences: 2, required: true, order: 8, aiInstructions: '' },
+  { key: 'leituraRapida', slug: 'leitura-rapida', label: 'Leitura Rápida', maxSentences: 3, required: true, order: 0, aiInstructions: 'Resumo executivo do diagnóstico. Deve ser compreensível por leigos e capturar a essência do relatório inteiro em 2-3 frases.', contentType: 'text', emotionalWeight: 'impacto', exampleOutput: '' },
+  { key: 'chamaAtencao', slug: 'chama-atencao', label: 'O que mais chama atenção', maxSentences: 2, required: true, order: 1, aiInstructions: '', contentType: 'text', emotionalWeight: 'impacto', exampleOutput: '' },
+  { key: 'padraoRepetido', slug: 'padrao-repetido', label: 'Padrão que se repete', maxSentences: 2, required: true, order: 2, aiInstructions: '', contentType: 'text', emotionalWeight: 'validacao', exampleOutput: '' },
+  { key: 'comoAparece', slug: 'como-aparece', label: 'Como aparece na rotina', maxSentences: 2, required: true, order: 3, aiInstructions: '', contentType: 'text', emotionalWeight: 'desconforto', exampleOutput: '' },
+  { key: 'triggers', slug: 'gatilhos', label: 'Gatilhos principais', maxSentences: 1, required: true, order: 4, aiInstructions: '', contentType: 'list', emotionalWeight: 'desconforto', exampleOutput: '' },
+  { key: 'lifeImpact', slug: 'impacto-por-area', label: 'Impacto por área', maxSentences: 1, required: true, order: 5, aiInstructions: '', contentType: 'table', emotionalWeight: 'desconforto', exampleOutput: '' },
+  { key: 'direction', slug: 'direcao-de-ajuste', label: 'Direção de ajuste', maxSentences: 2, required: true, order: 6, aiInstructions: '', contentType: 'text', emotionalWeight: 'esperanca', exampleOutput: '' },
+  { key: 'whatNotToDo', slug: 'o-que-parar', label: 'O que parar de fazer', maxSentences: 1, required: false, order: 7, aiInstructions: '', contentType: 'list', emotionalWeight: 'desconforto', exampleOutput: '' },
+  { key: 'focoMudanca', slug: 'foco-mudanca', label: 'Próxima ação prática', maxSentences: 2, required: true, order: 8, aiInstructions: '', contentType: 'text', emotionalWeight: 'esperanca', exampleOutput: '' },
 ];
 
 interface Props {
@@ -37,6 +58,23 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
   const [loading, setLoading] = useState(true);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [emotionalArchitecture, setEmotionalArchitecture] = useState('');
+  const [expandedExample, setExpandedExample] = useState<string | null>(null);
+
+  // Coverage indicator
+  const coverage = useMemo(() => {
+    const total = sections.length;
+    const withInstructions = sections.filter(s => s.aiInstructions.trim().length > 0).length;
+    const withExample = sections.filter(s => s.exampleOutput.trim().length > 0).length;
+    const withEmotional = sections.filter(s => s.emotionalWeight !== 'neutro').length;
+    const required = sections.filter(s => s.required).length;
+
+    const instructionPct = total > 0 ? Math.round((withInstructions / total) * 100) : 0;
+    const examplePct = total > 0 ? Math.round((withExample / total) * 100) : 0;
+    const emotionalPct = total > 0 ? Math.round((withEmotional / total) * 100) : 0;
+    const overallScore = Math.round((instructionPct * 0.4 + examplePct * 0.3 + emotionalPct * 0.2 + (emotionalArchitecture.trim().length > 20 ? 10 : 0)));
+
+    return { total, required, withInstructions, withExample, withEmotional, instructionPct, examplePct, emotionalPct, overallScore };
+  }, [sections, emotionalArchitecture]);
 
   useEffect(() => {
     fetchTemplate();
@@ -64,6 +102,9 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
           required: s.required ?? true,
           order: s.order ?? i + 1,
           aiInstructions: s.aiInstructions || '',
+          contentType: s.contentType || 'text',
+          emotionalWeight: s.emotionalWeight || 'neutro',
+          exampleOutput: s.exampleOutput || '',
         })));
       } else {
         setSections([...DEFAULT_SECTIONS]);
@@ -116,11 +157,8 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     setSpreading(true);
     try {
       const ordered = sections.map((s, i) => ({ ...s, order: i + 1 }));
-
-      // First save current template
       await handleSave();
 
-      // Get all test modules except current
       const { data: modules, error: modErr } = await supabase
         .from('test_modules')
         .select('id')
@@ -178,7 +216,12 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
       if (error) throw error;
       if (data?.error) { toast.error(data.error); return; }
       if (data?.sections?.length > 0) {
-        setSections(data.sections);
+        setSections(data.sections.map((s: any) => ({
+          ...s,
+          contentType: s.contentType || 'text',
+          emotionalWeight: s.emotionalWeight || 'neutro',
+          exampleOutput: s.exampleOutput || '',
+        })));
         toast.success(`Template gerado com ${data.sections.length} seções!`);
       } else {
         toast.error('Nenhuma seção gerada');
@@ -217,6 +260,9 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
       required: false,
       order: prev.length + 1,
       aiInstructions: '',
+      contentType: 'text' as ContentType,
+      emotionalWeight: 'neutro' as EmotionalWeight,
+      exampleOutput: '',
     }]);
   };
 
@@ -235,7 +281,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
         <div>
           <h3 className="text-base font-semibold text-foreground">Template do Relatório</h3>
           <p className="text-[0.75rem] text-muted-foreground/60 mt-0.5">
-            Defina a estrutura do relatório: ordem, nomes, tamanho e obrigatoriedade de cada bloco.
+            Defina a estrutura do relatório: ordem, nomes, formato, tom emocional e exemplos de saída.
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -270,6 +316,38 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
             <Save className="w-3 h-3" />
             {saving ? 'Salvando...' : 'Salvar'}
           </button>
+        </div>
+      </div>
+
+      {/* Coverage Indicator */}
+      <div className="border border-border/30 rounded-xl bg-card/60 px-4 py-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-foreground">📊 Cobertura do Template</span>
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+            coverage.overallScore >= 70 ? 'bg-emerald-500/10 text-emerald-400' :
+            coverage.overallScore >= 40 ? 'bg-amber-500/10 text-amber-400' :
+            'bg-red-500/10 text-red-400'
+          }`}>
+            {coverage.overallScore}%
+          </span>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <CoverageItem label="Instruções IA" value={coverage.withInstructions} total={coverage.total} pct={coverage.instructionPct} />
+          <CoverageItem label="Exemplos de saída" value={coverage.withExample} total={coverage.total} pct={coverage.examplePct} />
+          <CoverageItem label="Peso emocional" value={coverage.withEmotional} total={coverage.total} pct={coverage.emotionalPct} />
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[0.65rem] text-muted-foreground/50">Arq. Emocional</span>
+            <div className="flex items-center gap-1">
+              {emotionalArchitecture.trim().length > 20 ? (
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              ) : (
+                <AlertCircle className="w-3 h-3 text-red-400" />
+              )}
+              <span className="text-[0.7rem] font-medium text-foreground/80">
+                {emotionalArchitecture.trim().length > 20 ? 'Configurada' : 'Pendente'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -321,7 +399,6 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
             </span>
 
             {/* Content */}
-            {/* Content */}
             <div className="flex-1 min-w-0 space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
                 {/* Label */}
@@ -339,7 +416,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-3 flex-wrap">
                 {/* Slug */}
                 <div className="flex items-center gap-1.5">
                   <label className="text-[0.65rem] text-muted-foreground/50">Slug:</label>
@@ -347,21 +424,49 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
                     type="text"
                     value={section.slug}
                     onChange={(e) => updateSection(index, 'slug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                    className="text-[0.75rem] w-[140px] bg-secondary/30 border border-border/20 rounded-md px-2 py-0.5 text-foreground font-mono"
+                    className="text-[0.75rem] w-[120px] bg-secondary/30 border border-border/20 rounded-md px-2 py-0.5 text-foreground font-mono"
                     placeholder="slug-da-secao"
                   />
                 </div>
 
                 {/* Max sentences */}
                 <div className="flex items-center gap-1.5">
-                  <label className="text-[0.65rem] text-muted-foreground/50">Máx. frases:</label>
+                  <label className="text-[0.65rem] text-muted-foreground/50">Máx:</label>
                   <select
                     value={section.maxSentences}
                     onChange={(e) => updateSection(index, 'maxSentences', Number(e.target.value))}
-                    className="text-[0.75rem] bg-secondary/30 border border-border/20 rounded-md px-2 py-0.5 text-foreground"
+                    className="text-[0.75rem] bg-secondary/30 border border-border/20 rounded-md px-1.5 py-0.5 text-foreground"
                   >
                     {[1, 2, 3, 4, 5].map(n => (
-                      <option key={n} value={n}>{n}</option>
+                      <option key={n} value={n}>{n} frases</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Content type */}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[0.65rem] text-muted-foreground/50">Formato:</label>
+                  <select
+                    value={section.contentType}
+                    onChange={(e) => updateSection(index, 'contentType', e.target.value)}
+                    className="text-[0.75rem] bg-secondary/30 border border-border/20 rounded-md px-1.5 py-0.5 text-foreground"
+                  >
+                    {Object.entries(CONTENT_TYPE_LABELS).map(([val, label]) => (
+                      <option key={val} value={val}>{label}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Emotional weight */}
+                <div className="flex items-center gap-1.5">
+                  <label className="text-[0.65rem] text-muted-foreground/50">Tom:</label>
+                  <select
+                    value={section.emotionalWeight}
+                    onChange={(e) => updateSection(index, 'emotionalWeight', e.target.value)}
+                    className="text-[0.75rem] bg-secondary/30 border border-border/20 rounded-md px-1.5 py-0.5 text-foreground"
+                  >
+                    {Object.entries(EMOTIONAL_LABELS).map(([val, { label }]) => (
+                      <option key={val} value={val}>{label}</option>
                     ))}
                   </select>
                 </div>
@@ -390,6 +495,26 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
                   placeholder="Ex: Seja direto, use no máximo 1 exemplo concreto, evite jargão técnico..."
                 />
               </div>
+
+              {/* Example Output (collapsible) */}
+              <div className="pt-0.5">
+                <button
+                  onClick={() => setExpandedExample(expandedExample === section.key ? null : section.key)}
+                  className="text-[0.65rem] text-muted-foreground/50 hover:text-foreground flex items-center gap-1 transition-colors"
+                >
+                  {expandedExample === section.key ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                  Exemplo de saída ideal {section.exampleOutput ? '✓' : ''}
+                </button>
+                {expandedExample === section.key && (
+                  <textarea
+                    value={section.exampleOutput}
+                    onChange={(e) => updateSection(index, 'exampleOutput', e.target.value)}
+                    rows={3}
+                    className="w-full mt-1 text-[0.75rem] bg-violet-500/5 border border-violet-500/20 rounded-md px-2.5 py-1.5 text-foreground placeholder:text-muted-foreground/30 resize-none focus:outline-none focus:border-violet-500/40 transition-colors"
+                    placeholder='Ex: "Seu padrão dominante de evitação faz com que toda decisão importante seja adiada até que a pressão externa force uma ação impulsiva. Isso não é procrastinação — é uma estratégia inconsciente de proteção contra o medo de errar."'
+                  />
+                )}
+              </div>
             </div>
 
             {/* Remove */}
@@ -415,7 +540,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
       {/* Summary + Save footer */}
       <div className="bg-secondary/20 rounded-xl px-4 py-3 text-[0.7rem] text-muted-foreground/50 space-y-1">
         <p><strong className="text-foreground/60">{sections.length}</strong> seções · <strong className="text-foreground/60">{sections.filter(s => s.required).length}</strong> obrigatórias · <strong className="text-foreground/60">{sections.filter(s => !s.required).length}</strong> opcionais</p>
-        <p>Este template define a estrutura visual do relatório e é usado pelo motor de geração para validar e formatar a saída da IA.</p>
+        <p>Este template controla diretamente o schema da IA — cada seção gera um campo no JSON de saída com tipo de conteúdo, limite de frases e tom emocional.</p>
       </div>
 
       {/* Fixed bottom save */}
@@ -432,5 +557,24 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
     </div>
   );
 };
+
+function CoverageItem({ label, value, total, pct }: { label: string; value: number; total: number; pct: number }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[0.65rem] text-muted-foreground/50">{label}</span>
+      <div className="flex items-center gap-1.5">
+        <div className="flex-1 h-1.5 bg-secondary/30 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${
+              pct >= 70 ? 'bg-emerald-500' : pct >= 40 ? 'bg-amber-500' : 'bg-red-500'
+            }`}
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <span className="text-[0.65rem] font-medium text-foreground/60">{value}/{total}</span>
+      </div>
+    </div>
+  );
+}
 
 export default ReportTemplatePanel;

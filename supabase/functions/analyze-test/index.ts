@@ -35,6 +35,9 @@ interface TemplateSection {
   maxSize?: number;
   required: boolean;
   aiInstructions?: string;
+  contentType?: "text" | "list" | "table";
+  emotionalWeight?: "impacto" | "validacao" | "desconforto" | "esperanca" | "neutro";
+  exampleOutput?: string;
 }
 
 interface OutputRules {
@@ -247,56 +250,67 @@ As microAcoes são a parte MAIS IMPORTANTE do relatório — sem elas, o produto
 
 Retorne exclusivamente um JSON válido sem nenhum texto antes ou depois.`;
 
+// ═══════════════════════════════════════════════════════════════
+// UNIFIED SCHEMA — duplicates eliminated
+// ═══════════════════════════════════════════════════════════════
+
 function buildDynamicOutputSchema(template: ReportTemplate | null): string {
-  // Fixed structural fields that are always required
+  // Unified fields — NO duplicates. Each concept appears exactly once.
   const FIXED_FIELDS: Record<string, string> = {
+    // === Quick Read (resumo executivo) ===
+    leituraRapida: '"resumo executivo do diagnóstico em 2-3 frases — deve ser compreensível por leigos e capturar a essência do relatório inteiro"',
+    // === Profile & Identity ===
     profileName: '"nome do perfil comportamental"',
     combinedTitle: '"título do relatório que captura o padrão central"',
     perfilComportamental: '"descrição do perfil em 3 frases"',
+    mentalState: '"estado mental atual em 1 frase"',
+    // === Diagnosis Core ===
     diagnosis: '"diagnóstico central em 3 frases"',
+    criticalDiagnosis: '"diagnóstico crítico em 2 frases"',
     corePain: '"dor central em 2 frases"',
-    gatilhos: '["gatilho 1", "gatilho 2", "gatilho 3"]',
-    impactoPorArea: '[{"area": "nome da área", "impacto": "impacto concreto"}]',
-    selfSabotageCycle: '["passo 1", "passo 2", "passo 3", "passo 4"]',
+    mechanism: '"mecanismo central em 2 frases"',
+    contradiction: '"contradição interna em 1 frase"',
+    blindSpot: '"ponto cego em 1 frase"',
+    // === Patterns & Behaviors ===
+    triggers: '["gatilho concreto 1", "gatilho concreto 2", "gatilho concreto 3"]',
+    mentalTraps: '["armadilha mental 1", "armadilha mental 2"]',
+    selfSabotageCycle: '["passo 1 do ciclo", "passo 2", "passo 3", "passo 4"]',
+    comoAparece: '"como o padrão aparece na rotina — 2 frases com situações concretas"',
+    // === Impact ===
+    lifeImpact: '[{"pillar": "área da vida", "impact": "impacto concreto"}]',
+    futureConsequence: '"o que acontece se esse padrão continuar — 3 frases diretas"',
+    // === Direction & Action ===
+    direction: '"direção de mudança resumida"',
+    keyUnlockArea: '"área chave de desbloqueio"',
+    blockingPoint: '"ponto de travamento em 1 frase"',
+    focoMudanca: '"foco da mudança em 1 frase curta"',
+    whatNotToDo: '["o que não fazer 1", "o que não fazer 2"]',
+    exitStrategy: '["passo 1", "passo 2", "passo 3"]',
+    mentalCommand: '"comando mental em 1 frase curta"',
+    // === Micro Actions (always 3) ===
     microAcoes: `[
     {"gatilho": "situação específica derivada do PADRÃO DOMINANTE do usuário", "acao": "ação que ataca diretamente esse padrão — verbo claro + tempo + instrução concreta"},
     {"gatilho": "situação derivada do EIXO COM MAIOR SCORE do usuário", "acao": "ação que neutraliza esse eixo — verbo claro + tempo + instrução concreta"},
     {"gatilho": "comportamento recorrente detectado nas EVIDÊNCIAS COMPORTAMENTAIS (respostas com score >= 80)", "acao": "ação que interrompe esse comportamento — verbo claro + tempo + instrução concreta"}
   ]`,
-    exitStrategy: '["passo 1", "passo 2", "passo 3"]',
-    blindSpot: '"ponto cego em 1 frase"',
-    mentalCommand: '"comando mental em 1 frase curta"',
-    futureConsequence: '"o que acontece se esse padrão continuar — 3 frases diretas"',
+    // === Evolution ===
     evolutionSummary: '"resumo da comparação com diagnóstico anterior (string vazia se não houver dados)"',
+    // === Legacy compat (kept for Report.tsx rendering) ===
     summary: '"resumo geral em 2 frases"',
-    mechanism: '"mecanismo central em 2 frases"',
-    contradiction: '"contradição interna em 1 frase"',
     impact: '"impacto na vida em 1 frase"',
-    direction: '"direção de mudança resumida"',
-    keyUnlockArea: '"área chave de desbloqueio"',
-    criticalDiagnosis: '"diagnóstico crítico em 2 frases"',
-    mentalState: '"estado mental atual em 1 frase"',
-    blockingPoint: '"ponto de travamento em 1 frase"',
-    triggers: '["gatilho 1", "gatilho 2", "gatilho 3"]',
-    mentalTraps: '["armadilha 1", "armadilha 2"]',
-    whatNotToDo: '["o que não fazer 1", "o que não fazer 2"]',
-    lifeImpact: '[{"pillar": "área", "impact": "impacto"}]',
-    focoMudanca: '"foco da mudança em 1 frase curta"',
   };
 
-  // If template has sections, use them to add/override dynamic fields
+  // Add dynamic sections from template (only if not already in fixed fields)
   const dynamicFields: Record<string, string> = {};
   if (template?.sections && template.sections.length > 0) {
     for (const section of template.sections) {
       const maxSentences = section.maxSentences ?? section.maxSize ?? 2;
       const label = section.label || section.name || section.key;
-      // Only add if not already in fixed fields, or override description
-      if (FIXED_FIELDS[section.key]) {
-        // Keep the fixed field format but note the template constraint
-        continue;
-      }
-      // New dynamic section from template
-      dynamicFields[section.key] = `"${label} — máximo ${maxSentences} frases"`;
+      if (FIXED_FIELDS[section.key]) continue;
+      const contentTypeHint = section.contentType === "list" ? " (formato: array de strings)" :
+                              section.contentType === "table" ? ' (formato: array de objetos {"col1": "val1", "col2": "val2"})' :
+                              "";
+      dynamicFields[section.key] = `"${label} — máximo ${maxSentences} frases${contentTypeHint}"`;
     }
   }
 
@@ -307,23 +321,37 @@ function buildDynamicOutputSchema(template: ReportTemplate | null): string {
 
   let schema = `--- SCHEMA DE SAÍDA ---\n\nRetorne APENAS este JSON, sem markdown, sem texto adicional:\n\n{\n${fieldLines}\n}`;
 
-  // Add template-driven section instructions
+  // Section instructions with contentType, emotionalWeight, and exampleOutput
   if (template?.sections && template.sections.length > 0) {
     const sectionConstraints = template.sections
       .map((s) => {
         const maxSentences = s.maxSentences ?? s.maxSize ?? 2;
         const label = s.label || s.name || s.key;
         const requiredTag = s.required ? "[OBRIGATÓRIO]" : "[OPCIONAL]";
-        let line = `- "${s.key}" ${requiredTag}: "${label}" — máximo ${maxSentences} frases`;
+        const contentTag = s.contentType ? ` [formato: ${s.contentType}]` : "";
+        const emotionTag = s.emotionalWeight ? ` [peso emocional: ${s.emotionalWeight}]` : "";
+        let line = `- "${s.key}" ${requiredTag}${contentTag}${emotionTag}: "${label}" — máximo ${maxSentences} frases`;
         if (s.aiInstructions && s.aiInstructions.trim().length > 0) {
           line += `\n  INSTRUÇÃO ESPECÍFICA: ${s.aiInstructions.trim()}`;
+        }
+        if (s.exampleOutput && s.exampleOutput.trim().length > 0) {
+          line += `\n  EXEMPLO DE SAÍDA IDEAL: ${s.exampleOutput.trim()}`;
         }
         return line;
       })
       .join("\n");
 
-    schema += `\n\n--- INSTRUÇÕES POR SEÇÃO DO TEMPLATE ---\nCada seção abaixo tem regras específicas. Respeite o limite de frases e as instruções:\n${sectionConstraints}`;
+    schema += `\n\n--- INSTRUÇÕES POR SEÇÃO DO TEMPLATE ---\nCada seção abaixo tem regras específicas. Respeite o limite de frases, o formato de conteúdo e as instruções:\n${sectionConstraints}`;
   }
+
+  // Emotional weight guide
+  schema += `\n
+GUIA DE PESO EMOCIONAL:
+- "impacto": tom forte e revelador — deve causar surpresa e reconhecimento imediato
+- "validacao": tom empático — o leitor deve sentir que foi compreendido
+- "desconforto": tom provocativo — deve gerar leve incômodo produtivo que motiva mudança
+- "esperanca": tom construtivo — deve mostrar caminho claro e acessível
+- "neutro": tom informativo — dados e fatos sem carga emocional`;
 
   // microAcoes rules (always included)
   schema += `\n
@@ -671,18 +699,107 @@ function validateMicroAcoes(
   return { actions: validated, errors };
 }
 
+// ═══════════════════════════════════════════════════════════════
+// maxSentences VALIDATION — trims AI output per section
+// ═══════════════════════════════════════════════════════════════
+
+function countSentences(text: string): number {
+  if (!text || typeof text !== "string") return 0;
+  // Split by sentence-ending punctuation
+  const sentences = text.split(/[.!?]+/).filter((s) => s.trim().length > 5);
+  return sentences.length;
+}
+
+function trimToMaxSentences(text: string, max: number): string {
+  if (!text || typeof text !== "string" || max <= 0) return text;
+  const sentences = text.match(/[^.!?]+[.!?]+/g);
+  if (!sentences || sentences.length <= max) return text;
+  return sentences.slice(0, max).join("").trim();
+}
+
+function validateAndTrimSections(
+  result: Record<string, unknown>,
+  template: ReportTemplate | null,
+): { trimmed: string[]; violations: string[] } {
+  const trimmed: string[] = [];
+  const violations: string[] = [];
+  
+  if (!template?.sections) return { trimmed, violations };
+
+  for (const section of template.sections) {
+    const maxSentences = section.maxSentences ?? section.maxSize ?? 0;
+    if (maxSentences <= 0) continue;
+    
+    const value = result[section.key];
+    if (typeof value !== "string" || !value) continue;
+    
+    const sentenceCount = countSentences(value);
+    if (sentenceCount > maxSentences) {
+      const label = section.label || section.key;
+      violations.push(`${label}: ${sentenceCount}/${maxSentences} frases`);
+      result[section.key] = trimToMaxSentences(value, maxSentences);
+      trimmed.push(section.key);
+    }
+  }
+
+  return { trimmed, violations };
+}
+
 function normalizeResult(
   result: Record<string, unknown>,
   dominant: ScoreEntry,
   sortedScores: ScoreEntry[],
-  answers: StructuredAnswer[] = []
+  answers: StructuredAnswer[] = [],
+  template: ReportTemplate | null = null,
 ): Record<string, unknown> {
-  for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "gatilhos", "pararDeFazer", "exitStrategy"]) {
+  for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "exitStrategy"]) {
     if (!Array.isArray(result[f])) result[f] = [];
   }
   if (!Array.isArray(result.lifeImpact)) result.lifeImpact = [];
-  if (!Array.isArray(result.impactoPorArea)) result.impactoPorArea = [];
 
+  // === Unify duplicates: merge legacy fields into canonical ones ===
+  // gatilhos → triggers (if triggers is empty)
+  if (Array.isArray(result.gatilhos) && (result.gatilhos as any[]).length > 0 && (!Array.isArray(result.triggers) || (result.triggers as any[]).length === 0)) {
+    result.triggers = result.gatilhos;
+  }
+  delete result.gatilhos;
+
+  // impactoPorArea → lifeImpact (if lifeImpact is empty)
+  if (Array.isArray(result.impactoPorArea) && (result.impactoPorArea as any[]).length > 0 && (!Array.isArray(result.lifeImpact) || (result.lifeImpact as any[]).length === 0)) {
+    // Map { area, impacto } to { pillar, impact }
+    result.lifeImpact = (result.impactoPorArea as any[]).map((item: any) => ({
+      pillar: item.area || item.pillar || "",
+      impact: item.impacto || item.impact || "",
+    }));
+  }
+  delete result.impactoPorArea;
+
+  // corrigirPrimeiro → direction (if direction is empty)
+  if (typeof result.corrigirPrimeiro === "string" && result.corrigirPrimeiro && (!result.direction || (result.direction as string).length === 0)) {
+    result.direction = result.corrigirPrimeiro;
+  }
+  delete result.corrigirPrimeiro;
+
+  // acaoInicial → focoMudanca (if focoMudanca is empty)
+  if (typeof result.acaoInicial === "string" && result.acaoInicial && (!result.focoMudanca || (result.focoMudanca as string).length === 0)) {
+    result.focoMudanca = result.acaoInicial;
+  }
+  delete result.acaoInicial;
+
+  // pararDeFazer → whatNotToDo
+  if (result.pararDeFazer) {
+    const pararArr = typeof result.pararDeFazer === "string"
+      ? (result.pararDeFazer ? [result.pararDeFazer as string] : [])
+      : (Array.isArray(result.pararDeFazer) ? result.pararDeFazer : []);
+    if (pararArr.length > 0 && (!Array.isArray(result.whatNotToDo) || (result.whatNotToDo as any[]).length === 0)) {
+      result.whatNotToDo = pararArr;
+    }
+    delete result.pararDeFazer;
+  }
+
+  // chamaAtencao → diagnosis (supplement)
+  // Keep chamaAtencao as its own field for Report.tsx rendering
+  
   const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
   const actionValidationContext = buildActionValidationContext(dominant, sortedScores, answers);
   const validatedMicroAcoes = validateMicroAcoes(rawMicro, actionValidationContext);
@@ -698,21 +815,24 @@ function normalizeResult(
   const stringFields = [
     "profileName", "combinedTitle", "perfilComportamental", "diagnosis",
     "chamaAtencao", "padraoRepetido", "corePain", "comoAparece",
-    "corrigirPrimeiro", "acaoInicial", "blindSpot", "mentalCommand",
+    "blindSpot", "mentalCommand",
     "futureConsequence", "evolutionSummary",
     "summary", "mechanism", "contradiction", "impact", "direction",
     "keyUnlockArea", "criticalDiagnosis", "mentalState", "blockingPoint",
-    "focoMudanca",
+    "focoMudanca", "leituraRapida",
   ];
   for (const f of stringFields) {
     if (typeof result[f] !== "string") result[f] = "";
   }
 
-  if (typeof result.pararDeFazer === "string") {
-    result.pararDeFazer = result.pararDeFazer ? [result.pararDeFazer as string] : [];
-  }
-
   if (!result.combinedTitle) result.combinedTitle = dominant.label || "";
+
+  // === maxSentences validation ===
+  const { trimmed, violations } = validateAndTrimSections(result, template);
+  if (violations.length > 0) {
+    console.log(`[analyze-test] maxSentences violations trimmed: ${violations.join(", ")}`);
+  }
+  result._sectionTrimming = { trimmed, violations };
 
   result._quantitativeAnchor = {
     topAxis: sortedScores[0]?.label || "",
@@ -930,7 +1050,7 @@ serve(async (req) => {
         return fallbackResponse();
       }
 
-      normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || []);
+      normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || [], reportTemplate);
       
       const microCount = Array.isArray(normalized.microAcoes) ? (normalized.microAcoes as any[]).length : 0;
       lastMicroActionErrors = Array.isArray((normalized as any).microAcoesValidation?.errors)
