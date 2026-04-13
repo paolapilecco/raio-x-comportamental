@@ -43,7 +43,7 @@ import {
 } from '@/components/central-report/types';
 
 const CentralReport = () => {
-  const { user, isPremium, isSuperAdmin } = useAuth();
+  const { user, isPremium, isSuperAdmin, planType } = useAuth();
   const navigate = useNavigate();
   const { data: patternDefinitions } = usePatternDefinitions();
   const radarAxisLabels = useAxisLabels();
