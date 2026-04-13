@@ -19,17 +19,18 @@ export function getPersonLimit(planType: PlanType, isSuperAdmin: boolean): numbe
 }
 
 /**
+ * Check if a plan is individual (no multi-person management).
+ */
+export function isIndividualPlan(planType: PlanType): boolean {
+  return PLAN_LIMITS[planType].individual;
+}
+
+/**
  * Check if a specific test module is accessible for a given plan.
  * 
- * For 'pessoal' plan:
- * - Owner (isOwner=true) can access ALL tests
- * - Guests (isOwner=false) can only access behavioral test
- * 
- * For 'profissional' plan:
- * - Everyone can access ALL tests
- * 
- * For 'standard' (free):
- * - Only behavioral test
+ * For 'standard' (free): Only behavioral test
+ * For 'pessoal': All tests (individual use only)
+ * For 'profissional': All tests for all persons
  */
 export function canAccessModule(
   planType: PlanType,
@@ -43,13 +44,8 @@ export function canAccessModule(
     return moduleSlug === BEHAVIORAL_SLUG;
   }
   
-  if (planType === 'profissional') {
-    return true; // all tests for all persons
-  }
-  
-  // pessoal
-  if (isOwner) return true; // owner gets all tests
-  return moduleSlug === BEHAVIORAL_SLUG; // guests only behavioral
+  // pessoal and profissional have all tests
+  return true;
 }
 
 /**
