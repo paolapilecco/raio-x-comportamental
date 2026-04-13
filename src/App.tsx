@@ -89,6 +89,8 @@ const App = () => (
               <Route path="/comparar-pacientes" element={<ProtectedRoute><PatientComparison /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/history" element={<ProtectedRoute><DiagnosticHistory /></ProtectedRoute>} />
+              <Route path="/acompanhamento" element={<ProtectedRoute><Tracking /></ProtectedRoute>} />
+              <Route path="/acompanhamento/:testModuleId" element={<ProtectedRoute><TrackingDetail /></ProtectedRoute>} />
               <Route path="/central-report" element={<ProtectedRoute><CentralReport /></ProtectedRoute>} />
               <Route path="/premium" element={<ProtectedRoute><Premium /></ProtectedRoute>} />
               <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
