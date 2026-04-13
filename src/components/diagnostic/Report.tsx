@@ -317,9 +317,8 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                   );
                 }
 
-                // Action immediate sections
+                // Action immediate sections — delegate to ActionPreviewSection below (skip inline rendering to avoid duplicates)
                 if (/acao|proximo|imediata/i.test(section.key)) {
-                  const microAcoes: { gatilho?: string; acao: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
                   return (
                     <Section key={section.key} num={idx + 1} title={section.label} delay={delay} accent="green">
                       {ai.mentalCommand && (
@@ -328,29 +327,13 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                           <p className="text-base font-semibold text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
                         </div>
                       )}
-                      {microAcoes.length > 0 ? (
-                        <div className="space-y-3">
-                       {microAcoes.map((item: any, i: number) => (
-                            <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
-                              <div className="flex items-start gap-3">
-                                <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">{i + 1}</span>
-                                <div className="flex-1">
-                                  {item.gatilho && (
-                                    <p className="text-xs text-muted-foreground/70 mb-1 leading-relaxed">Quando {item.gatilho} →</p>
-                                  )}
-                                  <p className="text-sm font-semibold text-foreground leading-[1.7]">{item.acao}</p>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
+                      {ai.acaoInicial && (
                         <CardBlock variant="success">
                           <div className="flex items-start gap-3">
                             <CheckCircle2 className="w-4 h-4 text-green-600/60 mt-0.5 shrink-0" />
                             <div>
-                              <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-widest font-semibold mb-1.5">Faça isso agora</p>
-                              <p className="text-sm font-medium text-foreground leading-[1.8]">{typeof value === 'string' ? value : ''}</p>
+                              <p className="text-[9px] text-green-700/50 dark:text-green-400/50 uppercase tracking-widest font-semibold mb-1.5">Próximos 7 dias</p>
+                              <p className="text-sm font-medium text-foreground leading-[1.8]">{ai.acaoInicial}</p>
                             </div>
                           </div>
                         </CardBlock>
