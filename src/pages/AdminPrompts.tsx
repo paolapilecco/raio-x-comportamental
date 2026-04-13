@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Brain, Sparkles, Loader2, Layers, HelpCircle, PlayCircle, CheckCircle2, Circle, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Brain, Sparkles, Loader2, Layers, HelpCircle, PlayCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
