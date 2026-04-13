@@ -273,7 +273,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   const corrigirPrimeiro = safe(ai.corrigirPrimeiro) || safe(ai.direcaoAjuste) || safe(result.keyUnlockArea);
   const pararDeFazer: string[] = (ai.pararDeFazer || ai.oQueEvitar || result.whatNotToDo || []).filter((t: any) => safe(t));
   const acaoInicial = safe(ai.acaoInicial) || safe(ai.proximoPasso) || safe(result.exitStrategy?.[0]?.action) || safe(result.direction);
-  const microAcoes: { acao: string; detalhe?: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes.filter((m: any) => safe(m.acao)) : [];
+  // microAcoes removed — actions come exclusively from action_plan_tracking (persisted actions)
   const mentalCommand: string = safe(ai.mentalCommand);
   const blindSpot = result.interpretation?.blindSpot;
   const mecanismoNeural = ai.mecanismoNeural as { neurotransmissor?: string; cicloNeural?: string; neuroplasticidade?: string } | undefined;
