@@ -169,7 +169,7 @@ export function SummaryScreen({ managedPersons, personSummaries, totalTests, has
                 <button onClick={() => navigate('/checkout')} className="px-8 py-3 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-xl text-sm font-semibold hover:opacity-90 transition-all flex items-center gap-2 mx-auto shadow-[0_8px_25px_-6px_rgba(217,160,32,0.4)]">
                   <Crown className="w-4 h-4" /> Desbloquear Relatório
                 </button>
-                <p className="text-[0.65rem] text-muted-foreground/50">A partir de R$ 5,99/mês</p>
+                <p className="text-[0.65rem] text-muted-foreground/50">A partir de R$ 9,99/mês</p>
               </motion.div>
             </div>
           </div>
