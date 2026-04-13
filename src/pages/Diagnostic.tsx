@@ -430,10 +430,7 @@ const Diagnostic = () => {
     }
   }, [user, moduleId, selectedPersonId, isRetest, retestOrigin, previousSessionId, previousResultId]);
 
-  /**
-   * Local fallback analysis (hardcoded patterns).
-   * Used when AI prompts aren't configured or AI call fails.
-   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const _runLocalAnalysis = useCallback((answers: Answer[]): DiagnosticResult => {
     if (slug === PURPOSE_SLUG) {
       const r = analyzePurposeAnswers(answers);
