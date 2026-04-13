@@ -330,13 +330,15 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
                       )}
                       {microAcoes.length > 0 ? (
                         <div className="space-y-3">
-                          {microAcoes.map((item, i) => (
+                       {microAcoes.map((item: any, i: number) => (
                             <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
                               <div className="flex items-start gap-3">
                                 <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">{i + 1}</span>
                                 <div className="flex-1">
+                                  {item.gatilho && (
+                                    <p className="text-xs text-muted-foreground/70 mb-1 leading-relaxed">Quando {item.gatilho} →</p>
+                                  )}
                                   <p className="text-sm font-semibold text-foreground leading-[1.7]">{item.acao}</p>
-                                  {item.detalhe && <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{item.detalhe}</p>}
                                 </div>
                               </div>
                             </div>
@@ -629,13 +631,15 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         )}
         {microAcoes.length > 0 ? (
           <div className="space-y-3">
-            {microAcoes.map((item, i) => (
+            {microAcoes.map((item: any, i: number) => (
               <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
                 <div className="flex items-start gap-3">
                   <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">{i + 1}</span>
                   <div className="flex-1">
+                    {item.gatilho && (
+                      <p className="text-xs text-muted-foreground/70 mb-1 leading-relaxed">Quando {item.gatilho} →</p>
+                    )}
                     <p className="text-sm font-semibold text-foreground leading-[1.7]">{item.acao}</p>
-                    {item.detalhe && <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{item.detalhe}</p>}
                   </div>
                 </div>
               </div>
