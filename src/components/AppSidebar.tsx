@@ -19,7 +19,7 @@ const navItems = [
   { title: 'Pessoas', url: '/pessoas', icon: Users },
   { title: 'Catálogo', url: '/tests', icon: Activity },
   { title: 'Relatórios', url: '/central-report', icon: FileText },
-  { title: 'Acompanhamento', url: '/history', icon: Activity },
+  { title: 'Acompanhamento', url: '/acompanhamento', icon: Activity },
 ];
 
 export function AppSidebar() {
