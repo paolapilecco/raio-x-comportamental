@@ -904,18 +904,5 @@ function CardBlock({ variant = 'default', children }: { variant?: 'default' | 'a
   return <div className={`border rounded-2xl px-6 py-5 ${styles[variant]}`}>{children}</div>;
 }
 
-function QuickReadCell({ icon, label, value, bold, colorClass }: { icon: React.ReactNode; label: string; value: string; bold?: boolean; colorClass?: string }) {
-  return (
-    <div className="bg-background px-6 py-5 border-b border-r border-border/10 last:border-r-0 sm:[&:nth-child(odd):last-child]:col-span-2">
-      <div className="flex items-center gap-1.5 mb-2.5">
-        {icon}
-        <p className="text-[9px] text-muted-foreground/35 uppercase tracking-[0.2em]">{label}</p>
-      </div>
-      <p className={`text-sm leading-relaxed break-words hyphens-auto ${bold ? 'font-semibold' : 'font-medium'} ${colorClass || 'text-foreground'}`}>
-        {value}
-      </p>
-    </div>
-  );
-}
 
 export default memo(Report);
