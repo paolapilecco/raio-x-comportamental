@@ -28,9 +28,13 @@ interface ReportTemplate {
 
 interface TemplateSection {
   key: string;
-  name: string;
-  maxSize: number;
+  slug?: string;
+  label?: string;
+  name?: string;
+  maxSentences?: number;
+  maxSize?: number;
   required: boolean;
+  aiInstructions?: string;
 }
 
 interface OutputRules {
@@ -41,6 +45,7 @@ interface OutputRules {
   repetitionProhibited?: boolean;
   requiredBlocks?: string[];
   forbiddenLanguage?: string[];
+  emotionalArchitecture?: string;
 }
 
 interface StructuredAnswer {
