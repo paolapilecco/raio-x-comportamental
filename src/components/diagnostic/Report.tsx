@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
-import { buildActionPreviews, parseActionString } from '@/lib/buildActionPreview';
+import { parseActionString } from '@/lib/buildActionPreview';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown } from 'lucide-react';
+import { Download, ChevronRight, Zap, Target, AlertTriangle, ArrowRight, XCircle, CheckCircle2, BarChart3, TrendingDown, TrendingUp, Minus, ArrowUpDown, Lock, Crown } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { trackEvent } from '@/lib/trackEvent';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
@@ -817,19 +817,15 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
   );
 }
 
-/* ── Action Preview Section (3 actions) ── */
+/* ── Action Preview Section (3 actions) — reads from DB only, no frontend generation ── */
 function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any }) {
-  const { user } = useAuth();
+  const { user, isPremium, isSuperAdmin } = useAuth();
   const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
+  
 
   useEffect(() => {
     const resultId = (result as any).id;
-    if (!user || !resultId) {
-      // Fallback: generate client-side if no DB data available
-      const previews = buildActionPreviews(result);
-      setActions(previews);
-      return;
-    }
+    if (!user || !resultId) return;
 
     const fetchActions = async () => {
       const { data } = await supabase
@@ -840,7 +836,6 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
         .order('day_number');
 
       if (data && data.length > 0) {
-        // Get unique action texts (they repeat across 15 days)
         const seen = new Set<string>();
         const unique: { trigger: string; action: string }[] = [];
         for (const row of data) {
@@ -850,16 +845,15 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
           }
         }
         setActions(unique);
-      } else {
-        // No persisted actions — fallback to client-side generation (first render before save)
-        const previews = buildActionPreviews(result);
-        setActions(previews);
       }
+      // No fallback — if no actions in DB, show nothing
     };
     fetchActions();
   }, [(result as any).id, user?.id]);
 
   if (actions.length === 0) return null;
+
+  const showFull = isPremium || isSuperAdmin;
 
   return (
     <motion.section {...fade} transition={{ delay: 0.38, duration: 0.4 }}>
@@ -872,34 +866,75 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
         </h2>
       </div>
       <div className="pl-[42px] space-y-3">
-        {actions.slice(0, 3).map((action, i) => (
-          <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
-            <div className="flex items-start gap-3">
-              <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">
-                {i + 1}
-              </span>
-              <div className="flex-1">
-                <p className="text-xs font-medium text-muted-foreground/70 leading-relaxed">
-                  Quando <span className="text-foreground font-semibold">{action.trigger}</span>
-                </p>
-                <p className="text-sm font-semibold text-green-700 dark:text-green-400 leading-[1.7] mt-1">
-                  → {action.action}
-                </p>
+        {actions.slice(0, 3).map((action, i) => {
+          const isLocked = !showFull && i > 0;
+          return (
+            <div key={i} className={`border rounded-xl px-5 py-4 shadow-sm relative overflow-hidden ${
+              isLocked 
+                ? 'border-border/30 bg-secondary/30' 
+                : 'border-green-500/20 bg-green-500/[0.04]'
+            }`}>
+              <div className="flex items-start gap-3">
+                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
+                  isLocked ? 'bg-muted/50 text-muted-foreground/40' : 'bg-green-500/15 text-green-600'
+                }`}>
+                  {i + 1}
+                </span>
+                <div className="flex-1">
+                  <p className={`text-xs font-medium leading-relaxed ${isLocked ? 'text-muted-foreground/40' : 'text-muted-foreground/70'}`}>
+                    Quando <span className={`font-semibold ${isLocked ? 'text-muted-foreground/50' : 'text-foreground'}`}>
+                      {isLocked ? action.trigger.slice(0, 25) + '...' : action.trigger}
+                    </span>
+                  </p>
+                  <p className={`text-sm font-semibold leading-[1.7] mt-1 ${
+                    isLocked ? 'text-muted-foreground/30' : 'text-green-700 dark:text-green-400'
+                  }`}>
+                    → {isLocked ? action.action.slice(0, 30) + '...' : action.action}
+                  </p>
+                </div>
               </div>
+              {isLocked && (
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-background/60 to-background/90 flex items-center justify-end pr-4">
+                  <Lock className="w-4 h-4 text-muted-foreground/40" />
+                </div>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Paywall — only for free users */}
+        {!showFull && (
+          <div className="mt-5 border border-destructive/20 bg-destructive/[0.03] rounded-2xl px-6 py-6 space-y-4">
+            <div className="space-y-1.5 text-center">
+              <p className="text-[15px] text-foreground font-bold leading-snug">
+                Você já sabe o que está errado.
+              </p>
+              <p className="text-sm text-foreground/80 font-medium">
+                Mas continua fazendo igual.
+              </p>
+              <p className="text-sm text-destructive font-bold">
+                Sem execução, nada muda.
+              </p>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground text-center">
+              +32.847 mulheres já estão executando esse plano
+            </p>
+
+            <div className="border-t border-destructive/10 pt-4">
+              <p className="text-xs text-destructive/80 text-center font-medium leading-relaxed mb-4">
+                Se você não fizer isso, daqui 30 dias você ainda vai estar no mesmo padrão.
+              </p>
+              <button
+                onClick={() => window.location.href = '/premium'}
+                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
+              >
+                <Crown className="w-4 h-4" />
+                Desbloquear acompanhamento — R$9,99
+              </button>
             </div>
           </div>
-        ))}
-        <div className="mt-4 border border-destructive/15 bg-destructive/[0.03] rounded-xl px-5 py-4">
-          <p className="text-[13px] text-foreground font-semibold text-center leading-relaxed">
-            Você já sabe o que está errado.
-          </p>
-          <p className="text-xs text-muted-foreground text-center mt-0.5 leading-relaxed">
-            Mas continua fazendo igual. Sem execução, nada muda.
-          </p>
-          <p className="text-[10px] text-destructive/70 text-center mt-2 font-bold">
-            Desbloquear acompanhamento — R$9,99
-          </p>
-        </div>
+        )}
       </div>
     </motion.section>
   );
