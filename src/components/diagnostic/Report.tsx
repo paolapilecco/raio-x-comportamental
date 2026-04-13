@@ -915,10 +915,12 @@ function ActionPreviewSection({ result, ai }: { result: DiagnosticResult; ai: an
                 {i + 1}
               </span>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-foreground leading-[1.7]">{action.title}</p>
-                {action.description && (
-                  <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{action.description}</p>
-                )}
+                <p className="text-xs font-medium text-muted-foreground/70 leading-relaxed">
+                  Se <span className="text-foreground font-semibold">{action.trigger.toLowerCase()}</span>
+                </p>
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400 leading-[1.7] mt-1">
+                  → {action.action}
+                </p>
               </div>
             </div>
           </div>
