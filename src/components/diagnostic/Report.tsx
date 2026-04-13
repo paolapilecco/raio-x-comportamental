@@ -12,18 +12,32 @@ import { useState, useEffect, memo } from 'react';
 import LifeMapReport from './LifeMapReport';
 import { ReportGamification } from './ReportGamification';
 
+// ═══════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════
+
 interface ReportProps {
   result: DiagnosticResult;
   onRestart: () => void;
   moduleSlug?: string;
 }
 
-interface TemplateSection {
+interface StoryboardSlot {
   key: string;
   label: string;
-  order: number;
-  required: boolean;
+  format: 'prose' | 'list' | 'cards' | 'quote' | 'alert';
   maxSentences: number;
+  enabled: boolean;
+}
+
+interface StoryboardAct {
+  id: 'espelho' | 'confronto' | 'direcao';
+  title: string;
+  slots: StoryboardSlot[];
+}
+
+interface StoryboardTemplate {
+  acts: StoryboardAct[];
 }
 
 const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg: string; ring: string }> = {
@@ -32,18 +46,10 @@ const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg
   alto: { label: 'Alto', color: 'text-destructive', bg: 'bg-destructive', ring: 'ring-destructive/20' },
 };
 
-function getSectionAccent(key: string): string | undefined {
-  if (key.match(/diagnostico|chamaAtencao|dorCentral|corePain/i)) return 'destructive';
-  if (key.match(/futureConsequence|consequencia/i)) return 'destructive';
-  if (key.match(/direcao|corrigir|ajuste/i)) return 'primary';
-  if (key.match(/acao|proximo|imediata/i)) return 'green';
-  if (key.match(/gatilho|parar|oQue/i)) return 'destructive';
-  return undefined;
-}
-
-function isListSection(key: string): boolean {
-  return /gatilho|parar|oQue|whatNot|mentalTrap/i.test(key);
-}
+const fade = {
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+};
 
 function getHeaderTitle(slug?: string): string {
   if (!slug) return 'Sua leitura';
@@ -59,16 +65,15 @@ function getHeaderTitle(slug?: string): string {
   return 'Sua leitura';
 }
 
-const fade = {
-  initial: { opacity: 0, y: 12 },
-  animate: { opacity: 1, y: 0 },
-};
+// ═══════════════════════════════════════════════════════════════
+// MAIN COMPONENT
+// ═══════════════════════════════════════════════════════════════
 
 const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
   const { profile, user } = useAuth();
   const axisLabels = useAxisLabels();
-  const [templateSections, setTemplateSections] = useState<TemplateSection[]>([]);
+  const [storyboard, setStoryboard] = useState<StoryboardTemplate | null>(null);
 
   useEffect(() => {
     if (!moduleSlug || moduleSlug === 'mapa-de-vida') return;
@@ -77,9 +82,22 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
       if (!modules?.[0]) return;
       const { data: templates } = await supabase.from('report_templates').select('sections').eq('test_id', modules[0].id).limit(1);
       if (templates?.[0]?.sections) {
-        const sections = templates[0].sections as unknown as TemplateSection[];
-        if (Array.isArray(sections) && sections.length > 0) {
-          setTemplateSections(sections.sort((a, b) => a.order - b.order));
+        const raw = templates[0].sections as any;
+        // Check for new storyboard format
+        if (raw?.acts && Array.isArray(raw.acts)) {
+          setStoryboard({
+            acts: raw.acts.map((a: any) => ({
+              id: a.id,
+              title: a.title,
+              slots: (a.slots || []).filter((s: any) => s.enabled !== false).map((s: any) => ({
+                key: s.key,
+                label: s.label || s.key,
+                format: s.format || 'prose',
+                maxSentences: s.maxSentences ?? 2,
+                enabled: s.enabled !== false,
+              })),
+            })),
+          });
         }
       }
     };
@@ -98,10 +116,8 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
   const headerTitle = getHeaderTitle(moduleSlug);
   const ai = (result as any);
-
-  const corrigirPrimeiro = ai.corrigirPrimeiro || ai.direcaoAjuste || result.keyUnlockArea;
-  const focoMudanca = ai.focoMudanca || result.keyUnlockArea || ai.blockingPoint || result.blockingPoint || corrigirPrimeiro;
   const profileName = result.interpretation?.behavioralProfile?.name || result.profileName || String(result.dominantPattern || '');
+  const dominantAxisLabel = result.allScores?.[0]?.label || result.allScores?.[0]?.key || '';
 
   const handleDownloadPdf = async () => {
     if (moduleSlug === 'mapa-de-vida') {
@@ -149,6 +165,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
     }
   };
 
+  // ── Value resolver ──
   const resolveValue = (key: string): string | string[] | null => {
     const v = ai[key];
     if (Array.isArray(v) && v.length > 0) return v;
@@ -156,16 +173,13 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
     return null;
   };
 
-  const hasCustomTemplate = templateSections.length >= 5;
-
-  // Resolve dominant axis for diagnostic-action link
-  const dominantAxisLabel = result.allScores?.[0]?.label || result.allScores?.[0]?.key || '';
+  const hasStoryboard = storyboard && storyboard.acts.length > 0 && storyboard.acts.some(a => a.slots.length > 0);
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 md:px-10 py-16 md:py-28">
 
-        {/* ── Header — editorial ── */}
+        {/* ── Header ── */}
         <motion.header {...fade} transition={{ duration: 0.6 }} className="mb-16">
           <p className="text-[10px] text-muted-foreground/35 uppercase tracking-[0.35em] font-light mb-6">
             {headerTitle}
@@ -181,203 +195,53 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           </div>
         </motion.header>
 
-        {/* ── Editorial Opening — replaces mechanical Síntese card ── */}
+        {/* ── Profile Identity ── */}
         <motion.div {...fade} transition={{ delay: 0.1, duration: 0.5 }} className="mb-20">
-          <div className="space-y-6">
-            {/* Profile identity — the mirror */}
-            <div className="border-l-[3px] border-primary/30 pl-6">
-              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.3em] font-medium mb-3">
-                O padrão identificado
-              </p>
-              <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-snug">
-                {profileName}
-              </p>
-            </div>
-
-            {/* Core reading — editorial prose, not a dashboard grid */}
-            <div className="rounded-2xl border border-border/15 bg-card/30 px-7 py-6 space-y-4">
-              {(ai.blockingPoint || result.blockingPoint) && (
-                <div>
-                  <p className="text-[9px] text-destructive/40 uppercase tracking-[0.25em] font-medium mb-2">O que trava você</p>
-                  <p className="text-[15px] text-foreground/85 leading-[1.85]">
-                    {ai.blockingPoint || result.blockingPoint}
-                  </p>
-                </div>
-              )}
-              {focoMudanca && (
-                <div>
-                  <p className="text-[9px] text-primary/40 uppercase tracking-[0.25em] font-medium mb-2">Onde concentrar energia</p>
-                  <p className="text-[15px] text-foreground/85 leading-[1.85]">
-                    {focoMudanca}
-                  </p>
-                </div>
-              )}
-            </div>
+          <div className="border-l-[3px] border-primary/30 pl-6">
+            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.3em] font-medium mb-3">O padrão identificado</p>
+            <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-snug">{profileName}</p>
           </div>
         </motion.div>
 
-        {/* ── Sections — editorial flow ── */}
+        {/* ── 3-Act Narrative ── */}
         <div className="space-y-20">
-          {hasCustomTemplate ? (
+          {hasStoryboard ? (
             <>
-              {templateSections.map((section, idx) => {
-                const value = resolveValue(section.key);
-                if (!value && !section.required) return null;
+              {storyboard!.acts.map((act, actIdx) => {
+                const enabledSlots = act.slots.filter(s => s.enabled);
+                if (enabledSlots.length === 0) return null;
 
-                const accent = getSectionAccent(section.key);
-                const isList = isListSection(section.key) || Array.isArray(value);
-                const delay = 0.05 + idx * 0.04;
+                return enabledSlots.map((slot, slotIdx) => {
+                  const value = resolveValue(slot.key);
+                  const globalDelay = 0.05 + (actIdx * 0.1) + (slotIdx * 0.04);
 
-                // Impact areas
-                if (section.key === 'impactoPorArea' || section.key === 'impactoDecisoes' || section.key === 'impactoReal' || section.key === 'impactoRelacoes' || section.key === 'impactoVinculos') {
-                  const impacto = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
-                  const textValue = typeof value === 'string' ? value : null;
-                  
                   return (
-                    <Section key={section.key} title={section.label} delay={delay} accent={accent}>
-                      {impacto.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {impacto.map((item: any, i: number) => (
-                            <div key={i} className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
-                              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">{item.area}</p>
-                              <p className="text-sm text-foreground/80 leading-relaxed">{item.efeito}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : textValue ? (
-                        <p className="text-[15px] text-muted-foreground leading-[1.85]">{textValue}</p>
-                      ) : null}
-                    </Section>
+                    <RenderSlot
+                      key={slot.key}
+                      slot={slot}
+                      actId={act.id}
+                      value={value}
+                      ai={ai}
+                      result={result}
+                      delay={globalDelay}
+                    />
                   );
-                }
-
-                // List sections — NO numbers
-                if (isList && Array.isArray(value)) {
-                  const isStop = /parar|oQue/i.test(section.key);
-                  return (
-                    <Section key={section.key} title={section.label} delay={delay} accent={accent}>
-                      {isStop ? (
-                        <div className="space-y-2.5">
-                          {value.map((item: string, i: number) => (
-                            <div key={i} className="flex items-start gap-3 py-2 px-4 rounded-lg bg-destructive/[0.02] border border-destructive/8">
-                              <XCircle className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
-                              <p className="text-[15px] text-muted-foreground leading-[1.8]">{item}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <ul className="space-y-3">
-                          {value.map((item: string, i: number) => (
-                            <li key={i} className="flex items-start gap-3">
-                              <span className="mt-[9px] w-1 h-1 rounded-full bg-destructive/40 shrink-0" />
-                              <p className="text-[15px] text-muted-foreground leading-[1.85]">{item}</p>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                    </Section>
-                  );
-                }
-
-                // Direction sections
-                if (/direcao|corrigir|ajuste/i.test(section.key)) {
-                  return (
-                    <Section key={section.key} title={section.label} delay={delay} accent="primary">
-                      <CardBlock variant="primary">
-                        <div className="flex items-start gap-3">
-                          <ArrowRight className="w-4 h-4 text-primary/50 mt-0.5 shrink-0" />
-                          <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
-                        </div>
-                      </CardBlock>
-                    </Section>
-                  );
-                }
-
-                // Action/immediate sections
-                if (/acao|proximo|imediata/i.test(section.key)) {
-                  return (
-                    <Section key={section.key} title={section.label} delay={delay} accent="green">
-                      {ai.mentalCommand && (
-                        <div className="mb-5 rounded-xl border border-primary/15 bg-primary/[0.02] px-6 py-5">
-                          <p className="text-[9px] text-primary/40 uppercase tracking-[0.25em] font-medium mb-3">Repita antes de agir</p>
-                          <p className="text-base font-medium text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
-                        </div>
-                      )}
-                      {ai.acaoInicial && (
-                        <CardBlock variant="success">
-                          <div className="flex items-start gap-3">
-                            <CheckCircle2 className="w-4 h-4 text-green-600/50 mt-0.5 shrink-0" />
-                            <p className="text-[15px] font-medium text-foreground leading-[1.85]">{ai.acaoInicial}</p>
-                          </div>
-                        </CardBlock>
-                      )}
-                    </Section>
-                  );
-                }
-
-                // Diagnostic/alert sections
-                if (/diagnostico|chamaAtencao|dorCentral|corePain/i.test(section.key)) {
-                  return (
-                    <Section key={section.key} title={section.label} delay={delay} accent="destructive">
-                      <CardBlock variant="alert">
-                        <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
-                      </CardBlock>
-                    </Section>
-                  );
-                }
-
-                // Future consequence
-                if (/futureConsequence|consequencia/i.test(section.key)) {
-                  return (
-                    <Section key={section.key} title={section.label} delay={delay} accent="destructive">
-                      <CardBlock variant="alert">
-                        <div className="flex items-start gap-3">
-                          <TrendingDown className="w-4 h-4 text-destructive/50 mt-0.5 shrink-0" />
-                          <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
-                        </div>
-                      </CardBlock>
-                    </Section>
-                  );
-                }
-
-                // Default text
-                return (
-                  <Section key={section.key} title={section.label} delay={delay} accent={accent}>
-                    <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : (value || 'Não identificado')}</p>
-                  </Section>
-                );
+                });
               })}
 
-              <EvolutionComparisonSection ai={ai} delay={0.04 + templateSections.length * 0.04} />
-
-              {result.interpretation?.blindSpot?.realProblem && (
-                <motion.div {...fade} transition={{ delay: 0.07 }}>
-                  <CardBlock variant="muted">
-                    <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-3">Ponto cego</p>
-                    <p className="text-xs text-muted-foreground/60 italic mb-2.5">
-                      O que você acredita: {result.interpretation.blindSpot.perceivedProblem}
-                    </p>
-                    <div className="flex items-start gap-2">
-                      <ChevronRight className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
-                      <p className="text-[15px] text-foreground leading-[1.8]">{result.interpretation.blindSpot.realProblem}</p>
-                    </div>
-                  </CardBlock>
-                </motion.div>
-              )}
+              <EvolutionComparisonSection ai={ai} />
             </>
           ) : (
             <LegacySections result={result} moduleSlug={moduleSlug} ai={ai} />
           )}
 
-          {/* ── Actions with diagnostic connection ── */}
+          {/* ── Actions ── */}
           <ActionPreviewSection result={result} ai={ai} dominantAxisLabel={dominantAxisLabel} profileName={profileName} />
 
-          {/* ── Intensity bars ── */}
+          {/* ── Intensity Bars ── */}
           <motion.section {...fade} transition={{ delay: 0.42 }}>
             <div className="mb-6">
-              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.25em] font-medium">
-                Intensidade por eixo
-              </p>
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.25em] font-medium">Intensidade por eixo</p>
             </div>
             <div className="space-y-5 bg-card/50 border border-border/20 rounded-2xl px-6 py-6">
               {result.allScores.slice(0, 8).map((score) => {
@@ -414,17 +278,10 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             Leitura comportamental baseada em suas respostas. Não substitui avaliação profissional.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-16">
-            <button
-              onClick={handleDownloadPdf}
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-90 transition-all active:scale-[0.97] shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              Baixar PDF
+            <button onClick={handleDownloadPdf} className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:brightness-90 transition-all active:scale-[0.97] shadow-sm">
+              <Download className="w-4 h-4" /> Baixar PDF
             </button>
-            <button
-              onClick={onRestart}
-              className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors px-6 py-3 rounded-lg hover:bg-secondary/30"
-            >
+            <button onClick={onRestart} className="text-sm text-muted-foreground/60 hover:text-foreground transition-colors px-6 py-3 rounded-lg hover:bg-secondary/30">
               Ir para o Dashboard
             </button>
           </div>
@@ -434,9 +291,150 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   );
 };
 
+// ═══════════════════════════════════════════════════════════════
+// SLOT RENDERER — maps format to visual component
+// ═══════════════════════════════════════════════════════════════
 
-/* ── Legacy sections — NO NUMBERING anywhere ── */
-function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
+function RenderSlot({ slot, actId, value, ai, result, delay }: {
+  slot: StoryboardSlot; actId: string; value: string | string[] | null;
+  ai: any; result: DiagnosticResult; delay: number;
+}) {
+  // Special cases by key
+  if (slot.key === 'lifeImpact' || slot.key === 'impactoPorArea') {
+    const impacto = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
+    if (impacto.length === 0 && !value) return null;
+    return (
+      <Section title={slot.label} delay={delay} accent={actId === 'confronto' ? 'destructive' : undefined}>
+        {impacto.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {impacto.map((item: any, i: number) => (
+              <div key={i} className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+                <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">{item.area}</p>
+                <p className="text-sm text-foreground/80 leading-relaxed">{item.efeito || item.impact}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+        )}
+      </Section>
+    );
+  }
+
+  if (!value && slot.key !== 'mentalCommand') return null;
+
+  // Accent by act
+  const accentMap: Record<string, string | undefined> = {
+    espelho: undefined,
+    confronto: 'destructive',
+    direcao: 'primary',
+  };
+  const accent = accentMap[actId];
+
+  // Quote format (mentalCommand)
+  if (slot.format === 'quote') {
+    const cmd = ai.mentalCommand || (typeof value === 'string' ? value : null);
+    if (!cmd) return null;
+    return (
+      <motion.div {...fade} transition={{ delay, duration: 0.4 }}>
+        <div className="rounded-xl border border-primary/15 bg-primary/[0.02] px-6 py-5">
+          <p className="text-[9px] text-primary/40 uppercase tracking-[0.25em] font-medium mb-3">Repita antes de agir</p>
+          <p className="text-base font-medium text-foreground italic leading-relaxed">"{cmd}"</p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // Alert format
+  if (slot.format === 'alert') {
+    return (
+      <Section title={slot.label} delay={delay} accent="destructive">
+        <CardBlock variant="alert">
+          <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+        </CardBlock>
+      </Section>
+    );
+  }
+
+  // List format
+  if (slot.format === 'list' || Array.isArray(value)) {
+    const items = Array.isArray(value) ? value : [];
+    if (items.length === 0) return null;
+    const isStop = /parar|whatNot/i.test(slot.key);
+    return (
+      <Section title={slot.label} delay={delay} accent={accent}>
+        {isStop ? (
+          <div className="space-y-2.5">
+            {items.map((item: string, i: number) => (
+              <div key={i} className="flex items-start gap-3 py-2 px-4 rounded-lg bg-destructive/[0.02] border border-destructive/8">
+                <XCircle className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
+                <p className="text-[15px] text-muted-foreground leading-[1.8]">{item}</p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {items.map((item: string, i: number) => (
+              <li key={i} className="flex items-start gap-3">
+                <span className="mt-[9px] w-1 h-1 rounded-full bg-destructive/40 shrink-0" />
+                <p className="text-[15px] text-muted-foreground leading-[1.85]">{item}</p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+    );
+  }
+
+  // Cards format
+  if (slot.format === 'cards') {
+    return (
+      <Section title={slot.label} delay={delay} accent={accent}>
+        <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+      </Section>
+    );
+  }
+
+  // Prose format (default) — with act-specific styling
+  if (actId === 'direcao' && /direction|direcao|ajuste|corrigir/i.test(slot.key)) {
+    return (
+      <Section title={slot.label} delay={delay} accent="primary">
+        <CardBlock variant="primary">
+          <div className="flex items-start gap-3">
+            <ArrowRight className="w-4 h-4 text-primary/50 mt-0.5 shrink-0" />
+            <p className="text-[15px] text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+          </div>
+        </CardBlock>
+      </Section>
+    );
+  }
+
+  if (actId === 'direcao' && /foco|proximo|acao/i.test(slot.key)) {
+    return (
+      <Section title={slot.label} delay={delay} accent="green">
+        <CardBlock variant="success">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="w-4 h-4 text-green-600/50 mt-0.5 shrink-0" />
+            <p className="text-[15px] font-medium text-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+          </div>
+        </CardBlock>
+      </Section>
+    );
+  }
+
+  // Default prose
+  return (
+    <Section title={slot.label} delay={delay} accent={actId === 'espelho' ? undefined : accent}>
+      <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+    </Section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEGACY SECTIONS (backwards compatibility)
+// ═══════════════════════════════════════════════════════════════
+
+function LegacySections({ result, moduleSlug: _moduleSlug, ai }: { result: DiagnosticResult; moduleSlug?: string; ai: any }) {
   const chamaAtencao = ai.chamaAtencao || ai.resumoPrincipal || result.criticalDiagnosis;
   const padraoRepetido = ai.padraoRepetido || ai.padraoIdentificado || result.mechanism;
   const comoAparece = ai.comoAparece || result.mentalState;
@@ -448,12 +446,12 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
   const microAcoes: { gatilho?: string; acao: string }[] = Array.isArray(ai.microAcoes) ? ai.microAcoes : [];
   const acaoInicialRaw = ai.acaoInicial || ai.proximoPasso || (result.exitStrategy?.[0]?.action) || result.direction;
   const acaoInicial = typeof acaoInicialRaw === 'string' ? acaoInicialRaw : '';
-
-  const titles = getLegacySectionTitles(moduleSlug);
+  const focoMudanca = ai.focoMudanca || result.keyUnlockArea || ai.blockingPoint || result.blockingPoint || corrigirPrimeiro;
 
   return (
     <>
-      <Section title={titles.chamaAtencao} delay={0.05} accent="destructive">
+      {/* ACT 1: Espelho */}
+      <Section title="O que seu resultado revela" delay={0.05} accent="destructive">
         <CardBlock variant="alert">
           <p className="text-[15px] text-foreground leading-[1.85]">{chamaAtencao}</p>
         </CardBlock>
@@ -463,9 +461,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         <motion.div {...fade} transition={{ delay: 0.07 }} className="-mt-8">
           <CardBlock variant="muted">
             <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-3">Ponto cego</p>
-            <p className="text-xs text-muted-foreground/60 italic mb-2.5">
-              O que você acredita: {result.interpretation.blindSpot.perceivedProblem}
-            </p>
+            <p className="text-xs text-muted-foreground/60 italic mb-2.5">O que você acredita: {result.interpretation.blindSpot.perceivedProblem}</p>
             <div className="flex items-start gap-2">
               <ChevronRight className="w-3.5 h-3.5 text-destructive/40 mt-0.5 shrink-0" />
               <p className="text-[15px] text-foreground leading-[1.8]">{result.interpretation.blindSpot.realProblem}</p>
@@ -474,7 +470,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </motion.div>
       )}
 
-      <Section title={titles.padraoRepetido} delay={0.1}>
+      <Section title="O padrão que te define" delay={0.1}>
         {result.interpretation?.behavioralProfile && (
           <div className="border-l-2 border-primary/20 pl-5 mb-5">
             <p className="text-base font-semibold text-foreground">{result.interpretation.behavioralProfile.name}</p>
@@ -483,9 +479,8 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         <p className="text-[15px] text-muted-foreground leading-[1.85]">{padraoRepetido}</p>
       </Section>
 
-      <Section title={titles.comoAparece} delay={0.14}>
+      <Section title="Como isso vive em você" delay={0.14}>
         <p className="text-[15px] text-muted-foreground leading-[1.85]">{comoAparece}</p>
-        {/* Self-sabotage cycle — editorial flow, NO numbers */}
         {result.selfSabotageCycle?.length > 0 && (
           <div className="mt-6 space-y-2">
             {result.selfSabotageCycle.map((step, i) => (
@@ -498,8 +493,9 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         )}
       </Section>
 
+      {/* ACT 2: Confronto */}
       {gatilhos?.length > 0 && (
-        <Section title={titles.gatilhos} delay={0.18} accent="destructive">
+        <Section title="O que ativa esse ciclo" delay={0.18} accent="destructive">
           <ul className="space-y-3">
             {gatilhos.map((t: string, i: number) => (
               <li key={i} className="flex items-start gap-3">
@@ -511,7 +507,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <Section title={titles.comoAtrapalha} delay={0.22}>
+      <Section title="O custo real desse padrão" delay={0.22}>
         {impactoPorArea.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {impactoPorArea.map((item, i) => (
@@ -537,9 +533,10 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <EvolutionComparisonSection ai={ai} delay={0.255} />
+      <EvolutionComparisonSection ai={ai} />
 
-      <Section title={titles.corrigirPrimeiro} delay={0.26} accent="primary">
+      {/* ACT 3: Direção */}
+      <Section title="A mudança que importa" delay={0.26} accent="primary">
         <CardBlock variant="primary">
           <div className="flex items-start gap-3">
             <ArrowRight className="w-4 h-4 text-primary/50 mt-0.5 shrink-0" />
@@ -549,7 +546,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
       </Section>
 
       {pararDeFazer?.length > 0 && (
-        <Section title={titles.pararDeFazer} delay={0.3} accent="destructive">
+        <Section title="O que abandonar agora" delay={0.3} accent="destructive">
           <div className="space-y-2.5">
             {pararDeFazer.map((item: string, i: number) => (
               <div key={i} className="flex items-start gap-3 py-2 px-4 rounded-lg bg-destructive/[0.02] border border-destructive/8">
@@ -561,14 +558,13 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
         </Section>
       )}
 
-      <Section title={titles.acaoInicial} delay={0.34} accent="green">
+      <Section title="Seu próximo passo" delay={0.34} accent="green">
         {ai.mentalCommand && (
           <div className="mb-5 rounded-xl border border-primary/15 bg-primary/[0.02] px-6 py-5">
             <p className="text-[9px] text-primary/40 uppercase tracking-[0.25em] font-medium mb-3">Repita antes de agir</p>
             <p className="text-base font-medium text-foreground italic leading-relaxed">"{ai.mentalCommand}"</p>
           </div>
         )}
-        {/* microAcoes — editorial blocks, NO number badges */}
         {microAcoes.length > 0 ? (
           <div className="space-y-3">
             {microAcoes.map((item: any, i: number) => (
@@ -576,9 +572,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
                 <div className="flex items-start gap-3">
                   <span className="mt-[9px] w-1.5 h-1.5 rounded-full bg-green-500/50 shrink-0" />
                   <div className="flex-1">
-                    {item.gatilho && (
-                      <p className="text-xs text-muted-foreground/60 mb-1.5 leading-relaxed">Quando {item.gatilho} →</p>
-                    )}
+                    {item.gatilho && <p className="text-xs text-muted-foreground/60 mb-1.5 leading-relaxed">Quando {item.gatilho} →</p>}
                     <p className="text-[15px] font-medium text-foreground leading-[1.8]">{item.acao}</p>
                   </div>
                 </div>
@@ -589,7 +583,7 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
           <CardBlock variant="success">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="w-4 h-4 text-green-600/50 mt-0.5 shrink-0" />
-              <p className="text-[15px] font-medium text-foreground leading-[1.85]">{acaoInicial}</p>
+              <p className="text-[15px] font-medium text-foreground leading-[1.85]">{acaoInicial || focoMudanca}</p>
             </div>
           </CardBlock>
         )}
@@ -598,43 +592,11 @@ function LegacySections({ result, moduleSlug, ai }: { result: DiagnosticResult; 
   );
 }
 
-/* ── Editorial section titles ── */
-interface SectionTitles {
-  chamaAtencao: string;
-  padraoRepetido: string;
-  comoAparece: string;
-  gatilhos: string;
-  comoAtrapalha: string;
-  corrigirPrimeiro: string;
-  pararDeFazer: string;
-  acaoInicial: string;
-}
+// ═══════════════════════════════════════════════════════════════
+// EVOLUTION COMPARISON
+// ═══════════════════════════════════════════════════════════════
 
-function getLegacySectionTitles(slug?: string): SectionTitles {
-  const base: SectionTitles = {
-    chamaAtencao: 'O que seu resultado revela',
-    padraoRepetido: 'O padrão que te define',
-    comoAparece: 'Como isso vive em você',
-    gatilhos: 'O que ativa esse ciclo',
-    comoAtrapalha: 'O custo real desse padrão',
-    corrigirPrimeiro: 'A mudança que importa',
-    pararDeFazer: 'O que abandonar agora',
-    acaoInicial: 'Seu próximo passo',
-  };
-  if (!slug) return base;
-  if (slug.includes('execucao') || slug.includes('produtividade')) return { ...base, chamaAtencao: 'Onde sua execução trava', padraoRepetido: 'Seu tipo de bloqueio', comoAparece: 'Onde isso aparece nos projetos', gatilhos: 'O que ativa a procrastinação', comoAtrapalha: 'O que isso custa no trabalho', corrigirPrimeiro: 'O que precisa mudar na execução', acaoInicial: 'Faça isso nos próximos 3 dias' };
-  if (slug.includes('emocional') || slug.includes('emocoes') || slug.includes('reatividade')) return { ...base, chamaAtencao: 'O que domina suas reações', padraoRepetido: 'Seu tipo de reatividade', comoAparece: 'Quando você perde o controle', gatilhos: 'O que dispara suas reações', comoAtrapalha: 'O que você perde com isso', corrigirPrimeiro: 'O que mudar nas reações', acaoInicial: 'Na próxima vez, faça isso' };
-  if (slug.includes('relacionamento') || slug.includes('apego')) return { ...base, chamaAtencao: 'Como você se conecta', padraoRepetido: 'Seu padrão nos vínculos', comoAparece: 'Onde os conflitos se repetem', gatilhos: 'O que ativa o modo defensivo', comoAtrapalha: 'O que isso custa nos vínculos', corrigirPrimeiro: 'O que mudar nos relacionamentos', acaoInicial: 'Teste isso na próxima conversa difícil' };
-  if (slug.includes('autoimagem') || slug.includes('identidade')) return { ...base, chamaAtencao: 'Como você se enxerga', padraoRepetido: 'Sua distorção principal', comoAparece: 'As decisões que você evita', gatilhos: 'O que ativa sua autocrítica', comoAtrapalha: 'Onde essa visão te limita', corrigirPrimeiro: 'O que mudar na autoimagem', acaoInicial: 'Desafie isso esta semana' };
-  if (slug.includes('dinheiro') || slug.includes('financ')) return { ...base, chamaAtencao: 'Sua relação real com dinheiro', padraoRepetido: 'Seu perfil financeiro', comoAparece: 'Onde perde dinheiro sem perceber', gatilhos: 'O que ativa impulsos financeiros', comoAtrapalha: 'O impacto nas suas decisões', corrigirPrimeiro: 'O que mudar com dinheiro', acaoInicial: 'Faça isso na próxima compra' };
-  if (slug.includes('oculto') || slug.includes('hidden')) return { ...base, chamaAtencao: 'O que você não vê em si', padraoRepetido: 'O mecanismo escondido', comoAparece: 'Onde você sabota sem perceber', gatilhos: 'O que ativa o padrão', comoAtrapalha: 'As consequências invisíveis', corrigirPrimeiro: 'O que mudar nos padrões ocultos', acaoInicial: 'Observe isso nos próximos dias' };
-  if (slug.includes('proposito') || slug.includes('sentido')) return { ...base, chamaAtencao: 'Seu nível de conexão', padraoRepetido: 'Seu tipo de desconexão', comoAparece: 'Sinais de piloto automático', gatilhos: 'O que ativa a sensação de vazio', comoAtrapalha: 'Onde a falta de rumo aparece', corrigirPrimeiro: 'O que mudar na busca de propósito', acaoInicial: 'Reflexão para esta semana' };
-  if (slug === 'padrao-comportamental') return { ...base, chamaAtencao: 'Seu padrão dominante', padraoRepetido: 'Como o padrão funciona', comoAparece: 'Onde ele se ativa', comoAtrapalha: 'O que esse padrão custa', corrigirPrimeiro: 'O comportamento a mudar primeiro', acaoInicial: 'Faça isso nos próximos 3 dias' };
-  return base;
-}
-
-/* ── Evolution Comparison Section ── */
-function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: number }) {
+function EvolutionComparisonSection({ ai }: { ai: any }) {
   const evo = ai.evolutionComparison;
   if (!evo) return null;
 
@@ -648,7 +610,7 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
   const scoreDirection = scoreDelta < 0 ? 'melhorou' : scoreDelta > 0 ? 'piorou' : 'estável';
 
   return (
-    <motion.section {...fade} transition={{ delay, duration: 0.4 }}>
+    <motion.section {...fade} transition={{ delay: 0.25, duration: 0.4 }}>
       <div className="mb-6">
         <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">Comparação com diagnóstico anterior</h2>
       </div>
@@ -683,9 +645,7 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 
         {improved.length > 0 && (
           <div>
-            <p className="text-[9px] text-green-600/60 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5">
-              <TrendingDown className="w-3 h-3" /> Eixos que melhoraram
-            </p>
+            <p className="text-[9px] text-green-600/60 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5"><TrendingDown className="w-3 h-3" /> Eixos que melhoraram</p>
             <div className="space-y-2">
               {improved.map((axis: any) => (
                 <div key={axis.key} className="flex items-center justify-between rounded-xl border border-green-500/15 bg-green-500/[0.03] px-5 py-3">
@@ -703,9 +663,7 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 
         {worsened.length > 0 && (
           <div>
-            <p className="text-[9px] text-destructive/60 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5">
-              <TrendingUp className="w-3 h-3" /> Eixos que pioraram
-            </p>
+            <p className="text-[9px] text-destructive/60 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5"><TrendingUp className="w-3 h-3" /> Eixos que pioraram</p>
             <div className="space-y-2">
               {worsened.map((axis: any) => (
                 <div key={axis.key} className="flex items-center justify-between rounded-xl border border-destructive/15 bg-destructive/[0.03] px-5 py-3">
@@ -723,14 +681,10 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 
         {unchanged.length > 0 && (
           <div>
-            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5">
-              <Minus className="w-3 h-3" /> Sem alteração significativa
-            </p>
+            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-3 flex items-center gap-1.5"><Minus className="w-3 h-3" /> Sem alteração significativa</p>
             <div className="flex flex-wrap gap-2">
               {unchanged.map((axis: any) => (
-                <span key={axis.key} className="text-xs px-3 py-1.5 rounded-lg border border-border/25 bg-secondary/30 text-muted-foreground font-medium">
-                  {axis.label}: {axis.value}%
-                </span>
+                <span key={axis.key} className="text-xs px-3 py-1.5 rounded-lg border border-border/25 bg-secondary/30 text-muted-foreground font-medium">{axis.label}: {axis.value}%</span>
               ))}
             </div>
           </div>
@@ -747,7 +701,10 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
   );
 }
 
-/* ── Action Preview — NO numbering, with diagnostic connection ── */
+// ═══════════════════════════════════════════════════════════════
+// ACTION PREVIEW
+// ═══════════════════════════════════════════════════════════════
+
 function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { result: DiagnosticResult; ai: any; dominantAxisLabel: string; profileName: string }) {
   const { user, isPremium, isSuperAdmin } = useAuth();
   const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
@@ -755,7 +712,6 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
   useEffect(() => {
     const resultId = (result as any).id;
     if (!user || !resultId) return;
-
     const fetchActions = async () => {
       const { data } = await supabase
         .from('action_plan_tracking')
@@ -763,7 +719,6 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
         .eq('diagnostic_result_id', resultId)
         .eq('user_id', user.id)
         .order('day_number');
-
       if (data && data.length > 0) {
         const seen = new Set<string>();
         const unique: { trigger: string; action: string }[] = [];
@@ -780,18 +735,13 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
   }, [(result as any).id, user?.id]);
 
   if (actions.length === 0) return null;
-
   const showFull = isPremium || isSuperAdmin;
 
   return (
     <motion.section {...fade} transition={{ delay: 0.38, duration: 0.4 }}>
       <div className="mb-6">
-        <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">
-          Ações para começar a mudar esse padrão
-        </h2>
+        <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">Ações para começar a mudar esse padrão</h2>
       </div>
-
-      {/* Diagnostic-action connection — editorial, explicit */}
       {(profileName || dominantAxisLabel) && (
         <div className="mb-5 rounded-xl border border-border/15 bg-secondary/20 px-5 py-4">
           <p className="text-[13px] text-muted-foreground/70 leading-relaxed italic">
@@ -800,30 +750,18 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
           </p>
         </div>
       )}
-
       <div className="space-y-3">
         {actions.slice(0, 3).map((action, i) => {
           const isLocked = !showFull && i > 0;
           return (
-            <div key={i} className={`border rounded-xl px-6 py-5 relative overflow-hidden ${
-              isLocked 
-                ? 'border-border/20 bg-secondary/20' 
-                : 'border-green-500/15 bg-green-500/[0.03]'
-            }`}>
+            <div key={i} className={`border rounded-xl px-6 py-5 relative overflow-hidden ${isLocked ? 'border-border/20 bg-secondary/20' : 'border-green-500/15 bg-green-500/[0.03]'}`}>
               <div className="flex items-start gap-3">
-                {/* Dot instead of number badge */}
-                <span className={`mt-[9px] w-1.5 h-1.5 rounded-full shrink-0 ${
-                  isLocked ? 'bg-muted-foreground/20' : 'bg-green-500/50'
-                }`} />
+                <span className={`mt-[9px] w-1.5 h-1.5 rounded-full shrink-0 ${isLocked ? 'bg-muted-foreground/20' : 'bg-green-500/50'}`} />
                 <div className="flex-1">
                   <p className={`text-xs font-medium leading-relaxed ${isLocked ? 'text-muted-foreground/30' : 'text-muted-foreground/60'}`}>
-                    Quando <span className={`font-semibold ${isLocked ? 'text-muted-foreground/40' : 'text-foreground'}`}>
-                      {isLocked ? action.trigger.slice(0, 25) + '...' : action.trigger}
-                    </span>
+                    Quando <span className={`font-semibold ${isLocked ? 'text-muted-foreground/40' : 'text-foreground'}`}>{isLocked ? action.trigger.slice(0, 25) + '...' : action.trigger}</span>
                   </p>
-                  <p className={`text-[15px] font-medium leading-[1.8] mt-1.5 ${
-                    isLocked ? 'text-muted-foreground/20' : 'text-green-700 dark:text-green-400'
-                  }`}>
+                  <p className={`text-[15px] font-medium leading-[1.8] mt-1.5 ${isLocked ? 'text-muted-foreground/20' : 'text-green-700 dark:text-green-400'}`}>
                     → {isLocked ? action.action.slice(0, 30) + '...' : action.action}
                   </p>
                 </div>
@@ -836,33 +774,18 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
             </div>
           );
         })}
-
         {!showFull && (
           <div className="mt-6 border border-destructive/15 bg-destructive/[0.02] rounded-2xl px-6 py-6 space-y-5">
             <div className="space-y-2 text-center">
-              <p className="text-[15px] text-foreground font-semibold leading-snug">
-                Você já sabe o que está errado.
-              </p>
-              <p className="text-sm text-foreground/70 font-medium">
-                Mas continua fazendo igual.
-              </p>
-              <p className="text-sm text-destructive font-semibold">
-                Sem execução, nada muda.
-              </p>
+              <p className="text-[15px] text-foreground font-semibold leading-snug">Você já sabe o que está errado.</p>
+              <p className="text-sm text-foreground/70 font-medium">Mas continua fazendo igual.</p>
+              <p className="text-sm text-destructive font-semibold">Sem execução, nada muda.</p>
             </div>
-            <p className="text-[11px] text-muted-foreground/50 text-center">
-              +32.847 mulheres já estão executando esse plano
-            </p>
+            <p className="text-[11px] text-muted-foreground/50 text-center">+32.847 mulheres já estão executando esse plano</p>
             <div className="border-t border-destructive/8 pt-5">
-              <p className="text-xs text-destructive/70 text-center font-medium leading-relaxed mb-4">
-                Se você não fizer isso, daqui 30 dias você ainda vai estar no mesmo padrão.
-              </p>
-              <button
-                onClick={() => window.location.href = '/premium'}
-                className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-semibold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-sm"
-              >
-                <Crown className="w-4 h-4" />
-                Desbloquear acompanhamento — R$9,99
+              <p className="text-xs text-destructive/70 text-center font-medium leading-relaxed mb-4">Se você não fizer isso, daqui 30 dias você ainda vai estar no mesmo padrão.</p>
+              <button onClick={() => window.location.href = '/premium'} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-semibold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-sm">
+                <Crown className="w-4 h-4" /> Desbloquear acompanhamento — R$9,99
               </button>
             </div>
           </div>
@@ -872,10 +795,12 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
   );
 }
 
-/* ── Sub-components ── */
+// ═══════════════════════════════════════════════════════════════
+// SUB-COMPONENTS
+// ═══════════════════════════════════════════════════════════════
 
 function Section({ title, delay = 0, accent, children }: { title: string; delay?: number; accent?: string; children: React.ReactNode }) {
-  const accentClass = accent === 'destructive' ? 'bg-destructive/40' 
+  const accentClass = accent === 'destructive' ? 'bg-destructive/40'
     : accent === 'green' ? 'bg-green-500/40'
     : accent === 'primary' ? 'bg-primary/40'
     : 'bg-primary/20';
@@ -886,9 +811,7 @@ function Section({ title, delay = 0, accent, children }: { title: string; delay?
         <span className={`w-1 h-5 rounded-full ${accentClass}`} />
         <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">{title}</h2>
       </div>
-      <div className="pl-4">
-        {children}
-      </div>
+      <div className="pl-4">{children}</div>
     </motion.section>
   );
 }
@@ -903,6 +826,5 @@ function CardBlock({ variant = 'default', children }: { variant?: 'default' | 'a
   };
   return <div className={`border rounded-2xl px-6 py-5 ${styles[variant]}`}>{children}</div>;
 }
-
 
 export default memo(Report);
