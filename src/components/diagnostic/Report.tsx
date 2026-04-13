@@ -806,6 +806,92 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
   );
 }
 
+/* ── Action Preview Section (3 actions) ── */
+function ActionPreviewSection({ result, ai }: { result: DiagnosticResult; ai: any }) {
+  // Build 3 actions from the diagnosis data
+  const actions: { title: string; description: string }[] = [];
+
+  // 1. From microAcoes (AI)
+  if (Array.isArray(ai.microAcoes)) {
+    ai.microAcoes.forEach((a: any) => {
+      if (actions.length >= 3) return;
+      if (typeof a === 'string') actions.push({ title: a, description: '' });
+      else if (a?.acao) actions.push({ title: a.acao, description: a.detalhe || '' });
+    });
+  }
+
+  // 2. From exitStrategy
+  if (actions.length < 3 && Array.isArray(result.exitStrategy)) {
+    result.exitStrategy.forEach((s: any) => {
+      if (actions.length >= 3) return;
+      const text = s.action || s.title || '';
+      if (text && !actions.some(a => a.title === text)) {
+        actions.push({ title: text, description: s.detail || s.detalhe || '' });
+      }
+    });
+  }
+
+  // 3. Fallbacks from diagnosis fields
+  const fallbackSources = [
+    { title: ai.acaoInicial || ai.proximoPasso || '', description: 'Ação prática derivada do seu diagnóstico' },
+    { title: result.direction || '', description: 'Direção de ajuste para o seu padrão' },
+    { title: result.keyUnlockArea ? `Foque em: ${result.keyUnlockArea}` : '', description: 'Área-chave de desbloqueio identificada' },
+    { title: ai.mentalCommand ? `Repita diariamente: "${ai.mentalCommand}"` : '', description: 'Comando mental de reprogramação' },
+    { title: result.blockingPoint ? `Identifique quando "${result.blockingPoint.length > 50 ? result.blockingPoint.slice(0, 47) + '...' : result.blockingPoint}" aparecer e pause` : '', description: 'Consciência do ponto de travamento' },
+    ...(Array.isArray(result.triggers) ? result.triggers.slice(0, 2).map((t: string) => ({
+      title: `Observe o gatilho "${t.length > 50 ? t.slice(0, 47) + '...' : t}" e registre`,
+      description: 'Mapeamento de gatilhos comportamentais',
+    })) : []),
+  ];
+
+  for (const fb of fallbackSources) {
+    if (actions.length >= 3) break;
+    if (fb.title && !actions.some(a => a.title === fb.title)) {
+      actions.push(fb);
+    }
+  }
+
+  // Ensure exactly 3
+  while (actions.length < 3) {
+    actions.push({ title: 'Registre suas reações emocionais diariamente', description: 'Autoconhecimento começa pela observação' });
+  }
+
+  if (actions.length === 0) return null;
+
+  return (
+    <motion.section {...fade} transition={{ delay: 0.38, duration: 0.4 }}>
+      <div className="flex items-center gap-3.5 mb-5">
+        <span className="w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold bg-green-500/10 text-green-600">
+          <Target className="w-4 h-4" />
+        </span>
+        <h2 className="text-[15px] md:text-base font-extrabold text-foreground tracking-tight">
+          3 ações para começar a mudar esse padrão
+        </h2>
+      </div>
+      <div className="pl-[42px] space-y-3">
+        {actions.slice(0, 3).map((action, i) => (
+          <div key={i} className="border border-green-500/20 bg-green-500/[0.04] rounded-xl px-5 py-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className="w-6 h-6 rounded-lg bg-green-500/15 flex items-center justify-center text-[11px] font-bold text-green-600 shrink-0 mt-0.5">
+                {i + 1}
+              </span>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground leading-[1.7]">{action.title}</p>
+                {action.description && (
+                  <p className="text-xs text-muted-foreground/70 mt-1 leading-relaxed">{action.description}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+        <p className="text-[10px] text-muted-foreground/40 text-center pt-2">
+          Acompanhe sua execução diária no plano premium
+        </p>
+      </div>
+    </motion.section>
+  );
+}
+
 /* ── Sub-components ── */
 
 function Section({ num, title, delay = 0, accent, children }: { num: number; title: string; delay?: number; accent?: string; children: React.ReactNode }) {
