@@ -558,7 +558,13 @@ function tokenize(text: string): string[] {
 
 function buildAnchorTokens(parts: (string | null | undefined)[]): Set<string> {
   const tokens = new Set<string>();
-  parts.filter(Boolean).forEach((p) => tokenize(p as string).forEach((t) => tokens.add(t)));
+  parts.filter(Boolean).forEach((p) => {
+    // Tokenize normally
+    tokenize(p as string).forEach((t) => tokens.add(t));
+    // Also add individual words from snake_case keys (e.g., "autossabotagem_emocional" → "autossabotagem", "emocional")
+    const snakeWords = (p as string).split(/[_\s-]+/).map((w) => norm(w)).filter((w) => w.length >= 4 && !STOPWORDS.has(w));
+    snakeWords.forEach((t) => tokens.add(t));
+  });
   return tokens;
 }
 
@@ -572,8 +578,9 @@ function buildValidationContext(
   dominant: ScoreEntry,
   sortedScores: ScoreEntry[],
   answers: StructuredAnswer[] = [],
-): ValidationContext {
+): ValidationContext & { hasRealAnswers: boolean } {
   const topAxis = sortedScores[0] ?? dominant;
+  const hasRealAnswers = answers.length > 0;
 
   const getTopAnswers = (axisKey?: string, minScore = 65, limit = 3) =>
     [...answers]
@@ -585,24 +592,29 @@ function buildValidationContext(
   const topEvidence = getTopAnswers(topAxis.key);
   const strongEvidence = getTopAnswers(undefined, 80, 1)[0] || getTopAnswers(undefined, 65, 1)[0];
 
+  const allScoreTokens = !hasRealAnswers
+    ? sortedScores.flatMap((s) => [s.key, s.label])
+    : [];
+
   return {
+    hasRealAnswers,
     dominant: {
       ref: domEvidence[0]?.questionText || dominant.label || dominant.key,
-      tokens: buildAnchorTokens([dominant.key, dominant.label, ...domEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
+      tokens: buildAnchorTokens([dominant.key, dominant.label, ...allScoreTokens, ...domEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
     },
     topAxis: {
       ref: topEvidence[0]?.questionText || topAxis.label || topAxis.key,
-      tokens: buildAnchorTokens([topAxis.key, topAxis.label, ...topEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
+      tokens: buildAnchorTokens([topAxis.key, topAxis.label, ...allScoreTokens, ...topEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
     },
     evidence: {
       ref: strongEvidence ? `${strongEvidence.questionText} | ${strongEvidence.chosenOption || strongEvidence.value}` : dominant.label || dominant.key,
-      tokens: buildAnchorTokens(strongEvidence ? [strongEvidence.questionText, strongEvidence.chosenOption] : [dominant.key, dominant.label]),
+      tokens: buildAnchorTokens(strongEvidence ? [strongEvidence.questionText, strongEvidence.chosenOption] : [dominant.key, dominant.label, ...allScoreTokens]),
     },
   };
 }
 
 function hasMatch(text: string, anchors: Set<string>): boolean {
-  if (anchors.size === 0) return false;
+  if (anchors.size === 0) return true; // No anchors = no constraint (e.g. simulation mode)
   return tokenize(text).some((t) => anchors.has(t));
 }
 
@@ -610,7 +622,7 @@ function validateAction(
   index: number,
   gatilho: string,
   acao: string,
-  ctx: ValidationContext,
+  ctx: ValidationContext & { hasRealAnswers?: boolean },
 ): { pass: boolean; reason?: string } {
   const g = norm(gatilho.replace(/^quando\s+/i, "").trim());
   const a = norm(acao.replace(/^→\s*/i, "").trim());
@@ -635,11 +647,13 @@ function validateAction(
     return { pass: false, reason: `action_${index + 1}:no_time_condition` };
   }
 
-  // Connection to diagnosis
-  const combined = `${g} ${a}`;
-  const target = index === 0 ? ctx.dominant : index === 1 ? ctx.topAxis : ctx.evidence;
-  if (!hasMatch(combined, target.tokens)) {
-    return { pass: false, reason: `action_${index + 1}:no_diagnostic_link` };
+  // Connection to diagnosis — skip in simulation mode (no real answers)
+  if (ctx.hasRealAnswers !== false) {
+    const combined = `${g} ${a}`;
+    const target = index === 0 ? ctx.dominant : index === 1 ? ctx.topAxis : ctx.evidence;
+    if (!hasMatch(combined, target.tokens)) {
+      return { pass: false, reason: `action_${index + 1}:no_diagnostic_link` };
+    }
   }
 
   return { pass: true };
@@ -672,7 +686,11 @@ function validateMicroAcoes(
     seen.add(key);
 
     const check = validateAction(i, gatilho, acao, ctx);
-    if (!check.pass) { errors.push(check.reason!); continue; }
+    if (!check.pass) {
+      console.log(`[pipeline] microAcao ${i + 1} REJECTED: ${check.reason} | gatilho: "${gatilho.slice(0, 60)}" | acao: "${acao.slice(0, 60)}"`);
+      errors.push(check.reason!);
+      continue;
+    }
 
     validated.push({ gatilho, acao });
   }
