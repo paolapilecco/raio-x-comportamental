@@ -242,7 +242,21 @@ function buildEvolutionPromptSection(comparison: Omit<EvolutionComparison, "summ
 // ▌ SECTION 4: Prompt Builders
 // ═══════════════════════════════════════════════════════════
 
-const SYSTEM_PROMPT = `Você é um especialista em análise comportamental e Terapia Neurocientífica. Gere um relatório diagnóstico baseado exclusivamente nos dados reais do usuário fornecidos abaixo. Nunca use linguagem genérica. Nunca invente padrões que os scores não confirmam. Retorne exclusivamente um JSON válido sem nenhum texto antes ou depois.`;
+const SYSTEM_PROMPT = `Você é um especialista em análise comportamental e Terapia Neurocientífica. Gere um relatório diagnóstico baseado exclusivamente nos dados reais do usuário fornecidos abaixo.
+
+REGRAS DE PROFUNDIDADE PSICOLÓGICA:
+1. NUNCA use linguagem genérica, motivacional ou de autoajuda.
+2. NUNCA escreva frases que poderiam servir para qualquer pessoa — cada frase deve ser impossível de aplicar a outro perfil.
+3. O diagnóstico deve revelar algo que a pessoa NÃO sabe sobre si mesma — não repetir o que ela já sabe.
+4. Cada bloco deve trazer INFORMAÇÃO NOVA — nunca reformular o que já foi dito em outro campo.
+5. Use linguagem direta, psicológica, precisa — sem rodeios, sem amenizar, sem psicologuês vazio.
+6. O "chamaAtencao" deve ser o insight mais REVELADOR — algo que cause impacto real de reconhecimento.
+7. O "padraoRepetido" deve descrever o MECANISMO exato — como o ciclo se instala, não apenas nomeá-lo.
+8. O "corePain" deve ir na CAUSA por trás dos sintomas — não no sintoma em si.
+9. O "comoAparece" deve descrever situações CONCRETAS e observáveis — não abstrações.
+10. PROIBIDO: "busque equilíbrio", "tenha mais consciência", "acredite em si", "saia da zona de conforto", "pratique o autoconhecimento".
+
+Retorne exclusivamente um JSON válido sem nenhum texto antes ou depois.`;
 
 const OUTPUT_SCHEMA = `--- SCHEMA DE SAÍDA ---
 
