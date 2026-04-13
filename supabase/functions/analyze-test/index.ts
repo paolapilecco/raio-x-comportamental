@@ -646,11 +646,13 @@ function validateAction(
     return { pass: false, reason: `action_${index + 1}:no_time_condition` };
   }
 
-  // Connection to diagnosis
-  const combined = `${g} ${a}`;
-  const target = index === 0 ? ctx.dominant : index === 1 ? ctx.topAxis : ctx.evidence;
-  if (!hasMatch(combined, target.tokens)) {
-    return { pass: false, reason: `action_${index + 1}:no_diagnostic_link` };
+  // Connection to diagnosis — skip in simulation mode (no real answers)
+  if (ctx.hasRealAnswers !== false) {
+    const combined = `${g} ${a}`;
+    const target = index === 0 ? ctx.dominant : index === 1 ? ctx.topAxis : ctx.evidence;
+    if (!hasMatch(combined, target.tokens)) {
+      return { pass: false, reason: `action_${index + 1}:no_diagnostic_link` };
+    }
   }
 
   return { pass: true };
