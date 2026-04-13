@@ -413,12 +413,15 @@ function buildUserPrompt(
     if (rules.maxSentencesPerBlock) ruleLines.push(`- MÁXIMO ${rules.maxSentencesPerBlock} frases por bloco`);
     if (rules.repetitionProhibited) ruleLines.push(`- REPETIÇÃO PROIBIDA entre seções`);
     if (rules.forbiddenLanguage?.length) ruleLines.push(`- TERMOS PROIBIDOS: ${rules.forbiddenLanguage.map((t) => `"${t}"`).join(", ")}`);
+    if (rules.emotionalArchitecture && rules.emotionalArchitecture.trim().length > 0) {
+      ruleLines.push(`\n--- ARQUITETURA EMOCIONAL DO RELATÓRIO ---\n${rules.emotionalArchitecture.trim()}\nSiga essa jornada emocional na ordem e tom de cada seção.`);
+    }
     if (ruleLines.length > 0) {
       sections.push(`--- REGRAS DE SAÍDA ---\n${ruleLines.join("\n")}`);
     }
   }
 
-  sections.push(OUTPUT_SCHEMA);
+  sections.push(buildDynamicOutputSchema(template));
 
   return sections.join("\n\n");
 }
