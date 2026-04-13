@@ -23,6 +23,7 @@ export type Database = {
           day_number: number
           diagnostic_result_id: string
           id: string
+          notes: string
           user_id: string
         }
         Insert: {
@@ -33,6 +34,7 @@ export type Database = {
           day_number: number
           diagnostic_result_id: string
           id?: string
+          notes?: string
           user_id: string
         }
         Update: {
@@ -43,6 +45,7 @@ export type Database = {
           day_number?: number
           diagnostic_result_id?: string
           id?: string
+          notes?: string
           user_id?: string
         }
         Relationships: [
@@ -659,6 +662,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      progress_ai_feedback: {
+        Row: {
+          actions_completed: number
+          actions_total: number
+          created_at: string
+          diagnostic_result_id: string
+          feedback_text: string
+          id: string
+          test_module_id: string
+          user_id: string
+        }
+        Insert: {
+          actions_completed?: number
+          actions_total?: number
+          created_at?: string
+          diagnostic_result_id: string
+          feedback_text?: string
+          id?: string
+          test_module_id: string
+          user_id: string
+        }
+        Update: {
+          actions_completed?: number
+          actions_total?: number
+          created_at?: string
+          diagnostic_result_id?: string
+          feedback_text?: string
+          id?: string
+          test_module_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "progress_ai_feedback_diagnostic_result_id_fkey"
+            columns: ["diagnostic_result_id"]
+            isOneToOne: false
+            referencedRelation: "diagnostic_results"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prompt_generation_history: {
         Row: {
