@@ -19,6 +19,8 @@ interface ActionItem {
   id: string;
   day_number: number;
   action_text: string;
+  gatilho: string;
+  acao: string;
   completed: boolean;
   completed_at: string | null;
   notes: string;
@@ -101,7 +103,7 @@ export default function TrackingDetail() {
         const resultIds = results.map(r => r.id);
         const { data: allActions } = await supabase
           .from('action_plan_tracking')
-          .select('id, day_number, action_text, completed, completed_at, notes, diagnostic_result_id')
+          .select('id, day_number, action_text, gatilho, acao, completed, completed_at, notes, diagnostic_result_id')
           .in('diagnostic_result_id', resultIds)
           .eq('user_id', user.id)
           .order('day_number');
@@ -490,7 +492,9 @@ export default function TrackingDetail() {
                 {sortedActions.map((action, idx) => {
                   const isExpanded = expandedAction === action.id;
                   const isPastCycle = !isLatestCycle;
-                  const parsed = parseActionString(action.action_text);
+                  // Use structured gatilho/acao if available, fallback to parseActionString for legacy data
+                  const trigger = action.gatilho || parseActionString(action.action_text).trigger;
+                  const actionText = action.acao || parseActionString(action.action_text).action;
                   const actionNum = idx + 1;
                   const isPrimary = idx === 0;
 
@@ -524,7 +528,7 @@ export default function TrackingDetail() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-[11px] text-muted-foreground/60 mb-1 leading-relaxed">
-                              Quando <span className="text-foreground/70 font-medium">{parsed.trigger}</span> →
+                              Quando <span className="text-foreground/70 font-medium">{trigger}</span> →
                             </p>
                             <p className={`text-sm leading-relaxed ${
                               action.completed
@@ -533,7 +537,7 @@ export default function TrackingDetail() {
                                   ? 'text-foreground font-semibold'
                                   : 'text-foreground font-medium'
                             }`}>
-                              {parsed.action}
+                              {actionText}
                             </p>
                             {action.completed && action.completed_at && (
                               <p className="text-[10px] text-green-600/60 mt-1.5 flex items-center gap-1">
