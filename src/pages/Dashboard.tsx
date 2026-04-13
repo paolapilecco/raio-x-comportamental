@@ -527,29 +527,37 @@ const Dashboard = () => {
             {(isPremium || isSuperAdmin) ? (
               <ActionPlanCard plan={actionPlan} />
             ) : (
-              <div className="bg-card rounded-2xl border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] overflow-hidden">
-                <div className="px-6 py-5 border-b border-border/20">
+              <div className="bg-card rounded-2xl border border-destructive/20 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] overflow-hidden">
+                <div className="px-6 py-5 border-b border-destructive/10 bg-destructive/[0.03]">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Lock className="w-[18px] h-[18px] text-primary" />
+                    <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center">
+                      <Lock className="w-[18px] h-[18px] text-destructive" />
                     </div>
                     <div>
-                      <h3 className="text-base font-semibold text-foreground">Seu plano já foi gerado</h3>
-                      <p className="text-[0.65rem] text-muted-foreground">As 3 ações já estão definidas</p>
+                      <h3 className="text-base font-semibold text-foreground">Você sabe o que precisa mudar.</h3>
+                      <p className="text-[0.65rem] text-destructive/80 font-medium">Mas saber sem agir é só enganar a si mesma.</p>
                     </div>
                   </div>
                 </div>
                 <div className="px-6 py-5 space-y-4">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    O acompanhamento da execução fica disponível no premium. Acompanhe seu progresso diário, marque ações concluídas e veja sua taxa de evolução.
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm text-foreground/90 font-medium leading-relaxed">
+                      Seu diagnóstico já revelou o padrão. As 3 ações já estão prontas.
+                    </p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Cada dia que passa sem executar, o padrão se fortalece. O acompanhamento premium mostra exatamente se você está mudando — ou só adiando.
+                    </p>
+                  </div>
                   <button
                     onClick={() => navigate('/premium')}
-                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-primary-foreground rounded-xl text-sm font-semibold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
                   >
                     <Crown className="w-4 h-4" />
-                    Desbloquear acompanhamento — R$9,99
+                    Parar de adiar — R$9,99
                   </button>
+                  <p className="text-[10px] text-muted-foreground/50 text-center">
+                    Você já tem o diagnóstico. Falta a ação.
+                  </p>
                 </div>
               </div>
             )}

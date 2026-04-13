@@ -809,7 +809,51 @@ function EvolutionComparisonSection({ ai, delay = 0.25 }: { ai: any; delay?: num
 
 /* ── Action Preview Section (3 actions) ── */
 function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any }) {
-  const actions = buildActionPreviews(result);
+  const { user } = useAuth();
+  const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
+
+  useEffect(() => {
+    const resultId = (result as any).id;
+    if (!user || !resultId) {
+      // Fallback: generate client-side if no DB data available
+      const previews = buildActionPreviews(result);
+      setActions(previews);
+      return;
+    }
+
+    const fetchActions = async () => {
+      const { data } = await supabase
+        .from('action_plan_tracking')
+        .select('action_text, day_number')
+        .eq('diagnostic_result_id', resultId)
+        .eq('user_id', user.id)
+        .order('day_number');
+
+      if (data && data.length > 0) {
+        // Get unique action texts (they repeat across 15 days)
+        const seen = new Set<string>();
+        const unique: { trigger: string; action: string }[] = [];
+        for (const row of data) {
+          if (!seen.has(row.action_text) && unique.length < 3) {
+            seen.add(row.action_text);
+            // Parse "Se x → y" format
+            const match = row.action_text.match(/^Se\s+(.+?)\s+→\s+(.+)$/i);
+            if (match) {
+              unique.push({ trigger: match[1], action: match[2] });
+            } else {
+              unique.push({ trigger: 'O padrão se ativar', action: row.action_text });
+            }
+          }
+        }
+        setActions(unique);
+      } else {
+        // No persisted actions — fallback to client-side generation
+        const previews = buildActionPreviews(result);
+        setActions(previews);
+      }
+    };
+    fetchActions();
+  }, [(result as any).id, user?.id]);
 
   if (actions.length === 0) return null;
 
@@ -841,9 +885,14 @@ function ActionPreviewSection({ result }: { result: DiagnosticResult; ai: any })
             </div>
           </div>
         ))}
-        <p className="text-[10px] text-muted-foreground/40 text-center pt-2">
-          Acompanhe sua execução diária no plano premium
-        </p>
+        <div className="mt-4 border border-destructive/15 bg-destructive/[0.03] rounded-xl px-5 py-4">
+          <p className="text-xs text-foreground/80 font-medium text-center leading-relaxed">
+            Você já sabe o que precisa mudar. Cada dia sem agir reforça o padrão.
+          </p>
+          <p className="text-[10px] text-destructive/60 text-center mt-1 font-semibold">
+            Acompanhamento de execução disponível no premium — R$9,99
+          </p>
+        </div>
       </div>
     </motion.section>
   );
