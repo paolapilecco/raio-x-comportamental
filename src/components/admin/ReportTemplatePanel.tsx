@@ -216,7 +216,7 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
       if (error) throw error;
       if (data?.error) { toast.error(data.error); return; }
       if (data?.sections?.length > 0) {
-        setSections(data.sections.map((s: any, i: number) => ({
+        setSections(data.sections.map((s: any) => ({
           ...s,
           contentType: s.contentType || 'text',
           emotionalWeight: s.emotionalWeight || 'neutro',
