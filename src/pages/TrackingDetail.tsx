@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { parseActionString } from '@/lib/buildActionPreview';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp, Save, Lock, Crown, History, Target, Flame } from 'lucide-react';
+import { ArrowLeft, Clock, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp, Save, Lock, Crown, History, Target, Flame, AlertTriangle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ActionItem {
@@ -40,6 +40,14 @@ interface CycleData {
 
 const RETEST_DAYS = 15;
 
+function getProgressInterpretation(completed: number, total: number): { text: string; icon: typeof AlertTriangle } {
+  if (total === 0) return { text: '', icon: AlertTriangle };
+  if (completed === 0) return { text: 'Você já entendeu o padrão, mas ainda não entrou em execução. Saber não muda — fazer muda.', icon: AlertTriangle };
+  if (completed < total * 0.5) return { text: 'Você começou a agir, mas a execução ainda está inconsistente. Padrões não se quebram com uma tentativa.', icon: Zap };
+  if (completed < total) return { text: 'Você já está rompendo o padrão, mas ainda não consolidou. Falta pouco para fechar este ciclo.', icon: Target };
+  return { text: 'Você concluiu todas as ações deste ciclo. Agora é hora de medir se a mudança foi real.', icon: CheckCircle2 };
+}
+
 export default function TrackingDetail() {
   const { testModuleId } = useParams<{ testModuleId: string }>();
   const { user } = useAuth();
@@ -55,6 +63,7 @@ export default function TrackingDetail() {
   const [savingNotes, setSavingNotes] = useState<Set<string>>(new Set());
   const [loadingAI, setLoadingAI] = useState(false);
   const [showCycleHistory, setShowCycleHistory] = useState(false);
+  const [showRetestConfirm, setShowRetestConfirm] = useState(false);
 
   useEffect(() => {
     if (!user || !hasAccess || !testModuleId) { setLoading(false); return; }
@@ -280,7 +289,6 @@ export default function TrackingDetail() {
   const retestProgressPct = Math.min(100, Math.round((daysSinceTest / RETEST_DAYS) * 100));
   const isLatestCycle = activeCycleIndex === cycles.length - 1;
 
-  // Calculate streak (consecutive completed from action 1)
   let streak = 0;
   const sortedActions = [...activeCycle.actions].sort((a, b) => a.day_number - b.day_number);
   for (const a of sortedActions) {
@@ -288,13 +296,12 @@ export default function TrackingDetail() {
     else break;
   }
 
-  // AI feedback availability: at least 1 action completed OR 1 note filled
   const hasAnyCompletion = activeCycle.actions.some(a => a.completed);
   const hasAnyNote = activeCycle.actions.some(a => a.notes && a.notes.trim().length > 0);
   const canRequestFeedback = hasAnyCompletion || hasAnyNote;
-
-  // Has actions from backend
   const hasActions = totalActions > 0;
+  const progressInfo = getProgressInterpretation(completedCount, totalActions);
+  const notesCount = activeCycle.actions.filter(a => a.notes && a.notes.trim().length > 0).length;
 
   return (
     <AppLayout>
@@ -392,23 +399,26 @@ export default function TrackingDetail() {
                 )}
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">{activeCycle.stateSummary}</p>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5" />
-                  {new Date(activeCycle.completedAt).toLocaleDateString('pt-BR')}
-                </span>
-                {hasActions && (
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    {completedCount}/{totalActions} ações concluídas
-                  </span>
-                )}
-              </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* BLOCO B — Progresso do Ciclo */}
+        {/* BLOCO — Conexão Diagnóstico ↔ Ações */}
+        {hasActions && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
+            <div className="bg-primary/5 border border-primary/15 rounded-xl p-4">
+              <p className="text-xs font-medium text-primary mb-1">Por que essas ações?</p>
+              <p className="text-sm text-foreground/80 leading-relaxed">
+                Essas ações foram geradas porque seu padrão dominante é <span className="font-semibold text-foreground">{activeCycle.profileName}</span>
+                {activeCycle.topScore && (
+                  <> e seu eixo mais crítico é <span className="font-semibold text-primary">{activeCycle.topScore.label} ({activeCycle.topScore.percentage}%)</span></>
+                )}. Cada ação ataca diretamente um ponto específico do seu diagnóstico.
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+        {/* BLOCO B — Progresso do Ciclo + Interpretação */}
         {hasActions && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
             <Card>
@@ -446,7 +456,7 @@ export default function TrackingDetail() {
                   </div>
                 </div>
 
-                <div className="w-full h-2 rounded-full bg-secondary/60 overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-secondary/60 overflow-hidden mb-3">
                   <motion.div
                     className={`h-full rounded-full ${
                       progressPct >= 70 ? 'bg-green-500' : progressPct >= 40 ? 'bg-primary' : 'bg-muted-foreground/30'
@@ -456,6 +466,14 @@ export default function TrackingDetail() {
                     transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
                   />
                 </div>
+
+                {/* Interpretação do progresso */}
+                {isLatestCycle && progressInfo.text && (
+                  <div className="flex items-start gap-2.5 bg-secondary/30 rounded-lg p-3">
+                    <progressInfo.icon className="w-4 h-4 text-muted-foreground shrink-0 mt-0.5" />
+                    <p className="text-xs text-foreground/80 leading-relaxed">{progressInfo.text}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -474,16 +492,28 @@ export default function TrackingDetail() {
                   const isPastCycle = !isLatestCycle;
                   const parsed = parseActionString(action.action_text);
                   const actionNum = idx + 1;
+                  const isPrimary = idx === 0;
 
                   return (
                     <div key={action.id} className={`border rounded-xl overflow-hidden transition-all ${
-                      action.completed ? 'border-green-500/30 bg-green-500/[0.03]' : 'border-border/50'
+                      action.completed
+                        ? 'border-green-500/30 bg-green-500/[0.03]'
+                        : isPrimary
+                          ? 'border-primary/40 bg-primary/[0.03] ring-1 ring-primary/10'
+                          : 'border-border/50'
                     }`}>
-                      {/* Action header */}
+                      {/* Priority label for action 1 */}
+                      {isPrimary && !action.completed && (
+                        <div className="bg-primary/10 px-4 py-1.5 border-b border-primary/10">
+                          <p className="text-[10px] font-bold text-primary uppercase tracking-wider">⚡ Ação principal do ciclo</p>
+                        </div>
+                      )}
+
+                      {/* Action content */}
                       <div className="p-4 space-y-2">
                         <div className="flex items-start gap-3">
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[10px] font-bold text-muted-foreground/50 tabular-nums w-4 text-center">
+                            <span className={`text-[10px] font-bold tabular-nums w-4 text-center ${isPrimary && !action.completed ? 'text-primary' : 'text-muted-foreground/50'}`}>
                               {actionNum}
                             </span>
                             <Checkbox
@@ -496,7 +526,13 @@ export default function TrackingDetail() {
                             <p className="text-[11px] text-muted-foreground/60 mb-1 leading-relaxed">
                               Quando <span className="text-foreground/70 font-medium">{parsed.trigger}</span> →
                             </p>
-                            <p className={`text-sm leading-relaxed ${action.completed ? 'line-through text-muted-foreground' : 'text-foreground font-medium'}`}>
+                            <p className={`text-sm leading-relaxed ${
+                              action.completed
+                                ? 'line-through text-muted-foreground'
+                                : isPrimary
+                                  ? 'text-foreground font-semibold'
+                                  : 'text-foreground font-medium'
+                            }`}>
                               {parsed.action}
                             </p>
                             {action.completed && action.completed_at && (
@@ -557,7 +593,7 @@ export default function TrackingDetail() {
           </motion.div>
         )}
 
-        {/* BLOCO D — Contagem Regressiva */}
+        {/* BLOCO D — Contagem Regressiva / Reteste */}
         {isLatestCycle && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
             <Card className={retestAvailable ? 'border-accent/40' : ''}>
@@ -577,17 +613,66 @@ export default function TrackingDetail() {
                 </div>
                 <Progress value={retestProgressPct} className="h-1.5 mb-2" />
                 {retestAvailable ? (
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">
-                      Seu ciclo {activeCycle.cycleNumber} se completou. Refaça o teste para iniciar o ciclo {activeCycle.cycleNumber + 1}.
-                    </p>
-                    <Button
-                      size="sm"
-                      className="w-full"
-                      onClick={() => navigate(`/diagnostic/${testModuleId}`)}
-                    >
-                      <RefreshCw className="w-3.5 h-3.5 mr-2" /> Iniciar Ciclo {activeCycle.cycleNumber + 1}
-                    </Button>
+                  <div className="space-y-3">
+                    <AnimatePresence mode="wait">
+                      {!showRetestConfirm ? (
+                        <motion.div key="btn" initial={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                          <p className="text-xs text-muted-foreground mb-2">
+                            Seu ciclo {activeCycle.cycleNumber} se completou. Hora de medir se você realmente mudou.
+                          </p>
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => setShowRetestConfirm(true)}
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 mr-2" /> Preparar Ciclo {activeCycle.cycleNumber + 1}
+                          </Button>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          key="confirm"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-3 bg-secondary/30 rounded-xl p-4"
+                        >
+                          <p className="text-sm font-semibold text-foreground">Resumo do Ciclo {activeCycle.cycleNumber}</p>
+                          <div className="grid grid-cols-3 gap-2 text-center">
+                            <div>
+                              <p className="text-base font-bold text-foreground">{completedCount}/{totalActions}</p>
+                              <p className="text-[10px] text-muted-foreground">ações feitas</p>
+                            </div>
+                            <div>
+                              <p className="text-base font-bold text-foreground">{progressPct}%</p>
+                              <p className="text-[10px] text-muted-foreground">execução</p>
+                            </div>
+                            <div>
+                              <p className="text-base font-bold text-foreground">{notesCount}</p>
+                              <p className="text-[10px] text-muted-foreground">anotações</p>
+                            </div>
+                          </div>
+                          <p className="text-sm text-foreground/80 font-medium leading-relaxed">
+                            Agora vamos medir se você realmente mudou ou só entendeu o problema.
+                          </p>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={() => setShowRetestConfirm(false)}
+                            >
+                              Voltar
+                            </Button>
+                            <Button
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={() => navigate(`/diagnostic/${testModuleId}`)}
+                            >
+                              Iniciar Ciclo {activeCycle.cycleNumber + 1}
+                            </Button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 ) : (
                   <p className="text-sm text-foreground font-medium">
