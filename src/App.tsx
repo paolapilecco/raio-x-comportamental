@@ -30,6 +30,8 @@ const PatientDetail = lazy(() => import("./pages/PatientDetail"));
 const ProfessionalDashboard = lazy(() => import("./pages/ProfessionalDashboard"));
 const PatientComparison = lazy(() => import("./pages/PatientComparison"));
 const PublicTest = lazy(() => import("./pages/PublicTest"));
+const Tracking = lazy(() => import("./pages/Tracking"));
+const TrackingDetail = lazy(() => import("./pages/TrackingDetail"));
 
 // Admin pages – lazy-loaded (rarely visited)
 const AdminPrompts = lazy(() => import("./pages/AdminPrompts"));
