@@ -286,10 +286,9 @@ const Diagnostic = () => {
     if (!user) return;
     try {
       const aiResult = analysisResult as any;
-      const microAcoes = Array.isArray(aiResult.microAcoes) ? aiResult.microAcoes : [];
-      if (microAcoes.length !== 3) {
-        throw new Error(`[Diagnostic] HARD FAIL: expected 3 microAcoes before save, received ${microAcoes.length}`);
-      }
+      const microAcoes = Array.isArray(aiResult.microAcoes)
+        ? aiResult.microAcoes.filter((a: any) => a?.gatilho && a?.acao)
+        : [];
 
       const sessionInsert: any = { user_id: user.id };
       if (moduleId) sessionInsert.test_module_id = moduleId;
@@ -369,27 +368,24 @@ const Diagnostic = () => {
 
       await updateCentralProfile(user.id);
 
-      // Create action plan tracking from AI-generated microAcoes
+      // Create action plan tracking from AI-generated microAcoes when available
       if (savedResult?.id) {
         try {
           console.log(`[Diagnostic] microAcoes from AI: ${microAcoes.length}`, microAcoes);
-          
-          // Save structured actions (gatilho + acao as separate fields)
+
           const structuredActions = microAcoes
-            .filter((a: any) => a?.gatilho && a?.acao)
             .slice(0, 3)
             .map((a: any) => ({ gatilho: a.gatilho, acao: a.acao }));
 
-          if (structuredActions.length === 3) {
+          if (structuredActions.length > 0) {
             await createActionPlanTracking(user.id, savedResult.id, structuredActions);
             trackEvent({ userId: user.id, event: 'action_plan_created', moduleId: moduleId || undefined, diagnosticResultId: savedResult.id, metadata: { totalActions: structuredActions.length } });
             console.log(`[Diagnostic] ✅ Action plan created: ${structuredActions.length} structured actions`);
           } else {
-            throw new Error(`[Diagnostic] ❌ CRITICAL: Invalid structuredActions length: ${structuredActions.length}`);
+            console.warn('[Diagnostic] No valid microAcoes returned by AI — skipping action plan creation without blocking report');
           }
         } catch (e) {
-          console.error('[Diagnostic] ❌ Action plan creation failed:', e);
-          throw e;
+          console.error('[Diagnostic] Action plan creation failed (non-blocking):', e);
         }
       } else {
         throw new Error('[Diagnostic] ❌ CRITICAL: diagnostic_result_id not found after save');
