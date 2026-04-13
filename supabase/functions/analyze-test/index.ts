@@ -558,7 +558,13 @@ function tokenize(text: string): string[] {
 
 function buildAnchorTokens(parts: (string | null | undefined)[]): Set<string> {
   const tokens = new Set<string>();
-  parts.filter(Boolean).forEach((p) => tokenize(p as string).forEach((t) => tokens.add(t)));
+  parts.filter(Boolean).forEach((p) => {
+    // Tokenize normally
+    tokenize(p as string).forEach((t) => tokens.add(t));
+    // Also add individual words from snake_case keys (e.g., "autossabotagem_emocional" → "autossabotagem", "emocional")
+    const snakeWords = (p as string).split(/[_\s-]+/).map((w) => norm(w)).filter((w) => w.length >= 4 && !STOPWORDS.has(w));
+    snakeWords.forEach((t) => tokens.add(t));
+  });
   return tokens;
 }
 
