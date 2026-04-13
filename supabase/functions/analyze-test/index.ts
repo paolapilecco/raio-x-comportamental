@@ -913,12 +913,34 @@ serve(async (req) => {
     }
     if (!promptsRes.data?.length) return fallbackResponse();
 
-    // Parse template
+    // Parse template — detect storyboard vs legacy format
     let reportTemplate: ReportTemplate | null = null;
     if (templateRes.data) {
+      const rawSections = templateRes.data.sections;
+      const rawRules = templateRes.data.output_rules;
+
+      // Detect storyboard format: sections contains { acts: [...], rules: {...} }
+      let storyboard: StoryboardTemplate | undefined;
+      let legacySections: TemplateSection[] = [];
+
+      if (rawSections && typeof rawSections === "object" && !Array.isArray(rawSections)) {
+        // New storyboard format stored in sections column as { acts, rules }
+        const obj = rawSections as Record<string, unknown>;
+        if (Array.isArray(obj.acts)) {
+          storyboard = {
+            acts: obj.acts as StoryboardAct[],
+            rules: (obj.rules || {}) as CompositionRules,
+          };
+          console.log(`[pipeline] Storyboard detected: ${storyboard.acts.length} acts, ${storyboard.acts.reduce((n, a) => n + a.slots.filter((s) => s.enabled).length, 0)} active slots`);
+        }
+      } else if (Array.isArray(rawSections)) {
+        legacySections = rawSections as TemplateSection[];
+      }
+
       reportTemplate = {
-        sections: Array.isArray(templateRes.data.sections) ? templateRes.data.sections as TemplateSection[] : [],
-        output_rules: (templateRes.data.output_rules && typeof templateRes.data.output_rules === "object") ? templateRes.data.output_rules as OutputRules : {},
+        sections: legacySections,
+        output_rules: (rawRules && typeof rawRules === "object") ? rawRules as OutputRules : {},
+        storyboard,
       };
     }
 
