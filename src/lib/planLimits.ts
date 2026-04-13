@@ -53,8 +53,8 @@ export function canAccessModule(
  */
 export function getMonthlyTestLimit(
   planType: PlanType,
-  isOwner: boolean,
-  moduleSlug: string,
+  _isOwner: boolean,
+  _moduleSlug: string,
   isSuperAdmin: boolean
 ): number {
   if (isSuperAdmin) return 999;
@@ -63,14 +63,6 @@ export function getMonthlyTestLimit(
     return 1; // 1 test per month for free plan
   }
   
-  if (planType === 'profissional') {
-    return 2; // 2 tests per month per category for everyone
-  }
-  
-  // pessoal
-  if (isOwner) {
-    return 2; // owner: 2 per category per month
-  }
-  // guest on pessoal plan: 1 behavioral test only
-  return moduleSlug === BEHAVIORAL_SLUG ? 1 : 0;
+  // pessoal and profissional: 2 per category per month
+  return 2;
 }

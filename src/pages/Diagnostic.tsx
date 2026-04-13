@@ -234,7 +234,7 @@ const Diagnostic = () => {
         context: q.context || null,
       })));
 
-      // Fetch managed persons for person selection
+      // Fetch or auto-create managed person for individual plans
       let { data: personData } = await supabase
         .from('managed_persons')
         .select('id, name, cpf')
@@ -272,8 +272,10 @@ const Diagnostic = () => {
 
       setPersons(fetchedPersons);
 
-      if (fetchedPersons.length <= 1) {
-        // Auto-select if only one person
+      // Always auto-select for individual plans (standard/pessoal) or single person
+      // Only show person selection for profissional with multiple persons
+      const isProfissional = planType === 'profissional' || isSuperAdmin;
+      if (!isProfissional || fetchedPersons.length <= 1) {
         setSelectedPersonId(fetchedPersons[0]?.id || null);
         setStep('questionnaire');
       } else {
