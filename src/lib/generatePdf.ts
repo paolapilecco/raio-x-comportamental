@@ -562,9 +562,9 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   }
 
   // ═══════════════════════════════════════════
-  // SECTION: Próxima ação prática
+  // SECTION: Ações práticas
   // ═══════════════════════════════════════════
-  sectionHeader(ctx, sectionNum, 'Próxima ação prática', C.green);
+  sectionHeader(ctx, sectionNum, 'Ações práticas', C.green);
   sectionNum++;
   
   // Mental Command (reprogramming phrase)
@@ -583,21 +583,20 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
     for (const l of mcLines) { doc.text(l, M + 7, ctx.y); ctx.y += LH; }
     ctx.y += 5;
   }
+
+  // Use persisted action texts from DB (single source of truth)
+  const persistedActions = extras?.actionTexts || [];
   
-  // Micro-actions (numbered action cards)
-  if (microAcoes.length > 0) {
-    microAcoes.forEach((item, i) => {
-      const lines = doc.splitTextToSize(item.acao, CW - 18);
-      const detLines = item.detalhe ? doc.splitTextToSize(item.detalhe, CW - 18) : [];
-      const h = (lines.length + detLines.length) * LH + 12;
+  if (persistedActions.length > 0) {
+    persistedActions.forEach((actionText, i) => {
+      const lines = doc.splitTextToSize(actionText, CW - 18);
+      const h = lines.length * LH + 12;
       pb(ctx, h + 2);
       
-      // Card background
       doc.setFillColor(...C.greenSoft);
       doc.setDrawColor(180, 220, 195);
       doc.roundedRect(M, ctx.y, CW, h, 2.5, 2.5, 'FD');
       
-      // Number badge
       doc.setFillColor(...C.green);
       doc.roundedRect(M + 4, ctx.y + 4, 6, 6, 1.5, 1.5, 'F');
       doc.setFontSize(8);
@@ -605,14 +604,39 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       doc.setTextColor(...C.white);
       doc.text(String(i + 1), M + 5.8, ctx.y + 8.2);
       
-      // Action text
       let ay = ctx.y + 6;
       doc.setFontSize(9);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...C.text);
       for (const l of lines) { doc.text(l, M + 14, ay); ay += LH; }
       
-      // Detail text
+      ctx.y += h + 3;
+    });
+  } else if (microAcoes.length > 0) {
+    // Fallback to AI microAcoes if no persisted actions
+    microAcoes.forEach((item, i) => {
+      const lines = doc.splitTextToSize(item.acao, CW - 18);
+      const detLines = item.detalhe ? doc.splitTextToSize(item.detalhe, CW - 18) : [];
+      const h = (lines.length + detLines.length) * LH + 12;
+      pb(ctx, h + 2);
+      
+      doc.setFillColor(...C.greenSoft);
+      doc.setDrawColor(180, 220, 195);
+      doc.roundedRect(M, ctx.y, CW, h, 2.5, 2.5, 'FD');
+      
+      doc.setFillColor(...C.green);
+      doc.roundedRect(M + 4, ctx.y + 4, 6, 6, 1.5, 1.5, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C.white);
+      doc.text(String(i + 1), M + 5.8, ctx.y + 8.2);
+      
+      let ay = ctx.y + 6;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...C.text);
+      for (const l of lines) { doc.text(l, M + 14, ay); ay += LH; }
+      
       if (detLines.length > 0) {
         ay += 1;
         doc.setFontSize(8);
@@ -623,10 +647,7 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
       
       ctx.y += h + 3;
     });
-    
-    // (REGRA DE OURO removed — no hardcoded blocks)
-  } else {
-    // Fallback: single action
+  } else if (acaoInicial) {
     labelAbove(ctx, 'Faça isso agora', C.green);
     greenBox(ctx, acaoInicial);
   }
