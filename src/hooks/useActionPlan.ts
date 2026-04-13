@@ -134,7 +134,12 @@ export async function createActionPlanTracking(
   diagnosticResultId: string,
   actions: string[]
 ): Promise<void> {
-  if (!actions || actions.length === 0) return;
+  console.log(`[ActionPlan] Creating tracking: userId=${userId}, resultId=${diagnosticResultId}, actions=${actions.length}`);
+  
+  if (!actions || actions.length === 0) {
+    console.warn('[ActionPlan] No actions provided — skipping tracking creation');
+    return;
+  }
 
   // Check if plan already exists
   const { data: existing } = await supabase
@@ -143,7 +148,10 @@ export async function createActionPlanTracking(
     .eq('diagnostic_result_id', diagnosticResultId)
     .limit(1);
 
-  if (existing && existing.length > 0) return; // Already created
+  if (existing && existing.length > 0) {
+    console.log(`[ActionPlan] Tracking already exists for ${diagnosticResultId} — skipping`);
+    return;
+  }
 
   // Store exactly 1 row per action (max 3)
   const rows = actions.slice(0, 3).map((actionText, i) => ({
@@ -153,5 +161,11 @@ export async function createActionPlanTracking(
     action_text: actionText,
   }));
 
-  await supabase.from('action_plan_tracking').insert(rows);
+  const { error } = await supabase.from('action_plan_tracking').insert(rows);
+  
+  if (error) {
+    console.error('[ActionPlan] Failed to insert tracking rows:', error);
+  } else {
+    console.log(`[ActionPlan] ✅ Successfully created ${rows.length} tracking rows for ${diagnosticResultId}`);
+  }
 }
