@@ -89,6 +89,7 @@ const Dashboard = () => {
   const [latestResult, setLatestResult] = useState<StoredResult | null>(null);
   const [centralProfile, setCentralProfile] = useState<CentralProfile | null>(null);
   const [generating, setGenerating] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [modules, setModules] = useState<TestModule[]>([]);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [latestModuleId, setLatestModuleId] = useState<string | null>(null);
@@ -592,6 +593,39 @@ const Dashboard = () => {
             {!hasData && !previewMode && (
               <button onClick={generateTestData} disabled={generating} className="text-xs font-medium px-4 py-2 rounded-xl border border-border/40 hover:bg-secondary/50 transition-all duration-200 disabled:opacity-50 active:scale-[0.97]">
                 {generating ? 'Gerando...' : 'Gerar dados de teste'}
+              </button>
+            )}
+            {!previewMode && (
+              <button
+                onClick={async () => {
+                  if (!user || !window.confirm('Tem certeza? Isso apagará TODOS os seus dados de teste (sessões, resultados, plano de ação, perfil central). Essa ação é irreversível.')) return;
+                  setResetting(true);
+                  try {
+                    const uid = user.id;
+                    await supabase.from('action_plan_tracking').delete().eq('user_id', uid);
+                    await supabase.from('progress_ai_feedback').delete().eq('user_id', uid);
+                    // Delete results via session join
+                    const { data: mySessions } = await supabase.from('diagnostic_sessions').select('id').eq('user_id', uid);
+                    if (mySessions?.length) {
+                      const ids = mySessions.map(s => s.id);
+                      await supabase.from('diagnostic_results').delete().in('session_id', ids);
+                      await supabase.from('diagnostic_answers').delete().in('session_id', ids);
+                    }
+                    await supabase.from('diagnostic_sessions').delete().eq('user_id', uid);
+                    await supabase.from('user_central_profile').delete().eq('user_id', uid);
+                    await supabase.from('user_profile').delete().eq('user_id', uid);
+                    await supabase.from('test_usage').delete().eq('user_id', uid);
+                    toast.success('Todos os dados de teste foram apagados!');
+                    window.location.reload();
+                  } catch {
+                    toast.error('Erro ao resetar dados');
+                  }
+                  setResetting(false);
+                }}
+                disabled={resetting}
+                className="text-xs font-medium px-4 py-2 rounded-xl border border-destructive/40 text-destructive hover:bg-destructive/10 transition-all duration-200 disabled:opacity-50 active:scale-[0.97]"
+              >
+                {resetting ? 'Apagando...' : '🗑 Reset Total dos Testes'}
               </button>
             )}
             <button
