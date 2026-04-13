@@ -105,7 +105,7 @@ const Diagnostic = () => {
   const [previousSessionId, setPreviousSessionId] = useState<string | null>(null);
   const [previousResultId, setPreviousResultId] = useState<string | null>(null);
   const [isRetest, setIsRetest] = useState(false);
-  const { user, isPremium, isSuperAdmin } = useAuth();
+  const { user, isPremium, isSuperAdmin, planType } = useAuth();
   const navigate = useNavigate();
   const { moduleSlug } = useParams();
   const [searchParams] = useSearchParams();
