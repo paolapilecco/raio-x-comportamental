@@ -1076,8 +1076,9 @@ serve(async (req) => {
       if (microCount >= 3) break;
 
       if (attempt >= MAX_ATTEMPTS - 1) {
-        console.error(`[pipeline] HARD FAIL: ${microCount}/3 after ${MAX_ATTEMPTS} attempts`);
-        return errorResponse("Não foi possível gerar 3 ações válidas. Tente novamente.", 500);
+        // Accept partial results instead of failing — report is more important than perfect microAcoes
+        console.warn(`[pipeline] SOFT FAIL: ${microCount}/3 after ${MAX_ATTEMPTS} attempts — proceeding with partial microAcoes`);
+        break;
       }
     }
 
