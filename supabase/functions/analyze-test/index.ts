@@ -336,32 +336,21 @@ Retorne APENAS JSON válido. Sem markdown, sem texto antes ou depois.`;
 
 function buildOutputSchema(template: ReportTemplate | null): string {
   const schema: Record<string, string> = {
-    leituraRapida: '"resumo executivo do diagnóstico em 2-3 frases"',
     profileName: '"nome do perfil comportamental"',
     combinedTitle: '"título que captura o padrão central"',
-    perfilComportamental: '"descrição do perfil em 3 frases"',
     mentalState: '"estado mental atual em 1 frase"',
-    diagnosis: '"diagnóstico central em 3 frases"',
-    criticalDiagnosis: '"diagnóstico crítico em 2 frases"',
     corePain: '"dor central — causa raiz, não o sintoma"',
     mechanism: '"mecanismo de como o padrão se instala"',
     contradiction: '"contradição interna em 1 frase"',
-    blindSpot: '"ponto cego revelador"',
-    chamaAtencao: '"insight mais impactante — algo que cause reconhecimento"',
-    padraoRepetido: '"mecanismo exato do ciclo — como se instala, não apenas o nome"',
-    comoAparece: '"2 situações CONCRETAS e observáveis na rotina"',
+    direction: '"direção de mudança"',
+    keyUnlockArea: '"área chave de desbloqueio"',
+    blockingPoint: '"ponto de travamento"',
     triggers: '["gatilho concreto 1", "gatilho 2", "gatilho 3"]',
     mentalTraps: '["armadilha 1", "armadilha 2"]',
     selfSabotageCycle: '["passo 1", "passo 2", "passo 3", "passo 4"]',
     lifeImpact: '[{"pillar": "área", "impact": "impacto concreto"}]',
-    futureConsequence: '"consequência real se o padrão continuar — 3 frases"',
-    direction: '"direção de mudança"',
-    keyUnlockArea: '"área chave de desbloqueio"',
-    blockingPoint: '"ponto de travamento"',
-    focoMudanca: '"próxima ação prática"',
     whatNotToDo: '["não fazer 1", "não fazer 2"]',
     exitStrategy: '["passo 1", "passo 2", "passo 3"]',
-    mentalCommand: '"comando mental curto"',
     microAcoes: `[
       {"gatilho": "situação do PADRÃO DOMINANTE", "acao": "verbo + contexto + tempo"},
       {"gatilho": "situação do EIXO MAIS ALTO", "acao": "verbo + contexto + tempo"},
@@ -372,8 +361,22 @@ function buildOutputSchema(template: ReportTemplate | null): string {
     impact: '"impacto na vida em 1 frase"',
   };
 
-  // Add dynamic sections from template
-  if (template?.sections) {
+  // ─── STORYBOARD MODE: inject slots from acts ───
+  if (template?.storyboard?.acts?.length) {
+    for (const act of template.storyboard.acts) {
+      for (const slot of act.slots) {
+        if (!slot.enabled) continue;
+        if (schema[slot.key]) continue; // don't override structural fields
+        const formatHint = slot.format === "list" ? " (array de strings)" :
+                           slot.format === "cards" ? " (array de objetos)" :
+                           slot.format === "quote" ? " (frase citável)" :
+                           slot.format === "alert" ? " (alerta direto)" : "";
+        schema[slot.key] = `"${slot.label} — máx ${slot.maxSentences} frases${formatHint}"`;
+      }
+    }
+  }
+  // ─── LEGACY MODE: flat sections ───
+  else if (template?.sections) {
     for (const section of template.sections) {
       if (schema[section.key]) continue;
       const max = section.maxSentences ?? section.maxSize ?? 2;
@@ -387,8 +390,39 @@ function buildOutputSchema(template: ReportTemplate | null): string {
   const fieldLines = Object.entries(schema).map(([k, v]) => `  "${k}": ${v}`).join(",\n");
   let output = `═══ SCHEMA DE SAÍDA ═══\n\nRetorne APENAS este JSON:\n\n{\n${fieldLines}\n}`;
 
-  // Section-specific instructions
-  if (template?.sections && template.sections.length > 0) {
+  // ─── STORYBOARD: per-act instructions ───
+  if (template?.storyboard?.acts?.length) {
+    for (const act of template.storyboard.acts) {
+      const enabledSlots = act.slots.filter((s) => s.enabled);
+      if (enabledSlots.length === 0) continue;
+
+      output += `\n\n═══ ${act.title.toUpperCase()} ═══`;
+      output += `\nObjetivo: ${act.subtitle}`;
+      output += `\nTom: ${act.tone}`;
+
+      for (const slot of enabledSlots) {
+        const formatTag = `[${slot.format.toUpperCase()}]`;
+        output += `\n\n"${slot.key}" ${formatTag}: "${slot.label}" — máx ${slot.maxSentences} frases`;
+        if (slot.instruction?.trim()) output += `\n  → ${slot.instruction.trim()}`;
+        if (slot.example?.trim()) output += `\n  EXEMPLO: ${slot.example.trim()}`;
+      }
+    }
+
+    // Composition rules
+    if (template.storyboard.rules) {
+      const rules = template.storyboard.rules;
+      output += `\n\n═══ REGRAS DE COMPOSIÇÃO ═══`;
+      if (rules.maxTotalWords) output += `\n- LIMITE TOTAL: ${rules.maxTotalWords} palavras`;
+      if (rules.proportions) {
+        output += `\n- PROPORÇÃO: Espelho ${rules.proportions.espelho}% | Confronto ${rules.proportions.confronto}% | Direção ${rules.proportions.direcao}%`;
+      }
+      if (rules.narrativeVoice) output += `\n- VOZ NARRATIVA: ${rules.narrativeVoice}`;
+      if (rules.forbiddenTerms?.length) output += `\n- PROIBIDO: ${rules.forbiddenTerms.map((t) => `"${t}"`).join(", ")}`;
+      if (rules.mandatoryElements?.length) output += `\n- OBRIGATÓRIO incluir: ${rules.mandatoryElements.join(", ")}`;
+    }
+  }
+  // ─── LEGACY: section-specific instructions ───
+  else if (template?.sections && template.sections.length > 0) {
     output += "\n\n═══ INSTRUÇÕES POR SEÇÃO ═══";
     for (const s of template.sections) {
       const max = s.maxSentences ?? s.maxSize ?? 2;
