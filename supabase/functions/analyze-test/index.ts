@@ -672,7 +672,11 @@ function validateMicroAcoes(
     seen.add(key);
 
     const check = validateAction(i, gatilho, acao, ctx);
-    if (!check.pass) { errors.push(check.reason!); continue; }
+    if (!check.pass) {
+      console.log(`[pipeline] microAcao ${i + 1} REJECTED: ${check.reason} | gatilho: "${gatilho.slice(0, 60)}" | acao: "${acao.slice(0, 60)}"`);
+      errors.push(check.reason!);
+      continue;
+    }
 
     validated.push({ gatilho, acao });
   }
