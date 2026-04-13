@@ -20,6 +20,64 @@ import {
   type TestPrompt, type TestModule, type GlobalAiConfig, type TestAiConfig,
 } from '@/components/admin/promptConstants';
 
+const PIPELINE_STEPS = [
+  { key: 'prompts', label: 'Prompts', description: 'Instruções de análise', check: (stats: any) => stats.promptCount >= 5 },
+  { key: 'questions', label: 'Perguntas', description: 'Sensores do teste', check: (stats: any) => stats.qCount >= 20 },
+  { key: 'template', label: 'Template', description: 'Estrutura do relatório', check: (_: any, hasTemplate: boolean) => hasTemplate },
+  { key: 'config', label: 'Config IA', description: 'Modelo e parâmetros', check: (stats: any) => stats.hasAiConfig },
+];
+
+const PipelineFlowIndicator = ({ module, promptCount, qCount, hasAiConfig }: { module: TestModule; promptCount: number; qCount: number; hasAiConfig: boolean }) => {
+  const [hasTemplate, setHasTemplate] = useState(false);
+  
+  useEffect(() => {
+    const check = async () => {
+      const { data } = await supabase.from('report_templates').select('id, sections').eq('test_id', module.id).maybeSingle();
+      setHasTemplate(!!(data && (data.sections as any[])?.length > 0));
+    };
+    check();
+  }, [module.id]);
+
+  const stats = { promptCount, qCount, hasAiConfig };
+  const completedSteps = PIPELINE_STEPS.filter(s => s.check(stats, hasTemplate)).length;
+
+  return (
+    <div className="rounded-xl border border-border/30 bg-card/40 p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h4 className="text-[0.78rem] font-bold text-foreground/80">Fluxo do Pipeline</h4>
+        <span className={`text-[0.65rem] font-bold px-2 py-0.5 rounded-full ${
+          completedSteps === 4 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-amber-500/10 text-amber-600'
+        }`}>{completedSteps}/4 etapas</span>
+      </div>
+      <div className="flex items-center gap-1">
+        {PIPELINE_STEPS.map((step, i) => {
+          const done = step.check(stats, hasTemplate);
+          return (
+            <div key={step.key} className="flex items-center flex-1">
+              <div className={`flex-1 rounded-lg p-2.5 border transition-all ${
+                done 
+                  ? 'bg-emerald-500/5 border-emerald-500/20'
+                  : 'bg-muted/10 border-border/20'
+              }`}>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[0.55rem] font-bold ${
+                    done ? 'bg-emerald-500 text-white' : 'bg-muted/40 text-muted-foreground/40'
+                  }`}>{done ? '✓' : i + 1}</div>
+                  <span className={`text-[0.68rem] font-semibold ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground/50'}`}>{step.label}</span>
+                </div>
+                <p className="text-[0.58rem] text-muted-foreground/40 pl-5">{step.description}</p>
+              </div>
+              {i < PIPELINE_STEPS.length - 1 && (
+                <div className={`w-4 h-0.5 shrink-0 ${done ? 'bg-emerald-500/40' : 'bg-muted/20'}`} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 const AdminPrompts = () => {
   const { user, isSuperAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -257,6 +315,14 @@ const AdminPrompts = () => {
 
             {/* ═══ TAB 1: PIPELINE ═══ */}
             <TabsContent value="pipeline" className="mt-5 space-y-8">
+              {/* Pipeline Flow Indicator */}
+              <PipelineFlowIndicator
+                module={currentModule}
+                promptCount={getModuleStats(currentModule.id).promptCount}
+                qCount={questionCounts[currentModule.id] || 0}
+                hasAiConfig={!!testAiConfigs.find(c => c.test_id === currentModule.id)}
+              />
+
               {/* Prompts */}
               <PromptEditor
                 currentModule={currentModule}
