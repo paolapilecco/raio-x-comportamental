@@ -591,18 +591,23 @@ function buildValidationContext(
   const topEvidence = getTopAnswers(topAxis.key);
   const strongEvidence = getTopAnswers(undefined, 80, 1)[0] || getTopAnswers(undefined, 65, 1)[0];
 
+  // When no answers exist (simulation mode), include all score keys/labels as broad anchors
+  const allScoreTokens = answers.length === 0
+    ? sortedScores.flatMap((s) => [s.key, s.label])
+    : [];
+
   return {
     dominant: {
       ref: domEvidence[0]?.questionText || dominant.label || dominant.key,
-      tokens: buildAnchorTokens([dominant.key, dominant.label, ...domEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
+      tokens: buildAnchorTokens([dominant.key, dominant.label, ...allScoreTokens, ...domEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
     },
     topAxis: {
       ref: topEvidence[0]?.questionText || topAxis.label || topAxis.key,
-      tokens: buildAnchorTokens([topAxis.key, topAxis.label, ...topEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
+      tokens: buildAnchorTokens([topAxis.key, topAxis.label, ...allScoreTokens, ...topEvidence.flatMap((a) => [a.questionText, a.chosenOption])]),
     },
     evidence: {
       ref: strongEvidence ? `${strongEvidence.questionText} | ${strongEvidence.chosenOption || strongEvidence.value}` : dominant.label || dominant.key,
-      tokens: buildAnchorTokens(strongEvidence ? [strongEvidence.questionText, strongEvidence.chosenOption] : [dominant.key, dominant.label]),
+      tokens: buildAnchorTokens(strongEvidence ? [strongEvidence.questionText, strongEvidence.chosenOption] : [dominant.key, dominant.label, ...allScoreTokens]),
     },
   };
 }
