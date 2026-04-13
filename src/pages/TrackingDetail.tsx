@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Clock, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp, Save, Lock, Crown, History, Target, Flame, AlertTriangle, Zap } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp, Save, Lock, Crown, History, Target, Flame, AlertTriangle, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ActionItem {
