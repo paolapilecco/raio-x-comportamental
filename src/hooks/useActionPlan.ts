@@ -134,7 +134,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
 export async function createActionPlanTracking(
   userId: string,
   diagnosticResultId: string,
-  actions: string[]
+  actions: { gatilho: string; acao: string }[]
 ): Promise<void> {
   console.log(`[ActionPlan] Creating tracking: userId=${userId}, resultId=${diagnosticResultId}, actions=${actions.length}`);
   
@@ -155,12 +155,14 @@ export async function createActionPlanTracking(
     return;
   }
 
-  // Store exactly 1 row per action (max 3)
-  const rows = actions.slice(0, 3).map((actionText, i) => ({
+  // Store exactly 1 row per action (max 3) with structured gatilho/acao
+  const rows = actions.slice(0, 3).map((action, i) => ({
     user_id: userId,
     diagnostic_result_id: diagnosticResultId,
     day_number: i + 1,
-    action_text: actionText,
+    action_text: `Quando ${action.gatilho} → ${action.acao}`,
+    gatilho: action.gatilho,
+    acao: action.acao,
   }));
 
   const { error } = await supabase.from('action_plan_tracking').insert(rows);
