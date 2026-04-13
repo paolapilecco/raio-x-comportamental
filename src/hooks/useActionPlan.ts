@@ -138,8 +138,16 @@ export async function createActionPlanTracking(
 ): Promise<void> {
   console.log(`[ActionPlan] Creating tracking: userId=${userId}, resultId=${diagnosticResultId}, actions=${actions.length}`);
   
-  if (!actions || actions.length !== 3) {
-    throw new Error(`[ActionPlan] Invalid action count: expected 3, received ${actions?.length || 0}`);
+  if (!actions || actions.length === 0) {
+    throw new Error('[ActionPlan] Invalid action count: expected at least 1 action');
+  }
+
+  const normalizedActions = actions
+    .filter((action) => action?.gatilho && action?.acao)
+    .slice(0, 3);
+
+  if (normalizedActions.length === 0) {
+    throw new Error('[ActionPlan] No valid actions available to create tracking');
   }
 
   // Check if plan already exists
@@ -156,7 +164,7 @@ export async function createActionPlanTracking(
 
   const TOTAL_DAYS = 15;
   const rows = Array.from({ length: TOTAL_DAYS }, (_, i) => {
-    const action = actions[i % 3];
+    const action = normalizedActions[i % normalizedActions.length];
     return {
     user_id: userId,
     diagnostic_result_id: diagnosticResultId,
