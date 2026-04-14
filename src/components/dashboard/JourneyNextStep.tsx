@@ -147,7 +147,7 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
         <div className="flex items-center gap-1.5 mb-4">
           {['Diagnóstico', 'Plano', 'Prática', 'Reavaliação'].map((label, i) => {
             const stageIndex = phase === 'no_test' ? 0 :
-              ['test_done_no_plan', 'plan_not_started', 'plan_in_progress'].includes(phase) ? 1 :
+              ['test_done_no_plan', 'plan_not_started', 'plan_in_progress', 'plan_stalled'].includes(phase) ? 1 :
               phase === 'plan_complete_waiting' ? 2 : 3;
             const isActive = i === stageIndex;
             const isDone = i < stageIndex;
