@@ -9,6 +9,7 @@ type JourneyPhase =
   | 'test_done_no_plan'
   | 'plan_not_started'
   | 'plan_in_progress'
+  | 'plan_stalled'
   | 'plan_complete_waiting'
   | 'retest_available'
   | 'retest_available_no_plan';
@@ -53,6 +54,14 @@ const phaseConfig: Record<JourneyPhase, { icon: any; title: string; subtitle: st
     cta: 'Continuar quebrando o ciclo',
     route: '/acompanhamento',
     accent: 'primary',
+  },
+  plan_stalled: {
+    icon: AlertTriangle,
+    title: 'Você parou exatamente no ponto que sempre para.',
+    subtitle: 'Isso não é coincidência — é o padrão se protegendo. Você começou mas não continuou. Cada dia parado fortalece o circuito que te mantém travado. Isso confirma exatamente o que o diagnóstico revelou.',
+    cta: 'Retomar agora — antes que o padrão vença',
+    route: '/acompanhamento',
+    accent: 'amber',
   },
   plan_complete_waiting: {
     icon: Clock,
