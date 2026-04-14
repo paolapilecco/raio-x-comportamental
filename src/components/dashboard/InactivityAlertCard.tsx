@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { AlertTriangle, ArrowRight, BarChart3, Skull } from 'lucide-react';
+import { ArrowRight, BarChart3, Skull } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { trackEvent } from '@/lib/trackEvent';
