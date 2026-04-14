@@ -231,6 +231,8 @@ const Dashboard = () => {
             key_unlock_area: cp.key_unlock_area,
             profile_name: cp.profile_name,
             last_test_at: cp.last_test_at,
+            behavioral_tendencies: (cp as any).behavioral_tendencies as { key: string; label: string; intensity: number }[] | undefined,
+            behavioral_memory: (cp as any).behavioral_memory as Record<string, unknown> | undefined,
           });
         }
 
