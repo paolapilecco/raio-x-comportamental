@@ -141,6 +141,9 @@ export async function generateUnifiedProfile(userId: string): Promise<UnifiedPro
   // 7. Data confidence (how much we trust the profile)
   const dataConfidence = Math.min(Math.round((results.length / 5) * 100), 100);
 
+  // 7.5 Detect behavioral tendencies for memory system
+  const behavioralTendencies = detectBehavioralTendencies(aggregatedScores);
+
   const profile: UnifiedProfile = {
     dominantPattern,
     secondaryPatterns,
@@ -157,7 +160,10 @@ export async function generateUnifiedProfile(userId: string): Promise<UnifiedPro
   const dominantDef = patternDefinitions[dominantKey];
   const latestResult = results[0];
 
-  const profileData = {
+  // Build behavioral memory from historical data
+  const behavioralMemory = buildBehavioralMemory(aggregatedScores, sessions.length, internalConflicts);
+
+  const profileData: Record<string, unknown> = {
     user_id: userId,
     dominant_patterns: sortedPatterns.slice(0, 3),
     aggregated_scores: aggregatedScores,
@@ -167,6 +173,8 @@ export async function generateUnifiedProfile(userId: string): Promise<UnifiedPro
     key_unlock_area: dominantDef?.keyUnlockArea || null,
     profile_name: dominantDef?.profileName || latestResult.profile_name,
     last_test_at: sessions[0].completed_at,
+    behavioral_tendencies: behavioralTendencies,
+    behavioral_memory: behavioralMemory,
   };
 
   const { data: existing } = await supabase
@@ -187,6 +195,71 @@ export async function generateUnifiedProfile(userId: string): Promise<UnifiedPro
   }
 
   return profile;
+}
+
+/**
+ * Detects behavioral tendencies from aggregated scores.
+ * Returns an array of tendency objects used for personalized communication.
+ */
+function detectBehavioralTendencies(scores: Record<string, number>): { key: string; label: string; intensity: number }[] {
+  const tendencyMap: Record<string, { patterns: string[]; label: string }> = {
+    avoidance: {
+      patterns: ['discomfort_escape', 'emotional_self_sabotage', 'fear_of_judgment'],
+      label: 'Tendência a evitar',
+    },
+    control: {
+      patterns: ['paralyzing_perfectionism', 'functional_overload', 'excessive_self_criticism'],
+      label: 'Tendência a controlar',
+    },
+    procrastination: {
+      patterns: ['unstable_execution', 'low_routine_sustenance', 'discomfort_escape'],
+      label: 'Tendência a procrastinar',
+    },
+    unsustainability: {
+      patterns: ['low_routine_sustenance', 'unstable_execution'],
+      label: 'Dificuldade de sustentar ação',
+    },
+    self_sabotage: {
+      patterns: ['emotional_self_sabotage', 'excessive_self_criticism', 'validation_dependency'],
+      label: 'Autossabotagem recorrente',
+    },
+  };
+
+  const tendencies: { key: string; label: string; intensity: number }[] = [];
+
+  for (const [key, config] of Object.entries(tendencyMap)) {
+    const relevantScores = config.patterns.map(p => scores[p] || 0).filter(s => s > 0);
+    if (relevantScores.length === 0) continue;
+    const avg = relevantScores.reduce((a, b) => a + b, 0) / relevantScores.length;
+    if (avg >= 45) {
+      tendencies.push({ key, label: config.label, intensity: Math.round(avg) });
+    }
+  }
+
+  return tendencies.sort((a, b) => b.intensity - a.intensity);
+}
+
+/**
+ * Builds behavioral memory object for personalized confrontational communication.
+ */
+function buildBehavioralMemory(
+  scores: Record<string, number>,
+  testCount: number,
+  conflicts: { patternA: string; patternB: string; description: string }[]
+): Record<string, unknown> {
+  const highScores = Object.entries(scores).filter(([, v]) => v >= 60);
+  const criticalScores = Object.entries(scores).filter(([, v]) => v >= 75);
+
+  return {
+    starts_but_doesnt_finish: (scores['unstable_execution'] || 0) >= 55 && (scores['low_routine_sustenance'] || 0) >= 50,
+    avoids_discomfort: (scores['discomfort_escape'] || 0) >= 55,
+    seeks_external_validation: (scores['validation_dependency'] || 0) >= 55,
+    self_critical_loop: (scores['excessive_self_criticism'] || 0) >= 60,
+    has_internal_conflicts: conflicts.length > 0,
+    pattern_count_high: highScores.length,
+    pattern_count_critical: criticalScores.length,
+    test_history_depth: testCount,
+  };
 }
 
 // Keep backward compatibility
