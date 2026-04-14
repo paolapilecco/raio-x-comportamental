@@ -791,6 +791,36 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
           </div>
         )}
       </div>
+
+      {/* Post-test guided CTA */}
+      {showFull && (
+        <motion.div {...fade} transition={{ delay: 0.5, duration: 0.4 }} className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <ArrowRight className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <h3 className="text-base font-semibold text-foreground">Próximo passo da sua jornada</h3>
+              <p className="text-sm text-muted-foreground">Saber o padrão é só o começo. Executar é o que transforma.</p>
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => window.location.href = '/acompanhamento'}
+              className="flex items-center justify-center gap-2 px-5 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:brightness-90 transition-all active:scale-[0.97]"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              Ir para o Plano de Ação
+            </button>
+            <button
+              onClick={() => window.location.href = '/dashboard'}
+              className="flex items-center justify-center gap-2 px-5 py-3 border border-border/40 rounded-xl text-sm font-medium hover:bg-secondary/50 transition-all active:scale-[0.97]"
+            >
+              Ver meu progresso
+            </button>
+          </div>
+        </motion.div>
+      )}
     </motion.section>
   );
 }

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, FileText, Activity, LogOut, Settings, Shield, Stethoscope } from 'lucide-react';
+import { LayoutDashboard, Users, FileText, Target, LogOut, Settings, Shield, Stethoscope, Compass, RotateCcw } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -7,6 +7,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -14,19 +15,21 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-const baseNavItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Catálogo', url: '/tests', icon: Activity },
+const journeyNavItems = [
+  { title: 'Meu Progresso', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Testes', url: '/tests', icon: Compass },
+  { title: 'Plano de Ação', url: '/acompanhamento', icon: Target },
   { title: 'Relatórios', url: '/central-report', icon: FileText },
-  { title: 'Acompanhamento', url: '/acompanhamento', icon: Activity },
+  { title: 'Histórico', url: '/history', icon: RotateCcw },
 ];
 
 const professionalNavItems = [
-  { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'Meu Progresso', url: '/dashboard', icon: LayoutDashboard },
   { title: 'Pessoas', url: '/pessoas', icon: Users },
-  { title: 'Catálogo', url: '/tests', icon: Activity },
+  { title: 'Testes', url: '/tests', icon: Compass },
+  { title: 'Plano de Ação', url: '/acompanhamento', icon: Target },
   { title: 'Relatórios', url: '/central-report', icon: FileText },
-  { title: 'Acompanhamento', url: '/acompanhamento', icon: Activity },
+  { title: 'Histórico', url: '/history', icon: RotateCcw },
 ];
 
 export function AppSidebar() {
@@ -55,9 +58,10 @@ export function AppSidebar() {
 
       <SidebarContent className="px-3">
         <SidebarGroup>
+          {!collapsed && <SidebarGroupLabel className="text-[0.6rem] uppercase tracking-[0.15em] text-sidebar-foreground/40 font-semibold px-3 mb-1">Jornada</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {(planType === 'profissional' || isSuperAdmin ? professionalNavItems : baseNavItems).map((item) => (
+              {(planType === 'profissional' || isSuperAdmin ? professionalNavItems : journeyNavItems).map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
