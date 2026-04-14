@@ -99,6 +99,12 @@ function getPhase(props: JourneyNextStepProps): JourneyPhase {
   if (planCompleted && !retestReady) return 'plan_complete_waiting';
   if (actionPlan.days.length === 0) return 'test_done_no_plan';
   if (!actionPlan.stats.has_started) return 'plan_not_started';
+
+  // Detect stalled: started but no progress (has_started but no in_progress and not all completed)
+  const hasOnlyCompleted1 = actionPlan.days[0]?.status === 'completed' && 
+    actionPlan.days.slice(1).every(d => d.status === 'not_started');
+  if (hasOnlyCompleted1) return 'plan_stalled';
+
   return 'plan_in_progress';
 }
 
@@ -124,6 +130,7 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
     test_done_no_plan: 'Etapa 2 — Plano de Ação',
     plan_not_started: 'Etapa 2 — Plano de Ação',
     plan_in_progress: 'Etapa 2 — Execução',
+    plan_stalled: 'Etapa 2 — Abandono detectado',
     plan_complete_waiting: 'Etapa 3 — Período de Prática',
     retest_available: 'Etapa 4 — Reavaliação',
     retest_available_no_plan: 'Etapa 4 — Reavaliação',
