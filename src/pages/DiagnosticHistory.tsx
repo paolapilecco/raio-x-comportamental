@@ -50,7 +50,7 @@ const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } }
 
 const DiagnosticHistory = () => {
   const { user, isSuperAdmin } = useAuth();
-  const { hasMultiplePersons } = useSubscription();
+  const { hasMultiplePersons, isPremium } = useSubscription();
   const navigate = useNavigate();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [modules, setModules] = useState<TestModule[]>([]);
