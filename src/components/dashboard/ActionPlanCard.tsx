@@ -378,7 +378,7 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMo
       </div>
 
       {/* Irreversibility notice after test */}
-      {!stats.has_started && days.length > 0 && (
+      {!focusMode && !stats.has_started && days.length > 0 && (
         <div className="rounded-xl bg-primary/[0.04] border border-primary/10 px-4 py-3">
           <p className="text-xs text-foreground/70 font-medium leading-relaxed">
             O padrão ficou visível. Agora que você viu, não consegue mais fingir que não sabe. A decisão agora é sua.
@@ -387,8 +387,9 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMo
       )}
 
       {/* Phase indicators */}
-      <div className="flex gap-1">
-        {days.map((task) => (
+      {!focusMode && (
+        <div className="flex gap-1">
+          {days.map((task) => (
           <div key={task.id} className="flex-1">
             <div className={`h-1.5 rounded-full ${
               task.status === 'completed' ? 'bg-green-500' :
