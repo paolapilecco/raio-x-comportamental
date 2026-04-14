@@ -347,12 +347,12 @@ const Dashboard = () => {
         {/* Hero greeting */}
          <motion.section {...fadeIn} className="space-y-2">
           <h1 className="text-2xl sm:text-3xl md:text-[2.5rem] font-semibold tracking-tight text-foreground leading-tight">
-            {hasData ? `Olá, ${displayName}.` : `Bem-vindo, ${displayName}.`}
+            {hasData ? `${displayName}, seu padrão continua ativo.` : `${displayName}, você ainda não sabe o que te trava.`}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl">
             {hasData
-              ? 'Acompanhe seu progresso e continue evoluindo.'
-              : 'Sua jornada de autoconhecimento começa com a primeira leitura.'}
+              ? 'Cada dia sem ação fortalece o circuito que te mantém no mesmo lugar.'
+              : 'Sua jornada de transformação começa quando você enxerga o que opera por baixo.'}
           </p>
         </motion.section>
 
