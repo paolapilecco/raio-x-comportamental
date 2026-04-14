@@ -375,7 +375,7 @@ const Diagnostic = () => {
 
           const structuredActions = microAcoes
             .slice(0, 3)
-            .map((a: any) => ({ gatilho: a.gatilho, acao: a.acao, titulo: a.titulo || '', objetivo: a.objetivo || '', porque: a.porque || '', comoExecutar: a.comoExecutar || '', criterio: a.criterio || '' }));
+            .map((a: any) => ({ gatilho: a.gatilho, acao: a.acao, titulo: a.titulo || '', objetivo: a.objetivo || '', porque: a.porque || '', comoExecutar: a.comoExecutar || '', criterio: a.criterio || '', fase: a.fase || '', padraoAlvo: a.padraoAlvo || '' }));
 
           if (structuredActions.length > 0) {
             await createActionPlanTracking(user.id, savedResult.id, structuredActions);

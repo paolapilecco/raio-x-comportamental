@@ -318,16 +318,32 @@ PRINCÍPIOS INEGOCIÁVEIS:
 5. PROIBIDO: "busque equilíbrio", "tenha consciência", "acredite em si", "saia da zona de conforto", "pratique autoconhecimento", "talvez", "pode ser que"
 
 REGRA CRÍTICA PARA tarefasEstrategicas:
-Gere EXATAMENTE 3 tarefasEstrategicas. Cada uma é uma missão comportamental derivada do diagnóstico.
+Gere EXATAMENTE 3 tarefasEstrategicas. Cada uma tem um PAPEL PSICOLÓGICO ESPECÍFICO no processo de transformação:
 
-tarefasEstrategicas[0] → ataca PADRÃO DOMINANTE (o circuito principal que trava o usuário)
-tarefasEstrategicas[1] → ataca EIXO COM MAIOR SCORE (%) (o ponto de maior intensidade medida)
-tarefasEstrategicas[2] → ataca COMPORTAMENTO RECORRENTE das evidências (score ≥ 80)
+tarefasEstrategicas[0] → FASE: CONSCIÊNCIA — objetivo: fazer o usuário PERCEBER o padrão em tempo real
+  - Ataca o PADRÃO DOMINANTE
+  - A tarefa deve criar um momento de "flagrar" o padrão acontecendo
+  - Não é para mudar ainda, é para VER com clareza o que antes era automático
+  - Exemplo: registrar toda vez que o padrão aparece, notar o gatilho antes de reagir
+
+tarefasEstrategicas[1] → FASE: INTERRUPÇÃO — objetivo: QUEBRAR o comportamento automático
+  - Ataca o EIXO COM MAIOR SCORE (%)
+  - A tarefa deve criar uma ação que INTERROMPE o ciclo no momento em que ele acontece
+  - É o ponto de virada: onde o usuário age diferente do que sempre fez
+  - Exemplo: quando o gatilho aparecer, fazer X em vez de Y
+
+tarefasEstrategicas[2] → FASE: CONSOLIDAÇÃO — objetivo: criar um NOVO PADRÃO que substitua o antigo
+  - Ataca COMPORTAMENTO RECORRENTE das evidências (score ≥ 80)
+  - A tarefa deve instalar um comportamento alternativo que se repita
+  - É a construção do novo circuito neural — repetição consciente
+  - Exemplo: praticar a nova resposta 1x por dia em contexto específico
 
 Cada tarefa DEVE conter:
 - "titulo": nome curto e direto da tarefa (máx 8 palavras, sem jargão)
+- "fase": OBRIGATÓRIO — "consciencia" | "interrupcao" | "consolidacao"
+- "padraoAlvo": nome do padrão específico que essa tarefa ataca (ex: "execução instável", "fuga do desconforto")
 - "objetivo": o que muda concretamente na vida se executar (1 frase, resultado tangível)
-- "porque": por que essa tarefa existe — conecte ao padrão detectado (2 frases máx, linguagem confrontadora)
+- "porque": por que essa tarefa existe — CITE o padrão pelo nome e explique a conexão direta (2 frases máx, linguagem confrontadora)
 - "comoExecutar": instruções práticas, passo a passo real (3-4 frases com ações concretas)
 - "criterio": como saber que concluiu — indicador observável, não subjetivo (1 frase)
 - "gatilho": situação concreta do dia-a-dia onde o padrão aparece (mín 20 caracteres, sem vaguezas)
@@ -361,9 +377,9 @@ function buildOutputSchema(template: ReportTemplate | null): string {
     whatNotToDo: '["não fazer 1", "não fazer 2"]',
     exitStrategy: '["passo 1", "passo 2", "passo 3"]',
     microAcoes: `[
-      {"titulo": "nome curto da tarefa", "objetivo": "resultado tangível", "porque": "conexão com o padrão", "comoExecutar": "passo a passo prático", "criterio": "indicador observável de conclusão", "gatilho": "situação do PADRÃO DOMINANTE", "acao": "verbo + contexto + tempo"},
-      {"titulo": "nome curto", "objetivo": "resultado", "porque": "conexão", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "situação do EIXO MAIS ALTO", "acao": "verbo + contexto + tempo"},
-      {"titulo": "nome curto", "objetivo": "resultado", "porque": "conexão", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "comportamento das EVIDÊNCIAS (score ≥ 80)", "acao": "verbo + contexto + tempo"}
+      {"titulo": "nome curto", "fase": "consciencia", "padraoAlvo": "nome do padrão dominante", "objetivo": "resultado tangível", "porque": "conexão direta citando o padrão pelo nome", "comoExecutar": "passo a passo prático", "criterio": "indicador observável", "gatilho": "situação do PADRÃO DOMINANTE", "acao": "verbo + contexto + tempo"},
+      {"titulo": "nome curto", "fase": "interrupcao", "padraoAlvo": "nome do eixo mais alto", "objetivo": "resultado", "porque": "conexão direta", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "situação do EIXO MAIS ALTO", "acao": "verbo + contexto + tempo"},
+      {"titulo": "nome curto", "fase": "consolidacao", "padraoAlvo": "nome do comportamento recorrente", "objetivo": "resultado", "porque": "conexão direta", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "comportamento das EVIDÊNCIAS (score ≥ 80)", "acao": "verbo + contexto + tempo"}
     ]`,
     evolutionSummary: '"comparação com diagnóstico anterior (vazio se não houver)"',
     summary: '"resumo geral em 2 frases"',

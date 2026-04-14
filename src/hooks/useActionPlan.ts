@@ -2,9 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { trackEvent } from '@/lib/trackEvent';
 
+export type TaskPhase = 'consciencia' | 'interrupcao' | 'consolidacao';
+
+export const PHASE_META: Record<TaskPhase, { label: string; role: string; icon: string }> = {
+  consciencia: { label: 'Consciência', role: 'Perceber o padrão em tempo real', icon: '👁️' },
+  interrupcao: { label: 'Interrupção', role: 'Quebrar o comportamento automático', icon: '⚡' },
+  consolidacao: { label: 'Consolidação', role: 'Criar um novo padrão', icon: '🔄' },
+};
+
 export interface StrategicTask {
   id: string;
   task_number: number;
+  fase: TaskPhase;
+  padraoAlvo: string;
   titulo: string;
   objetivo: string;
   porque: string;
@@ -38,17 +48,19 @@ export interface ActionPlanData {
   updateTaskStatus: (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => Promise<void>;
 }
 
-function parseTaskMetadata(actionText: string, _gatilho: string, acao: string): Pick<StrategicTask, 'titulo' | 'objetivo' | 'porque' | 'comoExecutar' | 'criterio'> {
-  // Try to parse JSON metadata from notes field first, fallback to legacy format
+const PHASE_ORDER: TaskPhase[] = ['consciencia', 'interrupcao', 'consolidacao'];
+
+function parseTaskMetadata(actionText: string, _gatilho: string, acao: string, index: number): Pick<StrategicTask, 'titulo' | 'objetivo' | 'porque' | 'comoExecutar' | 'criterio' | 'fase' | 'padraoAlvo'> {
   const defaults = {
     titulo: '',
     objetivo: '',
     porque: '',
     comoExecutar: '',
     criterio: '',
+    fase: PHASE_ORDER[index] || 'consciencia' as TaskPhase,
+    padraoAlvo: '',
   };
 
-  // Legacy action text: "Quando X → Y"
   if (!actionText) return defaults;
 
   try {
@@ -59,9 +71,10 @@ function parseTaskMetadata(actionText: string, _gatilho: string, acao: string): 
       porque: parsed.porque || '',
       comoExecutar: parsed.comoExecutar || '',
       criterio: parsed.criterio || '',
+      fase: parsed.fase || PHASE_ORDER[index] || 'consciencia',
+      padraoAlvo: parsed.padraoAlvo || '',
     };
   } catch {
-    // Legacy format — generate basic title from gatilho/acao
     return {
       ...defaults,
       titulo: acao ? acao.slice(0, 50) : 'Tarefa comportamental',
@@ -113,11 +126,13 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
           .eq('user_id', userId)
           .order('day_number');
 
-        const tasks: StrategicTask[] = (tracking || []).map(row => {
-          const meta = parseTaskMetadata(row.action_text, row.gatilho, row.acao);
+        const tasks: StrategicTask[] = (tracking || []).map((row, index) => {
+          const meta = parseTaskMetadata(row.action_text, row.gatilho, row.acao, index);
           return {
             id: row.id,
             task_number: row.day_number,
+            fase: meta.fase,
+            padraoAlvo: meta.padraoAlvo,
             titulo: meta.titulo,
             objetivo: meta.objetivo,
             porque: meta.porque,
@@ -236,7 +251,7 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
 export async function createActionPlanTracking(
   userId: string,
   diagnosticResultId: string,
-  actions: { gatilho: string; acao: string; titulo?: string; objetivo?: string; porque?: string; comoExecutar?: string; criterio?: string }[]
+  actions: { gatilho: string; acao: string; titulo?: string; objetivo?: string; porque?: string; comoExecutar?: string; criterio?: string; fase?: string; padraoAlvo?: string }[]
 ): Promise<void> {
   console.log(`[ActionPlan] Creating tracking: userId=${userId}, resultId=${diagnosticResultId}, actions=${actions.length}`);
   
@@ -275,6 +290,8 @@ export async function createActionPlanTracking(
       porque: action.porque || '',
       comoExecutar: action.comoExecutar || '',
       criterio: action.criterio || '',
+      fase: action.fase || (['consciencia', 'interrupcao', 'consolidacao'][i] || 'consciencia'),
+      padraoAlvo: action.padraoAlvo || '',
     }),
     gatilho: action.gatilho,
     acao: action.acao,
