@@ -23,9 +23,6 @@ function TaskCard({ task, index, locked, onToggle, onStatusChange }: {
   onStatusChange: (id: string, status: 'not_started' | 'in_progress' | 'completed') => void;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const config = statusConfig[task.status];
-  const StatusIcon = config.icon;
-  const navigate = useNavigate();
 
   if (locked) {
     return (
