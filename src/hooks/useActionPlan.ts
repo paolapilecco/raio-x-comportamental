@@ -38,7 +38,7 @@ export interface ActionPlanData {
   updateTaskStatus: (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => Promise<void>;
 }
 
-function parseTaskMetadata(actionText: string, gatilho: string, acao: string): Pick<StrategicTask, 'titulo' | 'objetivo' | 'porque' | 'comoExecutar' | 'criterio'> {
+function parseTaskMetadata(actionText: string, _gatilho: string, acao: string): Pick<StrategicTask, 'titulo' | 'objetivo' | 'porque' | 'comoExecutar' | 'criterio'> {
   // Try to parse JSON metadata from notes field first, fallback to legacy format
   const defaults = {
     titulo: '',
