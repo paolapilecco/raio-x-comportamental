@@ -317,12 +317,21 @@ PRINCÍPIOS INEGOCIÁVEIS:
 4. Linguagem direta, precisa, sem rodeios — sem amenizar, sem "psicologuês" vazio
 5. PROIBIDO: "busque equilíbrio", "tenha consciência", "acredite em si", "saia da zona de conforto", "pratique autoconhecimento", "talvez", "pode ser que"
 
-REGRA CRÍTICA PARA microAcoes:
-Gere EXATAMENTE 3 microAcoes. Cada uma com "gatilho" (situação concreta) e "acao" (verbo forte + contexto + tempo).
-Se gerar menos de 3, será REJEITADO.
-microAcoes[0] → ataca PADRÃO DOMINANTE
-microAcoes[1] → ataca EIXO COM MAIOR SCORE (%)
-microAcoes[2] → ataca COMPORTAMENTO RECORRENTE das evidências (score ≥ 80)
+REGRA CRÍTICA PARA tarefasEstrategicas:
+Gere EXATAMENTE 3 tarefasEstrategicas. Cada uma é uma missão comportamental derivada do diagnóstico.
+
+tarefasEstrategicas[0] → ataca PADRÃO DOMINANTE (o circuito principal que trava o usuário)
+tarefasEstrategicas[1] → ataca EIXO COM MAIOR SCORE (%) (o ponto de maior intensidade medida)
+tarefasEstrategicas[2] → ataca COMPORTAMENTO RECORRENTE das evidências (score ≥ 80)
+
+Cada tarefa DEVE conter:
+- "titulo": nome curto e direto da tarefa (máx 8 palavras, sem jargão)
+- "objetivo": o que muda concretamente na vida se executar (1 frase, resultado tangível)
+- "porque": por que essa tarefa existe — conecte ao padrão detectado (2 frases máx, linguagem confrontadora)
+- "comoExecutar": instruções práticas, passo a passo real (3-4 frases com ações concretas)
+- "criterio": como saber que concluiu — indicador observável, não subjetivo (1 frase)
+- "gatilho": situação concreta do dia-a-dia onde o padrão aparece (mín 20 caracteres, sem vaguezas)
+- "acao": resposta comportamental específica com verbo forte + contexto + tempo
 
 QUALIDADE DO GATILHO:
 - CORRETO: "quando estiver adiando uma conversa difícil com alguém do trabalho por medo de rejeição"
@@ -352,9 +361,9 @@ function buildOutputSchema(template: ReportTemplate | null): string {
     whatNotToDo: '["não fazer 1", "não fazer 2"]',
     exitStrategy: '["passo 1", "passo 2", "passo 3"]',
     microAcoes: `[
-      {"gatilho": "situação do PADRÃO DOMINANTE", "acao": "verbo + contexto + tempo"},
-      {"gatilho": "situação do EIXO MAIS ALTO", "acao": "verbo + contexto + tempo"},
-      {"gatilho": "comportamento das EVIDÊNCIAS (score ≥ 80)", "acao": "verbo + contexto + tempo"}
+      {"titulo": "nome curto da tarefa", "objetivo": "resultado tangível", "porque": "conexão com o padrão", "comoExecutar": "passo a passo prático", "criterio": "indicador observável de conclusão", "gatilho": "situação do PADRÃO DOMINANTE", "acao": "verbo + contexto + tempo"},
+      {"titulo": "nome curto", "objetivo": "resultado", "porque": "conexão", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "situação do EIXO MAIS ALTO", "acao": "verbo + contexto + tempo"},
+      {"titulo": "nome curto", "objetivo": "resultado", "porque": "conexão", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "comportamento das EVIDÊNCIAS (score ≥ 80)", "acao": "verbo + contexto + tempo"}
     ]`,
     evolutionSummary: '"comparação com diagnóstico anterior (vazio se não houver)"',
     summary: '"resumo geral em 2 frases"',
