@@ -6,7 +6,7 @@ import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
 import { useNavigate } from 'react-router-dom';
 import {
   Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart,
-  CheckCircle2, X, Crown, Flame, Star, Gauge, AlertTriangle,
+  CheckCircle2, X, Crown, Flame, Star, Gauge,
   ChevronRight, Calendar, ChevronDown, ChevronUp, Minimize2,
 } from 'lucide-react';
 import { InactivityAlertCard } from '@/components/dashboard/InactivityAlertCard';
