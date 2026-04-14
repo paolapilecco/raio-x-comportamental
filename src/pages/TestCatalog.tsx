@@ -151,7 +151,6 @@ const TestCatalog = () => {
               index={i}
               isCompleted={completedModules.has(mod.id)}
               isLocked={false}
-              isSuperAdmin={isSuperAdmin}
               onStart={() => navigate(`/diagnostic/${mod.slug}`)}
             />
           ))}
@@ -178,7 +177,6 @@ const TestCatalog = () => {
                 index={i}
                 isCompleted={false}
                 isLocked={true}
-                isSuperAdmin={isSuperAdmin}
                 onStart={() => setUpgradeModal(mod)}
               />
             ))}
