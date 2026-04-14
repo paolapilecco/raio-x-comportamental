@@ -375,9 +375,6 @@ const Dashboard = () => {
   const topTendency = centralProfile?.behavioral_tendencies?.[0];
   const progressMessage = getProgressMessage(actionPlan.stats.completed_days, actionPlan.stats.total_days);
 
-  // Enter focus mode callback
-  const enterFocusMode = useCallback(() => setFocusMode(true), []);
-  const exitFocusMode = useCallback(() => setFocusMode(false), []);
 
   return (
     <AppLayout>
