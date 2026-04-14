@@ -405,11 +405,12 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMo
             </p>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Task cards */}
       <div className="space-y-3">
-        {days.map((task, i) => (
+        {visibleDays.map((task, i) => (
           <TaskCard
             key={task.id}
             task={task}
