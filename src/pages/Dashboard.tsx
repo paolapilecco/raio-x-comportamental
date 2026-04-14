@@ -223,6 +223,7 @@ const Dashboard = () => {
     fetchExtra();
   }, [user, sessionsLoading, latestSession]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleDownloadPdf = async () => {
     if (!latestResult) return;
     const latestModule = modules.find(m => m.id === latestModuleId);
@@ -282,7 +283,7 @@ const Dashboard = () => {
   const greeting = getGreeting();
 
   // Pattern labels
-  const dominantPatternDef = latestResult?.dominant_pattern ? patternDefinitions?.[latestResult.dominant_pattern as PatternKey] : undefined;
+  const _dominantPatternDef = latestResult?.dominant_pattern ? patternDefinitions?.[latestResult.dominant_pattern as PatternKey] : undefined;
   const secondaryPatternDefs = (latestResult?.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
 
   // Top behavioral tendency
