@@ -231,8 +231,7 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
 
       {/* Phase indicators */}
       <div className="flex gap-1">
-        {days.map((task, i) => {
-          const pc = phaseColors[task.fase];
+        {days.map((task) => {
           return (
             <div key={task.id} className="flex-1">
               <div className={`h-1.5 rounded-full ${
