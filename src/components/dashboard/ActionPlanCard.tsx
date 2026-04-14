@@ -165,6 +165,17 @@ function TaskCard({ task, index, locked, onToggle, onStatusChange }: {
             </div>
           )}
 
+          {/* Strategic positive reinforcement on completion */}
+          {task.status === 'completed' && (
+            <div className="rounded-xl bg-green-500/5 border border-green-500/10 px-4 py-3 pt-4">
+              <p className="text-xs font-semibold text-green-600 leading-relaxed">
+                {task.fase === 'consciencia' && '✓ Você fez o que normalmente não faz: parou e olhou pro padrão. Isso quebra o piloto automático mais do que você percebe.'}
+                {task.fase === 'interrupcao' && '✓ Você interrompeu o comportamento automático. Seu cérebro resistiu — e você agiu mesmo assim. Isso é raro.'}
+                {task.fase === 'consolidacao' && '✓ Você criou um caminho diferente. Agora o cérebro tem uma alternativa. Cada repetição enfraquece o padrão antigo.'}
+              </p>
+            </div>
+          )}
+
           <div className="flex gap-2 pt-2">
             {task.status === 'not_started' && (
               <button
@@ -324,6 +335,7 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
       </div>
 
       {/* Behavioral Paywall - confrontational and personalized */}
+      {/* Behavioral Paywall with decision point */}
       {!showFull && days.length > 1 && (
         <div className="border border-destructive/20 bg-destructive/[0.03] rounded-2xl px-6 py-6 space-y-4">
           <div className="flex items-start gap-3">
@@ -337,6 +349,14 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
               </p>
             </div>
           </div>
+
+          {/* Identity reinforcement */}
+          <div className="border border-border/10 bg-secondary/30 rounded-xl px-4 py-3 text-center">
+            <p className="text-xs text-foreground/80 font-semibold leading-relaxed">
+              Esse é o seu padrão <span className="italic">hoje</span>. Você é o tipo de pessoa que começa e não termina — <span className="text-primary font-bold">até mudar isso</span>.
+            </p>
+          </div>
+
           <div className="border-t border-destructive/10 pt-4 space-y-3">
             <p className="text-xs text-destructive/80 text-center font-semibold leading-relaxed">
               {paywallCopy.pressure}
@@ -344,16 +364,27 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
             <p className="text-[11px] text-destructive/60 text-center font-medium italic">
               {paywallCopy.consequence}
             </p>
+
+            {/* Decision moment */}
+            <div className="bg-background/60 rounded-xl px-4 py-3 border border-border/10">
+              <p className="text-[13px] text-foreground font-bold text-center leading-snug">
+                Ou você para aqui como sempre, ou faz diferente agora.
+              </p>
+            </div>
+
             <p className="text-[11px] text-muted-foreground/50 text-center">
               +32.847 pessoas já desbloquearam o processo completo
             </p>
             <button
-              onClick={() => navigate('/premium')}
+              onClick={() => navigate('/checkout')}
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
             >
               <Crown className="w-4 h-4" />
-              Desbloquear as 3 fases — R$9,99
+              Quebrar o padrão agora — R$9,99/mês
             </button>
+            <p className="text-[10px] text-muted-foreground/40 text-center">
+              Acesso imediato · Sem compromisso · Cancele quando quiser
+            </p>
           </div>
         </div>
       )}
