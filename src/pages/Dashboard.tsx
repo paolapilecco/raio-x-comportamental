@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart,
   CheckCircle2, X, Crown, Flame, Star, Gauge,
-  ChevronRight, Calendar, ChevronDown, ChevronUp, Minimize2,
+  ChevronRight, Calendar, ChevronDown, ChevronUp, Minimize2, AlertTriangle, Clock,
 } from 'lucide-react';
 import { InactivityAlertCard } from '@/components/dashboard/InactivityAlertCard';
 import { JourneyNextStep } from '@/components/dashboard/JourneyNextStep';
@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 import { trackEvent } from '@/lib/trackEvent';
+import { trackMetaEvent } from '@/lib/metaPixel';
 import type { PatternKey, PatternDefinition, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { PHASE_META } from '@/hooks/useActionPlan';
 
