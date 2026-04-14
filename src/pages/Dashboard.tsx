@@ -842,21 +842,26 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <p className="text-xs text-destructive/70 font-semibold text-center">
-                  Uma fase isolada nunca foi suficiente pra você mudar. E você sabe disso.
+                  Uma fase isolada nunca foi suficiente pra mudar. E você sabe disso.
                 </p>
-                {/* Loss aversion + value anchoring */}
-                <p className="text-xs text-foreground/60 font-medium text-center italic">
-                  Quanto tempo você já perdeu repetindo esse ciclo? Quanto isso já te custou até hoje?
-                </p>
+                {/* Gain visualization */}
+                <div className="border border-primary/10 bg-primary/[0.03] rounded-xl px-4 py-3 text-center">
+                  <p className="text-xs text-foreground/80 font-medium leading-relaxed">
+                    Imagina não repetir isso amanhã. Imagina sair desse ciclo de verdade.
+                  </p>
+                  <p className="text-[11px] text-primary/70 mt-1 font-medium">
+                    Você vai perceber o padrão antes dele acontecer — e agir diferente já na próxima situação.
+                  </p>
+                </div>
                 <button
                   onClick={() => navigate('/checkout')}
                   className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
                 >
                   <Crown className="w-4 h-4" />
-                  Eu vou continuar e quebrar esse padrão
+                  Eu vou fazer diferente dessa vez
                 </button>
                 <p className="text-[10px] text-muted-foreground/40 text-center">
-                  R$9,99/mês · Se você parar aqui, mantém exatamente o padrão que identificou
+                  R$9,99/mês · Isso muda a forma como você decide hoje
                 </p>
               </div>
             </div>
@@ -903,10 +908,7 @@ const Dashboard = () => {
             </div>
             <div className="border-t border-border/10 pt-4 space-y-3">
               <p className="text-xs text-foreground/60 font-semibold text-center">
-                Isso é o ponto onde você sempre interrompe — e tudo volta ao mesmo.
-              </p>
-              <p className="text-[11px] text-foreground/50 text-center italic">
-                Quanto tempo você já perdeu repetindo esse ciclo?
+                Imagina reagir diferente da próxima vez. Imagina perceber o padrão antes dele acontecer.
               </p>
               <button
                 onClick={() => { setShowUpgradeModal(false); navigate('/checkout'); }}
@@ -915,7 +917,7 @@ const Dashboard = () => {
                 <Crown className="w-4 h-4" />
                 Eu vou fazer diferente dessa vez
               </button>
-              <p className="text-center text-[10px] text-muted-foreground/40">R$9,99/mês · O custo real é continuar no padrão</p>
+              <p className="text-center text-[10px] text-muted-foreground/40">R$9,99/mês · Isso muda a forma como você decide hoje</p>
             </div>
           </motion.div>
         </div>

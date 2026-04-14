@@ -168,19 +168,16 @@ export default function Tracking() {
                 <div>
                   <p className="text-foreground font-bold text-sm">Você iniciou a consciência. Mas consciência sem execução completa não gera mudança.</p>
                   <p className="text-muted-foreground text-xs mt-1">
-                    O acompanhamento completo inclui as 3 fases do plano de ação, progresso detalhado e evolução comparativa entre ciclos.
+                    Imagina acompanhar cada fase e ver o padrão enfraquecendo. Você começa a agir diferente já na próxima situação.
                   </p>
                 </div>
               </div>
-              <p className="text-xs text-foreground/60 italic text-center font-medium">
-                Se você parar aqui, mantém exatamente o padrão que identificou. Quanto tempo você já perdeu repetindo esse ciclo?
-              </p>
               <Button onClick={() => navigate('/checkout')} className="bg-destructive text-destructive-foreground hover:brightness-90 w-full font-bold">
                 <Crown className="w-4 h-4 mr-2" />
-                Eu vou continuar e completar o processo
+                Eu vou fazer diferente dessa vez
               </Button>
               <p className="text-[10px] text-muted-foreground/40 text-center">
-                R$9,99/mês · O padrão não espera você decidir
+                R$9,99/mês · Isso muda a forma como você decide hoje
               </p>
             </CardContent>
           </Card>

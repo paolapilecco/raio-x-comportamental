@@ -398,21 +398,21 @@ const DiagnosticHistory = () => {
               <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-amber-500/20 p-6 md:p-8 relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background/95 z-10 flex flex-col items-center justify-end pb-8 gap-3">
                   <Lock className="w-6 h-6 text-amber-500/60" />
-                  <p className="text-sm font-semibold text-foreground text-center px-4">
+                   <p className="text-sm font-semibold text-foreground text-center px-4">
                     Sem comparação, você não sabe se mudou ou só se adaptou
                   </p>
                   <p className="text-xs text-muted-foreground text-center px-8 max-w-md">
-                    O plano gratuito mostra sua leitura mais recente. Para ver evolução real — antes vs depois, área por área — continue a jornada.
+                    Imagina ver exatamente o que mudou — área por área. Você vai perceber o padrão antes dele acontecer.
                   </p>
                    <button
                     onClick={() => navigate('/checkout')}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all active:scale-[0.97] shadow-md"
                   >
                     <Crown className="w-4 h-4" />
-                    Ver se mudou de verdade — R$9,99/mês
+                    Eu vou fazer diferente dessa vez
                   </button>
                   <p className="text-[10px] text-muted-foreground/40 mt-2">
-                    Se você parar aqui, mantém exatamente o padrão que identificou
+                    R$9,99/mês · Isso muda a forma como você decide hoje
                   </p>
                 </div>
                 <div className="blur-sm pointer-events-none">
