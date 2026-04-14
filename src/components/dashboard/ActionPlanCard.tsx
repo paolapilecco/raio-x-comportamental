@@ -244,7 +244,7 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
                 task.status === 'in_progress' ? 'text-amber-600' :
                 'text-muted-foreground/40'
               }`}>
-                {PHASE_META[task.fase]?.label || `Fase ${i + 1}`}
+                {PHASE_META[task.fase]?.label || task.fase}
               </p>
             </div>
           );
