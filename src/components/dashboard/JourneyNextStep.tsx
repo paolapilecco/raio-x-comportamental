@@ -9,6 +9,7 @@ type JourneyPhase =
   | 'test_done_no_plan'
   | 'plan_not_started'
   | 'plan_in_progress'
+  | 'plan_stalled'
   | 'plan_complete_waiting'
   | 'retest_available'
   | 'retest_available_no_plan';
@@ -54,6 +55,14 @@ const phaseConfig: Record<JourneyPhase, { icon: any; title: string; subtitle: st
     route: '/acompanhamento',
     accent: 'primary',
   },
+  plan_stalled: {
+    icon: AlertTriangle,
+    title: 'Você parou exatamente no ponto que sempre para.',
+    subtitle: 'Isso não é coincidência — é o padrão se protegendo. Você começou mas não continuou. Cada dia parado fortalece o circuito que te mantém travado. Isso confirma exatamente o que o diagnóstico revelou.',
+    cta: 'Retomar agora — antes que o padrão vença',
+    route: '/acompanhamento',
+    accent: 'amber',
+  },
   plan_complete_waiting: {
     icon: Clock,
     title: 'Processo executado. Agora vem a parte mais difícil: esperar.',
@@ -90,6 +99,12 @@ function getPhase(props: JourneyNextStepProps): JourneyPhase {
   if (planCompleted && !retestReady) return 'plan_complete_waiting';
   if (actionPlan.days.length === 0) return 'test_done_no_plan';
   if (!actionPlan.stats.has_started) return 'plan_not_started';
+
+  // Detect stalled: started but no progress (has_started but no in_progress and not all completed)
+  const hasOnlyCompleted1 = actionPlan.days[0]?.status === 'completed' && 
+    actionPlan.days.slice(1).every(d => d.status === 'not_started');
+  if (hasOnlyCompleted1) return 'plan_stalled';
+
   return 'plan_in_progress';
 }
 
@@ -107,7 +122,7 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
   const colors = accentColors[config.accent];
 
   const { stats } = props.actionPlan;
-  const showProgress = (phase === 'plan_in_progress' || phase === 'plan_not_started') && props.actionPlan.days.length > 0;
+  const showProgress = (phase === 'plan_in_progress' || phase === 'plan_not_started' || phase === 'plan_stalled') && props.actionPlan.days.length > 0;
   const showCountdown = phase === 'plan_complete_waiting' && props.retestCycle.daysUntilRetest > 0;
 
   const stageLabels: Record<JourneyPhase, string> = {
@@ -115,6 +130,7 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
     test_done_no_plan: 'Etapa 2 — Plano de Ação',
     plan_not_started: 'Etapa 2 — Plano de Ação',
     plan_in_progress: 'Etapa 2 — Execução',
+    plan_stalled: 'Etapa 2 — Abandono detectado',
     plan_complete_waiting: 'Etapa 3 — Período de Prática',
     retest_available: 'Etapa 4 — Reavaliação',
     retest_available_no_plan: 'Etapa 4 — Reavaliação',
@@ -131,7 +147,7 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
         <div className="flex items-center gap-1.5 mb-4">
           {['Diagnóstico', 'Plano', 'Prática', 'Reavaliação'].map((label, i) => {
             const stageIndex = phase === 'no_test' ? 0 :
-              ['test_done_no_plan', 'plan_not_started', 'plan_in_progress'].includes(phase) ? 1 :
+              ['test_done_no_plan', 'plan_not_started', 'plan_in_progress', 'plan_stalled'].includes(phase) ? 1 :
               phase === 'plan_complete_waiting' ? 2 : 3;
             const isActive = i === stageIndex;
             const isDone = i < stageIndex;

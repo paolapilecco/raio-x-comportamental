@@ -202,16 +202,26 @@ function TaskCard({ task, index, locked, onToggle, onStatusChange }: {
  */
 function getPaywallCopy(
   dominantPattern: string,
-  behavioralMemory?: Record<string, unknown>
-): { headline: string; subtext: string; pressure: string } {
+  behavioralMemory?: Record<string, unknown>,
+  abandonmentDetected?: boolean
+): { headline: string; subtext: string; pressure: string; consequence: string } {
   const mem = behavioralMemory || {};
 
-  // Personalized based on detected behavioral patterns
+  if (abandonmentDetected) {
+    return {
+      headline: `É exatamente nesse ponto que você sempre desiste.`,
+      subtext: `Você começou a fase 1 e parou. O padrão de ${dominantPattern} se protege assim: te faz acreditar que "já entendeu" e que não precisa continuar.`,
+      pressure: 'Se você parar aqui, nada muda. Você volta ao mesmo lugar — com a ilusão de que tentou.',
+      consequence: 'Daqui 30 dias, o padrão estará mais forte. E você vai se perguntar por que nada mudou.',
+    };
+  }
+
   if (mem.starts_but_doesnt_finish) {
     return {
       headline: `Você sempre começa e não termina. Esse é o padrão de ${dominantPattern} operando.`,
-      subtext: 'Uma única fase não é suficiente. Você precisa de Consciência, Interrupção e Consolidação — ou o ciclo se repete.',
+      subtext: 'Uma fase isolada nunca foi suficiente pra você mudar. São 3 fases: perceber, interromper e substituir.',
       pressure: 'Quantas vezes você já disse "dessa vez vai ser diferente" e parou no meio?',
+      consequence: 'Se você parar agora, isso confirma exatamente o padrão que o diagnóstico revelou.',
     };
   }
 
@@ -220,6 +230,7 @@ function getPaywallCopy(
       headline: `Seu cérebro vai te convencer a parar aqui. Ele sempre faz isso.`,
       subtext: `O padrão de ${dominantPattern} se protege fazendo você evitar o que é desconfortável. As fases 2 e 3 são exatamente isso: desconforto necessário.`,
       pressure: 'Ficar na fase 1 é confortável. Por isso mesmo não funciona sozinha.',
+      consequence: 'Evitar as fases difíceis é o mecanismo que mantém o padrão intacto há anos.',
     };
   }
 
@@ -228,14 +239,15 @@ function getPaywallCopy(
       headline: `Você vai se cobrar por não ter mudado. Mas sem as 3 fases, a mudança é impossível.`,
       subtext: `O padrão de ${dominantPattern} se alimenta da autocrítica sem ação. Libere as fases que atacam o ciclo inteiro.`,
       pressure: 'Saber o problema sem atacar em 3 frentes é autocrítica vazia — não é mudança.',
+      consequence: 'Você já sabe o que está errado. A pergunta é: vai fazer algo diferente dessa vez?',
     };
   }
 
-  // Default confrontational copy
   return {
-    headline: `Uma tarefa não quebra o padrão de ${dominantPattern}.`,
-    subtext: 'São 3 fases: perceber, interromper e substituir. Você só tem acesso à primeira.',
-    pressure: 'Se você não atacar o ciclo inteiro, ele se adapta e volta mais forte.',
+    headline: `Uma fase isolada nunca foi suficiente pra mudar o padrão de ${dominantPattern}.`,
+    subtext: 'São 3 fases: perceber, interromper e substituir. Você só tem acesso à primeira. Se você não atacar o ciclo inteiro, ele se adapta e volta mais forte.',
+    pressure: 'Se você parar aqui, nada muda. O padrão continua operando — exatamente como antes.',
+    consequence: 'Cada dia sem atacar as 3 fases fortalece o circuito que te mantém preso.',
   };
 }
 
@@ -248,7 +260,12 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
   if (days.length === 0) return null;
 
   const dominantPattern = days[0]?.padraoAlvo || 'seu padrão';
-  const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory);
+
+  // Detect abandonment: user started phase 1 but hasn't touched it in a while
+  const phase1 = days[0];
+  const abandonmentDetected = phase1?.status === 'completed' && days.slice(1).every(d => d.status === 'not_started' && !showFull);
+
+  const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory, abandonmentDetected);
 
   return (
     <motion.div
@@ -323,6 +340,9 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
           <div className="border-t border-destructive/10 pt-4 space-y-3">
             <p className="text-xs text-destructive/80 text-center font-semibold leading-relaxed">
               {paywallCopy.pressure}
+            </p>
+            <p className="text-[11px] text-destructive/60 text-center font-medium italic">
+              {paywallCopy.consequence}
             </p>
             <p className="text-[11px] text-muted-foreground/50 text-center">
               +32.847 pessoas já desbloquearam o processo completo
