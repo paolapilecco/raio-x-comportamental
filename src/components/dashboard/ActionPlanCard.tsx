@@ -337,6 +337,10 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMo
 
   const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory, abandonmentDetected, testsCompleted);
 
+  // In focus mode, only show the current active task
+  const activeTask = days.find(d => d.status === 'in_progress') || days.find(d => d.status === 'not_started');
+  const visibleDays = focusMode && activeTask ? [activeTask] : days;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -347,16 +351,30 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMo
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Processo de transformação</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            3 fases: Consciência → Interrupção → Consolidação
-          </p>
+          <h3 className="text-lg font-semibold text-foreground">
+            {focusMode ? 'Modo foco — sua tarefa atual' : 'Processo de transformação'}
+          </h3>
+          {!focusMode && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              3 fases: Consciência → Interrupção → Consolidação
+            </p>
+          )}
         </div>
-        {stats.all_completed && (
-          <div className="px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 text-xs font-semibold">
-            Ciclo completo ✓
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {!focusMode && activeTask && onEnterFocus && (
+            <button
+              onClick={onEnterFocus}
+              className="text-[0.6rem] font-semibold px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/15 transition-all active:scale-[0.97]"
+            >
+              Modo foco
+            </button>
+          )}
+          {stats.all_completed && (
+            <div className="px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 text-xs font-semibold">
+              Ciclo completo ✓
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Irreversibility notice after test */}
