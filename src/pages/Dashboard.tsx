@@ -357,7 +357,7 @@ const Dashboard = () => {
           <JourneyNextStep
             hasCompletedTest={!!latestResult || (centralProfile?.tests_completed ?? 0) > 0}
             actionPlan={actionPlan}
-            retestAvailable={inactiveModules.length > 0}
+            retestCycle={retestCycle}
             latestModuleSlug={modules.find(m => m.id === latestModuleId)?.slug}
           />
         )}
@@ -538,7 +538,7 @@ const Dashboard = () => {
 
         {/* Retest Cycle - 15 days */}
         {!retestCycle.loading && retestCycle.lastTestDate && (
-          <RetestCycleCard retest={retestCycle} />
+          <RetestCycleCard retest={retestCycle} planCompleted={actionPlan.stats.all_completed} />
         )}
 
         {/* Inactivity Alert */}
