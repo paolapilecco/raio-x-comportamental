@@ -172,10 +172,16 @@ export default function Tracking() {
                   </p>
                 </div>
               </div>
+              <p className="text-xs text-foreground/60 italic text-center font-medium">
+                Se você parar aqui, mantém exatamente o padrão que identificou. Quanto tempo você já perdeu repetindo esse ciclo?
+              </p>
               <Button onClick={() => navigate('/checkout')} className="bg-destructive text-destructive-foreground hover:brightness-90 w-full font-bold">
                 <Crown className="w-4 h-4 mr-2" />
-                Desbloquear acompanhamento completo — R$9,99/mês
+                Eu vou continuar e completar o processo
               </Button>
+              <p className="text-[10px] text-muted-foreground/40 text-center">
+                R$9,99/mês · O padrão não espera você decidir
+              </p>
             </CardContent>
           </Card>
         )}

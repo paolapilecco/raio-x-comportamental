@@ -844,15 +844,19 @@ const Dashboard = () => {
                 <p className="text-xs text-destructive/70 font-semibold text-center">
                   Uma fase isolada nunca foi suficiente pra você mudar. E você sabe disso.
                 </p>
+                {/* Loss aversion + value anchoring */}
+                <p className="text-xs text-foreground/60 font-medium text-center italic">
+                  Quanto tempo você já perdeu repetindo esse ciclo? Quanto isso já te custou até hoje?
+                </p>
                 <button
                   onClick={() => navigate('/checkout')}
                   className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
                 >
                   <Crown className="w-4 h-4" />
-                  Continuar a jornada — R$9,99/mês
+                  Eu vou continuar e quebrar esse padrão
                 </button>
                 <p className="text-[10px] text-muted-foreground/40 text-center">
-                  Acesso imediato a todos os testes + 3 fases + histórico completo · Cancele quando quiser
+                  R$9,99/mês · Se você parar aqui, mantém exatamente o padrão que identificou
                 </p>
               </div>
             </div>
@@ -899,16 +903,19 @@ const Dashboard = () => {
             </div>
             <div className="border-t border-border/10 pt-4 space-y-3">
               <p className="text-xs text-foreground/60 font-semibold text-center">
-                Ou você para aqui como sempre, ou faz diferente agora.
+                Isso é o ponto onde você sempre interrompe — e tudo volta ao mesmo.
+              </p>
+              <p className="text-[11px] text-foreground/50 text-center italic">
+                Quanto tempo você já perdeu repetindo esse ciclo?
               </p>
               <button
                 onClick={() => { setShowUpgradeModal(false); navigate('/checkout'); }}
                 className="w-full py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md flex items-center justify-center gap-2"
               >
                 <Crown className="w-4 h-4" />
-                Continuar a jornada — R$9,99/mês
+                Eu vou fazer diferente dessa vez
               </button>
-              <p className="text-center text-[10px] text-muted-foreground/40">Acesso imediato · Cancele quando quiser</p>
+              <p className="text-center text-[10px] text-muted-foreground/40">R$9,99/mês · O custo real é continuar no padrão</p>
             </div>
           </motion.div>
         </div>

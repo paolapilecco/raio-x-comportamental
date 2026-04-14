@@ -434,15 +434,16 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
             <p className="text-[11px] text-muted-foreground/50 text-center">
               +32.847 pessoas já desbloquearam o processo completo
             </p>
+             {/* Micro-decision before checkout */}
             <button
               onClick={() => navigate('/checkout')}
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
             >
               <Crown className="w-4 h-4" />
-              Quebrar o padrão agora — R$9,99/mês
+              Eu vou continuar e quebrar esse padrão
             </button>
             <p className="text-[10px] text-muted-foreground/40 text-center">
-              Acesso imediato · Sem compromisso · Cancele quando quiser
+              R$9,99/mês · O padrão não espera você decidir
             </p>
           </div>
         </div>

@@ -259,23 +259,29 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Free plan comparison */}
-              <div className="border border-border/40 rounded-lg p-4 bg-muted/20">
-                <p className="text-xs font-medium text-muted-foreground mb-2">Plano Padrão (Grátis)</p>
+              {/* Loss aversion + value anchoring */}
+              <div className="border border-amber-500/15 rounded-lg p-4 bg-amber-500/[0.03]">
+                <p className="text-xs font-semibold text-foreground/70 mb-1">Sem o processo completo:</p>
                 <div className="flex flex-wrap gap-3 text-xs text-muted-foreground/70">
-                  <span>• 1 CPF apenas</span>
-                  <span>• Apenas Padrão Comportamental</span>
-                  <span>• 1 teste por mês</span>
+                  <span>• Apenas 1 fase de 3 disponível</span>
+                  <span>• Sem evolução comparativa</span>
+                  <span>• O padrão continua operando</span>
                 </div>
+                <p className="text-[11px] text-amber-600/70 mt-2 italic font-medium">
+                  Quanto tempo você já perdeu repetindo esse ciclo?
+                </p>
               </div>
 
               <button
                 onClick={() => setStep('payment')}
-                className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold hover:brightness-90 transition-all active:scale-[0.97] flex items-center justify-center gap-2 shadow-md"
               >
-                Continuar com {plan.label}
+                Eu vou fazer diferente dessa vez
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
+              <p className="text-[10px] text-muted-foreground/40 text-center">
+                {plan.priceLabel}{plan.period} · O custo real é continuar no padrão
+              </p>
             </motion.div>
           )}
 

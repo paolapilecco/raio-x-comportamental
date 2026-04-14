@@ -41,7 +41,7 @@ const PricingSection = () => {
         'Estratégia de saída personalizada',
         'Até 3 perfis (faça com amigas!)',
       ],
-      limit: 'ou R$ 59,90/ano — economize 17%',
+      limit: 'ou R$ 59,90/ano — o custo real é continuar no padrão',
     },
     {
       icon: Sparkles,
