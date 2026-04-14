@@ -163,7 +163,7 @@ export async function generateUnifiedProfile(userId: string): Promise<UnifiedPro
   // Build behavioral memory from historical data
   const behavioralMemory = buildBehavioralMemory(aggregatedScores, sessions.length, internalConflicts);
 
-  const profileData: Record<string, unknown> = {
+  const profileData = {
     user_id: userId,
     dominant_patterns: sortedPatterns.slice(0, 3),
     aggregated_scores: aggregatedScores,
