@@ -165,16 +165,16 @@ export async function generateUnifiedProfile(userId: string): Promise<UnifiedPro
 
   const profileData = {
     user_id: userId,
-    dominant_patterns: sortedPatterns.slice(0, 3),
-    aggregated_scores: aggregatedScores,
+    dominant_patterns: sortedPatterns.slice(0, 3) as unknown as Json,
+    aggregated_scores: aggregatedScores as unknown as Json,
     tests_completed: sessions.length,
     mental_state: latestResult.mental_state,
     core_pain: dominantDef?.corePain || null,
     key_unlock_area: dominantDef?.keyUnlockArea || null,
     profile_name: dominantDef?.profileName || latestResult.profile_name,
     last_test_at: sessions[0].completed_at,
-    behavioral_tendencies: behavioralTendencies,
-    behavioral_memory: behavioralMemory,
+    behavioral_tendencies: behavioralTendencies as unknown as Json,
+    behavioral_memory: behavioralMemory as unknown as Json,
   };
 
   const { data: existing } = await supabase
