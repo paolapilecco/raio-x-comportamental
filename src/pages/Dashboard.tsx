@@ -6,6 +6,7 @@ import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
 import { useNavigate } from 'react-router-dom';
 import { Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart, CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge } from 'lucide-react';
 import { InactivityAlertCard } from '@/components/dashboard/InactivityAlertCard';
+import { JourneyNextStep } from '@/components/dashboard/JourneyNextStep';
 import { useGamification } from '@/hooks/useGamification';
 import { useRetestCycle } from '@/hooks/useRetestCycle';
 import { useActionPlan } from '@/hooks/useActionPlan';
@@ -340,14 +341,26 @@ const Dashboard = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-10 py-6 sm:py-10 space-y-8 sm:space-y-10">
 
         {/* Hero greeting */}
-        <motion.section {...fadeIn} className="space-y-2">
+         <motion.section {...fadeIn} className="space-y-2">
           <h1 className="text-2xl sm:text-3xl md:text-[2.5rem] font-semibold tracking-tight text-foreground leading-tight">
-            Bem-vindo, {displayName}.
+            {hasData ? `Olá, ${displayName}.` : `Bem-vindo, ${displayName}.`}
           </h1>
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl">
-            Avalie perfis comportamentais detalhados com base em suas respostas, {displayName}.
+            {hasData
+              ? 'Acompanhe seu progresso e continue evoluindo.'
+              : 'Sua jornada de autoconhecimento começa com a primeira leitura.'}
           </p>
         </motion.section>
+
+        {/* Journey Next Step - always visible */}
+        {!loading && (
+          <JourneyNextStep
+            hasCompletedTest={!!latestResult || (centralProfile?.tests_completed ?? 0) > 0}
+            actionPlan={actionPlan}
+            retestAvailable={inactiveModules.length > 0}
+            latestModuleSlug={modules.find(m => m.id === latestModuleId)?.slug}
+          />
+        )}
 
         {/* Score Global de Evolução */}
         {!gamification.loading && gamification.totalTests > 0 && (
