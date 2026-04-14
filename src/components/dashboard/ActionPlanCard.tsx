@@ -409,10 +409,13 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
             </p>
           </div>
 
-          {/* Identity reinforcement */}
-          <div className="border border-border/10 bg-secondary/30 rounded-xl px-4 py-3 text-center">
+           {/* Gain visualization */}
+          <div className="border border-primary/10 bg-primary/[0.03] rounded-xl px-4 py-3 text-center">
             <p className="text-xs text-foreground/80 font-semibold leading-relaxed">
-              Esse é o seu padrão <span className="italic">hoje</span>. Você é o tipo de pessoa que começa e não termina — <span className="text-primary font-bold">até mudar isso</span>.
+              Imagina reagir diferente na próxima vez. Imagina perceber o padrão <span className="italic">antes</span> dele acontecer.
+            </p>
+            <p className="text-[11px] text-primary/70 mt-1 font-medium">
+              Com o processo completo, você começa a agir diferente já na próxima situação.
             </p>
           </div>
 
@@ -420,30 +423,19 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
             <p className="text-xs text-destructive/80 text-center font-semibold leading-relaxed">
               {paywallCopy.pressure}
             </p>
-            <p className="text-[11px] text-destructive/60 text-center font-medium italic">
-              {paywallCopy.consequence}
-            </p>
-
-            {/* Decision moment */}
-            <div className="bg-background/60 rounded-xl px-4 py-3.5 border border-border/10">
-              <p className="text-[13px] text-foreground font-bold text-center leading-snug">
-                Você vai continuar no mesmo padrão ou vai quebrar isso agora?
-              </p>
-            </div>
 
             <p className="text-[11px] text-muted-foreground/50 text-center">
-              +32.847 pessoas já desbloquearam o processo completo
+              +32.847 pessoas já completaram o processo
             </p>
-             {/* Micro-decision before checkout */}
             <button
               onClick={() => navigate('/checkout')}
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
             >
               <Crown className="w-4 h-4" />
-              Eu vou continuar e quebrar esse padrão
+              Eu vou fazer diferente dessa vez
             </button>
             <p className="text-[10px] text-muted-foreground/40 text-center">
-              R$9,99/mês · O padrão não espera você decidir
+              R$9,99/mês · Isso muda a forma como você decide hoje
             </p>
           </div>
         </div>
