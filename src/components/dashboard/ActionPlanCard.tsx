@@ -323,7 +323,7 @@ function getPaywallCopy(
   };
 }
 
-export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: ActionPlanCardProps) {
+export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMode, onEnterFocus }: ActionPlanCardProps) {
   const { days, stats, toggleDay, updateTaskStatus } = plan;
   const { isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
