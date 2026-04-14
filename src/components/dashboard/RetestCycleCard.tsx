@@ -25,15 +25,15 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
 
   const getStatusMessage = () => {
     if (retest.retestAvailable && planCompleted) {
-      return 'Você executou o plano. Agora vem a verdade: o padrão enfraqueceu ou apenas se escondeu? Sem medir, você vai acreditar que mudou — e provavelmente não mudou.';
+      return 'Se você não medir agora, vai acreditar que mudou — mesmo não tendo mudado. O cérebro se adapta e engana você. Só o reteste mostra a verdade.';
     }
     if (retest.retestAvailable && !planCompleted) {
-      return 'O tempo passou e o plano não foi concluído. Seu padrão continua operando. Refaça a leitura — mas saiba que sem execução, o resultado será o mesmo.';
+      return 'O tempo passou e o plano não foi concluído. Seu padrão continua operando — e agora está mais forte. Sem medir, você nunca vai saber o que mudou e o que só se escondeu.';
     }
     if (planCompleted) {
-      return 'Plano executado. Seu cérebro vai te dizer que já mudou. Não confie. Mudança real precisa de tempo para se consolidar. O reteste vai mostrar a verdade.';
+      return 'Seu cérebro já está te dizendo que mudou. Não confie. O padrão se adapta e finge ter ido embora. Sem o reteste, você continua no mesmo ciclo achando que saiu dele.';
     }
-    return 'Complete as 3 fases do processo e aguarde o período de prática. Sem executar e sem medir, nada muda.';
+    return 'Complete as 3 fases e aguarde o período de prática. Sem executar e sem medir, nada muda — você só acumula autoconhecimento inútil.';
   };
 
   const getCtaLabel = () => {
@@ -87,12 +87,17 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
               </div>
             </div>
             {retest.retestAvailable ? (
-              <button
-                onClick={() => navigate('/tests')}
-                className="text-xs font-semibold px-4 py-2.5 rounded-xl bg-amber-600 text-white hover:brightness-90 transition-all active:scale-[0.97]"
-              >
-                {getCtaLabel()}
-              </button>
+              <div className="space-y-2 text-center">
+                <p className="text-[0.6rem] text-amber-600/80 font-semibold">
+                  Você vai encarar a verdade ou fugir dela?
+                </p>
+                <button
+                  onClick={() => navigate('/tests')}
+                  className="text-xs font-bold px-5 py-2.5 rounded-xl bg-amber-600 text-white hover:brightness-90 transition-all active:scale-[0.97] shadow-md"
+                >
+                  {getCtaLabel()}
+                </button>
+              </div>
             ) : (
               <p className="text-[0.65rem] text-muted-foreground text-center">
                 Último teste: {retest.lastTestDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
