@@ -163,6 +163,10 @@ const Dashboard = () => {
   const actionPlan = useActionPlan(user?.id);
   const retestConfig = useRetestConfig();
 
+  // Hooks must be before any conditional return
+  const enterFocusMode = useCallback(() => setFocusMode(true), []);
+  const exitFocusMode = useCallback(() => setFocusMode(false), []);
+
   const inactiveModules = useMemo(() => {
     if (!sessions.length || !modules.length) return [];
     if (!retestConfig.retest_enabled || !retestConfig.dashboard_alert_enabled) return [];
