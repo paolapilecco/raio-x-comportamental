@@ -122,7 +122,7 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
   const colors = accentColors[config.accent];
 
   const { stats } = props.actionPlan;
-  const showProgress = (phase === 'plan_in_progress' || phase === 'plan_not_started') && props.actionPlan.days.length > 0;
+  const showProgress = (phase === 'plan_in_progress' || phase === 'plan_not_started' || phase === 'plan_stalled') && props.actionPlan.days.length > 0;
   const showCountdown = phase === 'plan_complete_waiting' && props.retestCycle.daysUntilRetest > 0;
 
   const stageLabels: Record<JourneyPhase, string> = {
