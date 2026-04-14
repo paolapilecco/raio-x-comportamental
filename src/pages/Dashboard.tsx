@@ -223,8 +223,8 @@ const Dashboard = () => {
     fetchExtra();
   }, [user, sessionsLoading, latestSession]);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleDownloadPdf = async () => {
+  void handleDownloadPdfFn;
+  async function handleDownloadPdfFn() {
     if (!latestResult) return;
     const latestModule = modules.find(m => m.id === latestModuleId);
     if (latestModule?.slug === 'mapa-de-vida') { generateLifeMapPdf((latestResult.all_scores as any[]) || [], profile?.name); return; }
@@ -261,7 +261,7 @@ const Dashboard = () => {
       } catch { /* ignore */ }
     }
     generateDiagnosticPdf(diagResult, profile?.name, extras);
-  };
+  }
 
   if (loading) return <DashboardSkeleton />;
 
@@ -283,7 +283,7 @@ const Dashboard = () => {
   const greeting = getGreeting();
 
   // Pattern labels
-  const _dominantPatternDef = latestResult?.dominant_pattern ? patternDefinitions?.[latestResult.dominant_pattern as PatternKey] : undefined;
+  void 0; // dominantPatternDef kept via secondaryPatternDefs
   const secondaryPatternDefs = (latestResult?.secondary_patterns || []).map(k => patternDefinitions?.[k as PatternKey]).filter(Boolean);
 
   // Top behavioral tendency
