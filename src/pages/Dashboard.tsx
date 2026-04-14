@@ -363,6 +363,7 @@ const Dashboard = () => {
             actionPlan={actionPlan}
             retestCycle={retestCycle}
             latestModuleSlug={modules.find(m => m.id === latestModuleId)?.slug}
+            behavioralMemory={centralProfile?.behavioral_memory}
           />
         )}
 
@@ -554,7 +555,7 @@ const Dashboard = () => {
         {!actionPlan.loading && actionPlan.days.length > 0 && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.08 }}>
             {(isPremium || isSuperAdmin) ? (
-              <ActionPlanCard plan={actionPlan} />
+              <ActionPlanCard plan={actionPlan} behavioralMemory={centralProfile?.behavioral_memory} />
             ) : (
               <div className="bg-card rounded-2xl border border-destructive/20 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] overflow-hidden">
                 <div className="px-6 py-5 border-b border-destructive/10 bg-destructive/[0.03]">
