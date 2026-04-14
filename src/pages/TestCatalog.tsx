@@ -224,12 +224,11 @@ const TestCatalog = () => {
 /* ═══════════════════════════════════════════════════════════
    TEST CARD COMPONENT
    ═══════════════════════════════════════════════════════════ */
-function TestCard({ mod, index, isCompleted, isLocked, isSuperAdmin, onStart }: {
+function TestCard({ mod, index, isCompleted, isLocked, onStart }: {
   mod: TestModule;
   index: number;
   isCompleted: boolean;
   isLocked: boolean;
-  isSuperAdmin: boolean;
   onStart: () => void;
 }) {
   const Icon = iconMap[mod.icon] || Brain;
