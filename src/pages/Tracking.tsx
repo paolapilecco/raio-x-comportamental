@@ -35,10 +35,10 @@ export default function Tracking() {
   const [items, setItems] = useState<TestTrackingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const hasAccess = isPremium || isSuperAdmin;
+  const hasFullAccess = isPremium || isSuperAdmin;
 
   useEffect(() => {
-    if (!user || !hasAccess) { setLoading(false); return; }
+    if (!user) { setLoading(false); return; }
 
     const load = async () => {
       try {
@@ -127,32 +127,10 @@ export default function Tracking() {
     };
 
     load();
-  }, [user, hasAccess]);
+  }, [user]);
 
-  if (!hasAccess) {
-    return (
-      <AppLayout>
-        <div className="min-h-[80vh] flex items-center justify-center p-6">
-          <Card className="max-w-md text-center">
-            <CardContent className="pt-8 pb-8 space-y-4">
-              <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center mx-auto">
-                <Lock className="w-8 h-8 text-accent" />
-              </div>
-              <div className="space-y-2">
-                <p className="text-foreground font-bold text-base">Você já sabe o que está errado.</p>
-                <p className="text-foreground font-bold text-base">Mas continua fazendo igual.</p>
-                <p className="text-muted-foreground text-sm">Sem execução, nada muda.</p>
-              </div>
-              <Button onClick={() => navigate('/checkout')} className="bg-accent text-accent-foreground hover:bg-accent/90 w-full">
-                <Crown className="w-4 h-4 mr-2" />
-                Desbloquear acompanhamento — R$9,99/mês
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </AppLayout>
-    );
-  }
+  // Free users: show limited view with only started tasks
+  const freeItems = !hasFullAccess ? items.filter(i => i.actionsCompleted > 0) : items;
 
   if (loading) {
     return (
@@ -173,23 +151,52 @@ export default function Tracking() {
             <h1 className="text-2xl font-bold text-foreground">Acompanhamento</h1>
           </div>
           <p className="text-muted-foreground text-sm">
-            Acompanhe seu progresso em cada teste realizado. Execute ações, anote reflexões e evolua.
+            {hasFullAccess
+              ? 'Acompanhe seu progresso em cada teste realizado. Execute ações, anote reflexões e evolua.'
+              : 'Você pode acompanhar as tarefas iniciadas. Para acesso completo, continue sua jornada.'}
           </p>
         </motion.div>
 
-        {items.length === 0 ? (
+        {/* Free user upgrade CTA */}
+        {!hasFullAccess && (
+          <Card className="border-amber-500/20">
+            <CardContent className="pt-6 pb-6 space-y-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-amber-500" />
+                </div>
+                <div>
+                  <p className="text-foreground font-bold text-sm">Você iniciou a consciência. Mas consciência sem execução completa não gera mudança.</p>
+                  <p className="text-muted-foreground text-xs mt-1">
+                    O acompanhamento completo inclui as 3 fases do plano de ação, progresso detalhado e evolução comparativa entre ciclos.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => navigate('/checkout')} className="bg-destructive text-destructive-foreground hover:brightness-90 w-full font-bold">
+                <Crown className="w-4 h-4 mr-2" />
+                Desbloquear acompanhamento completo — R$9,99/mês
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {freeItems.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <Brain className="w-12 h-12 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-muted-foreground">Nenhum teste realizado ainda.</p>
-              <Button variant="outline" className="mt-4" onClick={() => navigate('/tests')}>
-                Ir para o catálogo de testes
+              <p className="text-muted-foreground">
+                {!hasFullAccess && items.length > 0
+                  ? 'Você tem tarefas pendentes, mas ainda não iniciou nenhuma. Volte ao Dashboard para começar.'
+                  : 'Nenhum teste realizado ainda.'}
+              </p>
+              <Button variant="outline" className="mt-4" onClick={() => navigate(items.length > 0 ? '/dashboard' : '/tests')}>
+                {items.length > 0 ? 'Ir para o Dashboard' : 'Ir para o catálogo de testes'}
               </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-3">
-            {items.map((item, i) => {
+            {freeItems.map((item, i) => {
               const progressPct = item.actionsTotal > 0
                 ? Math.round((item.actionsCompleted / item.actionsTotal) * 100)
                 : 0;
@@ -202,8 +209,8 @@ export default function Tracking() {
                   transition={{ delay: i * 0.05 }}
                 >
                   <Card
-                    className="cursor-pointer hover:border-primary/30 transition-all group"
-                    onClick={() => navigate(`/acompanhamento/${item.testModuleId}`)}
+                    className={`cursor-pointer hover:border-primary/30 transition-all group ${!hasFullAccess ? 'opacity-90' : ''}`}
+                    onClick={() => hasFullAccess ? navigate(`/acompanhamento/${item.testModuleId}`) : navigate('/checkout')}
                   >
                     <CardContent className="p-5">
                       <div className="flex items-center justify-between mb-3">
@@ -217,7 +224,12 @@ export default function Tracking() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          {item.totalCycles > 1 && (
+                          {!hasFullAccess && (
+                            <Badge variant="secondary" className="text-[10px] border-amber-500/20 text-amber-600">
+                              <Lock className="w-2.5 h-2.5 mr-1" /> Limitado
+                            </Badge>
+                          )}
+                          {item.totalCycles > 1 && hasFullAccess && (
                             <Badge variant="secondary" className="text-[10px]">
                               {item.totalCycles} ciclos
                             </Badge>
@@ -235,12 +247,14 @@ export default function Tracking() {
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {item.actionsCompleted}/{item.actionsTotal} ações
                         </span>
-                        {item.retestAvailable ? (
-                          <Badge variant="outline" className="text-[10px] border-accent text-accent">
-                            Reteste liberado
-                          </Badge>
-                        ) : (
-                          <span className="text-[10px]">{item.daysUntilRetest}d para reteste</span>
+                        {hasFullAccess && (
+                          item.retestAvailable ? (
+                            <Badge variant="outline" className="text-[10px] border-accent text-accent">
+                              Reteste liberado
+                            </Badge>
+                          ) : (
+                            <span className="text-[10px]">{item.daysUntilRetest}d para reteste</span>
+                          )
                         )}
                       </div>
 

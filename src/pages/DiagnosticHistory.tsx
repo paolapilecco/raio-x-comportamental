@@ -8,7 +8,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend,
 } from 'recharts';
-import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download, Users, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, TrendingUp, TrendingDown, Minus, RefreshCw, Filter, Download, Users, Trash2, Loader2, Lock, Crown } from 'lucide-react';
 import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DiagnosticHistorySkeleton } from '@/components/skeletons/DiagnosticHistorySkeleton';
@@ -50,7 +50,7 @@ const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } }
 
 const DiagnosticHistory = () => {
   const { user, isSuperAdmin } = useAuth();
-  const { hasMultiplePersons } = useSubscription();
+  const { hasMultiplePersons, isPremium } = useSubscription();
   const navigate = useNavigate();
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [modules, setModules] = useState<TestModule[]>([]);
@@ -393,8 +393,32 @@ const DiagnosticHistory = () => {
           </motion.div>
         ) : (
           <>
-            {/* Comparison radar */}
-            {previous && (
+            {/* Comparison radar — premium only */}
+            {previous && !isPremium && !isSuperAdmin && (
+              <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-amber-500/20 p-6 md:p-8 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/60 to-background/95 z-10 flex flex-col items-center justify-end pb-8 gap-3">
+                  <Lock className="w-6 h-6 text-amber-500/60" />
+                  <p className="text-sm font-semibold text-foreground text-center px-4">
+                    Sem comparação, você não sabe se mudou ou só se adaptou
+                  </p>
+                  <p className="text-xs text-muted-foreground text-center px-8 max-w-md">
+                    O plano gratuito mostra sua leitura mais recente. Para ver evolução real — antes vs depois, área por área — continue a jornada.
+                  </p>
+                  <button
+                    onClick={() => navigate('/checkout')}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all active:scale-[0.97] shadow-md"
+                  >
+                    <Crown className="w-4 h-4" />
+                    Desbloquear evolução — R$9,99/mês
+                  </button>
+                </div>
+                <div className="blur-sm pointer-events-none">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Antes vs Depois</h3>
+                  <div className="h-[200px] bg-muted/10 rounded-xl" />
+                </div>
+              </motion.div>
+            )}
+            {previous && (isPremium || isSuperAdmin) && (
               <motion.div {...fadeUp} transition={{ delay: 0.05 }} className="bg-card rounded-2xl border border-border/30 p-6 md:p-8">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-foreground">Antes vs Depois</h3>
@@ -430,8 +454,8 @@ const DiagnosticHistory = () => {
               </motion.div>
             )}
 
-            {/* Per-area evolution bars */}
-            {previous && evolutionData.length > 0 && (
+            {/* Per-area evolution bars — premium only */}
+            {previous && evolutionData.length > 0 && (isPremium || isSuperAdmin) && (
               <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="bg-card rounded-2xl border border-border/30 p-6 md:p-8">
                 <h3 className="text-lg font-semibold text-foreground mb-2">Evolução por Área</h3>
                 <p className="text-xs text-muted-foreground mb-6">
