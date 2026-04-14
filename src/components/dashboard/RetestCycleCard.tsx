@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CalendarClock, ArrowDownRight, ArrowUpRight, Minus, RefreshCw, TrendingDown, TrendingUp, Eye } from 'lucide-react';
+import { CalendarClock, ArrowDownRight, ArrowUpRight, Minus, TrendingDown, TrendingUp, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { RetestCycleData } from '@/hooks/useRetestCycle';
 
