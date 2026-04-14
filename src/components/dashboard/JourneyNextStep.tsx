@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Target, TrendingUp, RotateCcw, PlayCircle } from 'lucide-react';
+import { ArrowRight, Target, TrendingUp, RotateCcw, PlayCircle } from 'lucide-react';
 import type { ActionPlanData } from '@/hooks/useActionPlan';
 
 type JourneyPhase = 'no_test' | 'test_done_no_plan' | 'plan_active' | 'plan_complete' | 'retest_available';
