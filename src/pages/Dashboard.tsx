@@ -554,49 +554,7 @@ const Dashboard = () => {
         {/* Action Plan Tracking */}
         {!actionPlan.loading && actionPlan.days.length > 0 && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.08 }}>
-            {(isPremium || isSuperAdmin) ? (
-              <ActionPlanCard plan={actionPlan} behavioralMemory={centralProfile?.behavioral_memory} />
-            ) : (
-              <div className="bg-card rounded-2xl border border-destructive/20 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] overflow-hidden">
-                <div className="px-6 py-5 border-b border-destructive/10 bg-destructive/[0.03]">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-xl bg-destructive/10 flex items-center justify-center">
-                      <Lock className="w-[18px] h-[18px] text-destructive" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-foreground">Você já sabe o que está errado.</h3>
-                      <p className="text-[0.65rem] text-destructive/80 font-medium">Mas continua fazendo igual.</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="px-6 py-5 space-y-4">
-                  <p className="text-sm text-foreground/90 font-bold leading-relaxed">
-                    Sem execução, nada muda.
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Seu diagnóstico já revelou o padrão. As ações já estão prontas. Cada dia sem agir fortalece exatamente o que te trava.
-                  </p>
-                  <p className="text-[11px] text-muted-foreground/70 text-center">
-                    +32.847 mulheres já estão executando esse plano
-                  </p>
-                  <div className="border-t border-destructive/10 pt-3">
-                    <p className="text-xs text-destructive/80 text-center font-medium leading-relaxed mb-3">
-                      Se você não fizer isso, daqui 30 dias você ainda vai estar no mesmo padrão.
-                    </p>
-                    <button
-                      onClick={() => navigate('/premium')}
-                      className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
-                    >
-                      <Crown className="w-4 h-4" />
-                      Desbloquear acompanhamento — R$9,99
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground/50 text-center">
-                    Você já tem o diagnóstico. Falta a ação.
-                  </p>
-                </div>
-              </div>
-            )}
+            <ActionPlanCard plan={actionPlan} behavioralMemory={centralProfile?.behavioral_memory} />
           </motion.section>
         )}
 
