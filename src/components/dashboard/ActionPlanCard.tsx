@@ -10,6 +10,8 @@ interface ActionPlanCardProps {
   plan: ActionPlanData;
   behavioralMemory?: Record<string, unknown>;
   testsCompleted?: number;
+  focusMode?: boolean;
+  onEnterFocus?: () => void;
 }
 
 const statusConfig = {
@@ -321,7 +323,7 @@ function getPaywallCopy(
   };
 }
 
-export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: ActionPlanCardProps) {
+export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMode, onEnterFocus }: ActionPlanCardProps) {
   const { days, stats, toggleDay, updateTaskStatus } = plan;
   const { isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
@@ -335,6 +337,10 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
 
   const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory, abandonmentDetected, testsCompleted);
 
+  // In focus mode, only show the current active task
+  const activeTask = days.find(d => d.status === 'in_progress') || days.find(d => d.status === 'not_started');
+  const visibleDays = focusMode && activeTask ? [activeTask] : days;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -345,20 +351,34 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-foreground">Processo de transformação</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            3 fases: Consciência → Interrupção → Consolidação
-          </p>
+          <h3 className="text-lg font-semibold text-foreground">
+            {focusMode ? 'Modo foco — sua tarefa atual' : 'Processo de transformação'}
+          </h3>
+          {!focusMode && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              3 fases: Consciência → Interrupção → Consolidação
+            </p>
+          )}
         </div>
-        {stats.all_completed && (
-          <div className="px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 text-xs font-semibold">
-            Ciclo completo ✓
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          {!focusMode && activeTask && onEnterFocus && (
+            <button
+              onClick={onEnterFocus}
+              className="text-[0.6rem] font-semibold px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/15 transition-all active:scale-[0.97]"
+            >
+              Modo foco
+            </button>
+          )}
+          {stats.all_completed && (
+            <div className="px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 text-xs font-semibold">
+              Ciclo completo ✓
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Irreversibility notice after test */}
-      {!stats.has_started && days.length > 0 && (
+      {!focusMode && !stats.has_started && days.length > 0 && (
         <div className="rounded-xl bg-primary/[0.04] border border-primary/10 px-4 py-3">
           <p className="text-xs text-foreground/70 font-medium leading-relaxed">
             O padrão ficou visível. Agora que você viu, não consegue mais fingir que não sabe. A decisão agora é sua.
@@ -367,8 +387,9 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
       )}
 
       {/* Phase indicators */}
-      <div className="flex gap-1">
-        {days.map((task) => (
+      {!focusMode && (
+        <div className="flex gap-1">
+          {days.map((task) => (
           <div key={task.id} className="flex-1">
             <div className={`h-1.5 rounded-full ${
               task.status === 'completed' ? 'bg-green-500' :
@@ -384,11 +405,12 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
             </p>
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Task cards */}
       <div className="space-y-3">
-        {days.map((task, i) => (
+        {visibleDays.map((task, i) => (
           <TaskCard
             key={task.id}
             task={task}
@@ -402,7 +424,7 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: Actio
       </div>
 
       {/* Behavioral Paywall with decision point */}
-      {!showFull && days.length > 1 && (
+      {!focusMode && !showFull && days.length > 1 && (
         <div className="border border-destructive/20 bg-destructive/[0.03] rounded-2xl px-6 py-6 space-y-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
