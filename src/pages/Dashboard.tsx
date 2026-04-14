@@ -538,7 +538,7 @@ const Dashboard = () => {
 
         {/* Retest Cycle - 15 days */}
         {!retestCycle.loading && retestCycle.lastTestDate && (
-          <RetestCycleCard retest={retestCycle} />
+          <RetestCycleCard retest={retestCycle} planCompleted={actionPlan.stats.all_completed} />
         )}
 
         {/* Inactivity Alert */}
