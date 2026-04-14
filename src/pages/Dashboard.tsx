@@ -1,13 +1,13 @@
 import { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useDiagnosticSessions } from '@/hooks/useDiagnosticSessions';
 import { useNavigate } from 'react-router-dom';
 import {
   Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart,
-  CheckCircle2, X, Crown, Flame, Star, Trophy, Gauge, Eye, AlertTriangle,
-  Clock, RotateCcw, PlayCircle, Target, ChevronRight, Calendar,
+  CheckCircle2, X, Crown, Flame, Star, Gauge, AlertTriangle,
+  ChevronRight, Calendar,
 } from 'lucide-react';
 import { InactivityAlertCard } from '@/components/dashboard/InactivityAlertCard';
 import { JourneyNextStep } from '@/components/dashboard/JourneyNextStep';
