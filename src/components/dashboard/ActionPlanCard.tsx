@@ -10,6 +10,8 @@ interface ActionPlanCardProps {
   plan: ActionPlanData;
   behavioralMemory?: Record<string, unknown>;
   testsCompleted?: number;
+  focusMode?: boolean;
+  onEnterFocus?: () => void;
 }
 
 const statusConfig = {
