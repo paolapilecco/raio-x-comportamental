@@ -260,7 +260,12 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
   if (days.length === 0) return null;
 
   const dominantPattern = days[0]?.padraoAlvo || 'seu padrão';
-  const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory);
+
+  // Detect abandonment: user started phase 1 but hasn't touched it in a while
+  const phase1 = days[0];
+  const abandonmentDetected = phase1?.status === 'completed' && days.slice(1).every(d => d.status === 'not_started' && !showFull);
+
+  const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory, abandonmentDetected);
 
   return (
     <motion.div
@@ -335,6 +340,9 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
           <div className="border-t border-destructive/10 pt-4 space-y-3">
             <p className="text-xs text-destructive/80 text-center font-semibold leading-relaxed">
               {paywallCopy.pressure}
+            </p>
+            <p className="text-[11px] text-destructive/60 text-center font-medium italic">
+              {paywallCopy.consequence}
             </p>
             <p className="text-[11px] text-muted-foreground/50 text-center">
               +32.847 pessoas já desbloquearam o processo completo
