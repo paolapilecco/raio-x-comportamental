@@ -812,72 +812,104 @@ const Dashboard = () => {
           </motion.section>
         )}
 
-        {/* Premium CTA */}
-        {!isPremium && (
+        {/* Premium CTA — journey continuation */}
+        {!isPremium && hasData && (
           <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.25 }}>
-            <div className="bg-card rounded-2xl p-8 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] border border-border/30">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+            <div className="bg-card rounded-2xl p-8 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] border border-destructive/20 relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-destructive/60 via-destructive/40 to-transparent" />
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground">Desbloqueie o acesso completo</h3>
-                  <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-                    Todas as análises, relatórios avançados e acompanhamento de evolução.
+                  <h3 className="text-lg font-semibold text-foreground">Você já viu o padrão. E agora?</h3>
+                  <p className="text-sm text-foreground/70 mt-2 leading-relaxed">
+                    Consciência sem ação não gera mudança. Você precisa das 3 fases completas para quebrar o ciclo — e do acompanhamento para garantir que a mudança é real.
                   </p>
                 </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  <div className="bg-green-500/5 border border-green-500/10 rounded-xl px-3 py-2.5 text-center">
+                    <p className="font-bold text-green-600">✓ Fase 1</p>
+                    <p className="text-muted-foreground mt-0.5">Consciência</p>
+                    <p className="text-[10px] text-green-600/60 mt-1">Acesso gratuito</p>
+                  </div>
+                  <div className="bg-amber-500/5 border border-amber-500/10 rounded-xl px-3 py-2.5 text-center">
+                    <p className="font-bold text-amber-600">🔒 Fase 2</p>
+                    <p className="text-muted-foreground mt-0.5">Interrupção</p>
+                    <p className="text-[10px] text-amber-600/60 mt-1">Plano Pessoal</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl px-3 py-2.5 text-center">
+                    <p className="font-bold text-primary">🔒 Fase 3</p>
+                    <p className="text-muted-foreground mt-0.5">Consolidação</p>
+                    <p className="text-[10px] text-primary/60 mt-1">Plano Pessoal</p>
+                  </div>
+                </div>
+                <p className="text-xs text-destructive/70 font-semibold text-center">
+                  Uma fase isolada nunca foi suficiente pra você mudar. E você sabe disso.
+                </p>
                 <button
                   onClick={() => navigate('/checkout')}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:brightness-90 transition-all duration-200 whitespace-nowrap active:scale-[0.97]"
+                  className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
                 >
-                  Upgrade Premium
-                  <ArrowRight className="w-4 h-4" />
+                  <Crown className="w-4 h-4" />
+                  Continuar a jornada — R$9,99/mês
                 </button>
+                <p className="text-[10px] text-muted-foreground/40 text-center">
+                  Acesso imediato a todos os testes + 3 fases + histórico completo · Cancele quando quiser
+                </p>
               </div>
             </div>
           </motion.section>
         )}
       </div>
 
-      {/* Upgrade Modal */}
+      {/* Upgrade Modal — journey-focused */}
       {showUpgradeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Upgrade para Premium">
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4" role="dialog" aria-modal="true" aria-label="Continuar jornada">
           <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setShowUpgradeModal(false)} />
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="relative bg-card border border-border/30 rounded-2xl shadow-xl w-full max-w-md p-8 space-y-6"
+            className="relative bg-card border border-border/30 rounded-2xl shadow-xl w-full max-w-md p-8 space-y-5"
           >
             <button onClick={() => setShowUpgradeModal(false)} aria-label="Fechar modal" className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded-lg hover:bg-secondary/50">
               <X className="w-4 h-4" />
             </button>
             <div>
-              <h2 className="text-xl font-semibold text-foreground">Desbloqueie todas as análises</h2>
-              <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-                Acesse todos os módulos, relatórios avançados e acompanhamento de evolução.
+              <h2 className="text-xl font-semibold text-foreground">Esse teste faz parte do processo completo</h2>
+              <p className="text-sm text-foreground/70 mt-2 leading-relaxed">
+                Cada módulo expõe uma camada diferente do seu padrão. Sem acessar todas, você vê apenas uma fração do que te trava.
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {[
-                'Todos os módulos de análise',
-                'Relatório Central unificado',
-                'Histórico completo',
-                'Evolução comportamental',
-                'Download em PDF',
+                { text: 'Todos os módulos de leitura comportamental', desc: 'Cada ângulo revela algo que os outros escondem' },
+                { text: 'Plano de ação em 3 fases completas', desc: 'Consciência + Interrupção + Consolidação' },
+                { text: 'Acompanhamento e evolução real', desc: 'Comparação entre antes e depois, área por área' },
+                { text: 'Histórico completo + reavaliação', desc: 'Prove que mudou — ou descubra que não mudou' },
               ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                <div key={i} className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                     <CheckCircle2 className="w-3 h-3 text-primary" />
                   </div>
-                  <span className="text-sm text-foreground/80">{feature}</span>
+                  <div>
+                    <span className="text-sm font-medium text-foreground/80">{feature.text}</span>
+                    <p className="text-[11px] text-muted-foreground/60">{feature.desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
-            <button
-              onClick={() => { setShowUpgradeModal(false); navigate('/checkout'); }}
-              className="w-full py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:brightness-90 transition-all duration-200 active:scale-[0.97]"
-            >
-              Upgrade para Premium
-            </button>
-            <p className="text-center text-xs text-muted-foreground font-light">Cancele quando quiser</p>
+            <div className="border-t border-border/10 pt-4 space-y-3">
+              <p className="text-xs text-foreground/60 font-semibold text-center">
+                Ou você para aqui como sempre, ou faz diferente agora.
+              </p>
+              <button
+                onClick={() => { setShowUpgradeModal(false); navigate('/checkout'); }}
+                className="w-full py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md flex items-center justify-center gap-2"
+              >
+                <Crown className="w-4 h-4" />
+                Continuar a jornada — R$9,99/mês
+              </button>
+              <p className="text-center text-[10px] text-muted-foreground/40">Acesso imediato · Cancele quando quiser</p>
+            </div>
           </motion.div>
         </div>
       )}
