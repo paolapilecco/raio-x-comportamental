@@ -424,7 +424,7 @@ export function ActionPlanCard({ plan, behavioralMemory, testsCompleted, focusMo
       </div>
 
       {/* Behavioral Paywall with decision point */}
-      {!showFull && days.length > 1 && (
+      {!focusMode && !showFull && days.length > 1 && (
         <div className="border border-destructive/20 bg-destructive/[0.03] rounded-2xl px-6 py-6 space-y-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
