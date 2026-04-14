@@ -2,15 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { trackEvent } from '@/lib/trackEvent';
 
-export interface ActionPlanDay {
+export interface StrategicTask {
   id: string;
-  day_number: number;
-  action_text: string;
+  task_number: number;
+  titulo: string;
+  objetivo: string;
+  porque: string;
+  comoExecutar: string;
+  criterio: string;
   gatilho: string;
   acao: string;
   completed: boolean;
   completed_at: string | null;
   notes: string;
+  status: 'not_started' | 'in_progress' | 'completed';
 }
 
 export interface ActionPlanStats {
@@ -19,18 +24,60 @@ export interface ActionPlanStats {
   completed_days: number;
   remaining_days: number;
   total_days: number;
+  has_started: boolean;
+  has_in_progress: boolean;
+  all_completed: boolean;
 }
 
 export interface ActionPlanData {
-  days: ActionPlanDay[];
+  days: StrategicTask[];
   stats: ActionPlanStats;
   diagnosticResultId: string | null;
   loading: boolean;
   toggleDay: (dayId: string, completed: boolean) => Promise<void>;
+  updateTaskStatus: (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => Promise<void>;
+}
+
+function parseTaskMetadata(actionText: string, _gatilho: string, acao: string): Pick<StrategicTask, 'titulo' | 'objetivo' | 'porque' | 'comoExecutar' | 'criterio'> {
+  // Try to parse JSON metadata from notes field first, fallback to legacy format
+  const defaults = {
+    titulo: '',
+    objetivo: '',
+    porque: '',
+    comoExecutar: '',
+    criterio: '',
+  };
+
+  // Legacy action text: "Quando X → Y"
+  if (!actionText) return defaults;
+
+  try {
+    const parsed = JSON.parse(actionText);
+    return {
+      titulo: parsed.titulo || '',
+      objetivo: parsed.objetivo || '',
+      porque: parsed.porque || '',
+      comoExecutar: parsed.comoExecutar || '',
+      criterio: parsed.criterio || '',
+    };
+  } catch {
+    // Legacy format — generate basic title from gatilho/acao
+    return {
+      ...defaults,
+      titulo: acao ? acao.slice(0, 50) : 'Tarefa comportamental',
+    };
+  }
+}
+
+function inferStatus(completed: boolean, notes: string): 'not_started' | 'in_progress' | 'completed' {
+  if (completed) return 'completed';
+  // Check if notes contain status marker
+  if (notes.includes('__status:in_progress')) return 'in_progress';
+  return 'not_started';
 }
 
 export function useActionPlan(userId: string | undefined): ActionPlanData {
-  const [days, setDays] = useState<ActionPlanDay[]>([]);
+  const [days, setDays] = useState<StrategicTask[]>([]);
   const [diagnosticResultId, setDiagnosticResultId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,7 +86,6 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
 
     const fetch = async () => {
       try {
-        // Get the latest completed diagnostic session
         const { data: sessions } = await supabase
           .from('diagnostic_sessions')
           .select('id')
@@ -60,7 +106,6 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
 
         setDiagnosticResultId(results.id);
 
-        // Fetch action plan tracking for this result
         const { data: tracking } = await supabase
           .from('action_plan_tracking')
           .select('id, day_number, action_text, gatilho, acao, completed, completed_at, notes')
@@ -68,7 +113,27 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
           .eq('user_id', userId)
           .order('day_number');
 
-        setDays(tracking || []);
+        const tasks: StrategicTask[] = (tracking || []).map(row => {
+          const meta = parseTaskMetadata(row.action_text, row.gatilho, row.acao);
+          return {
+            id: row.id,
+            task_number: row.day_number,
+            titulo: meta.titulo,
+            objetivo: meta.objetivo,
+            porque: meta.porque,
+            comoExecutar: meta.comoExecutar,
+            criterio: meta.criterio,
+            gatilho: row.gatilho,
+            acao: row.acao,
+            completed: row.completed,
+            completed_at: row.completed_at,
+            notes: row.notes,
+            status: inferStatus(row.completed, row.notes),
+          };
+        });
+
+        // Only take first 3 (strategic tasks, not day-based)
+        setDays(tasks.slice(0, 3));
       } catch (e) {
         console.error('Error fetching action plan:', e);
       } finally {
@@ -81,10 +146,10 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
 
   const toggleDay = useCallback(async (dayId: string, completed: boolean) => {
     const now = completed ? new Date().toISOString() : null;
+    const newStatus = completed ? 'completed' : 'not_started';
 
-    // Optimistic update
     setDays(prev => prev.map(d => 
-      d.id === dayId ? { ...d, completed, completed_at: now } : d
+      d.id === dayId ? { ...d, completed, completed_at: now, status: newStatus as any } : d
     ));
 
     const { error } = await supabase
@@ -93,48 +158,85 @@ export function useActionPlan(userId: string | undefined): ActionPlanData {
       .eq('id', dayId);
 
     if (error) {
-      // Revert
       setDays(prev => prev.map(d => 
-        d.id === dayId ? { ...d, completed: !completed, completed_at: completed ? null : d.completed_at } : d
+        d.id === dayId ? { ...d, completed: !completed, completed_at: completed ? null : d.completed_at, status: inferStatus(!completed, d.notes) } : d
       ));
-      console.error('Error toggling day:', error);
+      console.error('Error toggling task:', error);
     } else if (completed && userId) {
-      trackEvent({ userId, event: 'action_plan_day_completed', diagnosticResultId: diagnosticResultId || undefined, metadata: { dayId } });
+      trackEvent({ userId, event: 'action_plan_task_completed', diagnosticResultId: diagnosticResultId || undefined, metadata: { dayId } });
     }
   }, [userId, diagnosticResultId]);
 
-  // Compute stats
+  const updateTaskStatus = useCallback(async (taskId: string, status: 'not_started' | 'in_progress' | 'completed') => {
+    const completed = status === 'completed';
+    const now = completed ? new Date().toISOString() : null;
+
+    setDays(prev => prev.map(d => {
+      if (d.id !== taskId) return d;
+      const newNotes = status === 'in_progress' 
+        ? (d.notes.includes('__status:') ? d.notes.replace(/__status:\w+/, '__status:in_progress') : d.notes + ' __status:in_progress')
+        : d.notes.replace(/__status:\w+/g, '').trim();
+      return { ...d, completed, completed_at: now, status, notes: newNotes };
+    }));
+
+    const task = days.find(d => d.id === taskId);
+    const newNotes = status === 'in_progress'
+      ? ((task?.notes || '').includes('__status:') ? (task?.notes || '').replace(/__status:\w+/, '__status:in_progress') : (task?.notes || '') + ' __status:in_progress')
+      : (task?.notes || '').replace(/__status:\w+/g, '').trim();
+
+    const { error } = await supabase
+      .from('action_plan_tracking')
+      .update({ completed, completed_at: now, notes: newNotes })
+      .eq('id', taskId);
+
+    if (error) {
+      console.error('Error updating task status:', error);
+    } else if (userId) {
+      trackEvent({ userId, event: `action_plan_task_${status}`, diagnosticResultId: diagnosticResultId || undefined, metadata: { taskId } });
+    }
+  }, [userId, diagnosticResultId, days]);
+
   const completedDays = days.filter(d => d.completed).length;
   const totalDays = days.length;
   const remainingDays = totalDays - completedDays;
   const executionRate = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+  const hasStarted = days.some(d => d.status === 'in_progress' || d.status === 'completed');
+  const hasInProgress = days.some(d => d.status === 'in_progress');
+  const allCompleted = totalDays > 0 && completedDays === totalDays;
 
-  // Calculate current streak (consecutive completed actions from start)
   let currentStreak = 0;
-  const sorted = [...days].sort((a, b) => a.day_number - b.day_number);
-  for (const d of sorted) {
+  for (const d of days) {
     if (d.completed) currentStreak++;
     else break;
   }
 
   return {
     days,
-    stats: { execution_rate: executionRate, current_streak: currentStreak, completed_days: completedDays, remaining_days: remainingDays, total_days: totalDays },
+    stats: { 
+      execution_rate: executionRate, 
+      current_streak: currentStreak, 
+      completed_days: completedDays, 
+      remaining_days: remainingDays, 
+      total_days: totalDays,
+      has_started: hasStarted,
+      has_in_progress: hasInProgress,
+      all_completed: allCompleted,
+    },
     diagnosticResultId,
     loading,
     toggleDay,
+    updateTaskStatus,
   };
 }
 
 /**
  * Creates action plan tracking records for a diagnostic result.
- * Stores exactly 1 row per action (max 3 actions).
- * Call after saving diagnostic results.
+ * Stores exactly 3 strategic task rows (1 per action).
  */
 export async function createActionPlanTracking(
   userId: string,
   diagnosticResultId: string,
-  actions: { gatilho: string; acao: string }[]
+  actions: { gatilho: string; acao: string; titulo?: string; objetivo?: string; porque?: string; comoExecutar?: string; criterio?: string }[]
 ): Promise<void> {
   console.log(`[ActionPlan] Creating tracking: userId=${userId}, resultId=${diagnosticResultId}, actions=${actions.length}`);
   
@@ -158,44 +260,32 @@ export async function createActionPlanTracking(
     .limit(1);
 
   if (existing && existing.length > 0) {
-    console.log(`[ActionPlan] Tracking already exists for ${diagnosticResultId} — skipping duplicate creation`);
+    console.log(`[ActionPlan] Tracking already exists for ${diagnosticResultId} — skipping`);
     return;
   }
 
-  const TOTAL_DAYS = 15;
-  const rows = Array.from({ length: TOTAL_DAYS }, (_, i) => {
-    const action = normalizedActions[i % normalizedActions.length];
-    return {
+  // Create 1 row per strategic task (max 3)
+  const rows = normalizedActions.map((action, i) => ({
     user_id: userId,
     diagnostic_result_id: diagnosticResultId,
     day_number: i + 1,
-    action_text: `Quando ${action.gatilho} → ${action.acao}`,
+    action_text: JSON.stringify({
+      titulo: action.titulo || '',
+      objetivo: action.objetivo || '',
+      porque: action.porque || '',
+      comoExecutar: action.comoExecutar || '',
+      criterio: action.criterio || '',
+    }),
     gatilho: action.gatilho,
     acao: action.acao,
-    };
-  });
+  }));
 
   const { error } = await supabase.from('action_plan_tracking').insert(rows);
   
   if (error) {
     console.error('[ActionPlan] Failed to insert tracking rows:', error);
     throw error;
-  } else {
-    console.log(`[ActionPlan] ✅ Successfully created ${rows.length} tracking rows for ${diagnosticResultId}`);
   }
-
-  const { count, error: countError } = await supabase
-    .from('action_plan_tracking')
-    .select('*', { count: 'exact', head: true })
-    .eq('diagnostic_result_id', diagnosticResultId)
-    .eq('user_id', userId);
-
-  if (countError) {
-    console.error('[ActionPlan] Failed to verify tracking rows:', countError);
-    throw countError;
-  }
-
-  if ((count || 0) < TOTAL_DAYS) {
-    throw new Error(`[ActionPlan] Incomplete tracking creation: expected ${TOTAL_DAYS}, found ${count || 0}`);
-  }
+  
+  console.log(`[ActionPlan] ✅ Created ${rows.length} strategic tasks for ${diagnosticResultId}`);
 }
