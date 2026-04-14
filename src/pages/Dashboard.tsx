@@ -186,7 +186,7 @@ const Dashboard = () => {
     return result.sort((a, b) => b.daysSinceLastTest - a.daysSinceLastTest);
   }, [sessions, modules, retestConfig]);
 
-  // ─── Reengagement event tracking ─────────────────────
+  // ─── Reengagement event tracking + Meta pixel ─────────
   useEffect(() => {
     if (!user?.id || loading) return;
     const hasData = !!latestResult || (centralProfile && centralProfile.tests_completed > 0);
@@ -198,6 +198,7 @@ const Dashboard = () => {
       actionPlan.days.slice(1).every(d => d.status === 'not_started');
     if (planStalled) {
       trackEvent({ userId: user.id, event: 'retest_alert_viewed', metadata: { type: 'plan_stalled', trigger: 'dashboard_load' } });
+      trackMetaEvent('StoppedAfterTask1');
     }
 
     // Task not completed (started but not finished)
@@ -210,7 +211,12 @@ const Dashboard = () => {
     if (retestCycle.retestAvailable) {
       trackEvent({ userId: user.id, event: 'retest_alert_viewed', metadata: { type: 'retest_available', trigger: 'dashboard_load' } });
     }
-  }, [user?.id, loading, actionPlan.days, retestCycle.retestAvailable, latestResult, centralProfile]);
+
+    // Inactivity Meta pixel
+    if (inactiveModules.length > 0) {
+      trackMetaEvent('InactiveUser', { daysSince: inactiveModules[0]?.daysSinceLastTest });
+    }
+  }, [user?.id, loading, actionPlan.days, retestCycle.retestAvailable, latestResult, centralProfile, inactiveModules]);
 
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
