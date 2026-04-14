@@ -207,6 +207,20 @@ function TaskCard({ task, index, locked, onToggle, onStatusChange, isFirstTask }
             </div>
           )}
 
+          {/* Confirmation after commitment */}
+          {task.status === 'not_started' && committed && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="rounded-xl bg-green-500/5 border border-green-500/10 px-4 py-2.5"
+            >
+              <p className="text-[0.65rem] text-green-600 font-semibold leading-relaxed flex items-center gap-1.5">
+                <CheckCircle2 className="w-3 h-3 shrink-0" />
+                Boa — essa decisão já quebra o padrão. Agora execute.
+              </p>
+            </motion.div>
+          )}
+
           {/* Action buttons after commitment */}
           {(task.status !== 'not_started' || committed) && (
             <div className="flex gap-2 pt-2">

@@ -431,19 +431,78 @@ export default function Checkout() {
             </motion.div>
           )}
 
-          {/* STEP 5: Success */}
+          {/* STEP 5: Success — Turning Point */}
           {step === 'success' && (
-            <motion.div key="success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
-              className="flex flex-col items-center justify-center py-20 gap-5 text-center">
-              <CheckCircle2 className="w-10 h-10 text-foreground/60" />
-              <div>
-                <h2 className="text-xl font-semibold">Bem-vindo ao {plan.label}!</h2>
-                <p className="text-sm text-muted-foreground mt-1">Seu acesso foi ativado.</p>
-              </div>
-              <button onClick={() => navigate('/premium')}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity">
-                Acessar plataforma
-              </button>
+            <motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="flex flex-col items-center justify-center py-16 gap-6 text-center">
+              
+              {/* Animated checkmark */}
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
+                className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center"
+              >
+                <CheckCircle2 className="w-8 h-8 text-green-600" />
+              </motion.div>
+
+              {/* Turning point message */}
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="space-y-2"
+              >
+                <h2 className="text-xl font-bold text-foreground">
+                  Boa — essa decisão já quebra o padrão.
+                </h2>
+                <p className="text-sm text-muted-foreground leading-relaxed max-w-sm mx-auto">
+                  Você fez o que normalmente não faz. Agora começa a mudança real — com o processo completo desbloqueado.
+                </p>
+              </motion.div>
+
+              {/* Transition moment */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.7 }}
+                className="w-full max-w-sm border border-primary/15 rounded-xl bg-primary/[0.03] p-4 space-y-3"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground/20" />
+                  </div>
+                  <p className="text-xs text-foreground/70 font-medium">
+                    Fase 2 — Interrupção — já está desbloqueada
+                  </p>
+                </div>
+                <p className="text-[0.65rem] text-muted-foreground/60 leading-relaxed">
+                  Você concluiu a consciência. Agora é hora de interromper o comportamento automático.
+                </p>
+              </motion.div>
+
+              {/* CTA to dashboard (task 2) */}
+              <motion.button
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1 }}
+                onClick={() => navigate('/dashboard')}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold hover:brightness-90 transition-all active:scale-[0.97] shadow-md"
+              >
+                Começar a Fase 2 agora
+                <ArrowRight className="w-4 h-4" />
+              </motion.button>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.2 }}
+                className="text-[0.6rem] text-muted-foreground/40"
+              >
+                O padrão não espera. Sua próxima tarefa já está pronta.
+              </motion.p>
             </motion.div>
           )}
         </AnimatePresence>
