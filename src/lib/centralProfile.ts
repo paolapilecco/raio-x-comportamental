@@ -2,6 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { patternDefinitions } from '@/data/patterns';
 import { detectConflicts as detectConflictsShared } from '@/lib/conflictDetection';
 import type { PatternKey } from '@/types/diagnostic';
+import type { Json } from '@/integrations/supabase/types';
 
 interface ScoreEntry {
   key: string;
