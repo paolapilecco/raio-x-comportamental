@@ -293,6 +293,51 @@ const templates: Record<string, (data: Record<string, string>) => { subject: str
     `, "Seu pagamento está pendente — regularize para manter o acesso"),
   }),
 
+  "reengagement-plan-stalled": (data) => ({
+    subject: "Você parou exatamente onde sempre para",
+    html: baseLayout(`
+      ${heading(`${data.name ? `${data.name}, ` : ""}você parou exatamente onde sempre para.`)}
+      ${paragraph("Isso não é coincidência — é o padrão se protegendo. Ele precisa que você pare. Toda vez que você chega nesse ponto, o cérebro encontra uma razão para adiar.")}
+      ${infoBox(`
+        <p style="margin:0;font-size:14px;color:${BRAND.green};font-family:Arial,sans-serif;font-weight:600;">Seu plano de ação está parado. O padrão está ativo.</p>
+      `)}
+      ${paragraph("A diferença entre quem muda e quem repete não é motivação — é continuar quando o cérebro diz para parar.")}
+      ${divider()}
+      ${paragraph("Quanto tempo você já perdeu repetindo isso? Quanto isso já te custou?")}
+      ${btn(data.dashboardUrl || "https://raio-x-comportamental.lovable.app/dashboard", "Eu vou fazer diferente dessa vez")}
+    `, "Você parou onde sempre para. Seu padrão está ativo."),
+  }),
+
+  "reengagement-task-incomplete": (data) => ({
+    subject: "Você começou, mas não terminou",
+    html: baseLayout(`
+      ${heading(`${data.name ? `${data.name}, ` : ""}você começou — mas não terminou.`)}
+      ${paragraph("O padrão não vence quem desiste de vez. Ele vence quem quase faz. Porque quase fazer dá a ilusão de progresso.")}
+      ${infoBox(`
+        <p style="margin:0;font-size:14px;color:${BRAND.green};font-family:Arial,sans-serif;font-weight:600;">Você tem uma tarefa em andamento. Ela precisa ser concluída.</p>
+      `)}
+      ${paragraph("Falta pouco — mas é exatamente aqui que você costuma travar. Reconhece esse momento?")}
+      ${divider()}
+      ${paragraph("Cada tarefa concluída enfraquece o circuito. Cada tarefa abandonada o fortalece.")}
+      ${btn(data.dashboardUrl || "https://raio-x-comportamental.lovable.app/dashboard", "Concluir minha tarefa agora")}
+    `, "Você começou, mas não terminou. O padrão conta com isso."),
+  }),
+
+  "reengagement-retest-available": (data) => ({
+    subject: "Agora é hora de ver se você mudou de verdade",
+    html: baseLayout(`
+      ${heading(`${data.name ? `${data.name}, ` : ""}agora é hora de ver se você mudou de verdade.`)}
+      ${paragraph("Seu cérebro vai dizer que sim. Não confie nele — ele é parte do padrão.")}
+      ${infoBox(`
+        <p style="margin:0;font-size:14px;color:${BRAND.green};font-family:Arial,sans-serif;font-weight:600;">Sua reavaliação está disponível. Meça — não adivinhe.</p>
+      `, BRAND.gold)}
+      ${paragraph("A única forma de saber se mudou é medir. Tudo o resto é autoengano.")}
+      ${divider()}
+      ${paragraph("Sem medir, você não sabe se mudou. E seu padrão precisa que você acredite que sim — sem provar.")}
+      ${btn(data.dashboardUrl || "https://raio-x-comportamental.lovable.app/dashboard", "Refazer minha análise agora")}
+    `, "Você mudou ou só adiou? Só o reteste vai dizer."),
+  }),
+
   "report-ready": (data) => ({
     subject: "📄 Seu relatório foi gerado — Raio-X Mental",
     html: baseLayout(`

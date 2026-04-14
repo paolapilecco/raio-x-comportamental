@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Brain, History, Lock, ArrowRight, TrendingUp, Shield, Zap, Heart,
   CheckCircle2, X, Crown, Flame, Star, Gauge,
-  ChevronRight, Calendar, ChevronDown, ChevronUp, Minimize2,
+  ChevronRight, Calendar, ChevronDown, ChevronUp, Minimize2, AlertTriangle, Clock,
 } from 'lucide-react';
 import { InactivityAlertCard } from '@/components/dashboard/InactivityAlertCard';
 import { JourneyNextStep } from '@/components/dashboard/JourneyNextStep';
@@ -25,6 +25,7 @@ import { toast } from 'sonner';
 import { AppLayout } from '@/components/AppLayout';
 import { DashboardSkeleton } from '@/components/skeletons/DashboardSkeleton';
 import { trackEvent } from '@/lib/trackEvent';
+import { trackMetaEvent } from '@/lib/metaPixel';
 import type { PatternKey, PatternDefinition, DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
 import { PHASE_META } from '@/hooks/useActionPlan';
 
@@ -185,7 +186,7 @@ const Dashboard = () => {
     return result.sort((a, b) => b.daysSinceLastTest - a.daysSinceLastTest);
   }, [sessions, modules, retestConfig]);
 
-  // ─── Reengagement event tracking ─────────────────────
+  // ─── Reengagement event tracking + Meta pixel ─────────
   useEffect(() => {
     if (!user?.id || loading) return;
     const hasData = !!latestResult || (centralProfile && centralProfile.tests_completed > 0);
@@ -197,6 +198,7 @@ const Dashboard = () => {
       actionPlan.days.slice(1).every(d => d.status === 'not_started');
     if (planStalled) {
       trackEvent({ userId: user.id, event: 'retest_alert_viewed', metadata: { type: 'plan_stalled', trigger: 'dashboard_load' } });
+      trackMetaEvent('StoppedAfterTask1');
     }
 
     // Task not completed (started but not finished)
@@ -209,7 +211,12 @@ const Dashboard = () => {
     if (retestCycle.retestAvailable) {
       trackEvent({ userId: user.id, event: 'retest_alert_viewed', metadata: { type: 'retest_available', trigger: 'dashboard_load' } });
     }
-  }, [user?.id, loading, actionPlan.days, retestCycle.retestAvailable, latestResult, centralProfile]);
+
+    // Inactivity Meta pixel
+    if (inactiveModules.length > 0) {
+      trackMetaEvent('InactiveUser', { daysSince: inactiveModules[0]?.daysSinceLastTest });
+    }
+  }, [user?.id, loading, actionPlan.days, retestCycle.retestAvailable, latestResult, centralProfile, inactiveModules]);
 
   const generateTestData = async () => {
     if (!user || role !== 'super_admin') return;
@@ -580,7 +587,64 @@ const Dashboard = () => {
                 </motion.section>
               )}
 
-              {/* ═══════════ 8) EVOLUTION SCORE — Collapsible ═══════════ */}
+              {/* ═══════════ TEMPORAL URGENCY ═══════════ */}
+              {hasData && (() => {
+                const daysSinceAction = (() => {
+                  const lastCompleted = actionPlan.days
+                    .filter(d => d.status === 'completed')
+                    .map(d => d.completed_at)
+                    .filter(Boolean)
+                    .sort()
+                    .reverse()[0];
+                  if (lastCompleted) return Math.floor((Date.now() - new Date(lastCompleted).getTime()) / (1000 * 60 * 60 * 24));
+                  if (latestResult?.created_at) return Math.floor((Date.now() - new Date(latestResult.created_at).getTime()) / (1000 * 60 * 60 * 24));
+                  return 0;
+                })();
+                const daysSinceTest = latestResult?.created_at
+                  ? Math.floor((Date.now() - new Date(latestResult.created_at).getTime()) / (1000 * 60 * 60 * 24))
+                  : 0;
+                if (daysSinceAction < 1 && daysSinceTest < 1) return null;
+                return (
+                  <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.13 }}>
+                    <div className="bg-card rounded-2xl border border-destructive/15 shadow-sm p-4 sm:p-5 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-destructive/70" />
+                        <p className="text-[0.6rem] uppercase tracking-[0.15em] text-destructive/70 font-bold">Urgência temporal</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        {daysSinceAction >= 1 && (
+                          <div className="bg-destructive/[0.04] rounded-xl px-4 py-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5 mb-1">
+                              <Clock className="w-3.5 h-3.5 text-destructive/60" />
+                              <span className="text-2xl font-bold tabular-nums text-destructive">{daysSinceAction}</span>
+                            </div>
+                            <p className="text-[0.6rem] text-foreground/60 font-medium">dia{daysSinceAction !== 1 ? 's' : ''} sem ação</p>
+                          </div>
+                        )}
+                        {daysSinceTest >= 1 && (
+                          <div className="bg-amber-500/[0.04] rounded-xl px-4 py-3 text-center">
+                            <div className="flex items-center justify-center gap-1.5 mb-1">
+                              <Calendar className="w-3.5 h-3.5 text-amber-600/60" />
+                              <span className="text-2xl font-bold tabular-nums text-amber-600">{daysSinceTest}</span>
+                            </div>
+                            <p className="text-[0.6rem] text-foreground/60 font-medium">dia{daysSinceTest !== 1 ? 's' : ''} desde o teste</p>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-xs text-foreground/70 font-semibold leading-relaxed text-center">
+                        {daysSinceAction >= 7
+                          ? `Você está há ${daysSinceAction} dias sem agir. O padrão está se fortalecendo.`
+                          : daysSinceAction >= 3
+                          ? `${daysSinceAction} dias sem ação. O padrão conta com isso.`
+                          : daysSinceAction >= 1
+                          ? 'Cada dia sem ação reforça o circuito. Continue.'
+                          : 'O padrão está ativo enquanto você não age.'}
+                      </p>
+                    </div>
+                  </motion.section>
+                );
+              })()}
+
               {!gamification.loading && gamification.totalTests > 0 && (
                 <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.14 }}>
                   <CollapsibleSection title="Score de Evolução" icon={Gauge}>
