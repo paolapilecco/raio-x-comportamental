@@ -1335,6 +1335,8 @@ export type Database = {
       user_central_profile: {
         Row: {
           aggregated_scores: Json
+          behavioral_memory: Json | null
+          behavioral_tendencies: Json | null
           core_pain: string | null
           created_at: string
           dominant_patterns: Json
@@ -1349,6 +1351,8 @@ export type Database = {
         }
         Insert: {
           aggregated_scores?: Json
+          behavioral_memory?: Json | null
+          behavioral_tendencies?: Json | null
           core_pain?: string | null
           created_at?: string
           dominant_patterns?: Json
@@ -1363,6 +1367,8 @@ export type Database = {
         }
         Update: {
           aggregated_scores?: Json
+          behavioral_memory?: Json | null
+          behavioral_tendencies?: Json | null
           core_pain?: string | null
           created_at?: string
           dominant_patterns?: Json

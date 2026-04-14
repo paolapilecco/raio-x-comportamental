@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Target, RotateCcw, PlayCircle, Zap, Clock, Eye, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Target, RotateCcw, PlayCircle, Zap, Clock, Eye, ShieldCheck, AlertTriangle } from 'lucide-react';
 import type { ActionPlanData } from '@/hooks/useActionPlan';
 import type { RetestCycleData } from '@/hooks/useRetestCycle';
 
@@ -9,71 +9,72 @@ type JourneyPhase =
   | 'test_done_no_plan'
   | 'plan_not_started'
   | 'plan_in_progress'
-  | 'plan_complete_waiting'   // plan done, but <15 days since test
-  | 'retest_available'        // plan done + 15 days elapsed
-  | 'retest_available_no_plan'; // 15 days elapsed but no plan completed
+  | 'plan_complete_waiting'
+  | 'retest_available'
+  | 'retest_available_no_plan';
 
 interface JourneyNextStepProps {
   hasCompletedTest: boolean;
   actionPlan: ActionPlanData;
   retestCycle: RetestCycleData;
   latestModuleSlug?: string;
+  behavioralMemory?: Record<string, unknown>;
 }
 
 const phaseConfig: Record<JourneyPhase, { icon: any; title: string; subtitle: string; cta: string; route: string; accent: string }> = {
   no_test: {
     icon: PlayCircle,
-    title: 'Descubra o que te trava',
-    subtitle: 'Seu primeiro passo é entender o padrão que opera por baixo das suas decisões. Em 5 minutos, você vai saber o que nunca te disseram.',
-    cta: 'Fazer minha primeira leitura',
+    title: 'Você ainda não sabe o que te trava.',
+    subtitle: 'Seu padrão opera no automático. Ele decide por você enquanto você acha que está no controle. Em 5 minutos, você vai ver o que nunca te disseram.',
+    cta: 'Descobrir meu padrão agora',
     route: '/tests',
     accent: 'primary',
   },
   test_done_no_plan: {
     icon: Target,
-    title: 'Seu diagnóstico está pronto. E agora?',
-    subtitle: 'Saber o padrão sem agir é a forma mais comum de autossabotagem. Suas tarefas de transformação estão esperando.',
+    title: 'Saber não muda nada. Executar muda.',
+    subtitle: 'Você já viu o padrão. Agora ele precisa ser atacado em 3 fases — ou continua operando exatamente como antes. Cada dia sem ação é um dia que o padrão se fortalece.',
     cta: 'Começar a quebrar esse padrão agora',
     route: '/acompanhamento',
     accent: 'primary',
   },
   plan_not_started: {
-    icon: Zap,
-    title: 'O padrão ainda está intacto',
-    subtitle: 'Você tem 3 fases desenhadas para atacar diretamente o que te trava: perceber, interromper e substituir. Nenhuma foi iniciada. O padrão agradece.',
-    cta: 'Iniciar fase de Consciência',
+    icon: AlertTriangle,
+    title: 'O padrão continua intacto. Você não começou.',
+    subtitle: 'Você tem 3 fases desenhadas para atacar diretamente o que te trava. Nenhuma foi iniciada. Enquanto você espera, o circuito neural que te mantém preso se fortalece.',
+    cta: 'Iniciar agora — antes que você desista',
     route: '/acompanhamento',
     accent: 'amber',
   },
   plan_in_progress: {
-    icon: Target,
-    title: 'Você já começou. Não pare agora.',
-    subtitle: 'Cada fase concluída enfraquece o circuito neural que te mantém preso no mesmo lugar. Continue até a Consolidação.',
-    cta: 'Continuar o processo',
+    icon: Zap,
+    title: 'Não pare agora. Seu cérebro quer que você pare.',
+    subtitle: 'O desconforto que você sente é o padrão se defendendo. Cada fase concluída enfraquece o circuito que te mantém preso no mesmo lugar. Desistir aqui é confirmar o padrão.',
+    cta: 'Continuar quebrando o ciclo',
     route: '/acompanhamento',
     accent: 'primary',
   },
   plan_complete_waiting: {
     icon: Clock,
-    title: 'Processo executado. Agora, deixe o novo padrão se instalar.',
-    subtitle: 'Você completou as 3 fases. Mudança real precisa de tempo para se consolidar. Em breve, vamos medir se o padrão realmente enfraqueceu.',
+    title: 'Processo executado. Agora vem a parte mais difícil: esperar.',
+    subtitle: 'Seu cérebro vai te dizer que já mudou. Não confie. Mudança real precisa de tempo para se consolidar. Em breve, vamos medir se o padrão realmente enfraqueceu — ou só se escondeu.',
     cta: 'Ver meu progresso',
     route: '/acompanhamento',
     accent: 'green',
   },
   retest_available: {
     icon: Eye,
-    title: 'Hora da verdade. Seu padrão mudou — ou só se escondeu?',
-    subtitle: 'Você executou o plano e o tempo de prática passou. Agora vamos medir: o circuito antigo enfraqueceu ou se adaptou? Só o reteste mostra.',
+    title: 'Se você não medir agora, vai acreditar que mudou… mesmo não tendo mudado.',
+    subtitle: 'Você executou o plano e o tempo passou. Mas o cérebro se adapta e engana você. Só o reteste mostra a verdade: o padrão enfraqueceu ou apenas se disfarçou?',
     cta: 'Medir minha evolução real',
     route: '/tests',
     accent: 'amber',
   },
   retest_available_no_plan: {
     icon: RotateCcw,
-    title: 'Seu padrão pode ter mudado. Ou não.',
-    subtitle: 'Já se passaram 15 dias desde sua última leitura. Refaça e descubra se algo mudou — ou se foi só intenção.',
-    cta: 'Refazer leitura e comparar',
+    title: 'Sem medir, você não sabe se mudou. E provavelmente não mudou.',
+    subtitle: 'Já se passaram 15 dias. Seu padrão pode ter se adaptado — ou você apenas se acostumou com ele. Refaça a leitura e descubra a verdade.',
+    cta: 'Encarar o reteste agora',
     route: '/tests',
     accent: 'amber',
   },
@@ -81,26 +82,14 @@ const phaseConfig: Record<JourneyPhase, { icon: any; title: string; subtitle: st
 
 function getPhase(props: JourneyNextStepProps): JourneyPhase {
   const { hasCompletedTest, actionPlan, retestCycle } = props;
-
   if (!hasCompletedTest) return 'no_test';
-
   const planCompleted = actionPlan.stats.all_completed;
   const retestReady = retestCycle.retestAvailable;
-
-  // Plan completed + 15 days passed = full retest journey moment
   if (planCompleted && retestReady) return 'retest_available';
-
-  // No plan but 15 days passed
   if (retestReady && !planCompleted) return 'retest_available_no_plan';
-
-  // Plan completed but still within 15-day window
   if (planCompleted && !retestReady) return 'plan_complete_waiting';
-
-  // Plan exists but not started
   if (actionPlan.days.length === 0) return 'test_done_no_plan';
   if (!actionPlan.stats.has_started) return 'plan_not_started';
-
-  // Plan in progress
   return 'plan_in_progress';
 }
 
@@ -121,7 +110,6 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
   const showProgress = (phase === 'plan_in_progress' || phase === 'plan_not_started') && props.actionPlan.days.length > 0;
   const showCountdown = phase === 'plan_complete_waiting' && props.retestCycle.daysUntilRetest > 0;
 
-  // Journey stage label
   const stageLabels: Record<JourneyPhase, string> = {
     no_test: 'Etapa 1 — Diagnóstico',
     test_done_no_plan: 'Etapa 2 — Plano de Ação',
@@ -195,9 +183,9 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {stats.completed_days === 0 && !stats.has_in_progress && 'Nenhuma fase iniciada'}
-                  {stats.has_in_progress && !stats.all_completed && `${stats.completed_days} de ${stats.total_days} fases concluídas`}
-                  {stats.completed_days > 0 && !stats.has_in_progress && !stats.all_completed && `${stats.completed_days} concluída${stats.completed_days > 1 ? 's' : ''}, ${stats.remaining_days} pendente${stats.remaining_days > 1 ? 's' : ''}`}
+                  {stats.completed_days === 0 && !stats.has_in_progress && 'Nenhuma fase iniciada — o padrão agradece.'}
+                  {stats.has_in_progress && !stats.all_completed && `${stats.completed_days} de ${stats.total_days} fases concluídas — não pare agora.`}
+                  {stats.completed_days > 0 && !stats.has_in_progress && !stats.all_completed && `${stats.completed_days} concluída${stats.completed_days > 1 ? 's' : ''}, ${stats.remaining_days} pendente${stats.remaining_days > 1 ? 's' : ''} — o ciclo precisa ser completo.`}
                 </p>
               </div>
             )}
@@ -210,7 +198,7 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-green-600">dias para a reavaliação</p>
-                  <p className="text-[0.6rem] text-muted-foreground">O novo padrão precisa de tempo para se instalar. Não apresse o processo.</p>
+                  <p className="text-[0.6rem] text-muted-foreground">Seu cérebro vai dizer que já mudou. Não confie. Espere a medição.</p>
                 </div>
               </div>
             )}
@@ -221,10 +209,10 @@ export function JourneyNextStep(props: JourneyNextStepProps) {
                 <p className="text-[0.6rem] uppercase tracking-wider text-muted-foreground font-semibold">Última evolução registrada</p>
                 <div className="flex items-center gap-3 text-xs">
                   {props.retestCycle.improvementCount > 0 && (
-                    <span className="text-green-600 font-medium">{props.retestCycle.improvementCount} eixo{props.retestCycle.improvementCount > 1 ? 's' : ''} melhorou</span>
+                    <span className="text-green-600 font-medium">{props.retestCycle.improvementCount} eixo{props.retestCycle.improvementCount > 1 ? 's' : ''} enfraqueceu</span>
                   )}
                   {props.retestCycle.worsenedCount > 0 && (
-                    <span className="text-red-500 font-medium">{props.retestCycle.worsenedCount} piorou</span>
+                    <span className="text-red-500 font-medium">{props.retestCycle.worsenedCount} se intensificou</span>
                   )}
                 </div>
               </div>

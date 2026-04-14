@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, Lock, Crown, Play, ChevronDown, ChevronUp, Eye, Zap, RotateCcw } from 'lucide-react';
+import { CheckCircle2, Circle, Lock, Crown, Play, ChevronDown, ChevronUp, Eye, Zap, RotateCcw, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -8,6 +8,7 @@ import { PHASE_META } from '@/hooks/useActionPlan';
 
 interface ActionPlanCardProps {
   plan: ActionPlanData;
+  behavioralMemory?: Record<string, unknown>;
 }
 
 const statusConfig = {
@@ -196,7 +197,49 @@ function TaskCard({ task, index, locked, onToggle, onStatusChange }: {
   );
 }
 
-export function ActionPlanCard({ plan }: ActionPlanCardProps) {
+/**
+ * Generates confrontational paywall copy based on behavioral memory.
+ */
+function getPaywallCopy(
+  dominantPattern: string,
+  behavioralMemory?: Record<string, unknown>
+): { headline: string; subtext: string; pressure: string } {
+  const mem = behavioralMemory || {};
+
+  // Personalized based on detected behavioral patterns
+  if (mem.starts_but_doesnt_finish) {
+    return {
+      headline: `Você sempre começa e não termina. Esse é o padrão de ${dominantPattern} operando.`,
+      subtext: 'Uma única fase não é suficiente. Você precisa de Consciência, Interrupção e Consolidação — ou o ciclo se repete.',
+      pressure: 'Quantas vezes você já disse "dessa vez vai ser diferente" e parou no meio?',
+    };
+  }
+
+  if (mem.avoids_discomfort) {
+    return {
+      headline: `Seu cérebro vai te convencer a parar aqui. Ele sempre faz isso.`,
+      subtext: `O padrão de ${dominantPattern} se protege fazendo você evitar o que é desconfortável. As fases 2 e 3 são exatamente isso: desconforto necessário.`,
+      pressure: 'Ficar na fase 1 é confortável. Por isso mesmo não funciona sozinha.',
+    };
+  }
+
+  if (mem.self_critical_loop) {
+    return {
+      headline: `Você vai se cobrar por não ter mudado. Mas sem as 3 fases, a mudança é impossível.`,
+      subtext: `O padrão de ${dominantPattern} se alimenta da autocrítica sem ação. Libere as fases que atacam o ciclo inteiro.`,
+      pressure: 'Saber o problema sem atacar em 3 frentes é autocrítica vazia — não é mudança.',
+    };
+  }
+
+  // Default confrontational copy
+  return {
+    headline: `Uma tarefa não quebra o padrão de ${dominantPattern}.`,
+    subtext: 'São 3 fases: perceber, interromper e substituir. Você só tem acesso à primeira.',
+    pressure: 'Se você não atacar o ciclo inteiro, ele se adapta e volta mais forte.',
+  };
+}
+
+export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) {
   const { days, stats, toggleDay, updateTaskStatus } = plan;
   const { isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
@@ -204,8 +247,8 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
 
   if (days.length === 0) return null;
 
-  // Get dominant pattern name from first task for behavioral paywall
   const dominantPattern = days[0]?.padraoAlvo || 'seu padrão';
+  const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory);
 
   return (
     <motion.div
@@ -231,24 +274,22 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
 
       {/* Phase indicators */}
       <div className="flex gap-1">
-        {days.map((task) => {
-          return (
-            <div key={task.id} className="flex-1">
-              <div className={`h-1.5 rounded-full ${
-                task.status === 'completed' ? 'bg-green-500' :
-                task.status === 'in_progress' ? 'bg-amber-500' :
-                'bg-muted-foreground/15'
-              }`} />
-              <p className={`text-[0.5rem] mt-1 text-center font-semibold uppercase tracking-wider ${
-                task.status === 'completed' ? 'text-green-600' :
-                task.status === 'in_progress' ? 'text-amber-600' :
-                'text-muted-foreground/40'
-              }`}>
-                {PHASE_META[task.fase]?.label || task.fase}
-              </p>
-            </div>
-          );
-        })}
+        {days.map((task) => (
+          <div key={task.id} className="flex-1">
+            <div className={`h-1.5 rounded-full ${
+              task.status === 'completed' ? 'bg-green-500' :
+              task.status === 'in_progress' ? 'bg-amber-500' :
+              'bg-muted-foreground/15'
+            }`} />
+            <p className={`text-[0.5rem] mt-1 text-center font-semibold uppercase tracking-wider ${
+              task.status === 'completed' ? 'text-green-600' :
+              task.status === 'in_progress' ? 'text-amber-600' :
+              'text-muted-foreground/40'
+            }`}>
+              {PHASE_META[task.fase]?.label || task.fase}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Task cards */}
@@ -265,23 +306,23 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
         ))}
       </div>
 
-      {/* Behavioral Paywall */}
+      {/* Behavioral Paywall - confrontational and personalized */}
       {!showFull && days.length > 1 && (
-        <div className="border border-destructive/15 bg-destructive/[0.02] rounded-2xl px-6 py-6 space-y-4">
-          <div className="space-y-2.5 text-center">
-            <p className="text-[15px] text-foreground font-semibold leading-snug">
-              Uma tarefa não quebra o padrão de {dominantPattern}.
-            </p>
-            <p className="text-sm text-foreground/70 font-medium leading-relaxed">
-              São 3 fases: perceber, interromper e substituir. Você só tem acesso à primeira.
-            </p>
-            <p className="text-sm text-destructive font-semibold">
-              Se você não atacar o ciclo inteiro, ele se adapta e volta mais forte.
-            </p>
+        <div className="border border-destructive/20 bg-destructive/[0.03] rounded-2xl px-6 py-6 space-y-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+            <div className="space-y-2.5">
+              <p className="text-[15px] text-foreground font-semibold leading-snug">
+                {paywallCopy.headline}
+              </p>
+              <p className="text-sm text-foreground/70 font-medium leading-relaxed">
+                {paywallCopy.subtext}
+              </p>
+            </div>
           </div>
-          <div className="border-t border-destructive/8 pt-4 space-y-3">
-            <p className="text-xs text-destructive/70 text-center font-medium leading-relaxed">
-              Você já tentou mudar antes fazendo só parte do processo. Dessa vez, ataque em 3 frentes.
+          <div className="border-t border-destructive/10 pt-4 space-y-3">
+            <p className="text-xs text-destructive/80 text-center font-semibold leading-relaxed">
+              {paywallCopy.pressure}
             </p>
             <p className="text-[11px] text-muted-foreground/50 text-center">
               +32.847 pessoas já desbloquearam o processo completo
@@ -291,7 +332,7 @@ export function ActionPlanCard({ plan }: ActionPlanCardProps) {
               className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-md"
             >
               <Crown className="w-4 h-4" />
-              Desbloquear processo completo — R$9,99
+              Desbloquear as 3 fases — R$9,99
             </button>
           </div>
         </div>

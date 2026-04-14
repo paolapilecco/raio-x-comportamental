@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CalendarClock, ArrowDownRight, ArrowUpRight, Minus, TrendingDown, TrendingUp, Eye } from 'lucide-react';
+import { CalendarClock, ArrowDownRight, ArrowUpRight, Minus, TrendingDown, TrendingUp, Eye, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { RetestCycleData } from '@/hooks/useRetestCycle';
 
@@ -23,23 +23,22 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
   const circumference = 2 * Math.PI * radius;
   const progress = (retest.progressPercent / 100) * circumference;
 
-  // Contextual messaging based on journey stage
   const getStatusMessage = () => {
     if (retest.retestAvailable && planCompleted) {
-      return 'Você executou o plano e o tempo passou. Hora de medir se o padrão realmente mudou.';
+      return 'Você executou o plano. Agora vem a verdade: o padrão enfraqueceu ou apenas se escondeu? Sem medir, você vai acreditar que mudou — e provavelmente não mudou.';
     }
     if (retest.retestAvailable && !planCompleted) {
-      return 'O tempo passou, mas o plano não foi concluído. Refaça a leitura para ver onde você está.';
+      return 'O tempo passou e o plano não foi concluído. Seu padrão continua operando. Refaça a leitura — mas saiba que sem execução, o resultado será o mesmo.';
     }
     if (planCompleted) {
-      return 'Plano concluído. O novo padrão precisa de tempo para se consolidar antes da reavaliação.';
+      return 'Plano executado. Seu cérebro vai te dizer que já mudou. Não confie. Mudança real precisa de tempo para se consolidar. O reteste vai mostrar a verdade.';
     }
-    return 'Complete o plano de ação e aguarde o período de prática para sua reavaliação.';
+    return 'Complete as 3 fases do processo e aguarde o período de prática. Sem executar e sem medir, nada muda.';
   };
 
   const getCtaLabel = () => {
-    if (retest.retestAvailable && planCompleted) return 'Medir minha evolução real';
-    if (retest.retestAvailable) return 'Refazer leitura e comparar';
+    if (retest.retestAvailable && planCompleted) return 'Encarar o reteste agora';
+    if (retest.retestAvailable) return 'Refazer leitura e ver a verdade';
     return '';
   };
 
@@ -47,8 +46,14 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
     <motion.section {...fadeIn} transition={{ ...fadeIn.transition, delay: 0.07 }}>
       <div className="bg-card rounded-2xl border border-border/30 shadow-[0_1px_3px_0_rgb(0_0_0/0.04)] p-6 sm:p-8">
         <div className="flex items-center gap-2.5 mb-2">
-          <CalendarClock className="w-4 h-4 text-primary" />
-          <h3 className="text-base font-semibold text-foreground">Ciclo de Evolução</h3>
+          {retest.retestAvailable ? (
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          ) : (
+            <CalendarClock className="w-4 h-4 text-primary" />
+          )}
+          <h3 className="text-base font-semibold text-foreground">
+            {retest.retestAvailable ? 'Reavaliação disponível' : 'Ciclo de Evolução'}
+          </h3>
         </div>
         <p className="text-xs text-muted-foreground mb-5 leading-relaxed">
           {getStatusMessage()}
@@ -62,7 +67,7 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
                 <circle cx="50" cy="50" r={radius} fill="none" stroke="hsl(var(--muted)/0.15)" strokeWidth="6" />
                 <motion.circle
                   cx="50" cy="50" r={radius} fill="none"
-                  stroke={retest.retestAvailable ? 'hsl(152, 45%, 42%)' : 'hsl(var(--primary))'}
+                  stroke={retest.retestAvailable ? 'hsl(38, 72%, 50%)' : 'hsl(var(--primary))'}
                   strokeWidth="6" strokeLinecap="round"
                   strokeDasharray={circumference}
                   initial={{ strokeDashoffset: circumference }}
@@ -72,7 +77,7 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 {retest.retestAvailable ? (
-                  <Eye className="w-5 h-5 text-green-500" />
+                  <Eye className="w-5 h-5 text-amber-600" />
                 ) : (
                   <>
                     <span className="text-xl font-bold tabular-nums text-foreground">{retest.daysUntilRetest}</span>
@@ -84,7 +89,7 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
             {retest.retestAvailable ? (
               <button
                 onClick={() => navigate('/tests')}
-                className="text-xs font-medium px-4 py-2 rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-opacity active:scale-[0.97]"
+                className="text-xs font-semibold px-4 py-2.5 rounded-xl bg-amber-600 text-white hover:brightness-90 transition-all active:scale-[0.97]"
               >
                 {getCtaLabel()}
               </button>
@@ -113,7 +118,7 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
                     <span className="text-orange-500 font-medium">{retest.worsenedCount} se intensific{retest.worsenedCount > 1 ? 'aram' : 'ou'}</span>
                   )}
                   {retest.improvementCount === 0 && retest.worsenedCount === 0 && (
-                    <span className="text-muted-foreground">O padrão se manteve estável</span>
+                    <span className="text-muted-foreground">O padrão se manteve — sem mudança real detectada</span>
                   )}
                 </p>
               </div>
@@ -154,7 +159,7 @@ export function RetestCycleCard({ retest, planCompleted = false }: RetestCycleCa
           {retest.scoreComparisons.length === 0 && (
             <div className="flex-1 flex items-center justify-center">
               <p className="text-xs text-muted-foreground text-center leading-relaxed">
-                Após a reavaliação, você verá aqui a comparação entre seus padrões — o que enfraqueceu e o que se adaptou.
+                Após a reavaliação, você verá aqui o que realmente mudou — e o que o seu cérebro apenas disfarçou.
               </p>
             </div>
           )}
