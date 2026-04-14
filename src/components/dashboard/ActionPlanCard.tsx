@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, Lock, Crown, Play, ChevronDown, ChevronUp, Eye, Zap, RotateCcw, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, Circle, Lock, Crown, Play, ChevronDown, ChevronUp, Eye, Zap, RotateCcw, AlertTriangle, Flame } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
@@ -9,6 +9,7 @@ import { PHASE_META } from '@/hooks/useActionPlan';
 interface ActionPlanCardProps {
   plan: ActionPlanData;
   behavioralMemory?: Record<string, unknown>;
+  testsCompleted?: number;
 }
 
 const statusConfig = {
@@ -29,14 +30,16 @@ const phaseColors: Record<TaskPhase, { badge: string; border: string }> = {
   consolidacao: { badge: 'bg-emerald-500/10 text-emerald-600', border: 'border-l-emerald-500/40' },
 };
 
-function TaskCard({ task, index, locked, onToggle, onStatusChange }: {
+function TaskCard({ task, index, locked, onToggle, onStatusChange, isFirstTask }: {
   task: StrategicTask;
   index: number;
   locked: boolean;
   onToggle: (id: string, completed: boolean) => void;
   onStatusChange: (id: string, status: 'not_started' | 'in_progress' | 'completed') => void;
+  isFirstTask?: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [committed, setCommitted] = useState(false);
   const config = statusConfig[task.status];
   const StatusIcon = config.icon;
   const phase = PHASE_META[task.fase];
@@ -165,43 +168,74 @@ function TaskCard({ task, index, locked, onToggle, onStatusChange }: {
             </div>
           )}
 
-          {/* Strategic positive reinforcement on completion */}
-          {task.status === 'completed' && (
-            <div className="rounded-xl bg-green-500/5 border border-green-500/10 px-4 py-3 pt-4">
-              <p className="text-xs font-semibold text-green-600 leading-relaxed">
-                {task.fase === 'consciencia' && '✓ Você fez o que normalmente não faz: parou e olhou pro padrão. Isso quebra o piloto automático mais do que você percebe.'}
-                {task.fase === 'interrupcao' && '✓ Você interrompeu o comportamento automático. Seu cérebro resistiu — e você agiu mesmo assim. Isso é raro.'}
-                {task.fase === 'consolidacao' && '✓ Você criou um caminho diferente. Agora o cérebro tem uma alternativa. Cada repetição enfraquece o padrão antigo.'}
+          {/* Micro perception of progress on first task in_progress */}
+          {isFirstTask && task.status === 'in_progress' && (
+            <div className="rounded-xl bg-primary/5 border border-primary/10 px-4 py-3">
+              <p className="text-xs text-primary font-semibold leading-relaxed">
+                Se você percebeu esse padrão hoje, já saiu na frente. A maioria nem chega nesse nível de consciência. Agora que você viu, não dá mais pra fingir que não sabe.
               </p>
             </div>
           )}
 
-          <div className="flex gap-2 pt-2">
-            {task.status === 'not_started' && (
+          {/* Strategic positive reinforcement on completion */}
+          {task.status === 'completed' && (
+            <div className="rounded-xl bg-green-500/5 border border-green-500/10 px-4 py-3">
+              <p className="text-xs font-semibold text-green-600 leading-relaxed">
+                {task.fase === 'consciencia' && '✓ Você fez o que normalmente não faz: parou e olhou pro padrão. Isso quebra o piloto automático mais do que você percebe. Agora que você viu, não tem como voltar atrás.'}
+                {task.fase === 'interrupcao' && '✓ Você interrompeu o comportamento automático. Seu cérebro resistiu — e você agiu mesmo assim. Isso é raro. Você fez diferente do que sempre fez.'}
+                {task.fase === 'consolidacao' && '✓ Você criou um caminho diferente. Agora o cérebro tem uma alternativa real. Cada repetição enfraquece o padrão antigo — e ele já está mais fraco.'}
+              </p>
+            </div>
+          )}
+
+          {/* Commitment moment before starting */}
+          {task.status === 'not_started' && !committed && (
+            <div className="space-y-3">
+              {/* Urgency */}
+              <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 px-4 py-2.5">
+                <p className="text-[0.65rem] text-amber-600 font-semibold leading-relaxed flex items-center gap-1.5">
+                  <Flame className="w-3 h-3 shrink-0" />
+                  Quanto mais você espera, mais automático isso fica. Esse padrão não fica parado — ele evolui.
+                </p>
+              </div>
               <button
-                onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, 'in_progress'); }}
-                className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-all active:scale-[0.97]"
+                onClick={(e) => { e.stopPropagation(); setCommitted(true); }}
+                className="w-full py-3 rounded-xl text-xs font-bold bg-primary/10 text-primary hover:bg-primary/15 transition-all active:scale-[0.97] border border-primary/15"
               >
-                Começar a executar
+                Eu vou fazer diferente dessa vez
               </button>
-            )}
-            {task.status === 'in_progress' && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onToggle(task.id, true); }}
-                className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-all active:scale-[0.97]"
-              >
-                Marcar como concluída
-              </button>
-            )}
-            {task.status === 'completed' && (
-              <button
-                onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, 'not_started'); }}
-                className="flex-1 py-2.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-secondary/50 transition-all active:scale-[0.97]"
-              >
-                Reabrir tarefa
-              </button>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Action buttons after commitment */}
+          {(task.status !== 'not_started' || committed) && (
+            <div className="flex gap-2 pt-2">
+              {task.status === 'not_started' && committed && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, 'in_progress'); }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 transition-all active:scale-[0.97]"
+                >
+                  Começar a executar agora
+                </button>
+              )}
+              {task.status === 'in_progress' && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onToggle(task.id, true); }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-green-500/10 text-green-600 hover:bg-green-500/20 transition-all active:scale-[0.97]"
+                >
+                  Marcar como concluída
+                </button>
+              )}
+              {task.status === 'completed' && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onStatusChange(task.id, 'not_started'); }}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-medium text-muted-foreground hover:bg-secondary/50 transition-all active:scale-[0.97]"
+                >
+                  Reabrir tarefa
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
       )}
     </motion.div>
@@ -214,16 +248,23 @@ function TaskCard({ task, index, locked, onToggle, onStatusChange }: {
 function getPaywallCopy(
   dominantPattern: string,
   behavioralMemory?: Record<string, unknown>,
-  abandonmentDetected?: boolean
-): { headline: string; subtext: string; pressure: string; consequence: string } {
+  abandonmentDetected?: boolean,
+  testsCompleted?: number
+): { headline: string; subtext: string; pressure: string; consequence: string; internalProof: string } {
   const mem = behavioralMemory || {};
+  const hasRetested = (testsCompleted || 0) > 1;
+
+  const internalProofDefault = hasRetested
+    ? 'Você já tentou mudar antes. Já percebeu esse padrão mais de uma vez. Dessa vez, vai ser diferente — ou vai ser igual?'
+    : 'Você já percebeu esse padrão. Agora que viu, não consegue mais fingir que não sabe. A decisão é sua.';
 
   if (abandonmentDetected) {
     return {
       headline: `É exatamente nesse ponto que você sempre desiste.`,
       subtext: `Você começou a fase 1 e parou. O padrão de ${dominantPattern} se protege assim: te faz acreditar que "já entendeu" e que não precisa continuar.`,
       pressure: 'Se você parar aqui, nada muda. Você volta ao mesmo lugar — com a ilusão de que tentou.',
-      consequence: 'Daqui 30 dias, o padrão estará mais forte. E você vai se perguntar por que nada mudou.',
+      consequence: 'Cada dia sem agir reforça o padrão. Isso não fica parado — isso evolui contra você.',
+      internalProof: internalProofDefault,
     };
   }
 
@@ -232,7 +273,8 @@ function getPaywallCopy(
       headline: `Você sempre começa e não termina. Esse é o padrão de ${dominantPattern} operando.`,
       subtext: 'Uma fase isolada nunca foi suficiente pra você mudar. São 3 fases: perceber, interromper e substituir.',
       pressure: 'Quantas vezes você já disse "dessa vez vai ser diferente" e parou no meio?',
-      consequence: 'Se você parar agora, isso confirma exatamente o padrão que o diagnóstico revelou.',
+      consequence: 'Quanto mais você espera, mais automático isso fica. E mais difícil de quebrar.',
+      internalProof: 'Você já tentou mudar antes. E parou. Esse é o ciclo — até você quebrá-lo de verdade.',
     };
   }
 
@@ -241,7 +283,8 @@ function getPaywallCopy(
       headline: `Seu cérebro vai te convencer a parar aqui. Ele sempre faz isso.`,
       subtext: `O padrão de ${dominantPattern} se protege fazendo você evitar o que é desconfortável. As fases 2 e 3 são exatamente isso: desconforto necessário.`,
       pressure: 'Ficar na fase 1 é confortável. Por isso mesmo não funciona sozinha.',
-      consequence: 'Evitar as fases difíceis é o mecanismo que mantém o padrão intacto há anos.',
+      consequence: 'Evitar as fases difíceis é o mecanismo que mantém o padrão intacto há anos. E ele fica mais forte a cada dia.',
+      internalProof: internalProofDefault,
     };
   }
 
@@ -251,6 +294,7 @@ function getPaywallCopy(
       subtext: `O padrão de ${dominantPattern} se alimenta da autocrítica sem ação. Libere as fases que atacam o ciclo inteiro.`,
       pressure: 'Saber o problema sem atacar em 3 frentes é autocrítica vazia — não é mudança.',
       consequence: 'Você já sabe o que está errado. A pergunta é: vai fazer algo diferente dessa vez?',
+      internalProof: 'Você já percebeu esse padrão antes. Mais de uma vez. E continuou repetindo. Isso muda hoje — ou não.',
     };
   }
 
@@ -258,11 +302,12 @@ function getPaywallCopy(
     headline: `Uma fase isolada nunca foi suficiente pra mudar o padrão de ${dominantPattern}.`,
     subtext: 'São 3 fases: perceber, interromper e substituir. Você só tem acesso à primeira. Se você não atacar o ciclo inteiro, ele se adapta e volta mais forte.',
     pressure: 'Se você parar aqui, nada muda. O padrão continua operando — exatamente como antes.',
-    consequence: 'Cada dia sem atacar as 3 fases fortalece o circuito que te mantém preso.',
+    consequence: 'Cada dia sem atacar as 3 fases fortalece o circuito que te mantém preso. Isso não espera — isso evolui.',
+    internalProof: internalProofDefault,
   };
 }
 
-export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) {
+export function ActionPlanCard({ plan, behavioralMemory, testsCompleted }: ActionPlanCardProps) {
   const { days, stats, toggleDay, updateTaskStatus } = plan;
   const { isPremium, isSuperAdmin } = useAuth();
   const navigate = useNavigate();
@@ -271,12 +316,10 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
   if (days.length === 0) return null;
 
   const dominantPattern = days[0]?.padraoAlvo || 'seu padrão';
-
-  // Detect abandonment: user started phase 1 but hasn't touched it in a while
   const phase1 = days[0];
   const abandonmentDetected = phase1?.status === 'completed' && days.slice(1).every(d => d.status === 'not_started' && !showFull);
 
-  const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory, abandonmentDetected);
+  const paywallCopy = getPaywallCopy(dominantPattern, behavioralMemory, abandonmentDetected, testsCompleted);
 
   return (
     <motion.div
@@ -299,6 +342,15 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
           </div>
         )}
       </div>
+
+      {/* Irreversibility notice after test */}
+      {!stats.has_started && days.length > 0 && (
+        <div className="rounded-xl bg-primary/[0.04] border border-primary/10 px-4 py-3">
+          <p className="text-xs text-foreground/70 font-medium leading-relaxed">
+            O padrão ficou visível. Agora que você viu, não consegue mais fingir que não sabe. A decisão agora é sua.
+          </p>
+        </div>
+      )}
 
       {/* Phase indicators */}
       <div className="flex gap-1">
@@ -330,11 +382,11 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
             locked={!showFull && i > 0}
             onToggle={toggleDay}
             onStatusChange={updateTaskStatus}
+            isFirstTask={i === 0}
           />
         ))}
       </div>
 
-      {/* Behavioral Paywall - confrontational and personalized */}
       {/* Behavioral Paywall with decision point */}
       {!showFull && days.length > 1 && (
         <div className="border border-destructive/20 bg-destructive/[0.03] rounded-2xl px-6 py-6 space-y-4">
@@ -348,6 +400,13 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
                 {paywallCopy.subtext}
               </p>
             </div>
+          </div>
+
+          {/* Internal proof — user's own data */}
+          <div className="border border-amber-500/10 bg-amber-500/[0.04] rounded-xl px-4 py-3">
+            <p className="text-xs text-foreground/70 font-semibold leading-relaxed italic">
+              "{paywallCopy.internalProof}"
+            </p>
           </div>
 
           {/* Identity reinforcement */}
@@ -366,9 +425,9 @@ export function ActionPlanCard({ plan, behavioralMemory }: ActionPlanCardProps) 
             </p>
 
             {/* Decision moment */}
-            <div className="bg-background/60 rounded-xl px-4 py-3 border border-border/10">
+            <div className="bg-background/60 rounded-xl px-4 py-3.5 border border-border/10">
               <p className="text-[13px] text-foreground font-bold text-center leading-snug">
-                Ou você para aqui como sempre, ou faz diferente agora.
+                Você vai continuar no mesmo padrão ou vai quebrar isso agora?
               </p>
             </div>
 
