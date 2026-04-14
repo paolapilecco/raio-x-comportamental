@@ -59,6 +59,8 @@ interface CentralProfile {
   key_unlock_area: string | null;
   profile_name: string | null;
   last_test_at: string | null;
+  behavioral_tendencies?: { key: string; label: string; intensity: number }[];
+  behavioral_memory?: Record<string, unknown>;
 }
 
 const iconMap: Record<string, any> = { brain: Brain, zap: Zap, shield: Shield, heart: Heart };
