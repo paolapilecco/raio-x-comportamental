@@ -404,13 +404,16 @@ const DiagnosticHistory = () => {
                   <p className="text-xs text-muted-foreground text-center px-8 max-w-md">
                     O plano gratuito mostra sua leitura mais recente. Para ver evolução real — antes vs depois, área por área — continue a jornada.
                   </p>
-                  <button
+                   <button
                     onClick={() => navigate('/checkout')}
                     className="inline-flex items-center gap-2 px-6 py-3 bg-destructive text-destructive-foreground rounded-xl text-sm font-bold hover:brightness-90 transition-all active:scale-[0.97] shadow-md"
                   >
                     <Crown className="w-4 h-4" />
-                    Desbloquear evolução — R$9,99/mês
+                    Ver se mudou de verdade — R$9,99/mês
                   </button>
+                  <p className="text-[10px] text-muted-foreground/40 mt-2">
+                    Se você parar aqui, mantém exatamente o padrão que identificou
+                  </p>
                 </div>
                 <div className="blur-sm pointer-events-none">
                   <h3 className="text-lg font-semibold text-foreground mb-4">Antes vs Depois</h3>
