@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Target, TrendingUp, RotateCcw, PlayCircle, Zap, Clock, Eye, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Target, RotateCcw, PlayCircle, Zap, Clock, Eye, ShieldCheck } from 'lucide-react';
 import type { ActionPlanData } from '@/hooks/useActionPlan';
 import type { RetestCycleData } from '@/hooks/useRetestCycle';
 
