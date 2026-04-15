@@ -371,12 +371,13 @@ const TestCatalog = () => {
 /* ═══════════════════════════════════════════════════════════
    TEST CARD COMPONENT
    ═══════════════════════════════════════════════════════════ */
-function TestCard({ mod, index, isCompleted, isLocked, badge, onStart }: {
+function TestCard({ mod, index, isCompleted, isLocked, badge, isPersonalized, onStart }: {
   mod: TestModule;
   index: number;
   isCompleted: boolean;
   isLocked: boolean;
   badge: 'recommended' | 'popular' | null;
+  isPersonalized?: boolean;
   onStart: () => void;
 }) {
   const Icon = iconMap[mod.icon] || Brain;
