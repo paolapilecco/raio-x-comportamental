@@ -472,6 +472,13 @@ function buildReportOutputSchema(template: ReportTemplate | null): string {
     evolutionSummary: '"comparação com diagnóstico anterior (vazio se não houver)"',
     summary: '"resumo geral em 2 frases"',
     impact: '"impacto na vida em 1 frase"',
+    cicloLogico: `{
+      "causa": "origem do padrão — derivada de causaProvavel do núcleo",
+      "gatilho": "situação que ativa — derivada de gatilhoPrincipal do núcleo",
+      "comportamento": "ação automática — derivada de comportamentoAutomatico do núcleo",
+      "justificativa": "narrativa interna — derivada de justificativaInterna do núcleo",
+      "consequencia": "resultado repetido — derivada de consequenciaRepetida do núcleo"
+    }`,
   };
 
   // ─── STORYBOARD MODE: inject slots from acts ───
