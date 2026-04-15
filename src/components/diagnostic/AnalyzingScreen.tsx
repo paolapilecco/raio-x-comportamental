@@ -2,11 +2,12 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 
 const steps = [
-  'Mapeando respostas...',
-  'Identificando padrões dominantes...',
+  'Mapeando suas respostas...',
+  'Detectando contradições internas...',
+  'Calculando índice de autoengano...',
+  'Verificando consistência do padrão...',
   'Cruzando eixos comportamentais...',
-  'Calculando intensidades...',
-  'Gerando relatório personalizado...',
+  'Gerando diagnóstico de alta precisão...',
 ];
 
 const AnalyzingScreen = () => {
