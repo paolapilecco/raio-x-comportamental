@@ -105,7 +105,6 @@ interface StoryboardTemplate {
 interface ReportTemplate {
   sections: TemplateSection[];
   output_rules: OutputRules;
-  // New storyboard format
   storyboard?: StoryboardTemplate;
 }
 
@@ -135,6 +134,28 @@ interface EvolutionComparison {
   current_score: number;
   previous_date: string;
   summary_text: string;
+}
+
+// ─── DIAGNOSTIC CORE TYPE ───
+
+interface DiagnosticCore {
+  dominantPattern: string;
+  dominantPatternLabel: string;
+  secondaryPattern: string;
+  secondaryPatternLabel: string;
+  mainConflict: string;
+  maintenancePattern: string;
+  emotionalReactionStyle: string;
+  selfSabotageTendency: string;
+  decisionMakingStyle: string;
+  primaryLifeImpact: string;
+  temperamentReading: string;
+  confidenceLevel: string;
+  selfDeceptionIndex: number;
+  inconsistencies: string[];
+  priorityChangeDirection: string;
+  corePatternMechanism: string;
+  hiddenMotivation: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -168,17 +189,14 @@ function classifyIntensity(pct: number): string {
 function buildDataBlock(sortedScores: ScoreEntry[], answers: StructuredAnswer[]): string {
   const lines: string[] = ["═══ DADOS QUANTITATIVOS DO USUÁRIO ═══"];
 
-  // Scores por eixo
   lines.push("\nSCORES POR EIXO (ordem decrescente):");
   sortedScores.forEach((s) => {
     lines.push(`  ${s.key}: ${s.percentage}% — ${classifyIntensity(s.percentage)}`);
   });
 
-  // Padrão dominante
   const dominant = sortedScores[0];
   lines.push(`\nPADRÃO DOMINANTE: ${dominant.key} (${dominant.percentage}%)`);
 
-  // Secundários ativos
   const secondary = sortedScores.filter((s, i) => i > 0 && s.percentage >= 40).slice(0, 3);
   if (secondary.length > 0) {
     lines.push("PADRÕES SECUNDÁRIOS ATIVOS (score ≥ 40%):");
@@ -187,7 +205,6 @@ function buildDataBlock(sortedScores: ScoreEntry[], answers: StructuredAnswer[])
     lines.push("PADRÕES SECUNDÁRIOS ATIVOS: NENHUM");
   }
 
-  // Conflitos
   const highScores = sortedScores.filter((s) => s.percentage >= 50);
   const conflicts: string[] = [];
   for (let i = 0; i < highScores.length; i++) {
@@ -200,7 +217,6 @@ function buildDataBlock(sortedScores: ScoreEntry[], answers: StructuredAnswer[])
     conflicts.forEach((c) => lines.push(c));
   }
 
-  // Evidências comportamentais
   if (answers && answers.length > 0) {
     const extremes = answers.filter((a) => (a.mappedScore ?? 0) >= 80);
     if (extremes.length > 0) {
@@ -212,7 +228,6 @@ function buildDataBlock(sortedScores: ScoreEntry[], answers: StructuredAnswer[])
       });
     }
 
-    // NOVO: evidências moderadas para enriquecer contexto
     const moderates = answers.filter((a) => {
       const s = a.mappedScore ?? 0;
       return s >= 60 && s < 80;
@@ -224,7 +239,6 @@ function buildDataBlock(sortedScores: ScoreEntry[], answers: StructuredAnswer[])
       });
     }
 
-    // NOVO: distribuição de respostas por eixo
     const axisAnswerCount: Record<string, { high: number; moderate: number; low: number }> = {};
     answers.forEach((a) => {
       const s = a.mappedScore ?? 0;
@@ -305,10 +319,55 @@ function buildEvolutionBlock(comparison: Omit<EvolutionComparison, "summary_text
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MODULE 3: PROMPT BUILDER
+// PHASE 1: DIAGNOSTIC CORE PROMPT
 // ═══════════════════════════════════════════════════════════════
 
-const SYSTEM_PROMPT = `Você é um analista comportamental de alta precisão. Seu trabalho é revelar o que a pessoa NÃO sabe sobre si mesma.
+const CORE_SYSTEM_PROMPT = `Você é um analista comportamental de alta precisão. Sua tarefa é gerar um NÚCLEO DIAGNÓSTICO INTERNO — a verdade comportamental estruturada sobre o usuário.
+
+Este núcleo NÃO é o relatório final. É a base de dados diagnóstica que será usada para gerar o relatório.
+
+PRINCÍPIOS:
+1. Cada campo deve ser IMPOSSÍVEL de aplicar a outro perfil
+2. Revele o que a pessoa NÃO sabe sobre si mesma
+3. Baseie TUDO nos dados quantitativos fornecidos
+4. Sem amenizar, sem "psicologuês", sem motivacional
+5. PROIBIDO: "busque equilíbrio", "tenha consciência", "acredite em si"
+
+Retorne APENAS JSON válido. Sem markdown, sem texto antes ou depois.`;
+
+function buildCoreOutputSchema(): string {
+  return `═══ SCHEMA DO NÚCLEO DIAGNÓSTICO ═══
+
+Retorne APENAS este JSON:
+
+{
+  "dominantPattern": "nome do padrão dominante (snake_case do eixo)",
+  "dominantPatternLabel": "nome legível do padrão dominante",
+  "secondaryPattern": "nome do padrão secundário (snake_case)",
+  "secondaryPatternLabel": "nome legível do padrão secundário",
+  "mainConflict": "descrição do conflito principal entre padrões — como eles se contradizem internamente (2 frases)",
+  "maintenancePattern": "como o padrão se mantém ativo — o ciclo que alimenta a repetição (2 frases)",
+  "emotionalReactionStyle": "como a pessoa reage emocionalmente sob pressão — padrão de resposta automática (1 frase)",
+  "selfSabotageTendency": "a forma específica de autossabotagem — o que a pessoa faz sem perceber que destrói o progresso (2 frases)",
+  "decisionMakingStyle": "como a pessoa toma decisões — o viés que domina e como isso gera consequências (1 frase)",
+  "primaryLifeImpact": "o impacto mais destrutivo desse padrão na vida real — área + consequência concreta (1 frase)",
+  "temperamentReading": "leitura complementar de temperamento — traço dominante e como amplifica o padrão (1 frase)",
+  "confidenceLevel": "alta | media | baixa — baseado em consistência e contradições das respostas",
+  "selfDeceptionIndex": 0-100,
+  "inconsistencies": ["inconsistência detectada 1", "inconsistência 2"],
+  "priorityChangeDirection": "a mudança mais urgente e impactante — ponto de alavanca (1 frase)",
+  "corePatternMechanism": "explicação do mecanismo neural/comportamental que instala e mantém o padrão (2 frases)",
+  "hiddenMotivation": "o que realmente motiva o comportamento por baixo da superfície — necessidade oculta (1 frase)"
+}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PHASE 2: REPORT GENERATION PROMPT (from core)
+// ═══════════════════════════════════════════════════════════════
+
+const REPORT_SYSTEM_PROMPT = `Você é um analista comportamental que transforma diagnósticos internos em relatórios claros e impactantes para o usuário.
+
+Você receberá um NÚCLEO DIAGNÓSTICO já processado. Sua tarefa é TRADUZIR esse núcleo em linguagem clara, direta e impactante.
 
 PRINCÍPIOS INEGOCIÁVEIS:
 1. Cada frase deve ser IMPOSSÍVEL de aplicar a outro perfil — se serve para qualquer pessoa, está errada
@@ -321,27 +380,24 @@ REGRA CRÍTICA PARA tarefasEstrategicas:
 Gere EXATAMENTE 3 tarefasEstrategicas. Cada uma tem um PAPEL PSICOLÓGICO ESPECÍFICO no processo de transformação:
 
 tarefasEstrategicas[0] → FASE: CONSCIÊNCIA — objetivo: fazer o usuário PERCEBER o padrão em tempo real
-  - Ataca o PADRÃO DOMINANTE
+  - Ataca o PADRÃO DOMINANTE do núcleo diagnóstico
   - A tarefa deve criar um momento de "flagrar" o padrão acontecendo
   - Não é para mudar ainda, é para VER com clareza o que antes era automático
-  - Exemplo: registrar toda vez que o padrão aparece, notar o gatilho antes de reagir
 
 tarefasEstrategicas[1] → FASE: INTERRUPÇÃO — objetivo: QUEBRAR o comportamento automático
   - Ataca o EIXO COM MAIOR SCORE (%)
   - A tarefa deve criar uma ação que INTERROMPE o ciclo no momento em que ele acontece
   - É o ponto de virada: onde o usuário age diferente do que sempre fez
-  - Exemplo: quando o gatilho aparecer, fazer X em vez de Y
 
 tarefasEstrategicas[2] → FASE: CONSOLIDAÇÃO — objetivo: criar um NOVO PADRÃO que substitua o antigo
   - Ataca COMPORTAMENTO RECORRENTE das evidências (score ≥ 80)
   - A tarefa deve instalar um comportamento alternativo que se repita
   - É a construção do novo circuito neural — repetição consciente
-  - Exemplo: praticar a nova resposta 1x por dia em contexto específico
 
 Cada tarefa DEVE conter:
 - "titulo": nome curto e direto da tarefa (máx 8 palavras, sem jargão)
 - "fase": OBRIGATÓRIO — "consciencia" | "interrupcao" | "consolidacao"
-- "padraoAlvo": nome do padrão específico que essa tarefa ataca (ex: "execução instável", "fuga do desconforto")
+- "padraoAlvo": nome do padrão específico que essa tarefa ataca
 - "objetivo": o que muda concretamente na vida se executar (1 frase, resultado tangível)
 - "porque": por que essa tarefa existe — CITE o padrão pelo nome e explique a conexão direta (2 frases máx, linguagem confrontadora)
 - "comoExecutar": instruções práticas, passo a passo real (3-4 frases com ações concretas)
@@ -359,7 +415,7 @@ QUALIDADE DA AÇÃO:
 
 Retorne APENAS JSON válido. Sem markdown, sem texto antes ou depois.`;
 
-function buildOutputSchema(template: ReportTemplate | null): string {
+function buildReportOutputSchema(template: ReportTemplate | null): string {
   const schema: Record<string, string> = {
     profileName: '"nome do perfil comportamental"',
     combinedTitle: '"título que captura o padrão central"',
@@ -376,7 +432,7 @@ function buildOutputSchema(template: ReportTemplate | null): string {
     lifeImpact: '[{"pillar": "área", "impact": "impacto concreto"}]',
     whatNotToDo: '["não fazer 1", "não fazer 2"]',
     exitStrategy: '["passo 1", "passo 2", "passo 3"]',
-    microAcoes: `[
+    tarefasEstrategicas: `[
       {"titulo": "nome curto", "fase": "consciencia", "padraoAlvo": "nome do padrão dominante", "objetivo": "resultado tangível", "porque": "conexão direta citando o padrão pelo nome", "comoExecutar": "passo a passo prático", "criterio": "indicador observável", "gatilho": "situação do PADRÃO DOMINANTE", "acao": "verbo + contexto + tempo"},
       {"titulo": "nome curto", "fase": "interrupcao", "padraoAlvo": "nome do eixo mais alto", "objetivo": "resultado", "porque": "conexão direta", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "situação do EIXO MAIS ALTO", "acao": "verbo + contexto + tempo"},
       {"titulo": "nome curto", "fase": "consolidacao", "padraoAlvo": "nome do comportamento recorrente", "objetivo": "resultado", "porque": "conexão direta", "comoExecutar": "passo a passo", "criterio": "indicador", "gatilho": "comportamento das EVIDÊNCIAS (score ≥ 80)", "acao": "verbo + contexto + tempo"}
@@ -391,7 +447,7 @@ function buildOutputSchema(template: ReportTemplate | null): string {
     for (const act of template.storyboard.acts) {
       for (const slot of act.slots) {
         if (!slot.enabled) continue;
-        if (schema[slot.key]) continue; // don't override structural fields
+        if (schema[slot.key]) continue;
         const formatHint = slot.format === "list" ? " (array de strings)" :
                            slot.format === "cards" ? " (array de objetos)" :
                            slot.format === "quote" ? " (frase citável)" :
@@ -433,7 +489,6 @@ function buildOutputSchema(template: ReportTemplate | null): string {
       }
     }
 
-    // Composition rules
     if (template.storyboard.rules) {
       const rules = template.storyboard.rules;
       output += `\n\n═══ REGRAS DE COMPOSIÇÃO ═══`;
@@ -464,9 +519,7 @@ function buildOutputSchema(template: ReportTemplate | null): string {
     }
   }
 
-  // Emotional weight guide
-  output += `\n
-PESOS EMOCIONAIS:
+  output += `\n\nPESOS EMOCIONAIS:
 - impacto: forte e revelador — surpresa e reconhecimento
 - validação: empático — leitor se sente compreendido
 - desconforto: provocativo — incômodo que motiva mudança
@@ -476,16 +529,39 @@ PESOS EMOCIONAIS:
   return output;
 }
 
-function buildUserPrompt(
-  userContext: string,
+function buildPhase2UserPrompt(
+  core: DiagnosticCore,
   dataBlock: string,
   prompts: PromptRecord[],
   template: ReportTemplate | null,
   evolutionBlock?: string,
+  userContext?: string,
 ): string {
   const sections: string[] = [];
 
-  sections.push(userContext);
+  if (userContext) sections.push(userContext);
+
+  // Inject the diagnostic core as the primary truth
+  sections.push(`═══ NÚCLEO DIAGNÓSTICO (VERDADE PRINCIPAL — USE COMO BASE) ═══
+
+PADRÃO DOMINANTE: ${core.dominantPatternLabel} (${core.dominantPattern})
+PADRÃO SECUNDÁRIO: ${core.secondaryPatternLabel} (${core.secondaryPattern})
+CONFLITO PRINCIPAL: ${core.mainConflict}
+PADRÃO DE MANUTENÇÃO: ${core.maintenancePattern}
+ESTILO DE REAÇÃO EMOCIONAL: ${core.emotionalReactionStyle}
+TENDÊNCIA DE AUTOSSABOTAGEM: ${core.selfSabotageTendency}
+TOMADA DE DECISÃO: ${core.decisionMakingStyle}
+IMPACTO PRINCIPAL NA VIDA: ${core.primaryLifeImpact}
+LEITURA DE TEMPERAMENTO: ${core.temperamentReading}
+CONFIABILIDADE: ${core.confidenceLevel}
+ÍNDICE DE AUTOENGANO: ${core.selfDeceptionIndex}%
+INCONSISTÊNCIAS: ${core.inconsistencies.length > 0 ? core.inconsistencies.join(" | ") : "nenhuma significativa"}
+DIREÇÃO DE MUDANÇA: ${core.priorityChangeDirection}
+MECANISMO CENTRAL: ${core.corePatternMechanism}
+MOTIVAÇÃO OCULTA: ${core.hiddenMotivation}
+
+REGRA: Todos os textos do relatório devem ser DERIVADOS deste núcleo. Não invente informações que contradigam o diagnóstico acima.`);
+
   sections.push(dataBlock);
 
   if (evolutionBlock) sections.push(evolutionBlock);
@@ -526,13 +602,13 @@ function buildUserPrompt(
     }
   }
 
-  sections.push(buildOutputSchema(template));
+  sections.push(buildReportOutputSchema(template));
 
   return sections.join("\n\n");
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MODULE 4: ACTION VALIDATION (microAcoes)
+// MODULE 4: ACTION VALIDATION (tarefasEstrategicas)
 // ═══════════════════════════════════════════════════════════════
 
 const FORBIDDEN_STARTS = new Set([
@@ -584,10 +660,8 @@ function tokenize(text: string): string[] {
 function buildAnchorTokens(parts: (string | null | undefined)[]): Set<string> {
   const tokens = new Set<string>();
   parts.filter(Boolean).forEach((p) => {
-    // Tokenize normally
     tokenize(p as string).forEach((t) => tokens.add(t));
-    // Also add individual words from snake_case keys (e.g., "autossabotagem_emocional" → "autossabotagem", "emocional")
-    const snakeWords = (p as string).split(/[_\s-]+/).map((w) => norm(w)).filter((w) => w.length >= 4 && !STOPWORDS.has(w));
+    const snakeWords = (p as string).split(/[_\\s-]+/).map((w) => norm(w)).filter((w) => w.length >= 4 && !STOPWORDS.has(w));
     snakeWords.forEach((t) => tokens.add(t));
   });
   return tokens;
@@ -639,7 +713,7 @@ function buildValidationContext(
 }
 
 function hasMatch(text: string, anchors: Set<string>): boolean {
-  if (anchors.size === 0) return true; // No anchors = no constraint (e.g. simulation mode)
+  if (anchors.size === 0) return true;
   return tokenize(text).some((t) => anchors.has(t));
 }
 
@@ -652,14 +726,12 @@ function validateAction(
   const g = norm(gatilho.replace(/^quando\s+/i, "").trim());
   const a = norm(acao.replace(/^→\s*/i, "").trim());
 
-  // Trigger checks
   if (g.length < 20) return { pass: false, reason: `action_${index + 1}:trigger_too_short` };
   if (g.split(" ").length < 4) return { pass: false, reason: `action_${index + 1}:trigger_too_generic` };
   for (const vague of VAGUE_TRIGGERS) {
     if (g.includes(norm(vague))) return { pass: false, reason: `action_${index + 1}:vague_trigger` };
   }
 
-  // Action checks
   for (const forbidden of FORBIDDEN_STARTS) {
     if (a.startsWith(norm(forbidden))) return { pass: false, reason: `action_${index + 1}:forbidden_start` };
   }
@@ -672,7 +744,6 @@ function validateAction(
     return { pass: false, reason: `action_${index + 1}:no_time_condition` };
   }
 
-  // Connection to diagnosis — skip in simulation mode (no real answers)
   if (ctx.hasRealAnswers !== false) {
     const combined = `${g} ${a}`;
     const target = index === 0 ? ctx.dominant : index === 1 ? ctx.topAxis : ctx.evidence;
@@ -684,24 +755,30 @@ function validateAction(
   return { pass: true };
 }
 
-function validateMicroAcoes(
-  raw: { gatilho?: string; acao?: string }[],
+function validateTarefasEstrategicas(
+  raw: any[],
   ctx: ValidationContext,
-): { actions: { gatilho: string; acao: string }[]; errors: string[] } {
+): { actions: any[]; errors: string[] } {
   const errors: string[] = [];
-  if (raw.length !== 3) {
-    errors.push(`count:${raw.length}`);
+  if (!Array.isArray(raw) || raw.length !== 3) {
+    errors.push(`count:${raw?.length ?? 0}`);
     return { actions: [], errors };
   }
 
-  const validated: { gatilho: string; acao: string }[] = [];
+  const validated: any[] = [];
   const seen = new Set<string>();
+  const expectedFases = ["consciencia", "interrupcao", "consolidacao"];
 
   for (let i = 0; i < raw.length; i++) {
     const item = raw[i];
     if (!item?.gatilho || !item?.acao) {
       errors.push(`action_${i + 1}:missing_fields`);
       continue;
+    }
+
+    // Validate fase
+    if (!item.fase || !expectedFases.includes(norm(item.fase))) {
+      errors.push(`action_${i + 1}:invalid_fase`);
     }
 
     const gatilho = item.gatilho.replace(/^quando\s+/i, "").trim().replace(/[.\s]+$/, "");
@@ -712,15 +789,32 @@ function validateMicroAcoes(
 
     const check = validateAction(i, gatilho, acao, ctx);
     if (!check.pass) {
-      console.log(`[pipeline] microAcao ${i + 1} REJECTED: ${check.reason} | gatilho: "${gatilho.slice(0, 60)}" | acao: "${acao.slice(0, 60)}"`);
+      console.log(`[pipeline] tarefa ${i + 1} REJECTED: ${check.reason} | gatilho: "${gatilho.slice(0, 60)}" | acao: "${acao.slice(0, 60)}"`);
       errors.push(check.reason!);
       continue;
     }
 
-    validated.push({ gatilho, acao });
+    // Validate required fields
+    const requiredFields = ["titulo", "fase", "padraoAlvo", "objetivo", "porque", "comoExecutar", "criterio"];
+    const missing = requiredFields.filter(f => !item[f] || (typeof item[f] === "string" && item[f].trim().length < 5));
+    if (missing.length > 0) {
+      errors.push(`action_${i + 1}:missing_detail_fields:${missing.join(",")}`);
+    }
+
+    validated.push({
+      titulo: item.titulo || "",
+      fase: item.fase || expectedFases[i],
+      padraoAlvo: item.padraoAlvo || "",
+      objetivo: item.objetivo || "",
+      porque: item.porque || "",
+      comoExecutar: item.comoExecutar || "",
+      criterio: item.criterio || "",
+      gatilho,
+      acao,
+    });
   }
 
-  console.log(`[pipeline] microAcoes: ${raw.length} → ${validated.length} approved`);
+  console.log(`[pipeline] tarefasEstrategicas: ${raw.length} → ${validated.length} approved`);
   return { actions: validated, errors };
 }
 
@@ -746,6 +840,7 @@ function normalizeResult(
   sortedScores: ScoreEntry[],
   answers: StructuredAnswer[] = [],
   template: ReportTemplate | null = null,
+  diagnosticCore: DiagnosticCore | null = null,
 ): Record<string, unknown> {
   // Ensure arrays
   for (const f of ["triggers", "mentalTraps", "selfSabotageCycle", "whatNotToDo", "exitStrategy"]) {
@@ -776,17 +871,28 @@ function normalizeResult(
     delete result.pararDeFazer;
   }
 
-  // Validate microAcoes
-  const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as { gatilho?: string; acao?: string }[] : [];
+  // Validate tarefasEstrategicas (new name, replaces microAcoes)
+  const rawTarefas = Array.isArray(result.tarefasEstrategicas) ? result.tarefasEstrategicas as any[] : [];
+  // Also check legacy microAcoes
+  const rawMicro = Array.isArray(result.microAcoes) ? result.microAcoes as any[] : [];
+  const actionsToValidate = rawTarefas.length > 0 ? rawTarefas : rawMicro;
+
   const ctx = buildValidationContext(dominant, sortedScores, answers);
-  const validatedActions = validateMicroAcoes(rawMicro, ctx);
-  result.microAcoes = validatedActions.actions;
-  result.microAcoesValidation = {
+  const validatedActions = validateTarefasEstrategicas(actionsToValidate, ctx);
+  result.tarefasEstrategicas = validatedActions.actions;
+  // Keep legacy microAcoes for backward compatibility
+  result.microAcoes = validatedActions.actions.map((t: any) => ({ gatilho: t.gatilho, acao: t.acao }));
+  result.tarefasValidation = {
     dominantPatternReference: ctx.dominant.ref,
     topAxisReference: ctx.topAxis.ref,
     evidenceReference: ctx.evidence.ref,
     errors: validatedActions.errors,
   };
+
+  // Inject diagnostic core data
+  if (diagnosticCore) {
+    result.diagnosticCore = diagnosticCore;
+  }
 
   // Ensure string fields
   const stringFields = [
@@ -806,7 +912,6 @@ function normalizeResult(
   const trimmed: string[] = [];
   const violations: string[] = [];
 
-  // Storyboard mode: trim based on slots
   if (template?.storyboard?.acts?.length) {
     for (const act of template.storyboard.acts) {
       for (const slot of act.slots) {
@@ -820,9 +925,7 @@ function normalizeResult(
         }
       }
     }
-  }
-  // Legacy mode: flat sections
-  else if (template?.sections) {
+  } else if (template?.sections) {
     for (const section of template.sections) {
       const max = section.maxSentences ?? section.maxSize ?? 0;
       if (max <= 0) continue;
@@ -927,7 +1030,7 @@ async function callAI(
 }
 
 // ═══════════════════════════════════════════════════════════════
-// MAIN HANDLER
+// MAIN HANDLER — 2-PHASE PIPELINE
 // ═══════════════════════════════════════════════════════════════
 
 serve(async (req) => {
@@ -973,18 +1076,16 @@ serve(async (req) => {
     }
     if (!promptsRes.data?.length) return fallbackResponse();
 
-    // Parse template — detect storyboard vs legacy format
+    // Parse template
     let reportTemplate: ReportTemplate | null = null;
     if (templateRes.data) {
       const rawSections = templateRes.data.sections;
       const rawRules = templateRes.data.output_rules;
 
-      // Detect storyboard format: sections contains { acts: [...], rules: {...} }
       let storyboard: StoryboardTemplate | undefined;
       let legacySections: TemplateSection[] = [];
 
       if (rawSections && typeof rawSections === "object" && !Array.isArray(rawSections)) {
-        // New storyboard format stored in sections column as { acts, rules }
         const obj = rawSections as Record<string, unknown>;
         if (Array.isArray(obj.acts)) {
           storyboard = {
@@ -1046,14 +1147,12 @@ serve(async (req) => {
       if (globalConfigRes.data.max_tokens != null) aiMaxTokens = Number(globalConfigRes.data.max_tokens);
     }
 
-    // ─── BUILD PROMPTS ───
     const profile = profileRes.data;
     const userContext = profile
       ? `Usuário: ${profile.name || "Anônimo"}${profile.age ? `, ${profile.age} anos` : ""}`
       : "Usuário anônimo";
 
     const dataBlock = buildDataBlock(sortedScores, structuredAnswers || []);
-    const userPrompt = buildUserPrompt(userContext, dataBlock, promptsRes.data as PromptRecord[], reportTemplate, evolutionBlock);
 
     let globalSystemPrompt = globalConfigRes.data?.system_prompt || "";
     const refineLevel = refine_level ?? 0;
@@ -1062,19 +1161,89 @@ serve(async (req) => {
       refineNote = "\n\nINSTRUÇÃO: A resposta anterior foi genérica. Seja mais específico, use dados reais, cada bloco com informação nova.";
     }
 
-    // ─── RETRY LOOP ───
+    // ═══════════════════════════════════════════════════════════════
+    // PHASE 1: GENERATE DIAGNOSTIC CORE
+    // ═══════════════════════════════════════════════════════════════
+
+    console.log(`[pipeline] ═══ PHASE 1: Diagnostic Core | Model: ${aiModel}, Slug: ${slug} ═══`);
+
+    const coreUserPrompt = `${userContext}\n\n${dataBlock}\n\n${buildCoreOutputSchema()}`;
+    const coreSystemFull = [globalSystemPrompt, CORE_SYSTEM_PROMPT, refineNote].filter(Boolean).join("\n\n");
+
+    const coreResult = await callAI(coreSystemFull, coreUserPrompt, aiModel, aiTemp, 2000, LOVABLE_API_KEY);
+
+    if (coreResult.error === "rate_limit") return errorResponse("Limite de requisições. Tente novamente.", 429);
+    if (coreResult.error === "credits_exhausted") return errorResponse("Créditos de IA esgotados.", 402);
+
+    let diagnosticCore: DiagnosticCore | null = null;
+
+    if (coreResult.result) {
+      const r = coreResult.result;
+      diagnosticCore = {
+        dominantPattern: (r.dominantPattern as string) || dominant.key,
+        dominantPatternLabel: (r.dominantPatternLabel as string) || dominant.label,
+        secondaryPattern: (r.secondaryPattern as string) || (sortedScores[1]?.key || ""),
+        secondaryPatternLabel: (r.secondaryPatternLabel as string) || (sortedScores[1]?.label || ""),
+        mainConflict: (r.mainConflict as string) || "",
+        maintenancePattern: (r.maintenancePattern as string) || "",
+        emotionalReactionStyle: (r.emotionalReactionStyle as string) || "",
+        selfSabotageTendency: (r.selfSabotageTendency as string) || "",
+        decisionMakingStyle: (r.decisionMakingStyle as string) || "",
+        primaryLifeImpact: (r.primaryLifeImpact as string) || "",
+        temperamentReading: (r.temperamentReading as string) || "",
+        confidenceLevel: (r.confidenceLevel as string) || "media",
+        selfDeceptionIndex: typeof r.selfDeceptionIndex === "number" ? r.selfDeceptionIndex : 0,
+        inconsistencies: Array.isArray(r.inconsistencies) ? r.inconsistencies as string[] : [],
+        priorityChangeDirection: (r.priorityChangeDirection as string) || "",
+        corePatternMechanism: (r.corePatternMechanism as string) || "",
+        hiddenMotivation: (r.hiddenMotivation as string) || "",
+      };
+      console.log(`[pipeline] Core generated: dominant=${diagnosticCore.dominantPatternLabel}, confidence=${diagnosticCore.confidenceLevel}, selfDeception=${diagnosticCore.selfDeceptionIndex}%`);
+    } else {
+      console.warn(`[pipeline] Core generation failed (${coreResult.error}), proceeding with data-only phase 2`);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // PHASE 2: GENERATE REPORT FROM CORE
+    // ═══════════════════════════════════════════════════════════════
+
+    console.log(`[pipeline] ═══ PHASE 2: Report Generation ═══`);
+
     let normalized: Record<string, unknown> | null = null;
     const MAX_ATTEMPTS = 4;
     let lastErrors: string[] = [];
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const retryContext = attempt > 0
-        ? `\n\nATENÇÃO: Tentativa ${attempt + 1}. As microAcoes anteriores foram REJEITADAS: ${lastErrors.join(" | ")}. Corrija os problemas.`
+        ? `\n\nATENÇÃO: Tentativa ${attempt + 1}. As tarefasEstrategicas anteriores foram REJEITADAS: ${lastErrors.join(" | ")}. Corrija os problemas.`
         : "";
 
-      const fullSystem = [globalSystemPrompt, SYSTEM_PROMPT, refineNote, retryContext].filter(Boolean).join("\n\n");
+      const fullSystem = [globalSystemPrompt, REPORT_SYSTEM_PROMPT, refineNote, retryContext].filter(Boolean).join("\n\n");
 
-      console.log(`[pipeline] Attempt ${attempt + 1}/${MAX_ATTEMPTS} | Model: ${aiModel}, Slug: ${slug}`);
+      // Build phase 2 user prompt — with or without diagnostic core
+      let userPrompt: string;
+      if (diagnosticCore) {
+        userPrompt = buildPhase2UserPrompt(diagnosticCore, dataBlock, promptsRes.data as PromptRecord[], reportTemplate, evolutionBlock, userContext);
+      } else {
+        // Fallback: build prompt without core (legacy style)
+        const sections: string[] = [userContext, dataBlock];
+        if (evolutionBlock) sections.push(evolutionBlock);
+        const promptMap: Record<string, string> = {};
+        (promptsRes.data as PromptRecord[]).forEach((p) => { promptMap[p.prompt_type] = p.content; });
+        const promptOrder: [string, string][] = [
+          ["interpretation", "INSTRUÇÕES DE ANÁLISE"], ["diagnosis", "INSTRUÇÕES DE DIAGNÓSTICO"],
+          ["profile", "INSTRUÇÕES DE PERFIL"], ["core_pain", "INSTRUÇÕES DE DOR CENTRAL"],
+          ["triggers", "INSTRUÇÕES DE GATILHOS"], ["direction", "INSTRUÇÕES DE DIREÇÃO"],
+          ["restrictions", "RESTRIÇÕES ABSOLUTAS"],
+        ];
+        for (const [key, title] of promptOrder) {
+          if (promptMap[key]?.trim()) sections.push(`═══ ${title} ═══\n${promptMap[key]}`);
+        }
+        sections.push(buildReportOutputSchema(reportTemplate));
+        userPrompt = sections.join("\n\n");
+      }
+
+      console.log(`[pipeline] Phase 2 Attempt ${attempt + 1}/${MAX_ATTEMPTS}`);
 
       const { result, error } = await callAI(fullSystem, userPrompt, aiModel, aiTemp, aiMaxTokens, LOVABLE_API_KEY);
 
@@ -1085,24 +1254,22 @@ serve(async (req) => {
         return fallbackResponse();
       }
 
-      // Check minimum fields
-      if (!(result.chamaAtencao || result.diagnosis || result.criticalDiagnosis || result.profileName)) {
+      if (!(result.chamaAtencao || result.diagnosis || result.criticalDiagnosis || result.profileName || result.combinedTitle)) {
         if (attempt < MAX_ATTEMPTS - 1) continue;
         return fallbackResponse();
       }
 
-      normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || [], reportTemplate);
+      normalized = normalizeResult(result, dominant, sortedScores, structuredAnswers || [], reportTemplate, diagnosticCore);
 
-      const microCount = Array.isArray(normalized.microAcoes) ? (normalized.microAcoes as any[]).length : 0;
-      lastErrors = (normalized as any).microAcoesValidation?.errors || [];
+      const tarefaCount = Array.isArray(normalized.tarefasEstrategicas) ? (normalized.tarefasEstrategicas as any[]).length : 0;
+      lastErrors = (normalized as any).tarefasValidation?.errors || [];
 
-      console.log(`[pipeline] Attempt ${attempt + 1}: ${microCount}/3 microAcoes`);
+      console.log(`[pipeline] Phase 2 Attempt ${attempt + 1}: ${tarefaCount}/3 tarefasEstrategicas`);
 
-      if (microCount >= 3) break;
+      if (tarefaCount >= 3) break;
 
       if (attempt >= MAX_ATTEMPTS - 1) {
-        // Accept partial results instead of failing — report is more important than perfect microAcoes
-        console.warn(`[pipeline] SOFT FAIL: ${microCount}/3 after ${MAX_ATTEMPTS} attempts — proceeding with partial microAcoes`);
+        console.warn(`[pipeline] SOFT FAIL: ${tarefaCount}/3 after ${MAX_ATTEMPTS} attempts — proceeding with partial`);
         break;
       }
     }
@@ -1113,7 +1280,7 @@ serve(async (req) => {
     if (evolutionData) {
       normalized.evolutionComparison = {
         ...evolutionData,
-        summary_text: (typeof normalized.evolutionSummary === "string" && normalized.evolutionSummary.trim()) 
+        summary_text: (typeof normalized.evolutionSummary === "string" && (normalized.evolutionSummary as string).trim()) 
           ? normalized.evolutionSummary as string : "",
       };
     }

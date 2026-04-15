@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { parseActionString } from '@/lib/buildActionPreview';
 import { DiagnosticResult, IntensityLevel } from '@/types/diagnostic';
-import { Download, ChevronRight, ArrowRight, XCircle, CheckCircle2, TrendingDown, TrendingUp, Minus, Lock, Crown } from 'lucide-react';
+import { Download, ChevronRight, ArrowRight, XCircle, CheckCircle2, TrendingDown, TrendingUp, Minus, Lock, Crown, Target, Zap, Shield } from 'lucide-react';
 import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { trackEvent } from '@/lib/trackEvent';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
@@ -42,6 +42,18 @@ interface StoryboardTemplate {
   acts: StoryboardAct[];
 }
 
+interface TarefaEstrategica {
+  titulo: string;
+  fase: 'consciencia' | 'interrupcao' | 'consolidacao';
+  padraoAlvo: string;
+  objetivo: string;
+  porque: string;
+  comoExecutar: string;
+  criterio: string;
+  gatilho: string;
+  acao: string;
+}
+
 const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg: string; ring: string }> = {
   leve: { label: 'Leve', color: 'text-green-600', bg: 'bg-green-500', ring: 'ring-green-500/20' },
   moderado: { label: 'Moderado', color: 'text-yellow-600', bg: 'bg-yellow-500', ring: 'ring-yellow-500/20' },
@@ -51,6 +63,12 @@ const intensityConfig: Record<IntensityLevel, { label: string; color: string; bg
 const fade = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0 },
+};
+
+const FASE_CONFIG: Record<string, { label: string; icon: typeof Target; color: string; bg: string; border: string }> = {
+  consciencia: { label: 'Consciência', icon: Target, color: 'text-blue-600', bg: 'bg-blue-500/[0.05]', border: 'border-blue-500/15' },
+  interrupcao: { label: 'Interrupção', icon: Zap, color: 'text-amber-600', bg: 'bg-amber-500/[0.05]', border: 'border-amber-500/15' },
+  consolidacao: { label: 'Consolidação', icon: Shield, color: 'text-green-600', bg: 'bg-green-500/[0.05]', border: 'border-green-500/15' },
 };
 
 function getHeaderTitle(slug?: string): string {
@@ -85,7 +103,6 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
       const { data: templates } = await supabase.from('report_templates').select('sections').eq('test_id', modules[0].id).limit(1);
       if (templates?.[0]?.sections) {
         const raw = templates[0].sections as any;
-        // Check for new storyboard format
         if (raw?.acts && Array.isArray(raw.acts)) {
           setStoryboard({
             acts: raw.acts.map((a: any) => ({
@@ -130,7 +147,7 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
         try {
           const { data: tracking } = await supabase
             .from('action_plan_tracking')
-            .select('completed, day_number, action_text')
+            .select('action_text, day_number, completed')
             .eq('user_id', user.id)
             .eq('diagnostic_result_id', (result as any).id || '')
             .order('day_number');
@@ -177,6 +194,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 
   const hasStoryboard = storyboard && storyboard.acts.length > 0 && storyboard.acts.some(a => a.slots.length > 0);
 
+  // Get diagnostic core if available
+  const diagnosticCore = ai.diagnosticCore;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 md:px-10 py-16 md:py-28">
@@ -207,6 +227,11 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             <p className="text-lg md:text-xl font-serif font-semibold text-foreground leading-snug">{profileName}</p>
           </div>
         </motion.div>
+
+        {/* ── Diagnostic Core Summary (when available) ── */}
+        {diagnosticCore && (
+          <DiagnosticCoreSummary core={diagnosticCore} />
+        )}
 
         {/* ── 3-Act Narrative ── */}
         <div className="space-y-20">
@@ -240,7 +265,10 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             <LegacySections result={result} moduleSlug={moduleSlug} ai={ai} />
           )}
 
-          {/* ── Actions ── */}
+          {/* ── Strategic Tasks (tarefasEstrategicas) ── */}
+          <TarefasEstrategicasSection ai={ai} result={result} dominantAxisLabel={dominantAxisLabel} profileName={profileName} />
+
+          {/* ── Legacy Actions (backward compat) ── */}
           <ActionPreviewSection result={result} ai={ai} dominantAxisLabel={dominantAxisLabel} profileName={profileName} />
 
           {/* ── Intensity Bars ── */}
@@ -302,16 +330,240 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
 };
 
 // ═══════════════════════════════════════════════════════════════
+// DIAGNOSTIC CORE SUMMARY
+// ═══════════════════════════════════════════════════════════════
+
+function DiagnosticCoreSummary({ core }: { core: any }) {
+  if (!core) return null;
+
+  return (
+    <motion.div {...fade} transition={{ delay: 0.12, duration: 0.5 }} className="mb-20 space-y-5">
+      {/* Main conflict */}
+      {core.mainConflict && (
+        <div className="rounded-2xl border border-destructive/10 bg-destructive/[0.02] px-6 py-5">
+          <p className="text-[9px] text-destructive/40 uppercase tracking-[0.25em] font-medium mb-3">Conflito principal</p>
+          <p className="text-[15px] text-foreground leading-[1.85]">{core.mainConflict}</p>
+        </div>
+      )}
+
+      {/* Maintenance pattern */}
+      {core.maintenancePattern && (
+        <div className="rounded-2xl border border-border/20 bg-card/50 px-6 py-5">
+          <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.25em] font-medium mb-3">Padrão de manutenção</p>
+          <p className="text-[15px] text-muted-foreground leading-[1.85]">{core.maintenancePattern}</p>
+        </div>
+      )}
+
+      {/* Emotional reaction + decision making in grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {core.emotionalReactionStyle && (
+          <div className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">Reação emocional</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{core.emotionalReactionStyle}</p>
+          </div>
+        )}
+        {core.decisionMakingStyle && (
+          <div className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+            <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">Tomada de decisão</p>
+            <p className="text-sm text-foreground/80 leading-relaxed">{core.decisionMakingStyle}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Self-sabotage tendency */}
+      {core.selfSabotageTendency && (
+        <div className="rounded-2xl border border-amber-500/10 bg-amber-500/[0.02] px-6 py-5">
+          <p className="text-[9px] text-amber-600/40 uppercase tracking-[0.25em] font-medium mb-3">Tendência de autossabotagem</p>
+          <p className="text-[15px] text-foreground leading-[1.85]">{core.selfSabotageTendency}</p>
+        </div>
+      )}
+
+      {/* Temperament + hidden motivation */}
+      {(core.temperamentReading || core.hiddenMotivation) && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {core.temperamentReading && (
+            <div className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">Leitura de temperamento</p>
+              <p className="text-sm text-foreground/80 leading-relaxed">{core.temperamentReading}</p>
+            </div>
+          )}
+          {core.hiddenMotivation && (
+            <div className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">Motivação oculta</p>
+              <p className="text-sm text-foreground/80 leading-relaxed">{core.hiddenMotivation}</p>
+            </div>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TAREFAS ESTRATÉGICAS (new 2-layer system)
+// ═══════════════════════════════════════════════════════════════
+
+function TarefasEstrategicasSection({ ai, result: _tarefaResult, dominantAxisLabel, profileName }: { ai: any; result: DiagnosticResult; dominantAxisLabel: string; profileName: string }) {
+  const { isPremium, isSuperAdmin } = useAuth();
+  const tarefas: TarefaEstrategica[] = Array.isArray(ai.tarefasEstrategicas) ? ai.tarefasEstrategicas : [];
+
+  if (tarefas.length === 0) return null;
+
+  const showFull = isPremium || isSuperAdmin;
+
+  return (
+    <motion.section {...fade} transition={{ delay: 0.36, duration: 0.4 }}>
+      <div className="mb-6">
+        <h2 className="text-lg md:text-xl font-serif font-semibold text-foreground tracking-tight">Plano estratégico de mudança</h2>
+      </div>
+
+      {(profileName || dominantAxisLabel) && (
+        <div className="mb-5 rounded-xl border border-border/15 bg-secondary/20 px-5 py-4">
+          <p className="text-[13px] text-muted-foreground/70 leading-relaxed italic">
+            Estas ações foram derivadas diretamente do padrão <span className="font-semibold text-foreground not-italic">{profileName}</span>
+            {dominantAxisLabel && <> e do eixo <span className="font-semibold text-foreground not-italic">{dominantAxisLabel}</span></>}.
+          </p>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {tarefas.slice(0, 3).map((tarefa, i) => {
+          const isLocked = !showFull && i > 0;
+          const faseConfig = FASE_CONFIG[tarefa.fase] || FASE_CONFIG.consciencia;
+          const FaseIcon = faseConfig.icon;
+
+          return (
+            <motion.div
+              key={i}
+              {...fade}
+              transition={{ delay: 0.38 + (i * 0.08), duration: 0.4 }}
+              className={`rounded-2xl border overflow-hidden relative ${isLocked ? 'border-border/20 bg-secondary/10' : faseConfig.border + ' ' + faseConfig.bg}`}
+            >
+              {/* Fase header */}
+              <div className={`px-6 py-3 border-b ${isLocked ? 'border-border/10' : faseConfig.border}`}>
+                <div className="flex items-center gap-2">
+                  <FaseIcon className={`w-3.5 h-3.5 ${isLocked ? 'text-muted-foreground/30' : faseConfig.color}`} />
+                  <span className={`text-[10px] uppercase tracking-[0.2em] font-semibold ${isLocked ? 'text-muted-foreground/30' : faseConfig.color}`}>
+                    Fase {i + 1} — {faseConfig.label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 py-5 space-y-4">
+                {/* Title + pattern */}
+                <div>
+                  <h3 className={`text-base font-semibold leading-snug ${isLocked ? 'text-muted-foreground/25' : 'text-foreground'}`}>
+                    {isLocked ? tarefa.titulo.slice(0, 15) + '...' : tarefa.titulo}
+                  </h3>
+                  {!isLocked && tarefa.padraoAlvo && (
+                    <p className="text-[11px] text-muted-foreground/50 mt-1">Ataca: {tarefa.padraoAlvo}</p>
+                  )}
+                </div>
+
+                {!isLocked ? (
+                  <>
+                    {/* Objetivo */}
+                    {tarefa.objetivo && (
+                      <div>
+                        <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-1.5">Objetivo</p>
+                        <p className="text-[15px] text-foreground leading-[1.85]">{tarefa.objetivo}</p>
+                      </div>
+                    )}
+
+                    {/* Porque */}
+                    {tarefa.porque && (
+                      <div>
+                        <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-1.5">Por que essa tarefa existe</p>
+                        <p className="text-sm text-muted-foreground leading-relaxed">{tarefa.porque}</p>
+                      </div>
+                    )}
+
+                    {/* Como executar */}
+                    {tarefa.comoExecutar && (
+                      <div>
+                        <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-1.5">Como executar</p>
+                        <p className="text-sm text-foreground/80 leading-relaxed">{tarefa.comoExecutar}</p>
+                      </div>
+                    )}
+
+                    {/* Gatilho → Ação */}
+                    <div className="rounded-xl border border-border/15 bg-card/50 px-5 py-4">
+                      {tarefa.gatilho && (
+                        <p className="text-xs text-muted-foreground/60 mb-1.5 leading-relaxed">
+                          Quando <span className="font-semibold text-foreground">{tarefa.gatilho}</span>
+                        </p>
+                      )}
+                      <p className="text-[15px] font-medium text-foreground leading-[1.8]">
+                        → {tarefa.acao}
+                      </p>
+                    </div>
+
+                    {/* Critério */}
+                    {tarefa.criterio && (
+                      <div className="flex items-start gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-600/40 mt-0.5 shrink-0" />
+                        <p className="text-xs text-muted-foreground/60 leading-relaxed">
+                          Critério: {tarefa.criterio}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="py-4">
+                    <p className="text-sm text-muted-foreground/20 leading-relaxed">
+                      {tarefa.objetivo?.slice(0, 40)}...
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Lock overlay */}
+              {isLocked && (
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/30 to-background/70 flex items-end justify-center pb-5">
+                  <Lock className="w-4 h-4 text-muted-foreground/30" />
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
+
+        {/* Paywall CTA */}
+        {!showFull && tarefas.length > 1 && (
+          <motion.div {...fade} transition={{ delay: 0.6, duration: 0.4 }}>
+            <div className="border border-destructive/15 bg-destructive/[0.02] rounded-2xl px-6 py-6 space-y-5">
+              <div className="space-y-2 text-center">
+                <p className="text-[15px] text-foreground font-semibold leading-snug">A Fase 1 mostra o padrão.</p>
+                <p className="text-sm text-foreground/70 font-medium">As Fases 2 e 3 quebram o ciclo e instalam o novo comportamento.</p>
+                <p className="text-sm text-destructive font-semibold">Sem as 3 fases, a mudança não se sustenta.</p>
+              </div>
+              <p className="text-[11px] text-muted-foreground/50 text-center">+32.847 mulheres já estão executando o plano completo</p>
+              <div className="border-t border-destructive/8 pt-5">
+                <p className="text-xs text-destructive/70 text-center font-medium leading-relaxed mb-4">
+                  Se você parar na consciência, vai continuar sabendo o que está errado — e fazendo igual.
+                </p>
+                <button onClick={() => window.location.href = '/premium'} className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-destructive text-destructive-foreground rounded-xl text-sm font-semibold hover:brightness-90 transition-all duration-200 active:scale-[0.97] shadow-sm">
+                  <Crown className="w-4 h-4" /> Desbloquear plano completo — R$9,99
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </motion.section>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
 // SLOT RENDERER — maps format to visual component
 // ═══════════════════════════════════════════════════════════════
 
-function RenderSlot({ slot, actId, value, ai, result, delay }: {
+function RenderSlot({ slot, actId, value, ai, result: _result, delay }: {
   slot: StoryboardSlot; actId: string; value: string | string[] | null;
   ai: any; result: DiagnosticResult; delay: number;
 }) {
-  // Special cases by key
   if (slot.key === 'lifeImpact' || slot.key === 'impactoPorArea') {
-    const impacto = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
+    const impacto = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || _result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
     if (impacto.length === 0 && !value) return null;
     return (
       <Section title={slot.label} delay={delay} accent={actId === 'confronto' ? 'destructive' : undefined}>
@@ -333,7 +585,6 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
 
   if (!value && slot.key !== 'mentalCommand') return null;
 
-  // Accent by act
   const accentMap: Record<string, string | undefined> = {
     espelho: undefined,
     confronto: 'destructive',
@@ -341,7 +592,6 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
   };
   const accent = accentMap[actId];
 
-  // Quote format (mentalCommand)
   if (slot.format === 'quote') {
     const cmd = ai.mentalCommand || (typeof value === 'string' ? value : null);
     if (!cmd) return null;
@@ -355,7 +605,6 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
     );
   }
 
-  // Alert format
   if (slot.format === 'alert') {
     return (
       <Section title={slot.label} delay={delay} accent="destructive">
@@ -366,7 +615,6 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
     );
   }
 
-  // List format
   if (slot.format === 'list' || Array.isArray(value)) {
     const items = Array.isArray(value) ? value : [];
     if (items.length === 0) return null;
@@ -396,7 +644,6 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
     );
   }
 
-  // Cards format
   if (slot.format === 'cards') {
     return (
       <Section title={slot.label} delay={delay} accent={accent}>
@@ -405,7 +652,6 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
     );
   }
 
-  // Prose format (default) — with act-specific styling
   if (actId === 'direcao' && /direction|direcao|ajuste|corrigir/i.test(slot.key)) {
     return (
       <Section title={slot.label} delay={delay} accent="primary">
@@ -432,7 +678,6 @@ function RenderSlot({ slot, actId, value, ai, result, delay }: {
     );
   }
 
-  // Default prose
   return (
     <Section title={slot.label} delay={delay} accent={actId === 'espelho' ? undefined : accent}>
       <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
@@ -712,14 +957,18 @@ function EvolutionComparisonSection({ ai }: { ai: any }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// ACTION PREVIEW
+// LEGACY ACTION PREVIEW (backward compat — hidden when tarefasEstrategicas exist)
 // ═══════════════════════════════════════════════════════════════
 
-function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { result: DiagnosticResult; ai: any; dominantAxisLabel: string; profileName: string }) {
+function ActionPreviewSection({ result, ai, dominantAxisLabel, profileName }: { result: DiagnosticResult; ai: any; dominantAxisLabel: string; profileName: string }) {
   const { user, isPremium, isSuperAdmin } = useAuth();
   const [actions, setActions] = useState<{ trigger: string; action: string }[]>([]);
 
+  // Don't render if tarefasEstrategicas exist
+  const hasTarefas = Array.isArray(ai.tarefasEstrategicas) && ai.tarefasEstrategicas.length > 0;
+  
   useEffect(() => {
+    if (hasTarefas) return; // Skip fetch if new system is active
     const resultId = (result as any).id;
     if (!user || !resultId) return;
     const fetchActions = async () => {
@@ -742,9 +991,9 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
       }
     };
     fetchActions();
-  }, [(result as any).id, user?.id]);
+  }, [(result as any).id, user?.id, hasTarefas]);
 
-  if (actions.length === 0) return null;
+  if (hasTarefas || actions.length === 0) return null;
   const showFull = isPremium || isSuperAdmin;
 
   return (
@@ -802,7 +1051,6 @@ function ActionPreviewSection({ result, dominantAxisLabel, profileName }: { resu
         )}
       </div>
 
-      {/* Post-test guided CTA */}
       {showFull && (
         <motion.div {...fade} transition={{ delay: 0.5, duration: 0.4 }} className="mt-8 rounded-2xl border border-primary/20 bg-primary/5 p-6 space-y-4">
           <div className="flex items-center gap-3">
