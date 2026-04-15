@@ -592,7 +592,14 @@ DIREÇÃO DE MUDANÇA: ${core.priorityChangeDirection}
 MECANISMO CENTRAL: ${core.corePatternMechanism}
 MOTIVAÇÃO OCULTA: ${core.hiddenMotivation}
 
-REGRA: Todos os textos do relatório devem ser DERIVADOS deste núcleo. Não invente informações que contradigam o diagnóstico acima.`);
+═══ CICLO LÓGICO DO PADRÃO (cadeia causal fechada) ═══
+CAUSA PROVÁVEL: ${core.causaProvavel}
+GATILHO PRINCIPAL: ${core.gatilhoPrincipal}
+COMPORTAMENTO AUTOMÁTICO: ${core.comportamentoAutomatico}
+JUSTIFICATIVA INTERNA: ${core.justificativaInterna}
+CONSEQUÊNCIA REPETIDA: ${core.consequenciaRepetida}
+
+REGRA: Todos os textos do relatório devem ser DERIVADOS deste núcleo e do ciclo lógico. O ciclo deve ser visível no relatório — o usuário precisa enxergar a cadeia causa→gatilho→comportamento→justificativa→consequência. Não invente informações que contradigam o diagnóstico acima.`);
 
   sections.push(dataBlock);
 
@@ -1229,6 +1236,12 @@ serve(async (req) => {
         priorityChangeDirection: (r.priorityChangeDirection as string) || "",
         corePatternMechanism: (r.corePatternMechanism as string) || "",
         hiddenMotivation: (r.hiddenMotivation as string) || "",
+        // Ciclo lógico completo
+        causaProvavel: (r.causaProvavel as string) || "",
+        gatilhoPrincipal: (r.gatilhoPrincipal as string) || "",
+        comportamentoAutomatico: (r.comportamentoAutomatico as string) || "",
+        justificativaInterna: (r.justificativaInterna as string) || "",
+        consequenciaRepetida: (r.consequenciaRepetida as string) || "",
       };
       console.log(`[pipeline] Core generated: dominant=${diagnosticCore.dominantPatternLabel}, confidence=${diagnosticCore.confidenceLevel}, selfDeception=${diagnosticCore.selfDeceptionIndex}%`);
     } else {
