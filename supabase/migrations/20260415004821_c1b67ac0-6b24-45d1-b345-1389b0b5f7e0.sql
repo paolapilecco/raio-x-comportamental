@@ -1,0 +1,1 @@
+ALTER TABLE public.action_plan_tracking ADD COLUMN IF NOT EXISTS started_at TIMESTAMP WITH TIME ZONE DEFAULT NULL;

@@ -26,6 +26,7 @@ export type Database = {
           gatilho: string
           id: string
           notes: string
+          started_at: string | null
           user_id: string
         }
         Insert: {
@@ -39,6 +40,7 @@ export type Database = {
           gatilho?: string
           id?: string
           notes?: string
+          started_at?: string | null
           user_id: string
         }
         Update: {
@@ -52,6 +54,7 @@ export type Database = {
           gatilho?: string
           id?: string
           notes?: string
+          started_at?: string | null
           user_id?: string
         }
         Relationships: [
