@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, memo } from 'react';
 import LifeMapReport from './LifeMapReport';
 import { ReportGamification } from './ReportGamification';
+import { DiagnosticTrustLayer } from './DiagnosticTrustLayer';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -194,6 +195,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </span>
           </div>
         </motion.header>
+
+        {/* ── Diagnostic Trust Layer ── */}
+        <DiagnosticTrustLayer interpretation={result.interpretation} />
 
         {/* ── Profile Identity ── */}
         <motion.div {...fade} transition={{ delay: 0.1, duration: 0.5 }} className="mb-20">
