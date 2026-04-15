@@ -308,9 +308,9 @@ const TestCatalog = () => {
               </div>
             </div>
 
-            {lockedModules.map((mod, i) => {
+            {sortedLockedModules.map((mod, i) => {
               let badge: 'recommended' | 'popular' | null = null;
-              if (hasCompletedFreeTest && mod.slug === RECOMMENDED_SLUG) badge = 'recommended';
+              if (hasCompletedFreeTest && mod.slug === effectiveRecommendedSlug) badge = 'recommended';
               else if (mod.slug === MOST_POPULAR_SLUG) badge = 'popular';
 
               return (
