@@ -12,6 +12,7 @@ import { useState, useEffect, memo } from 'react';
 import LifeMapReport from './LifeMapReport';
 import { ReportGamification } from './ReportGamification';
 import { DiagnosticTrustLayer } from './DiagnosticTrustLayer';
+import { ActionBridge } from './ActionBridge';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
@@ -272,6 +273,11 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </div>
           </motion.section>
         </div>
+        {/* ── Action Bridge ── */}
+        <ActionBridge
+          patternLabel={dominantAxisLabel || profileName}
+          onStartAction={onRestart}
+        />
 
         <ReportGamification />
 
