@@ -273,6 +273,11 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
             </div>
           </motion.section>
         </div>
+        {/* ── Action Bridge ── */}
+        <ActionBridge
+          patternLabel={dominantAxisLabel || profileName}
+          onStartAction={onRestart}
+        />
 
         <ReportGamification />
 
