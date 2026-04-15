@@ -549,6 +549,26 @@ export default function Tracking() {
                           </p>
                         </div>
                       )}
+
+                      {/* Micro-rewards for completed actions */}
+                      {item.actionsCompleted > 0 && item.actionsCompleted < item.actionsTotal && hasFullAccess && (
+                        <div className="flex items-center gap-2 mt-2 bg-green-500/5 border border-green-500/10 rounded-lg p-2.5">
+                          <span className="text-sm shrink-0">✦</span>
+                          <p className="text-[11px] font-medium text-green-700">
+                            {item.actionsCompleted === 1
+                              ? 'Isso já quebra parte do seu padrão.'
+                              : 'Você fez o que normalmente evitaria.'}
+                          </p>
+                        </div>
+                      )}
+                      {item.actionsCompleted === item.actionsTotal && item.actionsTotal > 0 && hasFullAccess && (
+                        <div className="flex items-center gap-2 mt-2 bg-green-500/5 border border-green-500/10 rounded-lg p-2.5">
+                          <span className="text-sm shrink-0">🏆</span>
+                          <p className="text-[11px] font-medium text-green-700">
+                            Ciclo completo. Você sustentou até o fim — isso é raro.
+                          </p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </motion.div>
