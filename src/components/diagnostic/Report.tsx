@@ -563,7 +563,7 @@ function RenderSlot({ slot, actId, value, ai, result: _result, delay }: {
   ai: any; result: DiagnosticResult; delay: number;
 }) {
   if (slot.key === 'lifeImpact' || slot.key === 'impactoPorArea') {
-    const impacto = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
+    const impacto = ai.impactoPorArea || ai.impactoVida?.map((l: any) => ({ area: l.area || l.pillar, efeito: l.efeito || l.impact })) || _result.lifeImpact?.map((l: any) => ({ area: l.pillar, efeito: l.impact })) || [];
     if (impacto.length === 0 && !value) return null;
     return (
       <Section title={slot.label} delay={delay} accent={actId === 'confronto' ? 'destructive' : undefined}>
