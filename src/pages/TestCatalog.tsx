@@ -321,6 +321,7 @@ const TestCatalog = () => {
                   isCompleted={false}
                   isLocked={true}
                   badge={badge}
+                  isPersonalized={badge === 'recommended' && !!personalizedSlug}
                   onStart={() => setUpgradeModal(mod)}
                 />
               );
