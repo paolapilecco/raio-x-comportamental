@@ -190,7 +190,11 @@ export type Database = {
           all_scores: Json | null
           blocking_point: string
           combined_title: string
+          confidence_level: string | null
+          confidence_score: number | null
+          consistency_score: number | null
           contradiction: string
+          contradiction_count: number | null
           core_pain: string
           created_at: string
           critical_diagnosis: string
@@ -206,9 +210,11 @@ export type Database = {
           mental_state: string
           profile_name: string
           secondary_patterns: string[] | null
+          self_deception_index: number | null
           self_sabotage_cycle: string[] | null
           session_id: string
           state_summary: string
+          temperament_traits: Json | null
           traps: string[] | null
           triggers: string[] | null
           what_not_to_do: string[]
@@ -217,7 +223,11 @@ export type Database = {
           all_scores?: Json | null
           blocking_point: string
           combined_title: string
+          confidence_level?: string | null
+          confidence_score?: number | null
+          consistency_score?: number | null
           contradiction: string
+          contradiction_count?: number | null
           core_pain?: string
           created_at?: string
           critical_diagnosis?: string
@@ -233,9 +243,11 @@ export type Database = {
           mental_state: string
           profile_name: string
           secondary_patterns?: string[] | null
+          self_deception_index?: number | null
           self_sabotage_cycle?: string[] | null
           session_id: string
           state_summary: string
+          temperament_traits?: Json | null
           traps?: string[] | null
           triggers?: string[] | null
           what_not_to_do?: string[]
@@ -244,7 +256,11 @@ export type Database = {
           all_scores?: Json | null
           blocking_point?: string
           combined_title?: string
+          confidence_level?: string | null
+          confidence_score?: number | null
+          consistency_score?: number | null
           contradiction?: string
+          contradiction_count?: number | null
           core_pain?: string
           created_at?: string
           critical_diagnosis?: string
@@ -260,9 +276,11 @@ export type Database = {
           mental_state?: string
           profile_name?: string
           secondary_patterns?: string[] | null
+          self_deception_index?: number | null
           self_sabotage_cycle?: string[] | null
           session_id?: string
           state_summary?: string
+          temperament_traits?: Json | null
           traps?: string[] | null
           triggers?: string[] | null
           what_not_to_do?: string[]
@@ -793,9 +811,13 @@ export type Database = {
           axes: string[]
           context: string | null
           created_at: string
+          emotional_context: string | null
           id: string
+          is_counterproof: boolean | null
+          mirror_pair_id: string | null
           option_scores: number[] | null
           options: string[] | null
+          question_category: string | null
           sort_order: number
           test_id: string
           text: string
@@ -806,9 +828,13 @@ export type Database = {
           axes?: string[]
           context?: string | null
           created_at?: string
+          emotional_context?: string | null
           id?: string
+          is_counterproof?: boolean | null
+          mirror_pair_id?: string | null
           option_scores?: number[] | null
           options?: string[] | null
+          question_category?: string | null
           sort_order?: number
           test_id: string
           text: string
@@ -819,9 +845,13 @@ export type Database = {
           axes?: string[]
           context?: string | null
           created_at?: string
+          emotional_context?: string | null
           id?: string
+          is_counterproof?: boolean | null
+          mirror_pair_id?: string | null
           option_scores?: number[] | null
           options?: string[] | null
+          question_category?: string | null
           sort_order?: number
           test_id?: string
           text?: string
@@ -829,6 +859,13 @@ export type Database = {
           weight?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "questions_mirror_pair_id_fkey"
+            columns: ["mirror_pair_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "questions_test_module_id_fkey"
             columns: ["test_id"]
@@ -1335,6 +1372,7 @@ export type Database = {
       user_central_profile: {
         Row: {
           aggregated_scores: Json
+          avg_confidence_level: string | null
           behavioral_memory: Json | null
           behavioral_tendencies: Json | null
           core_pain: string | null
@@ -1345,12 +1383,14 @@ export type Database = {
           last_test_at: string | null
           mental_state: string | null
           profile_name: string | null
+          temperament_profile: Json | null
           tests_completed: number
           updated_at: string
           user_id: string
         }
         Insert: {
           aggregated_scores?: Json
+          avg_confidence_level?: string | null
           behavioral_memory?: Json | null
           behavioral_tendencies?: Json | null
           core_pain?: string | null
@@ -1361,12 +1401,14 @@ export type Database = {
           last_test_at?: string | null
           mental_state?: string | null
           profile_name?: string | null
+          temperament_profile?: Json | null
           tests_completed?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           aggregated_scores?: Json
+          avg_confidence_level?: string | null
           behavioral_memory?: Json | null
           behavioral_tendencies?: Json | null
           core_pain?: string | null
@@ -1377,6 +1419,7 @@ export type Database = {
           last_test_at?: string | null
           mental_state?: string | null
           profile_name?: string | null
+          temperament_profile?: Json | null
           tests_completed?: number
           updated_at?: string
           user_id?: string
