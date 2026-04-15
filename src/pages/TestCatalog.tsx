@@ -243,7 +243,18 @@ const TestCatalog = () => {
           </motion.div>
         )}
 
-        {/* ═══ NEXT STEP BANNER (after free test completed) ═══ */}
+        {/* ═══ URGENCY BANNER ═══ */}
+        {urgencyText && (
+          <motion.div {...fadeUp} transition={{ delay: 0.01, duration: 0.4 }}
+            className="rounded-2xl border border-destructive/15 bg-destructive/[0.03] px-5 py-4 flex items-start gap-3"
+          >
+            <AlertTriangle className="w-4 h-4 text-destructive/50 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-foreground/80 leading-relaxed">{urgencyText}</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">O padrão não espera — ele se fortalece com cada dia sem ação.</p>
+            </div>
+          </motion.div>
+        )}
         {recommendedNext && (
           <motion.section {...fadeUp} transition={{ delay: 0.02, duration: 0.4 }}>
             <div
