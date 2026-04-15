@@ -403,7 +403,7 @@ function DiagnosticCoreSummary({ core }: { core: any }) {
 // TAREFAS ESTRATÉGICAS (new 2-layer system)
 // ═══════════════════════════════════════════════════════════════
 
-function TarefasEstrategicasSection({ ai, result, dominantAxisLabel, profileName }: { ai: any; result: DiagnosticResult; dominantAxisLabel: string; profileName: string }) {
+function TarefasEstrategicasSection({ ai, result: _tarefaResult, dominantAxisLabel, profileName }: { ai: any; result: DiagnosticResult; dominantAxisLabel: string; profileName: string }) {
   const { isPremium, isSuperAdmin } = useAuth();
   const tarefas: TarefaEstrategica[] = Array.isArray(ai.tarefasEstrategicas) ? ai.tarefasEstrategicas : [];
 
