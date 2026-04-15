@@ -127,6 +127,38 @@ function parseMetadata(actionText: string, index: number): Pick<ActionItem, 'tit
   }
 }
 
+function getEvolutionSummary(ev: EvolutionComparison, _curr: CycleData): string {
+  if (ev.classification === 'evolution') {
+    if (ev.patternChanged) return 'Você evoluiu — o padrão dominante mudou. Agora precisa consolidar.';
+    if (ev.consistencyDelta > 10) return 'Você evoluiu e está mais consistente. Falta sustentar.';
+    return 'Você evoluiu, mas ainda não consolidou.';
+  }
+  if (ev.classification === 'regression') {
+    if (ev.selfDeceptionDelta > 5) return 'Você regrediu — o padrão voltou a dominar e o autoengano subiu.';
+    return 'Você regrediu — o comportamento voltou a se fortalecer.';
+  }
+  // stagnation
+  if (ev.confidenceDelta > 0) return 'Você entendeu o padrão, mas não mudou o comportamento.';
+  return 'Estagnação — o padrão continua ativo sem alteração real.';
+}
+
+function getEvolutionDirection(ev: EvolutionComparison, curr: CycleData): string {
+  const hasIncomplete = curr.actions.some(a => !a.completed);
+  const abandoned = curr.actions.some(a => getTaskStatus(a) === 'abandoned');
+
+  if (ev.classification === 'evolution') {
+    if (hasIncomplete) return 'Sustentar até consolidar — complete as ações restantes deste ciclo.';
+    return 'Preparar o próximo ciclo com foco em manutenção do progresso.';
+  }
+  if (ev.classification === 'regression') {
+    if (abandoned) return 'Recomeçar o ciclo com foco em execução — retome a tarefa abandonada.';
+    return 'Executar novamente a fase de interrupção — o padrão retomou controle.';
+  }
+  // stagnation
+  if (hasIncomplete) return 'Finalizar as ações pendentes antes de reavaliar.';
+  return 'Refazer o teste e comparar — a mudança precisa ser medida.';
+}
+
 function computeEvolution(prev: CycleData, curr: CycleData): EvolutionComparison {
   const patternChanged = prev.dominantPattern !== curr.dominantPattern;
   const prevIntensity = INTENSITY_VALUE[prev.intensity] || 2;
@@ -674,6 +706,52 @@ export default function TrackingDetail() {
                     }`}>{evolution.riskMessage}</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* === EVOLUTION STRATEGIC CLOSURE === */}
+        {evolution && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }}>
+            <Card className="border-primary/20 bg-primary/[0.02]">
+              <CardContent className="p-5 space-y-4">
+                {/* Resumo da evolução */}
+                <div>
+                  <p className="text-[10px] text-primary font-bold uppercase tracking-wider mb-2">Resumo da sua evolução</p>
+                  <p className={`text-sm font-semibold leading-relaxed ${
+                    evolution.classification === 'evolution' ? 'text-green-600' :
+                    evolution.classification === 'regression' ? 'text-destructive' : 'text-amber-600'
+                  }`}>
+                    {getEvolutionSummary(evolution, activeCycle)}
+                  </p>
+                </div>
+
+                <div className="h-px bg-border/40" />
+
+                {/* Direcionamento pós-análise */}
+                <div>
+                  <p className="text-[10px] text-primary font-bold uppercase tracking-wider mb-2">Com base nisso, você precisa agora:</p>
+                  <div className="flex items-start gap-2.5 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                    <Target className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    <p className="text-sm font-medium text-foreground">{getEvolutionDirection(evolution, activeCycle)}</p>
+                  </div>
+                </div>
+
+                {/* CTA */}
+                <Button
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    const firstPending = activeCycle.actions.find(a => !a.completed);
+                    if (firstPending) {
+                      setExpandedAction(firstPending.id);
+                      document.getElementById(`action-${firstPending.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }}
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1.5" /> Ir para a próxima ação
+                </Button>
               </CardContent>
             </Card>
           </motion.div>
