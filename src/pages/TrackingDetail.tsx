@@ -14,7 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp,
-  Save, Lock, Crown, History, Target, Flame, AlertTriangle, Zap,
+  Save, Lock, Crown, History, Target, AlertTriangle, Zap,
   Play, Eye, Hammer, RotateCcw, Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
