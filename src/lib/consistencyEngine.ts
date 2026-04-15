@@ -186,7 +186,7 @@ function calculateCounterproofAdjustments(
 
 function calculateConsistencyScore(
   answers: Answer[],
-  questions: QuestionWithMeta[],
+  _questions: QuestionWithMeta[],
   mirrorDiscrepancies: MirrorDiscrepancy[],
   counterproofAdjustments: CounterproofAdjustment[]
 ): { consistencyScore: number; confidenceLevel: 'alta' | 'media' | 'baixa'; confidenceScore: number; flags: string[] } {
