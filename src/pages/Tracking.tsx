@@ -262,6 +262,103 @@ export default function Tracking() {
           </Card>
         )}
 
+        {/* === NEXT ACTION HIGHLIGHT === */}
+        {items.length > 0 && (() => {
+          // Find the priority action: first in_progress or first not_started
+          const priorityItem = items.find(i => i.actionsStarted > 0 && i.actionsCompleted < i.actionsTotal)
+            || items.find(i => i.actionsCompleted < i.actionsTotal);
+          if (!priorityItem) return null;
+
+          const phase = priorityItem.actionsCompleted === 0 ? 'Consciência'
+            : priorityItem.actionsCompleted === 1 ? 'Interrupção' : 'Consolidação';
+          const phaseIcon = priorityItem.actionsCompleted === 0 ? '👁️'
+            : priorityItem.actionsCompleted === 1 ? '⚡' : '🔄';
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
+              <Card className="border-primary/30 bg-primary/[0.03]">
+                <CardContent className="p-5">
+                  <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">Sua próxima ação</p>
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-lg shrink-0">
+                      {phaseIcon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-foreground text-sm">{phase} — {priorityItem.testName}</h3>
+                      <p className="text-xs text-muted-foreground truncate">Padrão: {priorityItem.dominantPattern}</p>
+                    </div>
+                  </div>
+                  <Button
+                    className="w-full font-bold"
+                    onClick={() => hasFullAccess ? navigate(`/acompanhamento/${priorityItem.testModuleId}`) : navigate('/checkout')}
+                  >
+                    {hasFullAccess ? (
+                      <>Executar agora <ChevronRight className="w-4 h-4 ml-1" /></>
+                    ) : (
+                      <><Lock className="w-4 h-4 mr-2" /> Desbloquear para executar</>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })()}
+
+        {/* === CURRENT MOMENT READING === */}
+        {items.length > 0 && (() => {
+          const totalActions = items.reduce((s, i) => s + i.actionsTotal, 0);
+          const completedActions = items.reduce((s, i) => s + i.actionsCompleted, 0);
+          const startedActions = items.reduce((s, i) => s + i.actionsStarted, 0);
+          const abandonedActions = items.reduce((s, i) => s + i.actionsAbandoned, 0);
+
+          let momentText = '';
+          let momentType: 'warn' | 'progress' | 'success' | 'abandon' = 'warn';
+
+          if (totalActions === 0) {
+            momentText = 'Você ainda não tem ações vinculadas. Faça um teste para começar.';
+          } else if (completedActions === totalActions) {
+            momentText = 'Você está executando melhor do que antes. Ciclo concluído.';
+            momentType = 'success';
+          } else if (abandonedActions > 0) {
+            momentText = 'Você está repetindo o ponto onde costuma parar.';
+            momentType = 'abandon';
+          } else if (startedActions > 0 && completedActions < startedActions) {
+            momentText = 'Você iniciou, mas ainda não sustentou.';
+            momentType = 'progress';
+          } else if (startedActions === 0) {
+            momentText = 'Você tem ações pendentes, mas ainda não começou nenhuma.';
+            momentType = 'warn';
+          } else {
+            momentText = 'Continue executando. O padrão só enfraquece com ação real.';
+            momentType = 'progress';
+          }
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+              <Card className={`${
+                momentType === 'abandon' ? 'border-destructive/20' :
+                momentType === 'success' ? 'border-green-500/20' :
+                momentType === 'progress' ? 'border-primary/20' : 'border-border'
+              }`}>
+                <CardContent className="p-5">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Seu momento atual</p>
+                  <div className="flex items-center gap-3">
+                    {momentType === 'abandon' ? <Flame className="w-5 h-5 text-destructive shrink-0" /> :
+                     momentType === 'success' ? <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0" /> :
+                     momentType === 'progress' ? <TrendingUp className="w-5 h-5 text-primary shrink-0" /> :
+                     <AlertTriangle className="w-5 h-5 text-muted-foreground shrink-0" />}
+                    <p className={`text-sm font-semibold ${
+                      momentType === 'abandon' ? 'text-destructive' :
+                      momentType === 'success' ? 'text-green-700' :
+                      momentType === 'progress' ? 'text-primary' : 'text-muted-foreground'
+                    }`}>{momentText}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })()}
+
         {/* Period Stats — Premium only */}
         {hasFullAccess && items.length > 0 && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
