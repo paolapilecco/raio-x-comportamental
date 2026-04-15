@@ -156,6 +156,12 @@ interface DiagnosticCore {
   priorityChangeDirection: string;
   corePatternMechanism: string;
   hiddenMotivation: string;
+  // ─── CICLO LÓGICO COMPLETO ───
+  causaProvavel: string;
+  gatilhoPrincipal: string;
+  comportamentoAutomatico: string;
+  justificativaInterna: string;
+  consequenciaRepetida: string;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -333,6 +339,24 @@ PRINCÍPIOS:
 4. Sem amenizar, sem "psicologuês", sem motivacional
 5. PROIBIDO: "busque equilíbrio", "tenha consciência", "acredite em si"
 
+REGRA DO CICLO LÓGICO:
+O núcleo DEVE conter um CICLO COMPLETO que conecta 5 campos obrigatórios:
+  causaProvavel → gatilhoPrincipal → comportamentoAutomatico → justificativaInterna → consequenciaRepetida
+
+Esse ciclo deve formar uma cadeia causal FECHADA:
+- A CAUSA gera vulnerabilidade ao GATILHO
+- O GATILHO dispara o COMPORTAMENTO AUTOMÁTICO
+- O comportamento é sustentado pela JUSTIFICATIVA INTERNA
+- A justificativa permite a CONSEQUÊNCIA se repetir
+- A consequência REFORÇA a causa original (loop)
+
+Exemplo de ciclo coerente:
+- causaProvavel: "Necessidade de aprovação externa instalada por ambiente familiar crítico"
+- gatilhoPrincipal: "Quando percebe que alguém pode estar decepcionado com seu desempenho"
+- comportamentoAutomatico: "Abandona a tarefa atual e inicia uma nova para gerar resultado visível rápido"
+- justificativaInterna: "Se eu entregar algo novo e impressionante, vão perceber meu valor"
+- consequenciaRepetida: "Acumula projetos inacabados, gerando mais frustração e confirmando a crença de incapacidade"
+
 Retorne APENAS JSON válido. Sem markdown, sem texto antes ou depois.`;
 
 function buildCoreOutputSchema(): string {
@@ -357,8 +381,16 @@ Retorne APENAS este JSON:
   "inconsistencies": ["inconsistência detectada 1", "inconsistência 2"],
   "priorityChangeDirection": "a mudança mais urgente e impactante — ponto de alavanca (1 frase)",
   "corePatternMechanism": "explicação do mecanismo neural/comportamental que instala e mantém o padrão (2 frases)",
-  "hiddenMotivation": "o que realmente motiva o comportamento por baixo da superfície — necessidade oculta (1 frase)"
-}`;
+  "hiddenMotivation": "o que realmente motiva o comportamento por baixo da superfície — necessidade oculta (1 frase)",
+
+  "causaProvavel": "origem provável do padrão — experiência, ambiente ou crença formadora que instalou a vulnerabilidade (1-2 frases)",
+  "gatilhoPrincipal": "situação específica e recorrente que ativa o padrão — contexto + emoção envolvida (1 frase concreta)",
+  "comportamentoAutomatico": "o que a pessoa FAZ automaticamente quando o gatilho dispara — ação observável, não sentimento (1 frase)",
+  "justificativaInterna": "a narrativa que a pessoa conta para si mesma para justificar o comportamento — a frase mental exata (1 frase entre aspas)",
+  "consequenciaRepetida": "o resultado concreto que se repete na vida — o preço real pago pelo padrão (1 frase)"
+}
+
+IMPORTANTE: Os 5 campos do ciclo (causaProvavel → gatilhoPrincipal → comportamentoAutomatico → justificativaInterna → consequenciaRepetida) devem formar uma CADEIA CAUSAL FECHADA onde a consequência reforça a causa original.`;
 }
 
 // ═══════════════════════════════════════════════════════════════
