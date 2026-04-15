@@ -243,15 +243,107 @@ const TestCatalog = () => {
           </motion.div>
         )}
 
-        {/* ═══ URGENCY BANNER ═══ */}
-        {urgencyText && (
-          <motion.div {...fadeUp} transition={{ delay: 0.01, duration: 0.4 }}
-            className="rounded-2xl border border-destructive/15 bg-destructive/[0.03] px-5 py-4 flex items-start gap-3"
+        {/* ═══ URGENCY BANNER — visual pressure ═══ */}
+        {urgencyText && daysSinceLastTest !== null && (
+          <motion.div
+            {...fadeUp}
+            transition={{ delay: 0.01, duration: 0.4 }}
+            className="rounded-2xl border overflow-hidden transition-all duration-500"
+            style={{
+              borderColor: daysSinceLastTest >= 10
+                ? 'hsl(0 65% 52% / 0.25)'
+                : daysSinceLastTest >= 5
+                  ? 'hsl(38 72% 50% / 0.2)'
+                  : 'hsl(var(--destructive) / 0.12)',
+              background: daysSinceLastTest >= 10
+                ? 'linear-gradient(135deg, hsl(0 65% 52% / 0.04), hsl(0 65% 52% / 0.08))'
+                : daysSinceLastTest >= 5
+                  ? 'linear-gradient(135deg, hsl(38 72% 50% / 0.03), hsl(38 72% 50% / 0.06))'
+                  : 'hsl(var(--destructive) / 0.03)',
+            }}
           >
-            <AlertTriangle className="w-4 h-4 text-destructive/50 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm font-semibold text-foreground/80 leading-relaxed">{urgencyText}</p>
-              <p className="text-xs text-muted-foreground/50 mt-1">O padrão não espera — ele se fortalece com cada dia sem ação.</p>
+            {/* Progress bar — fills based on days */}
+            <div className="h-1 w-full bg-secondary/20">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${Math.min((daysSinceLastTest / 15) * 100, 100)}%` }}
+                transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+                className="h-full rounded-r-full"
+                style={{
+                  background: daysSinceLastTest >= 10
+                    ? 'linear-gradient(90deg, hsl(38 72% 50%), hsl(0 65% 52%))'
+                    : daysSinceLastTest >= 5
+                      ? 'linear-gradient(90deg, hsl(48 80% 55%), hsl(38 72% 50%))'
+                      : 'hsl(38 72% 50% / 0.6)',
+                }}
+              />
+            </div>
+
+            <div className="px-5 py-4 flex items-start gap-4">
+              {/* Day counter — hero element */}
+              <div className="shrink-0 flex flex-col items-center">
+                <motion.span
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2, type: 'spring', stiffness: 200 }}
+                  className="text-3xl sm:text-4xl font-black tabular-nums leading-none"
+                  style={{
+                    color: daysSinceLastTest >= 10
+                      ? 'hsl(0 65% 52%)'
+                      : daysSinceLastTest >= 5
+                        ? 'hsl(38 72% 50%)'
+                        : 'hsl(var(--destructive) / 0.6)',
+                  }}
+                >
+                  {daysSinceLastTest}
+                </motion.span>
+                <span className="text-[0.55rem] font-bold uppercase tracking-widest text-muted-foreground/40 mt-1">
+                  {daysSinceLastTest === 1 ? 'dia' : 'dias'}
+                </span>
+              </div>
+
+              {/* Message */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-foreground/85 leading-snug">
+                  {daysSinceLastTest === 0
+                    ? 'O padrão continua ativo agora.'
+                    : daysSinceLastTest <= 2
+                      ? `${daysSinceLastTest} dia${daysSinceLastTest > 1 ? 's' : ''} sem agir — o padrão está ganhando força.`
+                      : daysSinceLastTest <= 7
+                        ? `${daysSinceLastTest} dias sem ação — o cérebro já está normalizando.`
+                        : daysSinceLastTest <= 15
+                          ? `${daysSinceLastTest} dias parado. O padrão já voltou ao controle.`
+                          : `Há ${daysSinceLastTest} dias o padrão opera sem resistência.`
+                  }
+                </p>
+                <p className="text-xs text-muted-foreground/50 mt-1 leading-relaxed">
+                  {daysSinceLastTest <= 3
+                    ? 'Cada dia sem ação fortalece o que você quer mudar.'
+                    : daysSinceLastTest <= 10
+                      ? 'Quanto mais tempo, mais automático fica — e mais difícil de quebrar.'
+                      : 'Você vai esperar até não conseguir mais voltar?'
+                  }
+                </p>
+              </div>
+
+              {/* Flame icon with pulse for high urgency */}
+              {daysSinceLastTest >= 5 && (
+                <div className="shrink-0 self-center">
+                  <motion.div
+                    animate={daysSinceLastTest >= 10 ? { scale: [1, 1.15, 1] } : {}}
+                    transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
+                  >
+                    <Flame
+                      className="w-5 h-5"
+                      style={{
+                        color: daysSinceLastTest >= 10
+                          ? 'hsl(0 65% 52% / 0.6)'
+                          : 'hsl(38 72% 50% / 0.5)',
+                      }}
+                    />
+                  </motion.div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}
