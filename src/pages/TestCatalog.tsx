@@ -82,6 +82,44 @@ const MOST_POPULAR_SLUG = 'emocoes';
 
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
+/* ── Slug-to-pattern mapping for personalization ── */
+const slugToPatternKeywords: Record<string, string[]> = {
+  'execucao': ['unstable_execution', 'low_routine_sustenance', 'functional_overload'],
+  'emocoes': ['emotional_self_sabotage', 'discomfort_escape', 'excessive_self_criticism'],
+  'relacionamentos': ['validation_dependency', 'fear_of_judgment'],
+  'autoimagem': ['excessive_self_criticism', 'validation_dependency'],
+  'dinheiro': ['discomfort_escape', 'emotional_self_sabotage'],
+  'padroes-ocultos': ['emotional_self_sabotage', 'discomfort_escape', 'paralyzing_perfectionism'],
+  'proposito': ['low_routine_sustenance', 'unstable_execution'],
+  'mapa-de-vida': [],
+};
+
+const urgencyMessages = [
+  { min: 0, max: 2, text: 'Esse padrão continua ativo agora.' },
+  { min: 3, max: 5, text: 'Você está há {days} dias repetindo isso.' },
+  { min: 6, max: 10, text: 'Quanto mais você espera, mais automático fica.' },
+  { min: 11, max: 20, text: 'Já são {days} dias sem ação. O cérebro já normalizou o padrão.' },
+  { min: 21, max: Infinity, text: 'Há {days} dias o padrão opera sem resistência. Ele já venceu?' },
+];
+
+function getUrgencyMessage(daysSinceLastTest: number | null): string | null {
+  if (daysSinceLastTest === null) return null;
+  const entry = urgencyMessages.find(m => daysSinceLastTest >= m.min && daysSinceLastTest <= m.max);
+  return entry ? entry.text.replace('{days}', String(daysSinceLastTest)) : null;
+}
+
+/** Scores each slug by how relevant it is to the user's dominant patterns */
+function getPersonalizedSlug(scores: Record<string, number>): string | null {
+  let bestSlug: string | null = null;
+  let bestScore = 0;
+  for (const [slug, keys] of Object.entries(slugToPatternKeywords)) {
+    if (slug === 'padrao-comportamental' || keys.length === 0) continue;
+    const avg = keys.reduce((s, k) => s + (scores[k] || 0), 0) / keys.length;
+    if (avg > bestScore) { bestScore = avg; bestSlug = slug; }
+  }
+  return bestScore >= 40 ? bestSlug : null;
+}
+
 const TestCatalog = () => {
   const { user, profile, isPremium, isSuperAdmin, previewMode, togglePreviewMode } = useAuth();
   const realSuperAdmin = useAuth().role === 'super_admin';
@@ -90,6 +128,8 @@ const TestCatalog = () => {
   const [completedModules, setCompletedModules] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [upgradeModal, setUpgradeModal] = useState<TestModule | null>(null);
+  const [daysSinceLastTest, setDaysSinceLastTest] = useState<number | null>(null);
+  const [personalizedSlug, setPersonalizedSlug] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -111,9 +151,27 @@ const TestCatalog = () => {
         setModules(isSuperAdmin ? validModules : validModules.filter(m => !m._isIncomplete));
         if (user) {
           const { data: sessions } = await supabase
-            .from('diagnostic_sessions').select('test_module_id')
-            .eq('user_id', user.id).not('completed_at', 'is', null).not('test_module_id', 'is', null);
-          if (sessions) setCompletedModules(new Set(sessions.map(s => s.test_module_id!)));
+            .from('diagnostic_sessions').select('test_module_id, completed_at')
+            .eq('user_id', user.id).not('completed_at', 'is', null).not('test_module_id', 'is', null)
+            .order('completed_at', { ascending: false });
+          if (sessions) {
+            setCompletedModules(new Set(sessions.map(s => s.test_module_id!)));
+            if (sessions.length > 0 && sessions[0].completed_at) {
+              const last = new Date(sessions[0].completed_at);
+              const diff = Math.floor((Date.now() - last.getTime()) / (1000 * 60 * 60 * 24));
+              setDaysSinceLastTest(diff);
+            }
+          }
+          // Fetch central profile for personalization
+          const { data: centralProfile } = await supabase
+            .from('user_central_profile')
+            .select('aggregated_scores')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          if (centralProfile?.aggregated_scores) {
+            const scores = centralProfile.aggregated_scores as Record<string, number>;
+            setPersonalizedSlug(getPersonalizedSlug(scores));
+          }
         }
       } catch (err) {
         console.error('Error loading test catalog:', err);
@@ -128,15 +186,26 @@ const TestCatalog = () => {
   const showFull = isPremium || isSuperAdmin;
   const displayName = profile?.name?.split(' ')[0] || 'Usuário';
   const hasCompletedFreeTest = modules.some(m => m.slug === 'padrao-comportamental' && completedModules.has(m.id));
+  const urgencyText = hasCompletedFreeTest ? getUrgencyMessage(daysSinceLastTest) : null;
+
+  // Use personalized slug for recommendation if available, otherwise fall back to defaults
+  const effectiveRecommendedSlug = personalizedSlug || RECOMMENDED_SLUG;
 
   /* ── Separate free vs locked ── */
   const freeModules = modules.filter(m => m.slug === 'padrao-comportamental' || showFull);
   const lockedModules = showFull ? [] : modules.filter(m => m.slug !== 'padrao-comportamental' && !m._isIncomplete);
   const incompleteModules = isSuperAdmin ? modules.filter(m => m._isIncomplete) : [];
 
+  // Sort locked modules: personalized first
+  const sortedLockedModules = [...lockedModules].sort((a, b) => {
+    if (a.slug === effectiveRecommendedSlug) return -1;
+    if (b.slug === effectiveRecommendedSlug) return 1;
+    return 0;
+  });
+
   /* ── Find recommended next test ── */
   const recommendedNext = hasCompletedFreeTest && !showFull
-    ? lockedModules.find(m => m.slug === RECOMMENDED_SLUG) || lockedModules[0]
+    ? sortedLockedModules.find(m => m.slug === effectiveRecommendedSlug) || sortedLockedModules[0]
     : null;
 
   return (
@@ -174,7 +243,18 @@ const TestCatalog = () => {
           </motion.div>
         )}
 
-        {/* ═══ NEXT STEP BANNER (after free test completed) ═══ */}
+        {/* ═══ URGENCY BANNER ═══ */}
+        {urgencyText && (
+          <motion.div {...fadeUp} transition={{ delay: 0.01, duration: 0.4 }}
+            className="rounded-2xl border border-destructive/15 bg-destructive/[0.03] px-5 py-4 flex items-start gap-3"
+          >
+            <AlertTriangle className="w-4 h-4 text-destructive/50 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-semibold text-foreground/80 leading-relaxed">{urgencyText}</p>
+              <p className="text-xs text-muted-foreground/50 mt-1">O padrão não espera — ele se fortalece com cada dia sem ação.</p>
+            </div>
+          </motion.div>
+        )}
         {recommendedNext && (
           <motion.section {...fadeUp} transition={{ delay: 0.02, duration: 0.4 }}>
             <div
@@ -215,7 +295,7 @@ const TestCatalog = () => {
         </div>
 
         {/* ═══ LOCKED TESTS — Desirable ═══ */}
-        {lockedModules.length > 0 && (
+        {sortedLockedModules.length > 0 && (
           <div className="space-y-4 pt-2">
             <div className="flex items-center gap-3">
               <p className="text-[0.6rem] uppercase tracking-[0.15em] text-muted-foreground font-semibold">
@@ -228,9 +308,9 @@ const TestCatalog = () => {
               </div>
             </div>
 
-            {lockedModules.map((mod, i) => {
+            {sortedLockedModules.map((mod, i) => {
               let badge: 'recommended' | 'popular' | null = null;
-              if (hasCompletedFreeTest && mod.slug === RECOMMENDED_SLUG) badge = 'recommended';
+              if (hasCompletedFreeTest && mod.slug === effectiveRecommendedSlug) badge = 'recommended';
               else if (mod.slug === MOST_POPULAR_SLUG) badge = 'popular';
 
               return (
@@ -241,6 +321,7 @@ const TestCatalog = () => {
                   isCompleted={false}
                   isLocked={true}
                   badge={badge}
+                  isPersonalized={badge === 'recommended' && !!personalizedSlug}
                   onStart={() => setUpgradeModal(mod)}
                 />
               );
@@ -291,12 +372,13 @@ const TestCatalog = () => {
 /* ═══════════════════════════════════════════════════════════
    TEST CARD COMPONENT
    ═══════════════════════════════════════════════════════════ */
-function TestCard({ mod, index, isCompleted, isLocked, badge, onStart }: {
+function TestCard({ mod, index, isCompleted, isLocked, badge, isPersonalized, onStart }: {
   mod: TestModule;
   index: number;
   isCompleted: boolean;
   isLocked: boolean;
   badge: 'recommended' | 'popular' | null;
+  isPersonalized?: boolean;
   onStart: () => void;
 }) {
   const Icon = iconMap[mod.icon] || Brain;
@@ -333,7 +415,9 @@ function TestCard({ mod, index, isCompleted, isLocked, badge, onStart }: {
             {badge === 'recommended' ? (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/[0.06] border border-primary/12">
                 <Star className="w-3 h-3 text-primary/60" />
-                <span className="text-[0.55rem] font-bold text-primary/70 uppercase tracking-wider">Recomendado para você</span>
+                <span className="text-[0.55rem] font-bold text-primary/70 uppercase tracking-wider">
+                  {isPersonalized ? 'Conectado ao seu padrão' : 'Recomendado para você'}
+                </span>
               </div>
             ) : (
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/[0.06] border border-amber-500/12">
