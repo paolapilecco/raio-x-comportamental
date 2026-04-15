@@ -556,6 +556,56 @@ export default function Tracking() {
             })}
           </div>
         )}
+
+        {/* === CLEAR DIRECTIVE === */}
+        {items.length > 0 && (() => {
+          const priorityItem = items.find(i => i.actionsStarted > 0 && i.actionsCompleted < i.actionsTotal)
+            || items.find(i => i.actionsCompleted < i.actionsTotal);
+          
+          if (!priorityItem) {
+            const retestItem = items.find(i => i.retestAvailable);
+            if (retestItem) {
+              return (
+                <Card className="border-accent/20 bg-accent/[0.03]">
+                  <CardContent className="p-5">
+                    <p className="text-[10px] uppercase tracking-widest text-accent font-bold mb-2">O que você precisa fazer agora</p>
+                    <p className="text-sm font-semibold text-foreground mb-3">Preparar o próximo ciclo — refazer o teste "{retestItem.testName}" e validar se o padrão mudou.</p>
+                    <Button variant="outline" className="w-full border-accent/30 text-accent hover:bg-accent/5" onClick={() => navigate('/tests')}>
+                      Iniciar reteste
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            }
+            return null;
+          }
+
+          const phase = priorityItem.actionsCompleted === 0 ? 'consciência'
+            : priorityItem.actionsCompleted === 1 ? 'interrupção' : 'consolidação';
+
+          const directive = priorityItem.actionsAbandoned > 0
+            ? `Voltar para a tarefa de ${phase} do teste "${priorityItem.testName}".`
+            : priorityItem.actionsStarted > 0
+            ? `Finalizar a fase de ${phase}.`
+            : `Iniciar a primeira ação do teste "${priorityItem.testName}".`;
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+              <Card className="border-primary/20 bg-primary/[0.02]">
+                <CardContent className="p-5">
+                  <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">O que você precisa fazer agora</p>
+                  <p className="text-sm font-semibold text-foreground mb-3">{directive}</p>
+                  <Button
+                    className="w-full font-bold"
+                    onClick={() => hasFullAccess ? navigate(`/acompanhamento/${priorityItem.testModuleId}`) : navigate('/checkout')}
+                  >
+                    {hasFullAccess ? 'Ir para a ação' : <><Lock className="w-4 h-4 mr-2" /> Desbloquear</>}
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          );
+        })()}
       </div>
     </AppLayout>
   );
