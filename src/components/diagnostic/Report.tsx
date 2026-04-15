@@ -196,6 +196,9 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           </div>
         </motion.header>
 
+        {/* ── Diagnostic Trust Layer ── */}
+        <DiagnosticTrustLayer interpretation={result.interpretation} />
+
         {/* ── Profile Identity ── */}
         <motion.div {...fade} transition={{ delay: 0.1, duration: 0.5 }} className="mb-20">
           <div className="border-l-[3px] border-primary/30 pl-6">
