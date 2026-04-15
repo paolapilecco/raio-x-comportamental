@@ -137,7 +137,9 @@ export function analyzeGenericTest(
   interpretation.responsePatternFlags = consistency.responsePatternFlags;
   interpretation.temperamentProfile = temperament;
 
-  const combinedTitle = secondary.length > 0
+  const corePain = interpretation.derivedCorePain || dominantDef.corePain;
+  const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;
+
     ? `${dominantDef.label} com ${secondaryDefs[0]?.label}`
     : dominantDef.label;
 
