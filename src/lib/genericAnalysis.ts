@@ -89,7 +89,29 @@ export function analyzeGenericTest(
     percentage: maxScores[key] > 0 ? Math.min(100, Math.round((rawScores[key] / maxScores[key]) * 100)) : 0,
   })).sort((a, b) => b.percentage - a.percentage);
 
-  const allScores = normalizeScoresForDiagnosis(rawAllScores);
+  // Build scores map for consistency analysis
+  const scoresMap: Record<string, number> = {};
+  rawAllScores.forEach(s => { scoresMap[s.key] = s.percentage; });
+
+  // Run consistency engine
+  const questionsWithMeta: QuestionWithMeta[] = questions.map(q => ({
+    id: q.id,
+    axes: q.axes,
+    type: q.type,
+    question_category: (q as any).question_category,
+    mirror_pair_id: (q as any).mirror_pair_id,
+    is_counterproof: (q as any).is_counterproof,
+    weight: q.weight,
+    option_scores: q.option_scores,
+  }));
+  const consistency = analyzeConsistency(answers, questionsWithMeta, scoresMap);
+
+  // Apply counter-proof adjustments to scores
+  const adjustedScores = applyCounterproofAdjustments(rawAllScores, consistency.counterproofAdjustments);
+  const allScores = normalizeScoresForDiagnosis(adjustedScores);
+
+  // Calculate temperament
+  const temperament = calculateTemperament(scoresMap);
 
   const dominant = allScores[0];
   const secondary = allScores.slice(1, 3).filter(s => s.percentage >= 40);
