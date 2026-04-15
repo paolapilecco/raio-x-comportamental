@@ -66,6 +66,20 @@ export interface InterpretiveInsight {
   interpretiveSummary: string;
   behavioralProfile: BehavioralProfile;
   blindSpot: BlindSpot;
+  // Enhanced consistency fields
+  consistencyScore?: number;        // 0-100
+  confidenceLevel?: 'alta' | 'media' | 'baixa';
+  confidenceScore?: number;         // 0-100
+  contradictionCount?: number;
+  responsePatternFlags?: string[];
+  temperamentProfile?: {
+    sanguineo: number;
+    colerico: number;
+    melancolico: number;
+    fleumatico: number;
+    dominant: string;
+    secondary: string | null;
+  };
 }
 
 export interface DiagnosticResult {
