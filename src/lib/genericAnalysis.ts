@@ -129,8 +129,13 @@ export function analyzeGenericTest(
   }));
   const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label, moduleSlug);
 
-  const corePain = interpretation.derivedCorePain || dominantDef.corePain;
-  const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;
+  // Enrich interpretation with consistency data
+  interpretation.consistencyScore = consistency.consistencyScore;
+  interpretation.confidenceLevel = consistency.confidenceLevel;
+  interpretation.confidenceScore = consistency.confidenceScore;
+  interpretation.contradictionCount = consistency.contradictionCount;
+  interpretation.responsePatternFlags = consistency.responsePatternFlags;
+  interpretation.temperamentProfile = temperament;
 
   const combinedTitle = secondary.length > 0
     ? `${dominantDef.label} com ${secondaryDefs[0]?.label}`
