@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams, useNavigate } from 'react-router-dom';
 import { parseActionString } from '@/lib/buildActionPreview';
@@ -15,7 +15,8 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   ArrowLeft, CheckCircle2, RefreshCw, Sparkles, ChevronDown, ChevronUp,
   Save, Lock, Crown, History, Target, AlertTriangle, Zap,
-  Play, Eye, Hammer, RotateCcw, Calendar
+  Play, Eye, Hammer, RotateCcw, Calendar, TrendingUp, TrendingDown, Minus,
+  Shield, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -43,10 +44,29 @@ interface CycleData {
   dominantPattern: string;
   profileName: string;
   stateSummary: string;
+  intensity: string;
+  contradiction: string;
+  selfDeceptionIndex: number;
+  confidenceScore: number;
+  consistencyScore: number;
   allScores: { key: string; label: string; percentage: number }[];
   topScore: { label: string; percentage: number } | null;
   actions: ActionItem[];
   aiFeedback: string | null;
+}
+
+type EvolutionClass = 'evolution' | 'stagnation' | 'regression';
+
+interface EvolutionComparison {
+  classification: EvolutionClass;
+  patternChanged: boolean;
+  intensityDelta: number; // negative = improvement
+  selfDeceptionDelta: number;
+  confidenceDelta: number;
+  consistencyDelta: number;
+  interpretation: string;
+  riskMessage: string | null;
+  scoreDiffs: { key: string; label: string; prev: number; curr: number; delta: number }[];
 }
 
 const RETEST_DAYS = 15;
@@ -69,6 +89,9 @@ const PHASE_COLORS: Record<string, string> = {
   interrupcao: 'text-orange-500 bg-orange-500/10 border-orange-500/20',
   consolidacao: 'text-green-600 bg-green-500/10 border-green-500/20',
 };
+
+const INTENSITY_VALUE: Record<string, number> = { leve: 1, moderado: 2, alto: 3 };
+const INTENSITY_LABEL: Record<string, string> = { leve: 'Leve', moderado: 'Moderado', alto: 'Alto' };
 
 function getTaskStatus(action: ActionItem): 'not_started' | 'in_progress' | 'completed' | 'abandoned' {
   if (action.completed) return 'completed';
@@ -102,6 +125,74 @@ function parseMetadata(actionText: string, index: number): Pick<ActionItem, 'tit
   } catch {
     return { titulo: '', objetivo: '', fase: phases[index] || 'consciencia', padraoAlvo: '' };
   }
+}
+
+function computeEvolution(prev: CycleData, curr: CycleData): EvolutionComparison {
+  const patternChanged = prev.dominantPattern !== curr.dominantPattern;
+  const prevIntensity = INTENSITY_VALUE[prev.intensity] || 2;
+  const currIntensity = INTENSITY_VALUE[curr.intensity] || 2;
+  const intensityDelta = currIntensity - prevIntensity;
+  const selfDeceptionDelta = (curr.selfDeceptionIndex || 0) - (prev.selfDeceptionIndex || 0);
+  const confidenceDelta = (curr.confidenceScore || 0) - (prev.confidenceScore || 0);
+  const consistencyDelta = (curr.consistencyScore || 0) - (prev.consistencyScore || 0);
+
+  // Build score diffs
+  const prevScoreMap = new Map(prev.allScores.map(s => [s.key, s]));
+  const scoreDiffs = curr.allScores.map(s => {
+    const p = prevScoreMap.get(s.key);
+    return { key: s.key, label: s.label, prev: p?.percentage || 0, curr: s.percentage, delta: s.percentage - (p?.percentage || 0) };
+  });
+
+  // Classify
+  const improvementSignals = [
+    intensityDelta < 0,
+    selfDeceptionDelta < 0,
+    confidenceDelta > 5,
+    consistencyDelta > 5,
+    patternChanged,
+  ].filter(Boolean).length;
+
+  const regressionSignals = [
+    intensityDelta > 0,
+    selfDeceptionDelta > 5,
+    confidenceDelta < -5,
+    consistencyDelta < -5,
+  ].filter(Boolean).length;
+
+  let classification: EvolutionClass = 'stagnation';
+  if (improvementSignals >= 2) classification = 'evolution';
+  else if (regressionSignals >= 2) classification = 'regression';
+
+  // Interpretation
+  let interpretation = '';
+  if (classification === 'evolution') {
+    if (patternChanged) {
+      interpretation = `Seu padrão dominante mudou de "${prev.dominantPattern}" para "${curr.dominantPattern}". Isso indica uma reestruturação real do comportamento.`;
+    } else {
+      interpretation = `Seu padrão "${curr.dominantPattern}" enfraqueceu. A intensidade diminuiu e os indicadores mostram progresso real.`;
+    }
+    if (selfDeceptionDelta < -5) interpretation += ' Seu índice de autoengano caiu — você está se vendo com mais clareza.';
+  } else if (classification === 'regression') {
+    interpretation = `Houve regressão — o comportamento "${curr.dominantPattern}" voltou a se fortalecer.`;
+    if (selfDeceptionDelta > 5) interpretation += ' Seu índice de autoengano subiu. Pode estar justificando o padrão novamente.';
+    if (intensityDelta > 0) interpretation += ` A intensidade subiu de ${INTENSITY_LABEL[prev.intensity] || prev.intensity} para ${INTENSITY_LABEL[curr.intensity] || curr.intensity}.`;
+  } else {
+    interpretation = `Seu padrão "${curr.dominantPattern}" se mantém ativo com a mesma intensidade. Houve entendimento, mas ainda não houve mudança estrutural.`;
+  }
+
+  // Risk
+  let riskMessage: string | null = null;
+  if (classification === 'evolution') {
+    const prevCompleted = prev.actions.filter(a => a.completed).length;
+    const prevTotal = prev.actions.length;
+    if (prevTotal > 0 && prevCompleted < prevTotal) {
+      riskMessage = 'Você melhorou, mas ainda está instável. Sem continuidade, esse padrão pode voltar.';
+    }
+  } else if (classification === 'regression') {
+    riskMessage = 'A regressão indica que o padrão retomou controle. Ação imediata é necessária.';
+  }
+
+  return { classification, patternChanged, intensityDelta, selfDeceptionDelta, confidenceDelta, consistencyDelta, interpretation, riskMessage, scoreDiffs };
 }
 
 export default function TrackingDetail() {
@@ -142,7 +233,7 @@ export default function TrackingDetail() {
         const sessionIds = sessions.map(s => s.id);
         const { data: results } = await supabase
           .from('diagnostic_results')
-          .select('id, session_id, dominant_pattern, profile_name, state_summary, all_scores')
+          .select('id, session_id, dominant_pattern, profile_name, state_summary, all_scores, intensity, contradiction, self_deception_index, confidence_score, consistency_score')
           .in('session_id', sessionIds);
 
         if (!results?.length) { setLoading(false); return; }
@@ -189,6 +280,11 @@ export default function TrackingDetail() {
             dominantPattern: result.dominant_pattern,
             profileName: result.profile_name,
             stateSummary: result.state_summary,
+            intensity: result.intensity || 'moderado',
+            contradiction: result.contradiction || '',
+            selfDeceptionIndex: result.self_deception_index || 0,
+            confidenceScore: result.confidence_score || 0,
+            consistencyScore: result.consistency_score || 0,
             allScores: scores,
             topScore,
             actions: actionsByResult.get(result.id) || [],
@@ -210,6 +306,12 @@ export default function TrackingDetail() {
 
   const activeCycle = cycles[activeCycleIndex] || null;
 
+  // Evolution comparison — compare active cycle with previous
+  const evolution = useMemo<EvolutionComparison | null>(() => {
+    if (activeCycleIndex <= 0 || !cycles[activeCycleIndex] || !cycles[activeCycleIndex - 1]) return null;
+    return computeEvolution(cycles[activeCycleIndex - 1], cycles[activeCycleIndex]);
+  }, [cycles, activeCycleIndex]);
+
   const updateActionInCycle = useCallback((actionId: string, updates: Partial<ActionItem>) => {
     setCycles(prev => prev.map((cycle, idx) =>
       idx === activeCycleIndex
@@ -221,43 +323,22 @@ export default function TrackingDetail() {
   const startTask = useCallback(async (actionId: string) => {
     const now = new Date().toISOString();
     updateActionInCycle(actionId, { started_at: now });
-
-    const { error } = await supabase
-      .from('action_plan_tracking')
-      .update({ started_at: now })
-      .eq('id', actionId);
-
-    if (error) {
-      updateActionInCycle(actionId, { started_at: null });
-      toast.error('Erro ao iniciar tarefa');
-    } else {
-      toast.success('Tarefa iniciada');
-    }
+    const { error } = await supabase.from('action_plan_tracking').update({ started_at: now }).eq('id', actionId);
+    if (error) { updateActionInCycle(actionId, { started_at: null }); toast.error('Erro ao iniciar tarefa'); }
+    else toast.success('Tarefa iniciada');
   }, [updateActionInCycle]);
 
   const toggleAction = useCallback(async (actionId: string, completed: boolean) => {
     const now = completed ? new Date().toISOString() : null;
     const startedNow = completed ? new Date().toISOString() : undefined;
-
     const updates: Partial<ActionItem> = { completed, completed_at: now };
-    // Auto-start if completing without started_at
     const action = activeCycle?.actions.find(a => a.id === actionId);
-    if (completed && action && !action.started_at) {
-      updates.started_at = startedNow;
-    }
-
+    if (completed && action && !action.started_at) updates.started_at = startedNow;
     updateActionInCycle(actionId, updates);
-
     const dbUpdate: any = { completed, completed_at: now };
-    if (completed && action && !action.started_at) {
-      dbUpdate.started_at = startedNow;
-    }
-
+    if (completed && action && !action.started_at) dbUpdate.started_at = startedNow;
     const { error } = await supabase.from('action_plan_tracking').update(dbUpdate).eq('id', actionId);
-    if (error) {
-      updateActionInCycle(actionId, { completed: !completed });
-      toast.error('Erro ao atualizar ação');
-    }
+    if (error) { updateActionInCycle(actionId, { completed: !completed }); toast.error('Erro ao atualizar ação'); }
   }, [updateActionInCycle, activeCycle]);
 
   const saveNotes = useCallback(async (actionId: string, notes: string) => {
@@ -346,8 +427,19 @@ export default function TrackingDetail() {
   const hasAnyNote = activeCycle.actions.some(a => a.notes?.trim());
   const canRequestFeedback = hasAnyCompletion || hasAnyNote;
   const notesCount = activeCycle.actions.filter(a => a.notes?.trim()).length;
-
   const sortedActions = [...activeCycle.actions].sort((a, b) => a.day_number - b.day_number);
+
+  const evolutionColors: Record<EvolutionClass, string> = {
+    evolution: 'border-green-500/30 bg-green-500/[0.03]',
+    stagnation: 'border-amber-500/30 bg-amber-500/[0.03]',
+    regression: 'border-destructive/30 bg-destructive/[0.03]',
+  };
+
+  const evolutionLabels: Record<EvolutionClass, { label: string; icon: typeof TrendingUp }> = {
+    evolution: { label: 'Evolução Real', icon: TrendingUp },
+    stagnation: { label: 'Estagnação', icon: Minus },
+    regression: { label: 'Regressão', icon: TrendingDown },
+  };
 
   return (
     <AppLayout>
@@ -415,6 +507,178 @@ export default function TrackingDetail() {
           </motion.div>
         )}
 
+        {/* === EVOLUTION TIMELINE === */}
+        {cycles.length > 1 && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <History className="w-4 h-4 text-primary" />
+                  <h3 className="text-sm font-semibold text-foreground">Linha do Tempo</h3>
+                </div>
+                <div className="relative">
+                  {/* Timeline line */}
+                  <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border/50" />
+                  
+                  {cycles.map((cycle, idx) => {
+                    const isActive = idx === activeCycleIndex;
+                    const cycleCompleted = cycle.actions.filter(a => a.completed).length;
+                    const cyclePct = cycle.actions.length > 0 ? Math.round((cycleCompleted / cycle.actions.length) * 100) : 0;
+                    const prevCycle = idx > 0 ? cycles[idx - 1] : null;
+                    const patternChanged = prevCycle && prevCycle.dominantPattern !== cycle.dominantPattern;
+
+                    return (
+                      <div key={cycle.sessionId} className="relative pl-10 pb-4 last:pb-0">
+                        {/* Dot */}
+                        <div className={`absolute left-2.5 w-3.5 h-3.5 rounded-full border-2 ${
+                          isActive ? 'bg-primary border-primary' :
+                          cyclePct === 100 ? 'bg-green-500 border-green-500' :
+                          'bg-background border-muted-foreground/30'
+                        }`} style={{ top: '4px' }} />
+                        
+                        <button
+                          onClick={() => setActiveCycleIndex(idx)}
+                          className={`w-full text-left p-2.5 rounded-lg transition-all ${
+                            isActive ? 'bg-primary/5 border border-primary/20' : 'hover:bg-secondary/30'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-xs font-bold text-foreground">Ciclo {cycle.cycleNumber}</span>
+                              <span className="text-[10px] text-muted-foreground ml-2">
+                                {new Date(cycle.completedAt).toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+                            <span className="text-[10px] font-medium text-muted-foreground">{cyclePct}%</span>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">{cycle.profileName}</p>
+                          {patternChanged && (
+                            <div className="flex items-center gap-1 mt-1">
+                              <ArrowUpRight className="w-3 h-3 text-green-600" />
+                              <span className="text-[10px] font-medium text-green-600">Padrão mudou</span>
+                            </div>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
+        {/* === EVOLUTION COMPARISON === */}
+        {evolution && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.03 }}>
+            <Card className={evolutionColors[evolution.classification]}>
+              <CardContent className="p-5 space-y-4">
+                {/* Classification badge */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    {(() => {
+                      const EvIcon = evolutionLabels[evolution.classification].icon;
+                      return <EvIcon className={`w-5 h-5 ${
+                        evolution.classification === 'evolution' ? 'text-green-600' :
+                        evolution.classification === 'regression' ? 'text-destructive' : 'text-amber-500'
+                      }`} />;
+                    })()}
+                    <h3 className="text-sm font-bold text-foreground">
+                      Comparação: Ciclo {activeCycleIndex} → {activeCycleIndex + 1}
+                    </h3>
+                  </div>
+                  <Badge className={`text-[10px] ${
+                    evolution.classification === 'evolution' ? 'bg-green-500/15 text-green-600 border-green-500/30' :
+                    evolution.classification === 'regression' ? 'bg-destructive/15 text-destructive border-destructive/30' :
+                    'bg-amber-500/15 text-amber-600 border-amber-500/30'
+                  }`}>
+                    {evolutionLabels[evolution.classification].label}
+                  </Badge>
+                </div>
+
+                {/* Interpretation */}
+                <p className="text-sm text-foreground leading-relaxed">{evolution.interpretation}</p>
+
+                {/* Key metrics */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-xl bg-background/50 border border-border/30">
+                    <p className="text-[10px] text-muted-foreground mb-1">Intensidade</p>
+                    <div className="flex items-center gap-1.5">
+                      {evolution.intensityDelta < 0 ? <ArrowDownRight className="w-3.5 h-3.5 text-green-600" /> :
+                       evolution.intensityDelta > 0 ? <ArrowUpRight className="w-3.5 h-3.5 text-destructive" /> :
+                       <Minus className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <span className="text-sm font-bold text-foreground">
+                        {INTENSITY_LABEL[activeCycle.intensity] || activeCycle.intensity}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-background/50 border border-border/30">
+                    <p className="text-[10px] text-muted-foreground mb-1">Autoengano</p>
+                    <div className="flex items-center gap-1.5">
+                      {evolution.selfDeceptionDelta < 0 ? <ArrowDownRight className="w-3.5 h-3.5 text-green-600" /> :
+                       evolution.selfDeceptionDelta > 0 ? <ArrowUpRight className="w-3.5 h-3.5 text-destructive" /> :
+                       <Minus className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <span className="text-sm font-bold text-foreground">{activeCycle.selfDeceptionIndex}%</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-background/50 border border-border/30">
+                    <p className="text-[10px] text-muted-foreground mb-1">Confiança</p>
+                    <div className="flex items-center gap-1.5">
+                      {evolution.confidenceDelta > 0 ? <ArrowUpRight className="w-3.5 h-3.5 text-green-600" /> :
+                       evolution.confidenceDelta < 0 ? <ArrowDownRight className="w-3.5 h-3.5 text-destructive" /> :
+                       <Minus className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <span className="text-sm font-bold text-foreground">{activeCycle.confidenceScore}%</span>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl bg-background/50 border border-border/30">
+                    <p className="text-[10px] text-muted-foreground mb-1">Consistência</p>
+                    <div className="flex items-center gap-1.5">
+                      {evolution.consistencyDelta > 0 ? <ArrowUpRight className="w-3.5 h-3.5 text-green-600" /> :
+                       evolution.consistencyDelta < 0 ? <ArrowDownRight className="w-3.5 h-3.5 text-destructive" /> :
+                       <Minus className="w-3.5 h-3.5 text-muted-foreground" />}
+                      <span className="text-sm font-bold text-foreground">{activeCycle.consistencyScore}%</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Score diffs */}
+                {evolution.scoreDiffs.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">Mudança por eixo</p>
+                    {evolution.scoreDiffs.map(sd => (
+                      <div key={sd.key} className="flex items-center gap-3">
+                        <span className="text-[11px] text-muted-foreground w-28 truncate">{sd.label}</span>
+                        <div className="flex-1 h-1.5 rounded-full bg-secondary/60 overflow-hidden">
+                          <div className="h-full rounded-full bg-primary/60" style={{ width: `${sd.curr}%` }} />
+                        </div>
+                        <span className={`text-[11px] font-bold tabular-nums w-12 text-right ${
+                          sd.delta < -3 ? 'text-green-600' : sd.delta > 3 ? 'text-destructive' : 'text-muted-foreground'
+                        }`}>
+                          {sd.delta > 0 ? '+' : ''}{sd.delta}%
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Risk warning */}
+                {evolution.riskMessage && (
+                  <div className={`flex items-start gap-2.5 rounded-lg p-3 ${
+                    evolution.classification === 'regression' ? 'bg-destructive/5 border border-destructive/10' : 'bg-amber-500/5 border border-amber-500/10'
+                  }`}>
+                    <Shield className={`w-4 h-4 shrink-0 mt-0.5 ${
+                      evolution.classification === 'regression' ? 'text-destructive' : 'text-amber-500'
+                    }`} />
+                    <p className={`text-xs font-medium ${
+                      evolution.classification === 'regression' ? 'text-destructive/80' : 'text-amber-600'
+                    }`}>{evolution.riskMessage}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Diagnosis summary */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <Card>
@@ -424,14 +688,34 @@ export default function TrackingDetail() {
                   <p className="text-xs text-muted-foreground">Ciclo {activeCycle.cycleNumber} — Diagnóstico</p>
                   <p className="font-semibold text-foreground">{activeCycle.profileName}</p>
                 </div>
-                {activeCycle.topScore && (
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Eixo mais alto</p>
-                    <p className="text-sm font-semibold text-primary">{activeCycle.topScore.label}: {activeCycle.topScore.percentage}%</p>
-                  </div>
-                )}
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-[10px]">
+                    {INTENSITY_LABEL[activeCycle.intensity] || activeCycle.intensity}
+                  </Badge>
+                  {activeCycle.topScore && (
+                    <div className="text-right">
+                      <p className="text-[10px] text-muted-foreground">Eixo mais alto</p>
+                      <p className="text-xs font-semibold text-primary">{activeCycle.topScore.label}: {activeCycle.topScore.percentage}%</p>
+                    </div>
+                  )}
+                </div>
               </div>
               <p className="text-sm text-muted-foreground leading-relaxed">{activeCycle.stateSummary}</p>
+              
+              {/* Retest status indicator */}
+              {isLatestCycle && (
+                <div className="flex items-center gap-2 pt-1">
+                  <div className={`w-2 h-2 rounded-full ${
+                    retestAvailable ? 'bg-accent animate-pulse' :
+                    daysSinceTest >= RETEST_DAYS * 0.7 ? 'bg-amber-500' : 'bg-green-500'
+                  }`} />
+                  <span className="text-[10px] text-muted-foreground">
+                    {retestAvailable ? 'Reavaliação disponível' :
+                     daysSinceTest >= RETEST_DAYS * 0.7 ? `Reavaliação em ${daysUntilRetest} dias` :
+                     `Período de execução — ${daysUntilRetest} dias restantes`}
+                  </span>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -553,10 +837,7 @@ export default function TrackingDetail() {
 
                       {/* Task content */}
                       <div className="p-4 space-y-2">
-                        {/* Title + target */}
-                        {action.titulo && (
-                          <p className="text-sm font-semibold text-foreground">{action.titulo}</p>
-                        )}
+                        {action.titulo && <p className="text-sm font-semibold text-foreground">{action.titulo}</p>}
                         {action.padraoAlvo && (
                           <p className="text-[10px] text-muted-foreground">Padrão alvo: <span className="font-medium text-foreground/70">{action.padraoAlvo}</span></p>
                         )}
@@ -564,7 +845,6 @@ export default function TrackingDetail() {
                           <p className="text-xs text-muted-foreground leading-relaxed">Objetivo: {action.objetivo}</p>
                         )}
 
-                        {/* Trigger → Action */}
                         <div className="flex items-start gap-3 mt-2">
                           <Checkbox
                             checked={action.completed}
@@ -578,9 +858,7 @@ export default function TrackingDetail() {
                             </p>
                             <p className={`text-sm leading-relaxed ${
                               action.completed ? 'line-through text-muted-foreground' : 'text-foreground font-medium'
-                            }`}>
-                              {actionText}
-                            </p>
+                            }`}>{actionText}</p>
                           </div>
                           <button
                             onClick={() => setExpandedAction(isExpanded ? null : action.id)}
@@ -590,7 +868,6 @@ export default function TrackingDetail() {
                           </button>
                         </div>
 
-                        {/* Dates */}
                         <div className="flex items-center gap-4 text-[10px] text-muted-foreground/60 mt-2">
                           {action.started_at && (
                             <span className="flex items-center gap-1">
@@ -606,14 +883,8 @@ export default function TrackingDetail() {
                           )}
                         </div>
 
-                        {/* Start button if not started */}
                         {status === 'not_started' && isLatestCycle && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={(e) => { e.stopPropagation(); startTask(action.id); }}
-                            className="text-xs mt-2"
-                          >
+                          <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); startTask(action.id); }} className="text-xs mt-2">
                             <Play className="w-3 h-3 mr-1" /> Iniciar tarefa
                           </Button>
                         )}
@@ -636,8 +907,7 @@ export default function TrackingDetail() {
                           />
                           {!isPastCycle && (
                             <Button
-                              size="sm"
-                              variant="outline"
+                              size="sm" variant="outline"
                               onClick={() => saveNotes(action.id, action.notes)}
                               disabled={savingNotes.has(action.id)}
                               className="text-xs"
