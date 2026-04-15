@@ -140,6 +140,7 @@ export function analyzeGenericTest(
   const corePain = interpretation.derivedCorePain || dominantDef.corePain;
   const keyUnlockArea = interpretation.derivedKeyUnlockArea || dominantDef.keyUnlockArea;
 
+  const combinedTitle = secondary.length > 0
     ? `${dominantDef.label} com ${secondaryDefs[0]?.label}`
     : dominantDef.label;
 
