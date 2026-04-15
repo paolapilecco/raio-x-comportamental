@@ -4,6 +4,7 @@ import { patternDefinitions } from '@/data/patterns';
 import { generateInterpretation } from './interpretationEngine';
 import { validateAndRefineReport } from './reportQualityValidator';
 import { normalizeScoresForDiagnosis } from './scoreNormalization';
+import { analyzeConsistency, applyCounterproofAdjustments, calculateTemperament, type QuestionWithMeta } from './consistencyEngine';
 
 const ALL_PATTERNS: PatternKey[] = [
   'unstable_execution',
