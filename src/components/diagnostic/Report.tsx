@@ -558,7 +558,7 @@ function TarefasEstrategicasSection({ ai, result, dominantAxisLabel, profileName
 // SLOT RENDERER — maps format to visual component
 // ═══════════════════════════════════════════════════════════════
 
-function RenderSlot({ slot, actId, value, ai, result, delay }: {
+function RenderSlot({ slot, actId, value, ai, result: _result, delay }: {
   slot: StoryboardSlot; actId: string; value: string | string[] | null;
   ai: any; result: DiagnosticResult; delay: number;
 }) {
