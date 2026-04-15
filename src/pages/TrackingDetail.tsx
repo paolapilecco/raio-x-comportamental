@@ -127,7 +127,7 @@ function parseMetadata(actionText: string, index: number): Pick<ActionItem, 'tit
   }
 }
 
-function getEvolutionSummary(ev: EvolutionComparison, curr: CycleData): string {
+function getEvolutionSummary(ev: EvolutionComparison, _curr: CycleData): string {
   if (ev.classification === 'evolution') {
     if (ev.patternChanged) return 'Você evoluiu — o padrão dominante mudou. Agora precisa consolidar.';
     if (ev.consistencyDelta > 10) return 'Você evoluiu e está mais consistente. Falta sustentar.';
