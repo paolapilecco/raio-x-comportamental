@@ -295,7 +295,7 @@ const TestCatalog = () => {
         </div>
 
         {/* ═══ LOCKED TESTS — Desirable ═══ */}
-        {lockedModules.length > 0 && (
+        {sortedLockedModules.length > 0 && (
           <div className="space-y-4 pt-2">
             <div className="flex items-center gap-3">
               <p className="text-[0.6rem] uppercase tracking-[0.15em] text-muted-foreground font-semibold">
