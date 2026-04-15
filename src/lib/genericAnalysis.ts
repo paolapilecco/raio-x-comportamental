@@ -2,6 +2,7 @@ import { Answer, DiagnosticResult, IntensityLevel, PatternScore } from '@/types/
 import { generateInterpretation } from './interpretationEngine';
 import { validateAndRefineReport } from './reportQualityValidator';
 import { normalizeScoresForDiagnosis } from './scoreNormalization';
+import { analyzeConsistency, applyCounterproofAdjustments, calculateTemperament, type QuestionWithMeta } from './consistencyEngine';
 
 export interface GenericPatternDefinition {
   key: string;
