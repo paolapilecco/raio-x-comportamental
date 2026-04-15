@@ -4,6 +4,7 @@ import { patternDefinitions } from '@/data/patterns';
 import { generateInterpretation } from './interpretationEngine';
 import { validateAndRefineReport } from './reportQualityValidator';
 import { normalizeScoresForDiagnosis } from './scoreNormalization';
+import { analyzeConsistency, applyCounterproofAdjustments, calculateTemperament, type QuestionWithMeta } from './consistencyEngine';
 
 const ALL_PATTERNS: PatternKey[] = [
   'unstable_execution',
@@ -56,7 +57,29 @@ function getIntensity(percentage: number): IntensityLevel {
 }
 
 export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
-  const allScores = calculateScores(answers);
+  const rawAllScores = calculateScores(answers);
+
+  // Build scores map for consistency analysis
+  const scoresMap: Record<string, number> = {};
+  rawAllScores.forEach(s => { scoresMap[s.key] = s.percentage; });
+
+  // Run consistency engine
+  const questionsWithMeta: QuestionWithMeta[] = questions.map(q => ({
+    id: q.id,
+    axes: q.axes as string[],
+    type: (q as any).type || 'likert',
+    question_category: (q as any).question_category,
+    mirror_pair_id: (q as any).mirror_pair_id,
+    is_counterproof: (q as any).is_counterproof,
+  }));
+  const consistency = analyzeConsistency(answers, questionsWithMeta, scoresMap);
+
+  // Apply counter-proof adjustments
+  const adjustedScores = applyCounterproofAdjustments(rawAllScores, consistency.counterproofAdjustments);
+  const allScores = adjustedScores;
+
+  // Calculate temperament
+  const temperament = calculateTemperament(scoresMap);
 
   const dominant = allScores[0];
   const secondary = allScores.slice(1, 3).filter((s) => s.percentage >= 40);
@@ -77,6 +100,14 @@ export function analyzeAnswers(answers: Answer[]): DiagnosticResult {
     type: (q as any).type || 'likert',
   }));
   const interpretation = generateInterpretation(answers, questionMeta, allScores, dominant.label, 'padrao-comportamental');
+
+  // Enrich interpretation with consistency data
+  interpretation.consistencyScore = consistency.consistencyScore;
+  interpretation.confidenceLevel = consistency.confidenceLevel;
+  interpretation.confidenceScore = consistency.confidenceScore;
+  interpretation.contradictionCount = consistency.contradictionCount;
+  interpretation.responsePatternFlags = consistency.responsePatternFlags;
+  interpretation.temperamentProfile = temperament;
 
   // Use derived insights when available, fallback to pattern definitions
   const corePain = interpretation.derivedCorePain || dominantDef.corePain;
