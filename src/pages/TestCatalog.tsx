@@ -415,7 +415,7 @@ function TestCard({ mod, index, isCompleted, isLocked, badge, isPersonalized, on
               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/[0.06] border border-primary/12">
                 <Star className="w-3 h-3 text-primary/60" />
                 <span className="text-[0.55rem] font-bold text-primary/70 uppercase tracking-wider">
-                  {personalizedSlug ? 'Conectado ao seu padrão' : 'Recomendado para você'}
+                  {isPersonalized ? 'Conectado ao seu padrão' : 'Recomendado para você'}
                 </span>
               </div>
             ) : (
