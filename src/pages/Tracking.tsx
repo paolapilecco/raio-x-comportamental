@@ -142,7 +142,7 @@ export default function Tracking() {
           .in('session_id', sessionIds);
 
         const resultMap = new Map((results || []).map(r => [r.session_id, r]));
-        const resultIds = (results || []).map(r => r.id);
+        const _resultIds = (results || []).map(r => r.id);
 
         const { data: actions } = await supabase
           .from('action_plan_tracking')
