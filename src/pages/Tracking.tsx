@@ -626,6 +626,15 @@ export default function Tracking() {
             </motion.div>
           );
         })()}
+
+        {/* === PRESSURE TEXT === */}
+        {items.length > 0 && items.some(i => i.actionsCompleted < i.actionsTotal) && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>
+            <p className="text-center text-xs text-muted-foreground/60 italic py-2">
+              Se você não agir agora, esse padrão continua exatamente igual.
+            </p>
+          </motion.div>
+        )}
       </div>
     </AppLayout>
   );
