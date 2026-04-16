@@ -9,7 +9,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { testName, testDescription, prompts, questions, existingSections } = await req.json();
+    const { testName, testDescription, prompts, questions, existingSections, format } = await req.json();
 
     if (!testName || typeof testName !== "string" || testName.length > 200) {
       return new Response(JSON.stringify({ error: "Nome do teste inválido" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -29,112 +29,173 @@ serve(async (req) => {
       if (gConfig?.system_prompt) globalSystemPrompt = gConfig.system_prompt;
     } catch { /* use empty */ }
 
-    // Build context blocks
+    // ── Context blocks ──
     let promptsBlock = "";
     if (Array.isArray(prompts) && prompts.length > 0) {
-      promptsBlock = `\n\nPROMPTS CONFIGURADOS PARA ESTE TESTE:\n${prompts.slice(0, 10).map((p: any) => `[${p.prompt_type?.toUpperCase()}]: ${(p.content || '').slice(0, 500)}`).join("\n\n")}`;
+      promptsBlock = `\n\nPROMPTS CONFIGURADOS:\n${prompts.slice(0, 10).map((p: any) => `[${p.prompt_type?.toUpperCase()}]: ${(p.content || '').slice(0, 400)}`).join("\n\n")}`;
     }
 
-    let questionsBlock = "";
-    if (Array.isArray(questions) && questions.length > 0) {
-      const axes = new Set<string>();
-      questions.forEach((q: any) => {
-        if (Array.isArray(q.axes)) q.axes.forEach((a: string) => axes.add(a));
-      });
-      questionsBlock = `\n\nPERGUNTAS DO TESTE (${questions.length} total):\nEixos comportamentais detectados: ${Array.from(axes).join(", ")}\n\nExemplos de perguntas:\n${questions.slice(0, 15).map((q: any) => `- [${q.type}] ${q.text} (eixos: ${(q.axes || []).join(", ")})`).join("\n")}`;
+    const axesSet = new Set<string>();
+    if (Array.isArray(questions)) {
+      questions.forEach((q: any) => Array.isArray(q.axes) && q.axes.forEach((a: string) => axesSet.add(a)));
     }
+    const axesList = Array.from(axesSet);
+    const questionsBlock = questions?.length
+      ? `\n\nPERGUNTAS (${questions.length} total)\nEixos: ${axesList.join(", ")}\nExemplos:\n${questions.slice(0, 12).map((q: any) => `- ${q.text} (${(q.axes || []).join(", ")})`).join("\n")}`
+      : "";
 
-    let existingBlock = "";
-    if (Array.isArray(existingSections) && existingSections.length > 0) {
-      existingBlock = `\n\nTEMPLATE ATUAL (use como referência, melhore se necessário):\n${existingSections.map((s: any) => `- ${s.key}: "${s.label}" (max ${s.maxSentences} frases, ${s.required ? "obrigatório" : "opcional"})`).join("\n")}`;
-    }
+    const slotsBlock = Array.isArray(existingSections) && existingSections.length > 0
+      ? existingSections.map((s: any) => `- ${s.key} | ${s.label} | formato:${s.format} | máx ${s.maxSentences} frases`).join("\n")
+      : "";
 
-    const systemPrompt = `Você é um especialista em relatórios comportamentais. Gere a estrutura ideal de seções para um relatório de diagnóstico comportamental.
+    // ═══════════════════════════════════════════════════════════════
+    // STORYBOARD MODE — personaliza cada slot com base no módulo
+    // ═══════════════════════════════════════════════════════════════
+    if (format === "storyboard") {
+      const systemPrompt = `Você é um diretor editorial de relatórios comportamentais premium. Sua missão é PERSONALIZAR um storyboard de 3 atos (Espelho → Confronto → Direção) para um teste específico.
+
+CONTEXTO DO TESTE:
+Nome: ${testName}
+Descrição: ${testDescription || "—"}
+Eixos avaliados: ${axesList.join(", ") || "não informado"}${promptsBlock}${questionsBlock}
+
+SLOTS EXISTENTES NO STORYBOARD (preserve as keys exatamente):
+${slotsBlock}
 
 REGRAS:
-1. Cada seção deve ter um propósito CLARO e ÚNICO
-2. A ordem das seções deve criar uma narrativa: do diagnóstico → explicação → ação
-3. Siga a regra de COMPLETUDE: Diagnóstico + Explicação + Ação prática
-4. Seções devem ser ESPECÍFICAS ao tipo de teste, não genéricas
-5. Use nomes de seções CURTOS e diretos (máx 5 palavras)
-6. A key deve ser camelCase, descritiva e única
-7. maxSentences: 1 para listas/itens, 2 para explicações, 3 para análises profundas
-8. Seções essenciais devem ser "required: true"
-9. Inclua sempre uma seção de AÇÃO PRÁTICA no final
-10. O template deve permitir que o motor de IA gere conteúdo ESPECÍFICO e MENSURÁVEL
+1. Cada slot deve ter instrução ESPECÍFICA ao tema deste teste — NUNCA genérica.
+   - Ex: para "Padrão Comportamental" cite ciclos auto-sabotagem/perfeccionismo; para "Emoções" cite reatividade/regulação; para "Relacionamentos" cite vínculos/repetições afetivas.
+2. Cada slot precisa de UM exemplo curto (máx 2 frases) escrito no tom do teste, mostrando o output ideal.
+3. Cada ato precisa de um TOM próprio adaptado ao teste (ex: Confronto de Emoções é mais visceral; Confronto de Execução é mais estratégico).
+4. Liste 5-8 termos proibidos que soariam mal NESTE teste (autoajuda, clichês, psicobabble do tema).
+5. Defina narrativeVoice em 1 frase específica do teste.
+6. Linguagem: direta, sem psicologuês, sem motivacional. Máx 3 frases por bloco.
 
-ESTRUTURA NARRATIVA OBRIGATÓRIA:
-- Abertura: O que está acontecendo (diagnóstico direto)
-- Desenvolvimento: Por que isso acontece (padrão neural/comportamental)
-- Evidência: Como aparece no dia a dia
-- Gatilhos: O que ativa o padrão
-- Impacto: Onde isso afeta a vida
-- Direção: O que fazer (ação executável)
-- Restrição: O que NÃO fazer
-- Comando: Frase de reprogramação + ação imediata${promptsBlock}${questionsBlock}${existingBlock}
+FORMATO DE SAÍDA (JSON ESTRITO, sem markdown, sem texto extra):
+{
+  "actTones": {
+    "espelho": "tom específico para o ato 1 deste teste",
+    "confronto": "tom específico para o ato 2 deste teste",
+    "direcao": "tom específico para o ato 3 deste teste"
+  },
+  "slots": [
+    { "key": "leituraRapida", "instruction": "...", "example": "..." },
+    ...todas as keys listadas acima
+  ],
+  "rules": {
+    "narrativeVoice": "1 frase específica do tema do teste",
+    "forbiddenTerms": ["termo1", "termo2", ...]
+  }
+}`;
 
-FORMATO DE SAÍDA (JSON array):
-Cada item:
-- key: string (camelCase, único)
-- label: string (nome da seção, curto)
-- maxSentences: number (1-4)
-- required: boolean`;
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-pro",
+          messages: [
+            { role: "system", content: [globalSystemPrompt, systemPrompt].filter(Boolean).join("\n\n") },
+            { role: "user", content: `Personalize o storyboard para "${testName}". Retorne APENAS o JSON.` },
+          ],
+          temperature: 0.6,
+          response_format: { type: "json_object" },
+        }),
+      });
 
-    const userPrompt = `Gere o template de relatório ideal para:
+      if (!response.ok) {
+        if (response.status === 429) return new Response(JSON.stringify({ error: "Limite de requisições excedido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        if (response.status === 402) return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        console.error("AI gateway error:", response.status);
+        return new Response(JSON.stringify({ error: "Erro ao gerar template" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
 
-TESTE: ${testName}
-${testDescription ? `OBJETIVO: ${testDescription}` : ""}
+      const aiData = await response.json();
+      let raw = aiData.choices?.[0]?.message?.content || "";
+      const m = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+      if (m) raw = m[1];
+      raw = raw.trim();
 
-Retorne APENAS um JSON array. Sem texto adicional.`;
+      let parsed: any;
+      try { parsed = JSON.parse(raw); } catch {
+        console.error("Failed to parse storyboard JSON:", raw.slice(0, 400));
+        return new Response(JSON.stringify({ error: "Erro ao processar resposta da IA" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      const slotsOut = Array.isArray(parsed.slots)
+        ? parsed.slots
+            .filter((s: any) => s && typeof s.key === "string")
+            .map((s: any) => ({
+              key: s.key.trim(),
+              instruction: String(s.instruction || "").slice(0, 800),
+              example: String(s.example || "").slice(0, 600),
+            }))
+        : [];
+
+      const actTones = parsed.actTones && typeof parsed.actTones === "object" ? {
+        espelho: String(parsed.actTones.espelho || "").slice(0, 300),
+        confronto: String(parsed.actTones.confronto || "").slice(0, 300),
+        direcao: String(parsed.actTones.direcao || "").slice(0, 300),
+      } : null;
+
+      const rules = parsed.rules && typeof parsed.rules === "object" ? {
+        narrativeVoice: String(parsed.rules.narrativeVoice || "").slice(0, 400),
+        forbiddenTerms: Array.isArray(parsed.rules.forbiddenTerms)
+          ? parsed.rules.forbiddenTerms.map((t: any) => String(t)).filter(Boolean).slice(0, 12)
+          : [],
+      } : null;
+
+      return new Response(JSON.stringify({ format: "storyboard", slots: slotsOut, actTones, rules }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // LEGACY MODE (flat array) — mantido para retrocompatibilidade
+    // ═══════════════════════════════════════════════════════════════
+    const systemPrompt = `Você é um especialista em relatórios comportamentais. Gere a estrutura ideal de seções para um relatório.
+
+REGRAS:
+1. Cada seção tem propósito ÚNICO
+2. Ordem narrativa: diagnóstico → explicação → ação
+3. Específico ao teste, nunca genérico
+4. Nomes curtos (máx 5 palavras), key camelCase
+5. maxSentences: 1-3${promptsBlock}${questionsBlock}
+
+FORMATO: JSON array de { key, label, maxSentences, required }`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: [globalSystemPrompt, systemPrompt].filter(Boolean).join("\n\n") },
-          { role: "user", content: userPrompt },
+          { role: "user", content: `Gere o template para: ${testName}. ${testDescription ? `Objetivo: ${testDescription}.` : ""} Retorne APENAS um JSON array.` },
         ],
         temperature: 0.5,
       }),
     });
 
     if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Limite de requisições excedido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-      console.error("AI gateway error:", response.status);
+      if (response.status === 429) return new Response(JSON.stringify({ error: "Limite de requisições excedido." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (response.status === 402) return new Response(JSON.stringify({ error: "Créditos de IA esgotados." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       return new Response(JSON.stringify({ error: "Erro ao gerar template" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const aiData = await response.json();
-    const rawContent = aiData.choices?.[0]?.message?.content || "";
+    let raw = aiData.choices?.[0]?.message?.content || "";
+    const m = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+    if (m) raw = m[1];
+    raw = raw.trim();
 
-    let jsonStr = rawContent;
-    const match = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/);
-    if (match) jsonStr = match[1];
-    jsonStr = jsonStr.trim();
-
-    let parsedSections;
-    try {
-      parsedSections = JSON.parse(jsonStr);
-    } catch {
-      console.error("Failed to parse AI template:", rawContent.slice(0, 500));
+    let parsedSections: any;
+    try { parsedSections = JSON.parse(raw); } catch {
       return new Response(JSON.stringify({ error: "Erro ao processar resposta da IA" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-
-    if (!Array.isArray(parsedSections) || parsedSections.length === 0) {
-      return new Response(JSON.stringify({ error: "Formato de resposta inválido" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!Array.isArray(parsedSections)) {
+      return new Response(JSON.stringify({ error: "Formato inválido" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Normalize
     const normalized = parsedSections
       .filter((s: any) => s && typeof s.key === "string" && typeof s.label === "string")
       .map((s: any, i: number) => ({
