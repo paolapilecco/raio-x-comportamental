@@ -1,20 +1,27 @@
 import { useState } from 'react';
-import { History, ChevronDown, ChevronRight, Clock, Loader2 } from 'lucide-react';
+import { History, ChevronDown, ChevronRight, Clock, Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PROMPT_SECTIONS, type TestModule } from './promptConstants';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface HistoryPanelProps {
   modules: TestModule[];
   expanded: boolean;
   onToggle: () => void;
+  onRestore?: (testId: string, promptType: string, content: string) => Promise<void>;
 }
 
-const HistoryPanel = ({ modules, expanded, onToggle }: HistoryPanelProps) => {
+const HistoryPanel = ({ modules, expanded, onToggle, onRestore }: HistoryPanelProps) => {
   const [historyTestId, setHistoryTestId] = useState('');
   const [historyEntries, setHistoryEntries] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<any | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const fetchHistory = async (testId: string) => {
     setHistoryLoading(true);
