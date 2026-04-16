@@ -246,7 +246,7 @@ Retorne APENAS um JSON array. Sem texto adicional.`;
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-2.5-pro",
         messages: [
           { role: "system", content: [globalSystemPrompt, systemPrompt].filter(Boolean).join("\n\n") },
           { role: "user", content: userPrompt },
