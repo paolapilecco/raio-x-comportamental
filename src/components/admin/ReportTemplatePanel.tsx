@@ -282,22 +282,55 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
         },
       });
       if (error) throw error;
-      if (data?.sections?.length > 0) {
-        // AI returns flat sections — distribute into acts
-        const newTemplate = structuredClone(template);
+
+      const newTemplate = structuredClone(template);
+      let touched = 0;
+
+      // Novo formato storyboard personalizado
+      if (data?.format === 'storyboard') {
+        if (Array.isArray(data.slots)) {
+          data.slots.forEach((s: any) => {
+            for (const act of newTemplate.acts) {
+              const slot = act.slots.find(sl => sl.key === s.key);
+              if (slot) {
+                if (s.instruction) slot.instruction = s.instruction;
+                if (s.example) slot.example = s.example;
+                touched++;
+              }
+            }
+          });
+        }
+        if (data.actTones) {
+          for (const act of newTemplate.acts) {
+            const t = data.actTones[act.id];
+            if (t && typeof t === 'string') act.tone = t;
+          }
+        }
+        if (data.rules) {
+          if (data.rules.narrativeVoice) newTemplate.rules.narrativeVoice = data.rules.narrativeVoice;
+          if (Array.isArray(data.rules.forbiddenTerms) && data.rules.forbiddenTerms.length > 0) {
+            newTemplate.rules.forbiddenTerms = data.rules.forbiddenTerms;
+          }
+        }
+      } else if (data?.sections?.length > 0) {
+        // Fallback legado
         data.sections.forEach((s: any) => {
           for (const act of newTemplate.acts) {
             const slot = act.slots.find(sl => sl.key === s.key);
             if (slot) {
               slot.instruction = s.aiInstructions || s.instruction || slot.instruction;
               slot.example = s.exampleOutput || s.example || slot.example;
+              touched++;
             }
           }
         });
-        setTemplate(newTemplate);
-        toast.success('Instruções preenchidas com IA!');
       }
-    } catch { toast.error('Erro ao gerar com IA'); }
+
+      setTemplate(newTemplate);
+      toast.success(`Storyboard personalizado para "${currentModule.name}" (${touched} slots)`);
+    } catch {
+      toast.error('Erro ao gerar com IA');
+    }
     setAiGenerating(false);
   };
 
