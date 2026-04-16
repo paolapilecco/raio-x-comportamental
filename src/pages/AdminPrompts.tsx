@@ -31,7 +31,7 @@ const PIPELINE_STEPS = [
   { key: 'config', label: 'Config IA', description: 'Modelo e parâmetros', check: (stats: any) => stats.hasAiConfig },
 ];
 
-const PipelineFlowIndicator = ({ module, promptCount, qCount, hasAiConfig }: { module: TestModule; promptCount: number; qCount: number; hasAiConfig: boolean }) => {
+const PipelineFlowIndicator = ({ module, promptCount, qCount, hasAiConfig, onNavigate }: { module: TestModule; promptCount: number; qCount: number; hasAiConfig: boolean; onNavigate: (key: string) => void }) => {
   const [hasTemplate, setHasTemplate] = useState(false);
   
   useEffect(() => {
@@ -58,19 +58,23 @@ const PipelineFlowIndicator = ({ module, promptCount, qCount, hasAiConfig }: { m
           const done = step.check(stats, hasTemplate);
           return (
             <div key={step.key} className="flex items-center flex-1">
-              <div className={`flex-1 rounded-lg p-2.5 border transition-all ${
-                done 
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : 'bg-muted/10 border-border/20'
-              }`}>
+              <button
+                type="button"
+                onClick={() => onNavigate(step.key)}
+                className={`flex-1 text-left rounded-lg p-2.5 border transition-all hover:scale-[1.02] hover:shadow-md cursor-pointer ${
+                  done
+                    ? 'bg-emerald-500/5 border-emerald-500/20 hover:bg-emerald-500/10'
+                    : 'bg-muted/10 border-border/20 hover:bg-muted/20 hover:border-primary/30'
+                }`}
+              >
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[0.55rem] font-bold ${
                     done ? 'bg-emerald-500 text-white' : 'bg-muted/40 text-muted-foreground/40'
                   }`}>{done ? '✓' : i + 1}</div>
-                  <span className={`text-[0.68rem] font-semibold ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground/50'}`}>{step.label}</span>
+                  <span className={`text-[0.68rem] font-semibold ${done ? 'text-emerald-700 dark:text-emerald-400' : 'text-muted-foreground/70'}`}>{step.label}</span>
                 </div>
-                <p className="text-[0.58rem] text-muted-foreground/40 pl-5">{step.description}</p>
-              </div>
+                <p className="text-[0.58rem] text-muted-foreground/50 pl-5">{step.description}</p>
+              </button>
               {i < PIPELINE_STEPS.length - 1 && (
                 <div className={`w-4 h-0.5 shrink-0 ${done ? 'bg-emerald-500/40' : 'bg-muted/20'}`} />
               )}
@@ -373,22 +377,36 @@ const AdminPrompts = () => {
                 promptCount={getModuleStats(currentModule.id).promptCount}
                 qCount={questionCounts[currentModule.id] || 0}
                 hasAiConfig={!!testAiConfigs.find(c => c.test_id === currentModule.id)}
+                onNavigate={(key) => {
+                  if (key === 'questions') {
+                    setActiveTab('questions');
+                    return;
+                  }
+                  const el = document.getElementById(`pipeline-${key}`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    el.classList.add('ring-2', 'ring-primary/40', 'rounded-xl');
+                    setTimeout(() => el.classList.remove('ring-2', 'ring-primary/40', 'rounded-xl'), 1600);
+                  }
+                }}
               />
 
               {/* Prompts */}
-              <PromptEditor
-                currentModule={currentModule}
-                testPrompts={testPrompts}
-                editedTexts={editedTexts}
-                setEditedTexts={setEditedTexts}
-                saving={saving}
-                onSavePrompt={handleSaveTestPrompt}
-                onTogglePrompt={handleToggleTestPrompt}
-                onCreatePrompt={handleCreatePrompt}
-              />
+              <div id="pipeline-prompts" className="scroll-mt-24 transition-all">
+                <PromptEditor
+                  currentModule={currentModule}
+                  testPrompts={testPrompts}
+                  editedTexts={editedTexts}
+                  setEditedTexts={setEditedTexts}
+                  saving={saving}
+                  onSavePrompt={handleSaveTestPrompt}
+                  onTogglePrompt={handleToggleTestPrompt}
+                  onCreatePrompt={handleCreatePrompt}
+                />
+              </div>
 
               {/* Template + Output Rules */}
-              <div className="border-t border-border/20 pt-6 space-y-8">
+              <div id="pipeline-template" className="border-t border-border/20 pt-6 space-y-8 scroll-mt-24 transition-all">
                 <ReportTemplatePanel currentModule={currentModule} />
                 <div className="border-t border-border/10 pt-6">
                   <OutputRulesPanel currentModule={currentModule} />
@@ -396,7 +414,7 @@ const AdminPrompts = () => {
               </div>
 
               {/* AI Config */}
-              <div className="border-t border-border/20 pt-6">
+              <div id="pipeline-config" className="border-t border-border/20 pt-6 scroll-mt-24 transition-all">
                 <AIConfigPanel
                   globalAiConfig={globalAiConfig}
                   editedGlobalAi={editedGlobalAi}
