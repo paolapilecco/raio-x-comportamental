@@ -98,6 +98,8 @@ const AdminPrompts = () => {
   const [selectedModule, setSelectedModule] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('pipeline');
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
+  const [confirmToggle, setConfirmToggle] = useState<TestPrompt | null>(null);
+  const [pendingModuleId, setPendingModuleId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -151,9 +153,53 @@ const AdminPrompts = () => {
   };
 
   const handleToggleTestPrompt = async (prompt: TestPrompt) => {
+    // Confirmação só ao desativar (ação destrutiva — afeta produção)
+    if (prompt.is_active) { setConfirmToggle(prompt); return; }
+    await performToggle(prompt);
+  };
+
+  const performToggle = async (prompt: TestPrompt) => {
     const { error } = await supabase.from('test_prompts').update({ is_active: !prompt.is_active, updated_by: user?.id }).eq('id', prompt.id);
     if (error) toast.error('Erro');
     else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
+  };
+
+  const handleRestorePrompt = async (testId: string, promptType: string, content: string) => {
+    const target = testPrompts.find(p => p.test_id === testId && p.prompt_type === promptType);
+    if (!target) { toast.error('Prompt atual não encontrado'); return; }
+    const { error } = await supabase.from('test_prompts').update({ content, updated_by: user?.id }).eq('id', target.id);
+    if (error) { toast.error('Erro ao restaurar versão'); return; }
+    toast.success('Versão restaurada');
+    await fetchData();
+  };
+
+  // Detecta se há alterações pendentes em prompts do módulo atual
+  const hasUnsavedChanges = (modId: string): boolean => {
+    return testPrompts
+      .filter(p => p.test_id === modId)
+      .some(p => {
+        const edited = editedTexts[`tp_${p.id}`];
+        return edited !== undefined && edited !== p.content;
+      });
+  };
+
+  const handleModuleChange = (newModuleId: string) => {
+    if (newModuleId === selectedModule) return;
+    if (hasUnsavedChanges(selectedModule)) { setPendingModuleId(newModuleId); return; }
+    setSelectedModule(newModuleId);
+  };
+
+  const confirmModuleChange = () => {
+    if (!pendingModuleId) return;
+    // Descarta edições não salvas do módulo anterior
+    const cleanedTexts: Record<string, string> = {};
+    testPrompts.forEach(p => {
+      if (p.test_id === selectedModule) cleanedTexts[`tp_${p.id}`] = p.content;
+      else if (editedTexts[`tp_${p.id}`] !== undefined) cleanedTexts[`tp_${p.id}`] = editedTexts[`tp_${p.id}`];
+    });
+    setEditedTexts(cleanedTexts);
+    setSelectedModule(pendingModuleId);
+    setPendingModuleId(null);
   };
 
   const handleCreatePrompt = async (testId: string, section: typeof PROMPT_SECTIONS[0]) => {
