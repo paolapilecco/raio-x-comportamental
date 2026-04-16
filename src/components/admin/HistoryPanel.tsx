@@ -1,20 +1,27 @@
 import { useState } from 'react';
-import { History, ChevronDown, ChevronRight, Clock, Loader2 } from 'lucide-react';
+import { History, ChevronDown, ChevronRight, Clock, Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PROMPT_SECTIONS, type TestModule } from './promptConstants';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface HistoryPanelProps {
   modules: TestModule[];
   expanded: boolean;
   onToggle: () => void;
+  onRestore?: (testId: string, promptType: string, content: string) => Promise<void>;
 }
 
-const HistoryPanel = ({ modules, expanded, onToggle }: HistoryPanelProps) => {
+const HistoryPanel = ({ modules, expanded, onToggle, onRestore }: HistoryPanelProps) => {
   const [historyTestId, setHistoryTestId] = useState('');
   const [historyEntries, setHistoryEntries] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null);
+  const [restoreTarget, setRestoreTarget] = useState<any | null>(null);
+  const [restoring, setRestoring] = useState(false);
 
   const fetchHistory = async (testId: string) => {
     setHistoryLoading(true);
@@ -57,9 +64,20 @@ const HistoryPanel = ({ modules, expanded, onToggle }: HistoryPanelProps) => {
                 </div>
                 <span className="text-[0.6rem] text-muted-foreground/40">{new Date(entry.changed_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
               </div>
-              <button onClick={() => setExpandedHistoryId(expandedHistoryId === entry.id ? null : entry.id)} className="text-[0.65rem] text-primary/60 hover:text-primary/80 transition-colors">
-                {expandedHistoryId === entry.id ? 'Ocultar diff' : 'Ver alterações'}
-              </button>
+              <div className="flex items-center gap-3">
+                <button onClick={() => setExpandedHistoryId(expandedHistoryId === entry.id ? null : entry.id)} className="text-[0.65rem] text-primary/60 hover:text-primary/80 transition-colors">
+                  {expandedHistoryId === entry.id ? 'Ocultar diff' : 'Ver alterações'}
+                </button>
+                {onRestore && entry.old_content && (
+                  <button
+                    onClick={() => setRestoreTarget(entry)}
+                    className="flex items-center gap-1 text-[0.65rem] text-amber-600 hover:text-amber-700 transition-colors"
+                    title="Restaurar versão anterior"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Restaurar
+                  </button>
+                )}
+              </div>
               {expandedHistoryId === entry.id && (
                 <div className="space-y-2 mt-1">
                   <div className="p-2 rounded-lg bg-red-500/[0.04] border border-red-500/10">
@@ -76,6 +94,34 @@ const HistoryPanel = ({ modules, expanded, onToggle }: HistoryPanelProps) => {
           ))}
         </div>
       )}
+
+      <AlertDialog open={!!restoreTarget} onOpenChange={(o) => !o && setRestoreTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Restaurar esta versão?</AlertDialogTitle>
+            <AlertDialogDescription>
+              O conteúdo atual do prompt <strong>{PROMPT_SECTIONS.find(s => s.type === restoreTarget?.prompt_type)?.label || restoreTarget?.prompt_type}</strong> será substituído pela versão "Antes" desta entrada do histórico. Uma nova entrada de histórico será criada automaticamente registrando esta restauração.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={restoring}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={restoring}
+              onClick={async (e) => {
+                e.preventDefault();
+                if (!restoreTarget || !onRestore) return;
+                setRestoring(true);
+                await onRestore(restoreTarget.test_id, restoreTarget.prompt_type, restoreTarget.old_content || '');
+                setRestoring(false);
+                setRestoreTarget(null);
+                if (historyTestId) await fetchHistory(historyTestId);
+              }}
+            >
+              {restoring ? 'Restaurando…' : 'Sim, restaurar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

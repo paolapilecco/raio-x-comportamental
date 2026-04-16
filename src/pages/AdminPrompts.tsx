@@ -6,6 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Brain, Sparkles, Loader2, Layers, HelpCircle, PlayCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import PromptEditor from '@/components/admin/PromptEditor';
 import AIConfigPanel from '@/components/admin/AIConfigPanel';
@@ -94,6 +98,8 @@ const AdminPrompts = () => {
   const [selectedModule, setSelectedModule] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('pipeline');
   const [questionCounts, setQuestionCounts] = useState<Record<string, number>>({});
+  const [confirmToggle, setConfirmToggle] = useState<TestPrompt | null>(null);
+  const [pendingModuleId, setPendingModuleId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -147,9 +153,53 @@ const AdminPrompts = () => {
   };
 
   const handleToggleTestPrompt = async (prompt: TestPrompt) => {
+    // Confirmação só ao desativar (ação destrutiva — afeta produção)
+    if (prompt.is_active) { setConfirmToggle(prompt); return; }
+    await performToggle(prompt);
+  };
+
+  const performToggle = async (prompt: TestPrompt) => {
     const { error } = await supabase.from('test_prompts').update({ is_active: !prompt.is_active, updated_by: user?.id }).eq('id', prompt.id);
     if (error) toast.error('Erro');
     else { toast.success(prompt.is_active ? 'Desativado' : 'Ativado'); await fetchData(); }
+  };
+
+  const handleRestorePrompt = async (testId: string, promptType: string, content: string) => {
+    const target = testPrompts.find(p => p.test_id === testId && p.prompt_type === promptType);
+    if (!target) { toast.error('Prompt atual não encontrado'); return; }
+    const { error } = await supabase.from('test_prompts').update({ content, updated_by: user?.id }).eq('id', target.id);
+    if (error) { toast.error('Erro ao restaurar versão'); return; }
+    toast.success('Versão restaurada');
+    await fetchData();
+  };
+
+  // Detecta se há alterações pendentes em prompts do módulo atual
+  const hasUnsavedChanges = (modId: string): boolean => {
+    return testPrompts
+      .filter(p => p.test_id === modId)
+      .some(p => {
+        const edited = editedTexts[`tp_${p.id}`];
+        return edited !== undefined && edited !== p.content;
+      });
+  };
+
+  const handleModuleChange = (newModuleId: string) => {
+    if (newModuleId === selectedModule) return;
+    if (hasUnsavedChanges(selectedModule)) { setPendingModuleId(newModuleId); return; }
+    setSelectedModule(newModuleId);
+  };
+
+  const confirmModuleChange = () => {
+    if (!pendingModuleId) return;
+    // Descarta edições não salvas do módulo anterior
+    const cleanedTexts: Record<string, string> = {};
+    testPrompts.forEach(p => {
+      if (p.test_id === selectedModule) cleanedTexts[`tp_${p.id}`] = p.content;
+      else if (editedTexts[`tp_${p.id}`] !== undefined) cleanedTexts[`tp_${p.id}`] = editedTexts[`tp_${p.id}`];
+    });
+    setEditedTexts(cleanedTexts);
+    setSelectedModule(pendingModuleId);
+    setPendingModuleId(null);
   };
 
   const handleCreatePrompt = async (testId: string, section: typeof PROMPT_SECTIONS[0]) => {
@@ -258,11 +308,12 @@ const AdminPrompts = () => {
             const ModIcon = iconMap[mod.icon] || Brain;
             const stats = getModuleStats(mod.id);
             const isSelected = selectedModule === mod.id;
+            const dirty = hasUnsavedChanges(mod.id);
             const completeness = Math.round(((stats.promptCount / 7) * 40 + (stats.qCount > 0 ? 40 : 0) + (stats.hasAiConfig ? 20 : 0)));
             return (
               <button
                 key={mod.id}
-                onClick={() => setSelectedModule(mod.id)}
+                onClick={() => handleModuleChange(mod.id)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-[0.78rem] font-medium transition-all ${
                   isSelected
                     ? 'bg-primary/10 border-primary/30 text-primary shadow-sm'
@@ -272,6 +323,7 @@ const AdminPrompts = () => {
                 <ModIcon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{mod.name}</span>
                 <span className="sm:hidden">{mod.name.split(' ')[0]}</span>
+                {dirty && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" title="Alterações não salvas" />}
                 <span className={`text-[0.55rem] px-1.5 py-0.5 rounded-full font-mono ${
                   completeness >= 80 ? 'bg-emerald-500/10 text-emerald-600' : completeness >= 40 ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-600'
                 }`}>{completeness}%</span>
@@ -380,11 +432,57 @@ const AdminPrompts = () => {
                 modules={modules}
                 expanded={expandedSections['history'] ?? false}
                 onToggle={() => toggleSection('history')}
+                onRestore={handleRestorePrompt}
               />
             </TabsContent>
           </Tabs>
         </motion.div>
       )}
+
+      {/* Confirmação ao desativar prompt */}
+      <AlertDialog open={!!confirmToggle} onOpenChange={(o) => !o && setConfirmToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desativar este prompt?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta seção deixará de ser usada na geração de relatórios em produção. Usuários reais podem receber relatórios incompletos. Tem certeza?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (confirmToggle) await performToggle(confirmToggle);
+                setConfirmToggle(null);
+              }}
+              className="bg-destructive text-destructive-foreground hover:brightness-90"
+            >
+              Sim, desativar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirmação ao trocar de módulo com edições não salvas */}
+      <AlertDialog open={!!pendingModuleId} onOpenChange={(o) => !o && setPendingModuleId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem alterações não salvas</AlertDialogTitle>
+            <AlertDialogDescription>
+              Existem edições em prompts deste módulo que ainda não foram salvas. Se trocar de módulo agora, essas alterações serão descartadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar e salvar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmModuleChange}
+              className="bg-destructive text-destructive-foreground hover:brightness-90"
+            >
+              Descartar e trocar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
