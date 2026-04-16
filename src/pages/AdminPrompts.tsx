@@ -6,6 +6,10 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Brain, Sparkles, Loader2, Layers, HelpCircle, PlayCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import PromptEditor from '@/components/admin/PromptEditor';
 import AIConfigPanel from '@/components/admin/AIConfigPanel';
