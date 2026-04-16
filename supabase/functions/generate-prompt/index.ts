@@ -278,10 +278,20 @@ INSTRUÇÃO: O prompt que você gerar deve manter o mesmo nível de especificida
 O prompt que você gerar DEVE referenciar estes eixos descobertos para garantir cobertura completa.`
       : "";
 
+    // EIXOS REAIS DO MÓDULO — injetados explicitamente no prompt
+    const realAxesBlock = axes.length > 0
+      ? `\n═══ EIXOS REAIS DESTE MÓDULO (USO OBRIGATÓRIO) ═══
+Os seguintes eixos psicométricos foram extraídos das perguntas cadastradas. O prompt gerado DEVE referenciar TODOS eles textualmente:
+${axes.map((a, i) => `${i + 1}. \`${a}\``).join("\n")}
+
+REGRA INVIOLÁVEL: Cada eixo acima deve aparecer pelo menos UMA VEZ no prompt gerado, escrito EXATAMENTE como mostrado (com underscore, minúsculas).
+═══════════════════════════════════════════════════\n`
+      : "";
+
     const systemPrompt = `Você é um especialista sênior em engenharia de prompts para diagnósticos comportamentais e psicométricos.
 
-Sua tarefa é gerar um prompt profissional para a seção "${sectionType}" (${SECTION_PURPOSES[sectionType]}) de um teste diagnóstico.
-${lifeMapBlock}
+Sua tarefa é gerar um prompt profissional, DENSO e ESTRUTURADO para a seção "${sectionType}" (${SECTION_PURPOSES[sectionType]}) de um teste diagnóstico.
+${lifeMapBlock}${realAxesBlock}
 MÉTODO OBRIGATÓRIO — ANÁLISE ANTES DE GERAR:
 Antes de escrever o prompt, analise internamente:
 1. O que as perguntas cadastradas REALMENTE medem (não o nome do teste)
@@ -290,16 +300,40 @@ Antes de escrever o prompt, analise internamente:
 4. Que tipo de conflito ou contradição pode surgir entre eixos
 5. Quais blocos do template do relatório este prompt deve alimentar
 
+═══ ESTRUTURA OBRIGATÓRIA DO PROMPT GERADO (BLOCOS FIXOS) ═══
+O prompt que você produzir DEVE conter, nesta ordem, os seguintes blocos rotulados:
+
+【BLOCO 1 — CONTEXTO E OBJETIVO】 (mín. 300 caracteres)
+Defina papel da IA, função desta seção, dados de entrada esperados.
+
+【BLOCO 2 — EIXOS A INTERPRETAR】 (mín. 500 caracteres)
+Liste e explique CADA UM dos eixos reais (${axes.join(", ") || "nenhum"}), descrevendo o que cada eixo capta comportamentalmente e como interpretar scores baixo/médio/alto.
+
+【BLOCO 3 — MÉTODO DE ANÁLISE】 (mín. 500 caracteres)
+Passo a passo numerado de como cruzar os eixos, identificar dominantes, detectar contradições e formar a saída.
+
+【BLOCO 4 — REGRAS DE OUTPUT】 (mín. 400 caracteres)
+Formato textual esperado, tamanho mínimo, tom, estrutura visual, vocabulário permitido.
+
+【BLOCO 5 — RESTRIÇÕES NEGATIVAS】 (mín. 300 caracteres)
+O que a IA NÃO pode fazer ao gerar esta seção (mínimo 5 proibições específicas).
+
+【BLOCO 6 — EXEMPLO MINI DE SAÍDA】 (mín. 300 caracteres)
+Mostre 1 exemplo curto e específico de como a saída final deve parecer.
+
+REQUISITO TOTAL: O prompt completo deve ter NO MÍNIMO 2500 caracteres. Prompts curtos serão rejeitados.
+═══════════════════════════════════════════════════════════════
+
 REGRAS DE QUALIDADE PROFISSIONAL:
 1. Linguagem CLARA e DIRETA — sem psicologuês vazio
 2. Função ESPECÍFICA — o prompt deve servir APENAS para "${sectionType}"
-3. ZERO generalização — cada instrução deve ser rastreável aos eixos/perguntas reais
+3. ZERO generalização — cada instrução rastreável aos eixos/perguntas reais
 4. ZERO frases motivacionais ou de autoajuda
 5. ZERO repetição de instruções que existam em outros prompts do teste
-6. Referencie EXPLICITAMENTE os eixos reais e o que eles captam
+6. Referencie EXPLICITAMENTE os eixos reais (\`${axes.join("`, `") || "—"}\`)
 7. Inclua regras claras do que fazer E do que NÃO fazer
-8. Estruture com seções numeradas
-9. Máximo 500 palavras
+8. Use os 6 blocos rotulados acima — sem omitir nenhum
+9. Mínimo 2500 caracteres no total — denso, profissional
 10. Se o template do relatório existir, alinhe as instruções aos blocos que esta seção alimenta
 
 ${outputExample ? `\n${outputExample}\n` : ""}
