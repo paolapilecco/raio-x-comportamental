@@ -45,8 +45,8 @@ Gere as regras de saída específicas para este módulo.`;
               type: "object",
               properties: {
                 tone: { type: "string", description: "Tom específico ao módulo, ex: 'direto e prático sem moralismo'" },
-                simplicityLevel: { type: "number", enum: [1, 2, 3, 4, 5], description: "1=técnico, 5=ultra-simples" },
-                maxSentencesPerBlock: { type: "number", enum: [1, 2, 3], description: "Máximo de frases por bloco" },
+                simplicityLevel: { type: "number", description: "1 a 5. 1=técnico, 5=ultra-simples" },
+                maxSentencesPerBlock: { type: "number", description: "Máximo de frases por bloco (1, 2 ou 3)" },
                 maxTotalBlocks: { type: "number", description: "Total de blocos do relatório (5-12)" },
                 forbiddenLanguage: {
                   type: "array",
@@ -55,7 +55,6 @@ Gere as regras de saída específicas para este módulo.`;
                 },
               },
               required: ["tone", "simplicityLevel", "maxSentencesPerBlock", "maxTotalBlocks", "forbiddenLanguage"],
-              additionalProperties: false,
             },
           },
         }],
