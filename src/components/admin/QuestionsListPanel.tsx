@@ -150,7 +150,25 @@ export const QuestionsListPanel = ({
 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          {questions.length > 0 && (
+            <button
+              onClick={onSelectAll}
+              className="flex items-center gap-1.5 text-[0.75rem] text-muted-foreground hover:text-foreground transition-colors"
+              title={allSelected ? 'Desmarcar todas' : 'Selecionar todas'}
+            >
+              {allSelected ? (
+                <CheckSquare className="w-4 h-4 text-primary" />
+              ) : someSelected ? (
+                <CheckSquare className="w-4 h-4 text-primary/50" />
+              ) : (
+                <Square className="w-4 h-4 text-muted-foreground/40" />
+              )}
+              <span className="font-medium">
+                {allSelected ? 'Desmarcar todas' : 'Selecionar todas'}
+              </span>
+            </button>
+          )}
           <p className="text-[0.8rem] text-muted-foreground/60">
             <span className="font-semibold text-foreground">{questions.length}</span> perguntas
             configuradas
