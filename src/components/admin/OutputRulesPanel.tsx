@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RotateCcw, Plus, X, Copy } from 'lucide-react';
+import { Save, RotateCcw, Plus, X, Copy, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
@@ -50,8 +50,37 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [spreading, setSpreading] = useState<string | null>(null);
+  const [generatingAi, setGeneratingAi] = useState(false);
   const [newForbidden, setNewForbidden] = useState('');
   const [newRequired, setNewRequired] = useState('');
+
+  const handleAiGenerate = async () => {
+    setGeneratingAi(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-output-rules', {
+        body: {
+          moduleName: currentModule.name,
+          moduleSlug: currentModule.slug,
+          moduleDescription: (currentModule as any).description ?? '',
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setRules(prev => ({
+        ...prev,
+        tone: data.tone ?? prev.tone,
+        simplicityLevel: data.simplicityLevel ?? prev.simplicityLevel,
+        maxSentencesPerBlock: data.maxSentencesPerBlock ?? prev.maxSentencesPerBlock,
+        maxTotalBlocks: data.maxTotalBlocks ?? prev.maxTotalBlocks,
+        forbiddenLanguage: Array.isArray(data.forbiddenLanguage) ? data.forbiddenLanguage : prev.forbiddenLanguage,
+      }));
+      toast.success('Regras geradas pela IA — revise e salve');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao gerar regras');
+    }
+    setGeneratingAi(false);
+  };
 
   useEffect(() => {
     fetchRules();
@@ -214,6 +243,14 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleAiGenerate}
+            disabled={generatingAi}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] font-medium bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:brightness-110 transition-all disabled:opacity-50"
+            title="Gerar regras personalizadas para este módulo com IA"
+          >
+            <Sparkles className="w-3 h-3" /> {generatingAi ? 'Gerando...' : 'Configurar com IA'}
+          </button>
           <SpreadButton field="all" label="Replicar tudo para todos" />
           <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-secondary/50 transition-all">
             <RotateCcw className="w-3 h-3" /> Restaurar padrão
