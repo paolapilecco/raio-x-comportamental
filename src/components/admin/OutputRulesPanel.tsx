@@ -50,8 +50,37 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [spreading, setSpreading] = useState<string | null>(null);
+  const [generatingAi, setGeneratingAi] = useState(false);
   const [newForbidden, setNewForbidden] = useState('');
   const [newRequired, setNewRequired] = useState('');
+
+  const handleAiGenerate = async () => {
+    setGeneratingAi(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-output-rules', {
+        body: {
+          moduleName: currentModule.name,
+          moduleSlug: currentModule.slug,
+          moduleDescription: (currentModule as any).description ?? '',
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setRules(prev => ({
+        ...prev,
+        tone: data.tone ?? prev.tone,
+        simplicityLevel: data.simplicityLevel ?? prev.simplicityLevel,
+        maxSentencesPerBlock: data.maxSentencesPerBlock ?? prev.maxSentencesPerBlock,
+        maxTotalBlocks: data.maxTotalBlocks ?? prev.maxTotalBlocks,
+        forbiddenLanguage: Array.isArray(data.forbiddenLanguage) ? data.forbiddenLanguage : prev.forbiddenLanguage,
+      }));
+      toast.success('Regras geradas pela IA — revise e salve');
+    } catch (e: any) {
+      toast.error(e?.message || 'Erro ao gerar regras');
+    }
+    setGeneratingAi(false);
+  };
 
   useEffect(() => {
     fetchRules();
