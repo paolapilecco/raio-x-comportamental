@@ -198,27 +198,33 @@ export const GenerateQuestionsModal = ({
         test_id: currentModule.id,
       }));
 
-      // SUBSTITUI todas as perguntas existentes do módulo (não soma)
-      const { error: deleteError } = await supabase
+      // 1. Apagar TODAS as perguntas anteriores do módulo (com contagem real)
+      const { error: deleteError, count: deletedCount } = await supabase
         .from('questions')
-        .delete()
+        .delete({ count: 'exact' })
         .eq('test_id', currentModule.id);
 
       if (deleteError) {
-        toast.error('Erro ao remover perguntas anteriores');
+        console.error('Delete error:', deleteError);
+        toast.error(`Falha ao remover perguntas anteriores: ${deleteError.message}`);
+        setSaving(false);
         return;
       }
 
-      const { error } = await supabase.from('questions').insert(rows);
-      if (error) {
-        toast.error('Erro ao salvar perguntas');
-      } else {
-        toast.success(`${rows.length} perguntas substituíram as anteriores!`);
-        setAiPreview(null);
-        setAiSelected(new Set());
-        onClose();
-        onQuestionsGenerated?.(selected);
+      // 2. Inserir as novas SOMENTE após delete bem-sucedido
+      const { error: insertError } = await supabase.from('questions').insert(rows);
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        toast.error(`Falha ao salvar novas perguntas: ${insertError.message}`);
+        setSaving(false);
+        return;
       }
+
+      toast.success(`${deletedCount ?? 0} antiga(s) removida(s) · ${rows.length} nova(s) salva(s)`);
+      setAiPreview(null);
+      setAiSelected(new Set());
+      onClose();
+      onQuestionsGenerated?.(selected);
     } catch (e: any) {
       console.error(e);
       toast.error('Erro ao salvar perguntas');
