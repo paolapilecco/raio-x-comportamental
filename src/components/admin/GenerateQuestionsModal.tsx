@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { Sparkles, Plus, AlertTriangle, Check, Edit3, Loader2 } from 'lucide-react';
+import { Sparkles, Plus, AlertTriangle, Check, Edit3, Loader2, Wand2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Question, typeLabels, QuestionType } from './questionConstants';
@@ -61,6 +61,7 @@ export const GenerateQuestionsModal = ({
   const [aiContextSummary, setAiContextSummary] = useState<ContextSummary | null>(null);
   const [aiEditingIndex, setAiEditingIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [suggestingInstructions, setSuggestingInstructions] = useState(false);
 
   if (!isOpen) return null;
 
