@@ -154,29 +154,62 @@ export const GenerateQuestionsModal = ({
     }
   };
 
+  const handleSuggestInstructions = async () => {
+    setSuggestingInstructions(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('suggest-question-instructions', {
+        body: { testModuleId: currentModule.id },
+      });
+      if (error) throw error;
+      if (data?.error) {
+        toast.error(data.error);
+        return;
+      }
+      if (data?.instructions) {
+        setAiExtraInstructions(data.instructions);
+        toast.success('Instruções geradas com base no pipeline completo!');
+      }
+    } catch (e: any) {
+      console.error(e);
+      toast.error('Erro ao gerar instruções');
+    } finally {
+      setSuggestingInstructions(false);
+    }
+  };
+
   const handleAISave = async () => {
     if (!aiPreview || aiSelected.size === 0) return;
     setSaving(true);
 
     try {
-      const startOrder = questions.length + 1;
       const selected = aiPreview.filter((_, i) => aiSelected.has(i));
       const rows = selected.map((q, i) => ({
         text: q.text,
         type: q.type,
         axes: q.axes,
         weight: q.weight,
-        sort_order: startOrder + i,
+        sort_order: i + 1,
         options: q.options,
         option_scores: q.option_scores,
         test_id: currentModule.id,
       }));
 
+      // SUBSTITUI todas as perguntas existentes do módulo (não soma)
+      const { error: deleteError } = await supabase
+        .from('questions')
+        .delete()
+        .eq('test_id', currentModule.id);
+
+      if (deleteError) {
+        toast.error('Erro ao remover perguntas anteriores');
+        return;
+      }
+
       const { error } = await supabase.from('questions').insert(rows);
       if (error) {
         toast.error('Erro ao salvar perguntas');
       } else {
-        toast.success(`${rows.length} perguntas adicionadas!`);
+        toast.success(`${rows.length} perguntas substituíram as anteriores!`);
         setAiPreview(null);
         setAiSelected(new Set());
         onClose();
@@ -267,16 +300,38 @@ export const GenerateQuestionsModal = ({
           </div>
 
           <div>
-            <label className="text-[0.7rem] font-semibold text-foreground/70 mb-1.5 block">
-              Instruções adicionais <span className="font-normal text-muted-foreground/50">(opcional)</span>
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[0.7rem] font-semibold text-foreground/70">
+                Instruções adicionais <span className="font-normal text-muted-foreground/50">(opcional)</span>
+              </label>
+              <button
+                type="button"
+                onClick={handleSuggestInstructions}
+                disabled={suggestingInstructions}
+                className="text-[0.65rem] px-2 py-1 rounded-md bg-gradient-to-r from-amber-500/15 to-amber-600/15 text-amber-700 hover:from-amber-500/25 hover:to-amber-600/25 transition-all flex items-center gap-1 disabled:opacity-50 font-semibold border border-amber-500/20"
+                title="Lê todo o pipeline (prompts, padrões, regras de saída) para gerar instruções precisas"
+              >
+                {suggestingInstructions ? (
+                  <><Loader2 className="w-3 h-3 animate-spin" /> Lendo pipeline...</>
+                ) : (
+                  <><Wand2 className="w-3 h-3" /> Gerar instruções com IA</>
+                )}
+              </button>
+            </div>
             <textarea
               className="w-full px-3 py-2 rounded-lg bg-background/50 border border-border/20 text-foreground text-[0.8rem] focus:ring-2 focus:ring-violet-500/20 outline-none resize-none leading-relaxed"
-              rows={2}
+              rows={4}
               value={aiExtraInstructions}
               onChange={e => setAiExtraInstructions(e.target.value)}
               placeholder="Ex: Focar em comportamentos de procrastinação. Evitar perguntas muito complexas."
             />
+          </div>
+
+          <div className="flex items-start gap-2 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
+            <p className="text-[0.65rem] text-amber-700/90 leading-relaxed">
+              <strong>Atenção:</strong> ao confirmar, as {questions.length} perguntas existentes deste módulo serão <strong>substituídas</strong> pelas novas geradas.
+            </p>
           </div>
 
           <button
