@@ -290,9 +290,9 @@ Retorne APENAS um JSON array. Sem texto adicional.`;
 
     let normalized = normalizeQuestions(parsed, 0);
 
-    // ── AUTO-RETRY: cobrir eixos faltantes ──
+    // ── AUTO-RETRY: cobrir eixos faltantes (1 tentativa para evitar timeout) ──
     let retryAttempts = 0;
-    const MAX_RETRIES = 2;
+    const MAX_RETRIES = 1;
     if (numAxes > 0) {
       while (retryAttempts < MAX_RETRIES) {
         const axisCounts: Record<string, number> = {};
