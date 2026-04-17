@@ -55,23 +55,32 @@ async function callAIForQuestions(params: {
   apiKey: string;
   systemPrompt: string;
   userPrompt: string;
+  timeoutMs?: number;
 }): Promise<any[]> {
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${params.apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-pro",
-      messages: [
-        { role: "system", content: params.systemPrompt },
-        { role: "user", content: params.userPrompt },
-      ],
-      temperature: 0.6,
-      reasoning: { effort: "medium" },
-    }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), params.timeoutMs ?? 60000);
+
+  let response: Response;
+  try {
+    response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${params.apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          { role: "system", content: params.systemPrompt },
+          { role: "user", content: params.userPrompt },
+        ],
+        temperature: 0.6,
+      }),
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const errBody = await response.text().catch(() => "");
