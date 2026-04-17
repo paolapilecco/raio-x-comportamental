@@ -55,7 +55,29 @@ const Auth = () => {
       if (isLogin) {
         const { error } = await signIn(emailResult.data, password);
         if (error) {
-          toast.error('Email ou senha incorretos.');
+          const raw = (error.message || '').toLowerCase();
+          if (raw.includes('email not confirmed') || raw.includes('not confirmed')) {
+            toast.error('Email ainda não confirmado.', {
+              description: 'Verifique sua caixa de entrada (e spam) ou reenvie o link.',
+              action: {
+                label: 'Reenviar email',
+                onClick: async () => {
+                  const { error: resendError } = await supabase.auth.resend({
+                    type: 'signup',
+                    email: emailResult.data,
+                    options: { emailRedirectTo: `${window.location.origin}/dashboard` },
+                  });
+                  if (resendError) toast.error('Não foi possível reenviar agora. Tente em alguns minutos.');
+                  else toast.success('Email de confirmação reenviado!');
+                },
+              },
+              duration: 10000,
+            });
+          } else if (raw.includes('invalid login') || raw.includes('invalid_credentials')) {
+            toast.error('Email ou senha incorretos.');
+          } else {
+            toast.error('Não foi possível entrar. Tente novamente.');
+          }
         } else {
           navigate('/dashboard');
         }
@@ -67,7 +89,9 @@ const Auth = () => {
             : 'Erro ao criar conta. Tente novamente.';
           toast.error(msg);
         } else {
-          toast.success('Conta criada! Verifique seu email para confirmar o cadastro.');
+          toast.success('Conta criada! Verifique seu email (e a caixa de spam) para confirmar o cadastro.', {
+            duration: 8000,
+          });
         }
       }
     } finally {
