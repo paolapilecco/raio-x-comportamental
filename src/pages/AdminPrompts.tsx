@@ -37,7 +37,10 @@ const PipelineFlowIndicator = ({ module, promptCount, qCount, hasAiConfig, onNav
   useEffect(() => {
     const check = async () => {
       const { data } = await supabase.from('report_templates').select('id, sections').eq('test_id', module.id).maybeSingle();
-      setHasTemplate(!!(data && (data.sections as any[])?.length > 0));
+      const sections = data?.sections as any;
+      const hasNewFormat = sections?.acts && Array.isArray(sections.acts) && sections.acts.length > 0;
+      const hasLegacy = Array.isArray(sections) && sections.length > 0;
+      setHasTemplate(!!(hasNewFormat || hasLegacy));
     };
     check();
   }, [module.id]);
