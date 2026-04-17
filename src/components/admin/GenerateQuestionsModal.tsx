@@ -25,6 +25,10 @@ interface QualityMetrics {
   coveredAxes: number;
   totalAxes: number;
   uncoveredAxes: string[];
+  underCoveredAxes?: string[];
+  axisDensity?: Record<string, number>;
+  minPerAxis?: number;
+  retryAttempts?: number;
 }
 
 interface ContextSummary {
@@ -381,11 +385,25 @@ export const GenerateQuestionsModal = ({
             </div>
           </div>
 
-          {aiQualityMetrics.uncoveredAxes?.length > 0 && (
+          {aiQualityMetrics.underCoveredAxes && aiQualityMetrics.underCoveredAxes.length > 0 ? (
+            <div className="flex items-start gap-2 text-[0.65rem] text-destructive/90 p-2 rounded-lg bg-destructive/10 border border-destructive/20">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>
+                <strong>Bloqueio:</strong> {aiQualityMetrics.underCoveredAxes.length} eixo(s) com menos de {aiQualityMetrics.minPerAxis ?? 3} perguntas — relatório ficará incompleto. Eixos: <strong>{aiQualityMetrics.underCoveredAxes.join(', ')}</strong>. Clique em <strong>Regenerar</strong> para tentar novamente.
+              </span>
+            </div>
+          ) : aiQualityMetrics.uncoveredAxes?.length > 0 ? (
             <div className="flex items-start gap-2 text-[0.65rem] text-amber-600/80">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
               <span>
                 Eixos sem cobertura: <strong>{aiQualityMetrics.uncoveredAxes.join(', ')}</strong>
+              </span>
+            </div>
+          ) : (
+            <div className="flex items-start gap-2 text-[0.65rem] text-emerald-600/90">
+              <Check className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span>
+                Todos os {aiQualityMetrics.totalAxes} eixos cobertos com mínimo de {aiQualityMetrics.minPerAxis ?? 3} perguntas. {aiQualityMetrics.retryAttempts ? `(IA fez ${aiQualityMetrics.retryAttempts} retry para completar)` : ''}
               </span>
             </div>
           )}
@@ -509,8 +527,9 @@ export const GenerateQuestionsModal = ({
           </button>
           <button
             onClick={handleAISave}
-            disabled={aiSelected.size === 0 || saving}
-            className="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[0.8rem] font-semibold flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
+            disabled={aiSelected.size === 0 || saving || (aiQualityMetrics?.underCoveredAxes && aiQualityMetrics.underCoveredAxes.length > 0)}
+            title={aiQualityMetrics?.underCoveredAxes && aiQualityMetrics.underCoveredAxes.length > 0 ? 'Não é possível substituir: existem eixos sem cobertura mínima. Regenere primeiro.' : ''}
+            className="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[0.8rem] font-semibold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-90 transition-all"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
             Substituir por {aiSelected.size} pergunta{aiSelected.size !== 1 ? 's' : ''}
