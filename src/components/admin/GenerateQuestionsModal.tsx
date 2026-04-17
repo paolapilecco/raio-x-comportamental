@@ -25,6 +25,10 @@ interface QualityMetrics {
   coveredAxes: number;
   totalAxes: number;
   uncoveredAxes: string[];
+  underCoveredAxes?: string[];
+  axisDensity?: Record<string, number>;
+  minPerAxis?: number;
+  retryAttempts?: number;
 }
 
 interface ContextSummary {
