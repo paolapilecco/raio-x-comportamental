@@ -56,7 +56,7 @@ export const QuestionsListPanel = ({
   selectedIds,
   expandedQuestionId,
   onSelectId,
-  onSelectAll: _onSelectAll,
+  onSelectAll,
   onDuplicate,
   onEdit,
   onDelete,
@@ -68,6 +68,8 @@ export const QuestionsListPanel = ({
   isCreating,
   showAIPanel,
 }: QuestionsListPanelProps) => {
+  const allSelected = questions.length > 0 && selectedIds.size === questions.length;
+  const someSelected = selectedIds.size > 0 && selectedIds.size < questions.length;
   // Audit existing questions against standards
   const auditResults = useMemo<AuditResults | null>(() => {
     if (loading || questions.length === 0) return null;
