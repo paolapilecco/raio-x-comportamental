@@ -513,7 +513,7 @@ export const GenerateQuestionsModal = ({
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[0.8rem] font-semibold flex items-center gap-2 disabled:opacity-50 hover:opacity-90 transition-all"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Adicionar {aiSelected.size} pergunta{aiSelected.size !== 1 ? 's' : ''}
+            Substituir por {aiSelected.size} pergunta{aiSelected.size !== 1 ? 's' : ''}
           </button>
         </div>
       )}
