@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, RotateCcw, Plus, X, Copy } from 'lucide-react';
+import { Save, RotateCcw, Plus, X, Copy, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
