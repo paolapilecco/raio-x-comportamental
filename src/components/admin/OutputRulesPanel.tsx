@@ -243,6 +243,14 @@ const OutputRulesPanel = ({ currentModule }: Props) => {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleAiGenerate}
+            disabled={generatingAi}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] font-medium bg-gradient-to-r from-amber-500/20 to-amber-600/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 hover:brightness-110 transition-all disabled:opacity-50"
+            title="Gerar regras personalizadas para este módulo com IA"
+          >
+            <Sparkles className="w-3 h-3" /> {generatingAi ? 'Gerando...' : 'Configurar com IA'}
+          </button>
           <SpreadButton field="all" label="Replicar tudo para todos" />
           <button onClick={handleReset} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[0.75rem] text-muted-foreground hover:text-foreground border border-border/30 hover:bg-secondary/50 transition-all">
             <RotateCcw className="w-3 h-3" /> Restaurar padrão
