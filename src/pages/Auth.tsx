@@ -15,7 +15,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
