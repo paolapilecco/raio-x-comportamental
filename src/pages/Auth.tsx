@@ -84,10 +84,51 @@ const Auth = () => {
       } else {
         const { error } = await signUp(emailResult.data, password);
         if (error) {
-          const msg = error.message?.includes('already registered')
-            ? 'Este email já está cadastrado'
-            : 'Erro ao criar conta. Tente novamente.';
-          toast.error(msg);
+          console.error('signUp error:', error);
+          const code = (error as { code?: string }).code?.toLowerCase() || '';
+          const status = (error as { status?: number }).status;
+          const raw = (error.message || '').toLowerCase();
+
+          const isAlreadyExists =
+            code === 'user_already_exists' ||
+            code === 'email_address_already_registered' ||
+            raw.includes('already registered') ||
+            raw.includes('already exists') ||
+            raw.includes('user already');
+
+          if (isAlreadyExists) {
+            toast.error('Este email já está cadastrado.', {
+              description: 'Faça login ou recupere sua senha.',
+              action: {
+                label: 'Fazer login',
+                onClick: () => {
+                  setIsLogin(true);
+                  setPassword('');
+                },
+              },
+              duration: 10000,
+            });
+          } else if (code === 'weak_password' || (raw.includes('password') && (raw.includes('weak') || raw.includes('short')))) {
+            toast.error('Senha muito fraca.', {
+              description: 'Use ao menos 6 caracteres com letras e números.',
+            });
+          } else if (code === 'over_email_send_rate_limit' || status === 429 || raw.includes('rate limit')) {
+            toast.error('Muitas tentativas.', {
+              description: 'Aguarde alguns minutos e tente novamente.',
+            });
+          } else if (code === 'email_address_invalid' || raw.includes('invalid email')) {
+            toast.error('Email inválido.', {
+              description: 'Verifique o endereço e tente novamente.',
+            });
+          } else if (code === 'signup_disabled' || raw.includes('signup') && raw.includes('disabled')) {
+            toast.error('Cadastro temporariamente indisponível.', {
+              description: 'Entre com Google ou tente mais tarde.',
+            });
+          } else {
+            toast.error('Não foi possível criar a conta agora.', {
+              description: 'Tente novamente em instantes.',
+            });
+          }
         } else {
           toast.success('Conta criada! Verifique seu email (e a caixa de spam) para confirmar o cadastro.', {
             duration: 8000,
