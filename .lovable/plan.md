@@ -1,46 +1,43 @@
 
-## Diagnóstico do Bug
 
-A etapa **3 (Template)** no "Fluxo do Pipeline" usa esta verificação em `src/pages/AdminPrompts.tsx` (linhas 30, 39-40):
+## Diagnóstico do Erro "Erro ao criar conta. Tente novamente."
 
-```ts
-{ key: 'template', check: (_, hasTemplate) => hasTemplate }
-// hasTemplate = !!(data && (data.sections as any[])?.length > 0)
-```
+Os logs do servidor de autenticação mostram que `POST /signup` retornou **HTTP 422** (acionado nas últimas tentativas a partir de `raio-xmental.com.br/dashboard`). Esse status é devolvido pelo Supabase Auth nestes casos:
 
-Ou seja, ele só fica verde se `sections` for um **array com length > 0**.
+1. **Email já cadastrado** (causa mais provável aqui)
+2. Senha fraca / abaixo da política
+3. Email rejeitado por validação (formato/domínio)
+4. "Signup desabilitado" no projeto
 
-**Mas o `ReportTemplatePanel` salva `sections` como um OBJETO** (linha 207):
-```ts
-sections: { acts: template.acts, rules: template.rules }
-```
+O código atual em `src/pages/Auth.tsx` só reconhece a string literal `"already registered"`. O Supabase pode retornar mensagens diferentes (`User already registered`, `email_address_already_registered`, `user_already_exists`) e expõe um campo `error.code` mais confiável que a `error.message`. Como nenhuma variação bate, o código cai no genérico **"Erro ao criar conta. Tente novamente."** — exatamente o que você está vendo no toast.
 
-Um objeto não tem `.length`, então `(data.sections as any[])?.length > 0` é sempre `undefined > 0` → `false`. **Por isso a etapa 3 nunca fica verde**, mesmo que o storyboard (Atos 1/2/3, Regras de Composição, Regras de Saída) esteja completamente preenchido e salvo.
+Em outras palavras: **o cadastro provavelmente está sendo recusado porque o email já existe** (você testou login antes e o usuário já está na base), mas a UI não consegue traduzir esse erro corretamente.
 
-## Correção
+## Plano de Correção
 
-Em `src/pages/AdminPrompts.tsx`, ajustar o `check` da linha 39-40 para reconhecer o formato novo (objeto com `acts`):
+**Único arquivo alterado**: `src/pages/Auth.tsx` (bloco de tratamento do `signUp`, linhas ~85-95)
 
-```ts
-const { data } = await supabase
-  .from('report_templates')
-  .select('id, sections')
-  .eq('test_id', module.id)
-  .maybeSingle();
+### Melhorias no tratamento de erro de signup
+Trocar a checagem frágil baseada em string única por uma matriz que cobre todos os retornos conhecidos do Supabase, usando tanto `error.code` quanto `error.message` (lowercase) e `error.status`:
 
-const sections = data?.sections as any;
-const hasNewFormat = sections?.acts && Array.isArray(sections.acts) && sections.acts.length > 0;
-const hasLegacy = Array.isArray(sections) && sections.length > 0;
-setHasTemplate(!!(hasNewFormat || hasLegacy));
-```
+| Condição detectada | Mensagem amigável + ação |
+|---|---|
+| `code === 'user_already_exists'` ou message contém `already registered` / `already exists` / `user already` | **"Este email já está cadastrado."** + botão de ação **"Fazer login"** que alterna para o modo login com o email pré-preenchido, e botão secundário **"Esqueci minha senha"** |
+| `code === 'weak_password'` ou message contém `password` + `weak`/`short` | **"Senha muito fraca. Use ao menos 6 caracteres com letras e números."** |
+| `code === 'over_email_send_rate_limit'` ou status 429 | **"Muitas tentativas. Aguarde alguns minutos e tente novamente."** |
+| `code === 'email_address_invalid'` ou message contém `invalid email` | **"Email inválido. Verifique e tente novamente."** |
+| `code === 'signup_disabled'` | **"Cadastro temporariamente indisponível. Entre com Google ou tente mais tarde."** |
+| Qualquer outro | **"Não foi possível criar a conta agora. Tente novamente em instantes."** (mensagem genérica + `console.error` com o erro real para debug) |
 
-Isso cobre:
-- **Formato novo (storyboard 3 atos)**: objeto `{ acts: [...], rules: {...} }`
-- **Formato legado**: array direto
+### Logging para debug futuro
+Adicionar `console.error('signUp error:', error)` antes do `toast`, para que próximos casos diferentes apareçam no console do navegador e sejam capturados pelo painel de runtime errors da Lovable.
 
-Depois disso, a etapa 3 ficará verde para todos os módulos que já têm storyboard salvo (mesmo apenas o default), e o badge superior passará para `4/4 etapas`.
+### Sem mudanças em backend / triggers / RLS
+Os triggers `assign_admin_on_signup` e `handle_new_user_role` foram inspecionados e estão íntegros (ambos `SECURITY DEFINER` com `ON CONFLICT DO NOTHING`). O 422 vem da camada de validação do GoTrue, não do banco — nenhuma migração é necessária.
 
-## Mudança
-- **Arquivo**: `src/pages/AdminPrompts.tsx`
-- **Linhas**: 37-43 (função `check` dentro do `useEffect` do `PipelineFlowIndicator`)
-- **Risco**: nenhum — apenas leitura, lógica isolada no indicador visual
+### Checagem de segurança
+Será executada após a edição (`security--run_security_scan`) para garantir 0 vulnerabilidades novas. Mudança é puramente client-side (UI/UX de tratamento de erro), sem expor dados sensíveis.
+
+## Próximo Passo Após Aplicar
+Você poderá tentar criar conta novamente — se o email já existir, o toast vai dizer isso explicitamente e oferecer um botão para alternar para o login (ou recuperar senha), eliminando a confusão atual.
+
