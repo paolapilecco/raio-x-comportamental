@@ -231,6 +231,16 @@ const Auth = () => {
               )}
             </div>
           )}
+          {authError && (
+            <div
+              role="alert"
+              aria-live="polite"
+              className="rounded-lg border border-border bg-secondary px-3 py-2 text-sm text-foreground"
+            >
+              {authError}
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={submitting}
