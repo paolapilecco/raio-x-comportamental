@@ -108,9 +108,13 @@ const Auth = () => {
               },
               duration: 10000,
             });
-          } else if (code === 'weak_password' || (raw.includes('password') && (raw.includes('weak') || raw.includes('short')))) {
-            toast.error('Senha muito fraca.', {
-              description: 'Use ao menos 6 caracteres com letras e números.',
+          } else if (code === 'weak_password' || raw.includes('pwned') || raw.includes('weak password') || (raw.includes('password') && (raw.includes('weak') || raw.includes('short') || raw.includes('known')))) {
+            const isPwned = raw.includes('pwned') || raw.includes('known to be');
+            toast.error(isPwned ? 'Esta senha já vazou em outros sites.' : 'Senha muito fraca.', {
+              description: isPwned
+                ? 'Por segurança, escolha outra senha única (combine letras, números e símbolos).'
+                : 'Use ao menos 6 caracteres com letras e números.',
+              duration: 8000,
             });
           } else if (code === 'over_email_send_rate_limit' || status === 429 || raw.includes('rate limit')) {
             toast.error('Muitas tentativas.', {
