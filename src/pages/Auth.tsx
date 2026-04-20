@@ -16,12 +16,14 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const [forgotMode, setForgotMode] = useState(false);
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError(null);
 
     const emailResult = emailSchema.safeParse(email);
     if (!emailResult.success) {
@@ -36,6 +38,7 @@ const Auth = () => {
       });
       setSubmitting(false);
       if (error) {
+        setAuthError('Erro ao enviar email de recuperação. Tente novamente.');
         toast.error('Erro ao enviar email de recuperação. Tente novamente.');
       } else {
         toast.success('Email de recuperação enviado! Verifique sua caixa de entrada.');
@@ -57,6 +60,7 @@ const Auth = () => {
         if (error) {
           const raw = (error.message || '').toLowerCase();
           if (raw.includes('email not confirmed') || raw.includes('not confirmed')) {
+            setAuthError('Email ainda não confirmado. Verifique sua caixa de entrada (e spam) ou reenvie o link.');
             toast.error('Email ainda não confirmado.', {
               description: 'Verifique sua caixa de entrada (e spam) ou reenvie o link.',
               action: {
@@ -74,8 +78,10 @@ const Auth = () => {
               duration: 10000,
             });
           } else if (raw.includes('invalid login') || raw.includes('invalid_credentials')) {
+            setAuthError('Email ou senha incorretos.');
             toast.error('Email ou senha incorretos.');
           } else {
+            setAuthError('Não foi possível entrar. Tente novamente.');
             toast.error('Não foi possível entrar. Tente novamente.');
           }
         } else {
@@ -97,6 +103,8 @@ const Auth = () => {
             raw.includes('user already');
 
           if (isAlreadyExists) {
+            const message = 'Este email já está cadastrado. Faça login ou recupere sua senha.';
+            setAuthError(message);
             toast.error('Este email já está cadastrado.', {
               description: 'Faça login ou recupere sua senha.',
               action: {
@@ -104,12 +112,17 @@ const Auth = () => {
                 onClick: () => {
                   setIsLogin(true);
                   setPassword('');
+                  setAuthError(null);
                 },
               },
               duration: 10000,
             });
           } else if (code === 'weak_password' || raw.includes('pwned') || raw.includes('weak password') || (raw.includes('password') && (raw.includes('weak') || raw.includes('short') || raw.includes('known')))) {
             const isPwned = raw.includes('pwned') || raw.includes('known to be');
+            const message = isPwned
+              ? 'Esta senha já vazou em outros sites. Por segurança, escolha outra senha única.'
+              : 'Senha muito fraca. Use ao menos 6 caracteres com letras e números.';
+            setAuthError(message);
             toast.error(isPwned ? 'Esta senha já vazou em outros sites.' : 'Senha muito fraca.', {
               description: isPwned
                 ? 'Por segurança, escolha outra senha única (combine letras, números e símbolos).'
@@ -117,23 +130,28 @@ const Auth = () => {
               duration: 8000,
             });
           } else if (code === 'over_email_send_rate_limit' || status === 429 || raw.includes('rate limit')) {
+            setAuthError('Muitas tentativas. Aguarde alguns minutos e tente novamente.');
             toast.error('Muitas tentativas.', {
               description: 'Aguarde alguns minutos e tente novamente.',
             });
           } else if (code === 'email_address_invalid' || raw.includes('invalid email')) {
+            setAuthError('Email inválido. Verifique o endereço e tente novamente.');
             toast.error('Email inválido.', {
               description: 'Verifique o endereço e tente novamente.',
             });
           } else if (code === 'signup_disabled' || raw.includes('signup') && raw.includes('disabled')) {
+            setAuthError('Cadastro temporariamente indisponível. Entre com Google ou tente mais tarde.');
             toast.error('Cadastro temporariamente indisponível.', {
               description: 'Entre com Google ou tente mais tarde.',
             });
           } else {
+            setAuthError('Não foi possível criar a conta agora. Tente novamente em instantes.');
             toast.error('Não foi possível criar a conta agora.', {
               description: 'Tente novamente em instantes.',
             });
           }
         } else {
+          setAuthError(null);
           toast.success('Conta criada! Verifique seu email (e a caixa de spam) para confirmar o cadastro.', {
             duration: 8000,
           });
