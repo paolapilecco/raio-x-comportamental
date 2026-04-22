@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import { DiagnosticResult } from '@/types/diagnostic';
+import { getBehavioralAxisLabel } from '@/lib/axisLabelsBehavioral';
 
 export interface PdfEvolutionData {
   futureConsequence?: string;
