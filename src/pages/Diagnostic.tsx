@@ -612,25 +612,32 @@ const Diagnostic = () => {
       });
     }
 
+    // Step 1: run AI analysis (CRITICAL — no analysis = no report)
+    let analysisResult: DiagnosticResult;
     try {
-      let analysisResult = await runAIAnalysis(answers);
-
-      if (!analysisResult) {
-        throw new Error('AI analysis returned null');
-      }
-
+      const ai = await runAIAnalysis(answers);
+      if (!ai) throw new Error('AI analysis returned null');
       console.log('[Diagnostic] Using AI-powered analysis from admin prompts');
       // Apply structured block assembly + quality validation to AI output
-      analysisResult = assembleReport(analysisResult);
-
-      await saveToDatabase(answers, analysisResult);
-      setResult(analysisResult);
-      setStep('report');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      analysisResult = assembleReport(ai);
     } catch (error) {
-      console.error('[Diagnostic] Hard fail in end-to-end action flow:', error);
-      toast.error('Falha técnica: o diagnóstico não foi concluído porque o plano de ação não atingiu o padrão exigido.');
+      console.error('[Diagnostic] AI analysis failed:', error);
+      toast.error('Falha técnica ao gerar o diagnóstico. Tente novamente em instantes.');
       setStep('questionnaire');
+      return;
+    }
+
+    // Step 2: show the report IMMEDIATELY — never block the user on persistence
+    setResult(analysisResult);
+    setStep('report');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    // Step 3: persist in background — failures here must NOT kick the user back
+    try {
+      await saveToDatabase(answers, analysisResult);
+    } catch (error) {
+      console.error('[Diagnostic] Background save failed (report still shown):', error);
+      toast.warning('Seu diagnóstico foi gerado, mas houve um problema ao salvá-lo no histórico. Você pode revisar agora normalmente.');
     }
   }, [saveToDatabase, runAIAnalysis, isRetest, user, moduleId, retestOrigin, previousSessionId, previousResultId]);
 
