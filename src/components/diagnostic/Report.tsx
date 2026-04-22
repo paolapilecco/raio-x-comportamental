@@ -13,6 +13,7 @@ import LifeMapReport from './LifeMapReport';
 import { ReportGamification } from './ReportGamification';
 import { DiagnosticTrustLayer } from './DiagnosticTrustLayer';
 import { ActionBridge } from './ActionBridge';
+import { BehavioralRadar } from './BehavioralRadar';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES
