@@ -272,35 +272,8 @@ const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
           {/* ── Legacy Actions (backward compat) ── */}
           <ActionPreviewSection result={result} ai={ai} dominantAxisLabel={dominantAxisLabel} profileName={profileName} />
 
-          {/* ── Intensity Bars ── */}
-          <motion.section {...fade} transition={{ delay: 0.42 }}>
-            <div className="mb-6">
-              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.25em] font-medium">Intensidade por eixo</p>
-            </div>
-            <div className="space-y-5 bg-card/50 border border-border/20 rounded-2xl px-6 py-6">
-              {result.allScores.slice(0, 8).map((score) => {
-                const pct = Math.min(100, score.percentage);
-                const barColor = pct > 65 ? 'bg-destructive/60' : pct >= 40 ? 'bg-yellow-500/60' : 'bg-green-500/60';
-                const textColor = pct > 65 ? 'text-destructive' : pct >= 40 ? 'text-yellow-600' : 'text-green-600';
-                return (
-                  <div key={score.key}>
-                    <div className="flex justify-between text-xs mb-2">
-                      <span className="text-muted-foreground/70 font-medium">{axisLabels[score.key] || score.label || score.key}</span>
-                      <span className={`tabular-nums font-semibold ${textColor}`}>{pct}%</span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-border/20 overflow-hidden">
-                      <motion.div
-                        className={`h-full rounded-full ${barColor}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${pct}%` }}
-                        transition={{ duration: 0.6, delay: 0.5, ease: 'easeOut' }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </motion.section>
+          {/* Behavioral Radar (premium clinical visual) */}
+          <BehavioralRadar scores={result.allScores} />
         </div>
         {/* ── Action Bridge ── */}
         <ActionBridge
