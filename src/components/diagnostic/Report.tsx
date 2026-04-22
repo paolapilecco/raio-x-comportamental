@@ -93,7 +93,7 @@ function getHeaderTitle(slug?: string): string {
 const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
   const { profile, user } = useAuth();
-  const axisLabels = useAxisLabels();
+  const _axisLabels = useAxisLabels();
   const [storyboard, setStoryboard] = useState<StoryboardTemplate | null>(null);
 
   useEffect(() => {
