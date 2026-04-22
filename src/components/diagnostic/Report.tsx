@@ -6,7 +6,6 @@ import { generateDiagnosticPdf, PdfEvolutionData } from '@/lib/generatePdf';
 import { trackEvent } from '@/lib/trackEvent';
 import { generateLifeMapPdf } from '@/lib/generateLifeMapPdf';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAxisLabels } from '@/hooks/useAxisLabels';
 import { supabase } from '@/integrations/supabase/client';
 import { useState, useEffect, memo } from 'react';
 import LifeMapReport from './LifeMapReport';
@@ -93,7 +92,6 @@ function getHeaderTitle(slug?: string): string {
 const Report = ({ result, onRestart, moduleSlug }: ReportProps) => {
   const info = intensityConfig[result.intensity];
   const { profile, user } = useAuth();
-  const _axisLabels = useAxisLabels();
   const [storyboard, setStoryboard] = useState<StoryboardTemplate | null>(null);
 
   useEffect(() => {
