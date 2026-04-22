@@ -225,6 +225,134 @@ function renderImpactCards(ctx: Ctx, items: { area: string; efeito: string }[]) 
   }
 }
 
+// ── Behavioral Radar (vector clinical chart) ──
+
+interface RadarAxis { key: string; label?: string; percentage: number; }
+
+function drawBehavioralRadar(ctx: Ctx, axes: RadarAxis[]) {
+  if (!axes.length) return;
+  const data = axes.slice(0, 8);
+  const n = data.length;
+  const { doc } = ctx;
+
+  pb(ctx, 12);
+  ctx.y += 6;
+  doc.setFillColor(...C.accent);
+  doc.roundedRect(M, ctx.y - 4, 2, 10, 1, 1, 'F');
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...C.dark);
+  doc.text('Mapa Comportamental', M + 8, ctx.y + 1.5);
+  ctx.y += 10;
+
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(...C.muted);
+  doc.text('Distribuicao relativa dos seus padroes comportamentais.', M, ctx.y);
+  ctx.y += 8;
+
+  const cardH = 110;
+  pb(ctx, cardH + 22);
+  doc.setFillColor(...C.cardBg);
+  doc.setDrawColor(...C.border);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(M, ctx.y, CW, cardH, 4, 4, 'FD');
+
+  const cx = M + CW / 2;
+  const cy = ctx.y + cardH / 2;
+  const radius = 36;
+  const angleFor = (i: number) => -Math.PI / 2 + (i * 2 * Math.PI) / n;
+
+  doc.setLineWidth(0.2);
+  [0.25, 0.5, 0.75, 1].forEach((r, idx) => {
+    if (idx === 1) {
+      doc.setLineDashPattern([0.6, 0.6], 0);
+      doc.setDrawColor(180, 184, 190);
+    } else {
+      doc.setLineDashPattern([], 0);
+      doc.setDrawColor(...C.border);
+    }
+    doc.circle(cx, cy, radius * r, 'S');
+  });
+  doc.setLineDashPattern([], 0);
+
+  doc.setDrawColor(225, 227, 230);
+  doc.setLineWidth(0.15);
+  data.forEach((_, i) => {
+    const a = angleFor(i);
+    doc.line(cx, cy, cx + Math.cos(a) * radius, cy + Math.sin(a) * radius);
+  });
+
+  const pts: [number, number][] = data.map((s, i) => {
+    const a = angleFor(i);
+    const r = (Math.min(100, Math.max(0, s.percentage)) / 100) * radius;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  });
+
+  doc.setFillColor(60, 110, 100);
+  doc.setDrawColor(31, 61, 58);
+  doc.setLineWidth(0.5);
+  if (pts.length >= 3) {
+    const origin = pts[0];
+    const segs: [number, number][] = pts.slice(1).map((p, i) => [p[0] - pts[i][0], p[1] - pts[i][1]]);
+    segs.push([origin[0] - pts[pts.length - 1][0], origin[1] - pts[pts.length - 1][1]]);
+    (doc as any).lines(segs, origin[0], origin[1], [1, 1], 'FD', true);
+  }
+
+  data.forEach((s, i) => {
+    const [x, y] = pts[i];
+    const color: RGB = s.percentage > 65 ? C.red : s.percentage >= 40 ? C.yellow : C.green;
+    doc.setFillColor(...color);
+    doc.circle(x, y, 1.2, 'F');
+  });
+
+  doc.setFontSize(7.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(...C.text);
+  data.forEach((s, i) => {
+    const a = angleFor(i);
+    const lr = radius + 8;
+    const x = cx + Math.cos(a) * lr;
+    const y = cy + Math.sin(a) * lr;
+    const label = getBehavioralAxisLabel(s.key, s.label);
+    const words = label.split(' ');
+    const isLong = label.length > 14 && words.length >= 2;
+    const mid = Math.ceil(words.length / 2);
+    const line1 = isLong ? words.slice(0, mid).join(' ') : label;
+    const line2 = isLong ? words.slice(mid).join(' ') : '';
+    let alignX = x;
+    if (Math.abs(Math.cos(a)) < 0.2) alignX = x - doc.getTextWidth(line1) / 2;
+    else if (Math.cos(a) < 0) alignX = x - doc.getTextWidth(line1);
+    doc.text(line1, alignX, isLong ? y - 1 : y + 1);
+    if (isLong) {
+      let alignX2 = x;
+      if (Math.abs(Math.cos(a)) < 0.2) alignX2 = x - doc.getTextWidth(line2) / 2;
+      else if (Math.cos(a) < 0) alignX2 = x - doc.getTextWidth(line2);
+      doc.text(line2, alignX2, y + 3);
+    }
+  });
+
+  ctx.y += cardH + 6;
+
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  const legendItems: { label: string; color: RGB }[] = [
+    { label: 'Equilibrado', color: C.green },
+    { label: 'Em atencao', color: C.yellow },
+    { label: 'Critico', color: C.red },
+  ];
+  let lx = M;
+  legendItems.forEach((it) => {
+    doc.setFillColor(...it.color);
+    doc.circle(lx + 1.2, ctx.y - 0.8, 1.0, 'F');
+    doc.setTextColor(...C.muted);
+    doc.text(it.label.toUpperCase(), lx + 4, ctx.y);
+    lx += doc.getTextWidth(it.label.toUpperCase()) + 14;
+  });
+  ctx.y += 6;
+}
+
+
 // ── Main export ──
 
 export function generateDiagnosticPdf(result: DiagnosticResult, userName?: string, extras?: PdfEvolutionData) {
@@ -625,47 +753,9 @@ export function generateDiagnosticPdf(result: DiagnosticResult, userName?: strin
   }
 
   // ═══════════════════════════════════════════
-  // INTENSITY BARS
+  // BEHAVIORAL RADAR (replaces raw axis bars)
   // ═══════════════════════════════════════════
-  ctx.y += 6;
-  pb(ctx, 24);
-  doc.setFontSize(8.5);
-  doc.setFont('helvetica', 'bold');
-  doc.setTextColor(...C.muted);
-  doc.text('INTENSIDADE POR EIXO', M, ctx.y);
-  ctx.y += 6;
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica', 'normal');
-  doc.setFillColor(...C.green);
-  doc.circle(M + 2, ctx.y - 0.8, 0.8, 'F');
-  doc.setTextColor(...C.light);
-  doc.text('< 40%', M + 5, ctx.y);
-  doc.setFillColor(...C.yellow);
-  doc.circle(M + 22, ctx.y - 0.8, 0.8, 'F');
-  doc.text('40-65%', M + 25, ctx.y);
-  doc.setFillColor(...C.red);
-  doc.circle(M + 48, ctx.y - 0.8, 0.8, 'F');
-  doc.text('> 65%', M + 51, ctx.y);
-  ctx.y += 6;
-
-  result.allScores.slice(0, 8).forEach(score => {
-    pb(ctx, 12);
-    doc.setFontSize(8.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(...C.text);
-    doc.text(score.label, M + 2, ctx.y);
-    doc.setFont('helvetica', 'bold');
-    const p = `${score.percentage}%`;
-    doc.text(p, M + CW - doc.getTextWidth(p), ctx.y);
-    const by = ctx.y + 3;
-    doc.setFillColor(...C.border);
-    doc.roundedRect(M + 2, by, CW - 4, 2.5, 1.2, 1.2, 'F');
-    const bc: RGB = score.percentage > 65 ? C.red : score.percentage >= 40 ? C.yellow : C.green;
-    doc.setFillColor(...bc);
-    const barWidth = (score.percentage / 100) * (CW - 4);
-    if (barWidth > 0) doc.roundedRect(M + 2, by, Math.max(barWidth, 2), 2.5, 1.2, 1.2, 'F');
-    ctx.y += 11;
-  });
+  drawBehavioralRadar(ctx, result.allScores as any);
 
   // ═══════════════════════════════════════════
   // FOOTER
