@@ -1182,7 +1182,7 @@ serve(async (req) => {
     // ─── AI CONFIG ───
     let aiModel = "google/gemini-3-flash-preview";
     let aiTemp = 0.55;
-    let aiMaxTokens = 6000;
+    let aiMaxTokens = 8000;
 
     if (globalConfigRes.data?.ai_model) aiModel = globalConfigRes.data.ai_model;
     if (testConfigRes.data && !testConfigRes.data.use_global_defaults) {
@@ -1216,7 +1216,7 @@ serve(async (req) => {
     const coreUserPrompt = `${userContext}\n\n${dataBlock}\n\n${buildCoreOutputSchema()}`;
     const coreSystemFull = [globalSystemPrompt, CORE_SYSTEM_PROMPT, refineNote].filter(Boolean).join("\n\n");
 
-    const coreResult = await callAI(coreSystemFull, coreUserPrompt, aiModel, aiTemp, 2000, LOVABLE_API_KEY);
+    const coreResult = await callAI(coreSystemFull, coreUserPrompt, aiModel, aiTemp, 3500, LOVABLE_API_KEY);
 
     if (coreResult.error === "rate_limit") return errorResponse("Limite de requisições. Tente novamente.", 429);
     if (coreResult.error === "credits_exhausted") return errorResponse("Créditos de IA esgotados.", 402);

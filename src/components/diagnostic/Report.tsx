@@ -645,9 +645,29 @@ function RenderSlot({ slot, actId, value, ai, result: _result, delay }: {
   }
 
   if (slot.format === 'cards') {
+    const cards = Array.isArray(value)
+      ? (value as any[]).map((item: any) => ({
+          pillar: item.pillar || item.area || item.label || '',
+          impact: item.impact || item.efeito || item.text || '',
+        })).filter(c => c.pillar && c.impact)
+      : [];
+    if (cards.length === 0) {
+      return (
+        <Section title={slot.label} delay={delay} accent={accent}>
+          <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+        </Section>
+      );
+    }
     return (
       <Section title={slot.label} delay={delay} accent={accent}>
-        <p className="text-[15px] text-muted-foreground leading-[1.85]">{typeof value === 'string' ? value : ''}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {cards.map((c, i) => (
+            <div key={i} className="rounded-xl border border-border/25 bg-card/50 px-5 py-4">
+              <p className="text-[9px] text-muted-foreground/40 uppercase tracking-[0.2em] font-medium mb-2">{c.pillar}</p>
+              <p className="text-sm text-foreground/85 leading-relaxed">{c.impact}</p>
+            </div>
+          ))}
+        </div>
       </Section>
     );
   }
