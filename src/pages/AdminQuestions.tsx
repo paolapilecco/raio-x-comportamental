@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Plus, Save, Trash2, Loader2, Edit3, X, CheckSquare, Square,
   Brain, Heart, Zap, DollarSign, Eye, Compass, Shield, Sparkles, AlertTriangle,
-  BookOpen, CheckCircle2, XCircle,
+  BookOpen, CheckCircle2, XCircle, Download,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -689,6 +689,13 @@ export default function AdminQuestions() {
                     Excluir {selectedIds.size} selecionada(s)
                   </button>
                 )}
+                <a
+                  href="/perguntas-modulos.md"
+                  download="perguntas-modulos.md"
+                  className="px-4 py-2 rounded-lg border border-border text-muted-foreground text-sm font-medium flex items-center gap-2 hover:bg-accent hover:text-foreground transition-colors"
+                >
+                  <Download className="w-4 h-4" /> Baixar .md
+                </a>
                 <button
                   onClick={startCreate}
                   disabled={creating}
