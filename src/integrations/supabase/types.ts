@@ -217,6 +217,8 @@ export type Database = {
           self_sabotage_cycle: string[] | null
           session_id: string
           state_summary: string
+          tarefas_estrategicas: Json | null
+          tarefas_validation: Json | null
           temperament_traits: Json | null
           traps: string[] | null
           triggers: string[] | null
@@ -250,6 +252,8 @@ export type Database = {
           self_sabotage_cycle?: string[] | null
           session_id: string
           state_summary: string
+          tarefas_estrategicas?: Json | null
+          tarefas_validation?: Json | null
           temperament_traits?: Json | null
           traps?: string[] | null
           triggers?: string[] | null
@@ -283,6 +287,8 @@ export type Database = {
           self_sabotage_cycle?: string[] | null
           session_id?: string
           state_summary?: string
+          tarefas_estrategicas?: Json | null
+          tarefas_validation?: Json | null
           temperament_traits?: Json | null
           traps?: string[] | null
           triggers?: string[] | null

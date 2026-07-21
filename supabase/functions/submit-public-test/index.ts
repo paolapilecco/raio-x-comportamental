@@ -52,6 +52,17 @@ serve(async (req) => {
       } catch (e) { console.error("Email notification error:", e); }
     };
 
+    // Helper: track monthly test usage for plan-limit enforcement (non-blocking)
+    const incrementUsage = async () => {
+      const { error } = await supabase.rpc("increment_test_usage", {
+        _user_id: invite.owner_id,
+        _person_id: invite.person_id,
+        _test_module_id: invite.test_module_id,
+        _month_year: monthYear,
+      });
+      if (error) console.error("Failed to increment test usage:", error);
+    };
+
     // 1. Validate token
     const { data: invite, error: inviteErr } = await supabase
       .from("test_invites")
@@ -64,6 +75,31 @@ serve(async (req) => {
     if (inviteErr || !invite) {
       return new Response(JSON.stringify({ error: "Link inválido, expirado ou já utilizado" }), {
         status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Enforce the same "N testes/mês por categoria" plan limit used in the authenticated flow
+    // (test_usage is tracked per managed person + module, regardless of who submits the answers).
+    const { data: ownerSub } = await supabase
+      .from("subscriptions")
+      .select("plan_type")
+      .eq("user_id", invite.owner_id)
+      .eq("status", "active")
+      .maybeSingle();
+    const ownerPlanType = ownerSub?.plan_type || "standard";
+    const monthlyLimit = ownerPlanType === "standard" ? 1 : 2;
+    const now = new Date();
+    const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+
+    const { data: usageCount, error: usageErr } = await supabase.rpc("get_test_usage_count", {
+      _person_id: invite.person_id,
+      _test_module_id: invite.test_module_id,
+      _month_year: monthYear,
+    });
+
+    if (!usageErr && (usageCount || 0) >= monthlyLimit) {
+      return new Response(JSON.stringify({ error: `Limite de ${monthlyLimit} teste(s) por mês atingido para esta pessoa neste módulo.` }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -129,6 +165,7 @@ serve(async (req) => {
     if (!questions) {
       // Complete session without analysis
       await supabase.from("diagnostic_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
+      incrementUsage().catch(() => {});
       return new Response(JSON.stringify({ success: true, sessionId: session.id, message: "Respostas salvas. Análise pendente." }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -240,6 +277,7 @@ serve(async (req) => {
           });
 
           await supabase.from("diagnostic_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
+          incrementUsage().catch(() => {});
 
           // Notify professional
           if (ownerEmail) {
@@ -281,6 +319,7 @@ serve(async (req) => {
     });
 
     await supabase.from("diagnostic_sessions").update({ completed_at: new Date().toISOString() }).eq("id", session.id);
+    incrementUsage().catch(() => {});
 
     // Notify professional (fallback path)
     const fallbackDominant = scores[0];

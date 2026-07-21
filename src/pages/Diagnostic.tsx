@@ -14,7 +14,7 @@ import { trackEvent, RetestOrigin } from '@/lib/trackEvent';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { UserCircle, ChevronRight } from 'lucide-react';
-// import { canAccessModule, getMonthlyTestLimit, getCurrentMonthYear } from '@/lib/planLimits';
+import { getMonthlyTestLimit, getCurrentMonthYear } from '@/lib/planLimits';
 
 type Step = 'loading' | 'select-person' | 'questionnaire' | 'analyzing' | 'report';
 
@@ -28,12 +28,32 @@ interface DbQuestion {
   options?: string[] | null;
   option_scores?: number[] | null;
   context?: string | null;
+  weight?: number | null;
 }
 
 interface ManagedPerson {
   id: string;
   name: string;
   cpf: string;
+}
+
+/**
+ * Map a single answer to its raw score and the max it could have scored,
+ * per the question's type (option_scores / intensity / likert). Shared by
+ * calculateRawScores (axis aggregation) and the per-answer evidence mapping
+ * sent to the AI, so both stay mathematically identical by construction.
+ */
+function computeQuestionScore(question: DbQuestion, answerValue: number): { scoreValue: number; maxPerQuestion: number } {
+  if (question.option_scores && question.option_scores.length > 0) {
+    // Map answer index (1-based) to the actual score from option_scores
+    const idx = Math.max(0, Math.min(answerValue - 1, question.option_scores.length - 1));
+    return { scoreValue: question.option_scores[idx], maxPerQuestion: Math.max(...question.option_scores) };
+  }
+  if (question.type === 'intensity') {
+    return { scoreValue: answerValue, maxPerQuestion: 10 };
+  }
+  // Likert 1-5 → normalize to 0-4
+  return { scoreValue: Math.max(0, answerValue - 1), maxPerQuestion: 4 };
 }
 
 /**
@@ -49,27 +69,13 @@ function calculateRawScores(answers: Answer[], questions: DbQuestion[], axisKeys
     const question = questions.find(q => q.id === answer.questionId);
     if (!question) return;
 
-    let scoreValue: number;
-    let maxPerQuestion: number;
+    const { scoreValue, maxPerQuestion } = computeQuestionScore(question, answer.value);
 
-    if (question.option_scores && question.option_scores.length > 0) {
-      // Map answer index (1-based) to the actual score from option_scores
-      const idx = Math.max(0, Math.min(answer.value - 1, question.option_scores.length - 1));
-      scoreValue = question.option_scores[idx];
-      maxPerQuestion = Math.max(...question.option_scores);
-    } else if (question.type === 'intensity') {
-      scoreValue = answer.value;
-      maxPerQuestion = 10;
-    } else {
-      // Likert 1-5 → normalize to 0-4
-      scoreValue = Math.max(0, answer.value - 1);
-      maxPerQuestion = 4;
-    }
-
+    const weight = question.weight || 1;
     question.axes.forEach(axis => {
       if (axis in rawScores) {
-        rawScores[axis] += scoreValue;
-        maxScores[axis] += maxPerQuestion;
+        rawScores[axis] += scoreValue * weight;
+        maxScores[axis] += maxPerQuestion * weight;
       }
     });
   });
@@ -109,6 +115,27 @@ const Diagnostic = () => {
   const slug = moduleSlug || BEHAVIORAL_SLUG;
   const isFreeTest = slug === BEHAVIORAL_SLUG;
   const canAccessTest = isSuperAdmin || isPremium || isFreeTest;
+
+  // Enforce the "N testes/mês por categoria" plan limit before letting the questionnaire start.
+  // Fails open on an infra error — never lock a user out of the product over a transient RPC failure.
+  const canStartTest = useCallback(async (personId: string, modId: string): Promise<boolean> => {
+    if (isSuperAdmin) return true;
+    const limit = getMonthlyTestLimit(planType, true, slug, isSuperAdmin);
+    const { data: count, error } = await supabase.rpc('get_test_usage_count', {
+      _person_id: personId,
+      _test_module_id: modId,
+      _month_year: getCurrentMonthYear(),
+    });
+    if (error) {
+      console.error('[Diagnostic] Failed to check monthly test usage:', error);
+      return true;
+    }
+    if ((count || 0) >= limit) {
+      toast.error(`Limite de ${limit} teste(s) por mês atingido para este módulo. Volte no próximo mês ou faça upgrade de plano.`);
+      return false;
+    }
+    return true;
+  }, [planType, isSuperAdmin, slug]);
 
   // Determine retest origin from URL param
   const retestOrigin: RetestOrigin = (() => {
@@ -163,7 +190,7 @@ const Diagnostic = () => {
 
       const { data: questions, error } = await supabase
         .from('questions')
-        .select('sort_order, text, axes, type, options, option_scores, context')
+        .select('sort_order, text, axes, type, options, option_scores, context, weight')
         .eq('test_id', mod.id)
         .order('sort_order', { ascending: true });
 
@@ -228,6 +255,7 @@ const Diagnostic = () => {
         options: q.options,
         option_scores: q.option_scores,
         context: q.context || null,
+        weight: q.weight,
       })));
 
       // Fetch or auto-create managed person for individual plans
@@ -272,7 +300,12 @@ const Diagnostic = () => {
       // Only show person selection for profissional with multiple persons
       const isProfissional = planType === 'profissional' || isSuperAdmin;
       if (!isProfissional || fetchedPersons.length <= 1) {
-        setSelectedPersonId(fetchedPersons[0]?.id || null);
+        const chosenPersonId = fetchedPersons[0]?.id || null;
+        setSelectedPersonId(chosenPersonId);
+        if (chosenPersonId && !(await canStartTest(chosenPersonId, mod.id))) {
+          navigate('/tests');
+          return;
+        }
         setStep('questionnaire');
       } else {
         setStep('select-person');
@@ -334,6 +367,8 @@ const Diagnostic = () => {
         critical_diagnosis: analysisResult.criticalDiagnosis || '',
         impact: analysisResult.impact || '',
         what_not_to_do: analysisResult.whatNotToDo || [],
+        tarefas_estrategicas: Array.isArray(aiResult.tarefasEstrategicas) ? aiResult.tarefasEstrategicas : null,
+        tarefas_validation: aiResult.tarefasValidation || null,
       }]);
 
       // Get the saved result ID
@@ -347,6 +382,18 @@ const Diagnostic = () => {
         .from('diagnostic_sessions')
         .update({ completed_at: new Date().toISOString() })
         .eq('id', session.id);
+
+      // Track monthly test usage for plan-limit enforcement (best-effort, non-blocking)
+      if (selectedPersonId && moduleId) {
+        supabase.rpc('increment_test_usage', {
+          _user_id: user.id,
+          _person_id: selectedPersonId,
+          _test_module_id: moduleId,
+          _month_year: getCurrentMonthYear(),
+        }).then(({ error }) => {
+          if (error) console.error('[Diagnostic] Failed to increment test usage:', error);
+        });
+      }
 
       // Track diagnostic_completed event (always)
       trackEvent({ userId: user.id, event: 'diagnostic_completed', moduleId: moduleId || undefined, diagnosticResultId: savedResult?.id });
@@ -464,17 +511,8 @@ const Diagnostic = () => {
         }
 
         // Calculate the mapped score (0-100) for this answer
-        let mappedScore: number;
-        if (q.option_scores && q.option_scores.length > 0) {
-          const idx = Math.max(0, Math.min(a.value - 1, q.option_scores.length - 1));
-          const maxOption = Math.max(...q.option_scores);
-          mappedScore = maxOption > 0 ? Math.round((q.option_scores[idx] / maxOption) * 100) : 0;
-        } else if (q.type === 'intensity') {
-          mappedScore = Math.round((a.value / 10) * 100);
-        } else {
-          // Likert 1-5 → 0-100
-          mappedScore = Math.round(((a.value - 1) / 4) * 100);
-        }
+        const { scoreValue, maxPerQuestion } = computeQuestionScore(q, a.value);
+        const mappedScore = maxPerQuestion > 0 ? Math.round((scoreValue / maxPerQuestion) * 100) : 0;
 
         return {
           questionId: a.questionId,
@@ -670,7 +708,8 @@ const Diagnostic = () => {
                 {persons.map(person => (
                   <button
                     key={person.id}
-                    onClick={() => {
+                    onClick={async () => {
+                      if (moduleId && !(await canStartTest(person.id, moduleId))) return;
                       setSelectedPersonId(person.id);
                       setStep('questionnaire');
                     }}
