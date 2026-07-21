@@ -5,9 +5,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/AppLayout';
-import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar, Mail, Send, Pencil, ToggleLeft, ToggleRight, Check, X, Eye } from 'lucide-react';
+import { Users, Plus, Trash2, Crown, Lock, UserCircle, Phone, Calendar, Pencil, ToggleLeft, ToggleRight, Check, X, Eye } from 'lucide-react';
 import { z } from 'zod';
-import { getPersonLimit } from '@/lib/planLimits';
+import { getPersonLimit, isIndividualPlan } from '@/lib/planLimits';
 
 const nameSchema = z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres').max(100);
 const cpfSchema = z.string().trim().regex(/^\d{3}\.?\d{3}\.?\d{3}-?\d{2}$/, 'CPF inválido');
@@ -40,14 +40,11 @@ function formatCpfDisplay(cpf: string): string {
 const fadeUp = { initial: { opacity: 0, y: 15 }, animate: { opacity: 1, y: 0 } };
 
 export default function ManagedPersons() {
-  const { user, isSuperAdmin, planType, profile } = useAuth();
+  const { user, isSuperAdmin, planType } = useAuth();
   const navigate = useNavigate();
   const [persons, setPersons] = useState<ManagedPerson[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
-  const [showInviteForm, setShowInviteForm] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [sendingInvite, setSendingInvite] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   // Form state
@@ -62,11 +59,10 @@ export default function ManagedPersons() {
   const [editPhone, setEditPhone] = useState('');
   const [editBirthDate, setEditBirthDate] = useState('');
 
-  const isIndividual = planType !== 'profissional' && !isSuperAdmin;
+  const isIndividual = isIndividualPlan(planType) && !isSuperAdmin;
   const limit = getPersonLimit(planType, isSuperAdmin);
   const activeCount = persons.filter(p => p.is_active).length;
   const canAdd = isSuperAdmin || (!isIndividual && activeCount < limit);
-  const canInvite = planType === 'profissional' || isSuperAdmin;
 
   useEffect(() => {
     // Individual plans don't need person management
@@ -243,20 +239,11 @@ export default function ManagedPersons() {
               {persons.length > activeCount && (
                 <span className="ml-2 text-muted-foreground/60">· {persons.length - activeCount} inativo(s)</span>
               )}
-              {planType === 'standard' && ` — Upgrade libera até ${PLAN_LIMITS.pessoal.maxPersons}`}
+              {planType === 'standard' && ` — Plano Profissional libera até ${PLAN_LIMITS.profissional.maxPersons}`}
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            {canInvite && !showInviteForm && (
-              <button
-                onClick={() => setShowInviteForm(true)}
-                className="px-3 py-2 border border-border rounded-lg text-sm text-muted-foreground hover:bg-muted/30 flex items-center gap-1.5"
-              >
-                <Mail className="w-3.5 h-3.5" /> Convidar
-              </button>
-            )}
-
           {canAdd && !showForm && (
             <button
               onClick={() => {
@@ -338,59 +325,13 @@ export default function ManagedPersons() {
             <Crown className="w-8 h-8 text-primary shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground">Desbloqueie mais perfis</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Com o plano Pessoal, analise até 3 perfis. Com o Profissional, até 15.</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Com o plano Profissional, gerencie até {PLAN_LIMITS.profissional.maxPersons} perfis.</p>
             </div>
             <a href="/checkout" className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 shrink-0">
               Upgrade
             </a>
           </motion.div>
         )}
-
-        {/* Invite form */}
-        <AnimatePresence>
-        {showInviteForm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-card rounded-xl border border-border p-6 space-y-4">
-            <h3 className="text-lg font-serif mb-2 flex items-center gap-2"><Send className="w-4 h-4 text-primary" /> Convidar por email</h3>
-            <p className="text-xs text-muted-foreground">O convidado receberá um email para se cadastrar na plataforma e será vinculado à sua conta.</p>
-            <div className="flex gap-3">
-              <input type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="email@exemplo.com" className={inputClass} />
-              <button
-                onClick={async () => {
-                  if (!inviteEmail || !inviteEmail.includes('@')) { toast.error('Email inválido'); return; }
-                  setSendingInvite(true);
-                  const { data: inviteData, error } = await supabase.from('invites').insert({ inviter_id: user!.id, email: inviteEmail }).select('token').single();
-                  if (error) {
-                    if (error.code === '23505') toast.error('Convite já enviado para este email.');
-                    else toast.error('Erro ao enviar convite.');
-                  } else {
-                    // Send invite email via Resend
-                    const inviteLink = `${window.location.origin}/auth?invite=${inviteData?.token || ''}`;
-                    supabase.functions.invoke('send-email', {
-                      body: {
-                        templateName: 'platform-invite',
-                        to: inviteEmail,
-                        data: {
-                          inviterName: profile?.name || 'Um profissional',
-                          inviteLink,
-                        },
-                      },
-                    }).catch(() => {});
-                    toast.success('Convite enviado por email!');
-                    setInviteEmail('');
-                    setShowInviteForm(false);
-                  }
-                  setSendingInvite(false);
-                }}
-                disabled={sendingInvite}
-                className="px-5 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
-              >
-                {sendingInvite ? 'Enviando...' : 'Enviar'}
-              </button>
-            </div>
-            <button onClick={() => setShowInviteForm(false)} className="text-xs text-muted-foreground hover:text-foreground">Cancelar</button>
-          </motion.div>
-        )}
-        </AnimatePresence>
 
         {/* Persons List */}
         {loading ? (

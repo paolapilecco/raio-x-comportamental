@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity, Award } from 'lucide-react';
+import { ArrowLeft, Calendar, Layers, TrendingUp, ArrowRight, Crown, Fingerprint, BarChart3, Activity, Award, Mail } from 'lucide-react';
 import { useBadges } from '@/hooks/useBadges';
 import { useGamification } from '@/hooks/useGamification';
 import { BadgeUnlockCelebration } from '@/components/gamification/BadgeUnlockCelebration';
@@ -33,8 +33,32 @@ const Profile = () => {
   const [completedCount, setCompletedCount] = useState(0);
   const [totalModules, setTotalModules] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [sendingInvite, setSendingInvite] = useState(false);
   const badgesData = useBadges(user?.id);
   const gamification = useGamification(user?.id);
+
+  const handleSendInvite = async () => {
+    if (!inviteEmail || !inviteEmail.includes('@')) { toast.error('Email inválido'); return; }
+    setSendingInvite(true);
+    const { data: inviteData, error } = await supabase.from('invites').insert({ inviter_id: user!.id, email: inviteEmail }).select('token').single();
+    if (error) {
+      if (error.code === '23505') toast.error('Convite já enviado para este email.');
+      else toast.error('Erro ao enviar convite.');
+    } else {
+      const inviteLink = `${window.location.origin}/auth?invite=${inviteData?.token || ''}`;
+      supabase.functions.invoke('send-email', {
+        body: {
+          templateName: 'platform-invite',
+          to: inviteEmail,
+          data: { inviterName: profile?.name || 'Um amigo', inviteLink },
+        },
+      }).catch(() => {});
+      toast.success('Convite enviado por email!');
+      setInviteEmail('');
+    }
+    setSendingInvite(false);
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -183,6 +207,33 @@ const Profile = () => {
               </div>
             );
           })}
+        </motion.div>
+
+        {/* Invite a friend */}
+        <motion.div {...fadeUp} transition={{ delay: 0.11 }} className="bg-card/60 backdrop-blur-sm rounded-2xl border border-border/40 p-6">
+          <div className="flex items-center gap-2.5 mb-3">
+            <Mail className="w-4 h-4 text-primary/50" />
+            <span className="text-[0.82rem] font-medium text-foreground/75">Indique um amigo</span>
+          </div>
+          <p className="text-[0.75rem] text-muted-foreground/60 mb-4">
+            Envie um convite por email. A pessoa cria a própria conta e assina o próprio plano — cada assinatura é individual, para um único CPF.
+          </p>
+          <div className="flex gap-3">
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              placeholder="email@exemplo.com"
+              className="flex-1 h-11 rounded-xl border border-border/40 bg-background/60 px-4 text-sm ring-offset-background placeholder:text-muted-foreground/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary/20 transition-all"
+            />
+            <button
+              onClick={handleSendInvite}
+              disabled={sendingInvite}
+              className="px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:opacity-90 disabled:opacity-50 whitespace-nowrap"
+            >
+              {sendingInvite ? 'Enviando...' : 'Enviar convite'}
+            </button>
+          </div>
         </motion.div>
 
         {/* Gamification Level */}

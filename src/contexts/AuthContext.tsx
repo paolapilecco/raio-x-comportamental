@@ -103,8 +103,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Set plan type from active subscription
     if (subRes.data && subRes.data.status === 'active') {
-      const pt = (subRes.data as any).plan_type as PlanType;
-      setPlanType(pt || 'pessoal');
+      const pt = (subRes.data as any).plan_type as string;
+      // Defense in depth: the DB has a CHECK constraint restricting plan_type to these values,
+      // but don't trust the cast alone — fall back safely if an unexpected value ever shows up.
+      setPlanType(pt in PLAN_LIMITS ? (pt as PlanType) : 'pessoal');
       setSubscription(subRes.data as any);
     } else {
       setPlanType('standard');

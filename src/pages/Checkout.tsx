@@ -11,8 +11,8 @@ import { toast } from 'sonner';
 import { trackEvent } from '@/lib/trackEvent';
 
 const PLANS = {
-  pessoal_monthly: { key: 'pessoal', label: 'Pessoal', billing: 'monthly', price: 9.99, priceLabel: 'R$ 9,99', period: '/mês', maxPersons: 3, allTests: true },
-  pessoal_yearly: { key: 'pessoal', label: 'Pessoal', billing: 'yearly', price: 99.90, priceLabel: 'R$ 99,90', period: '/ano', maxPersons: 3, allTests: true, savings: 'Economize R$ 19,98' },
+  pessoal_monthly: { key: 'pessoal', label: 'Pessoal', billing: 'monthly', price: 9.99, priceLabel: 'R$ 9,99', period: '/mês', maxPersons: 1, allTests: true },
+  pessoal_yearly: { key: 'pessoal', label: 'Pessoal', billing: 'yearly', price: 99.90, priceLabel: 'R$ 99,90', period: '/ano', maxPersons: 1, allTests: true, savings: 'Economize R$ 19,98' },
   profissional_monthly: { key: 'profissional', label: 'Profissional', billing: 'monthly', price: 39.90, priceLabel: 'R$ 39,90', period: '/mês', maxPersons: 15, allTests: true },
   profissional_yearly: { key: 'profissional', label: 'Profissional', billing: 'yearly', price: 399.90, priceLabel: 'R$ 399,90', period: '/ano', maxPersons: 15, allTests: true, savings: 'Economize R$ 78,90' },
 };
@@ -184,10 +184,8 @@ export default function Checkout() {
                   <ul className="space-y-2 text-[0.8rem] text-muted-foreground mb-4">
                     <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary shrink-0" /> Todos os 9 módulos de análise</li>
                     <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary shrink-0" /> 2 testes/mês por categoria</li>
-                    <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary shrink-0" /> Até 3 CPFs (você + 2 convidados)</li>
-                    <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary shrink-0" /> Convidados: 1x teste comportamental</li>
+                    <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary shrink-0" /> 1 CPF (uso individual)</li>
                     <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary shrink-0" /> Relatórios completos + IA</li>
-                    <li className="flex items-center gap-2"><Check className="w-3.5 h-3.5 text-primary shrink-0" /> Convite por email</li>
                   </ul>
                   {plan.key === 'pessoal' && (
                     <div className="space-y-2">
@@ -308,7 +306,7 @@ export default function Checkout() {
                   </span>
                 </div>
                 <div className="flex gap-3 mt-2 text-xs text-muted-foreground/60">
-                  <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {plan.maxPersons} CPFs</span>
+                  <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {plan.maxPersons} {plan.maxPersons === 1 ? 'CPF' : 'CPFs'}</span>
                   <span>• 2 testes/mês por categoria</span>
                 </div>
               </div>
