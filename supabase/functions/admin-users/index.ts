@@ -378,7 +378,6 @@ serve(async (req) => {
 
       await adminClient.from("managed_persons").delete().eq("owner_id", targetUserId);
       await adminClient.from("user_central_profile").delete().eq("user_id", targetUserId);
-      await adminClient.from("user_profile").delete().eq("user_id", targetUserId);
       await adminClient.from("subscriptions").delete().eq("user_id", targetUserId);
       await adminClient.from("plan_change_history").delete().eq("user_id", targetUserId);
       await adminClient.from("user_roles").delete().eq("user_id", targetUserId);

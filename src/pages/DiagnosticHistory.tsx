@@ -284,9 +284,7 @@ const DiagnosticHistory = () => {
       await supabase.from('diagnostic_sessions').delete().eq('user_id', user.id);
 
       // Delete user profiles
-      await supabase.from('user_profile').delete().eq('user_id', user.id);
       await supabase.from('user_central_profile').delete().eq('user_id', user.id);
-      await supabase.from('test_results').delete().eq('user_id', user.id);
 
       toast.success('Histórico resetado com sucesso!');
       // Reload page to refresh data

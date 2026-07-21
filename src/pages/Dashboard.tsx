@@ -920,7 +920,6 @@ const Dashboard = () => {
                           }
                           await supabase.from('diagnostic_sessions').delete().eq('user_id', uid);
                           await supabase.from('user_central_profile').delete().eq('user_id', uid);
-                          await supabase.from('user_profile').delete().eq('user_id', uid);
                           await supabase.from('test_usage').delete().eq('user_id', uid);
                           toast.success('Todos os dados de teste foram apagados!');
                           window.location.reload();
