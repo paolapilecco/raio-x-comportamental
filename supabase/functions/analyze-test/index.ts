@@ -637,8 +637,11 @@ REGRA: Todos os textos do relatório devem ser DERIVADOS deste núcleo e do cicl
     const rules = template.output_rules;
     const ruleLines: string[] = [];
     if (rules.tone) ruleLines.push(`- TOM: ${rules.tone}`);
+    if (rules.simplicityLevel) ruleLines.push(`- NÍVEL DE SIMPLICIDADE DA LINGUAGEM: ${rules.simplicityLevel}/5 (1=técnico, 5=ultra-simples)`);
     if (rules.maxSentencesPerBlock) ruleLines.push(`- MÁX ${rules.maxSentencesPerBlock} frases/bloco`);
+    if (rules.maxTotalBlocks) ruleLines.push(`- MÁXIMO DE ${rules.maxTotalBlocks} BLOCOS no relatório inteiro`);
     if (rules.repetitionProhibited) ruleLines.push(`- REPETIÇÃO PROIBIDA entre seções`);
+    if (rules.requiredBlocks?.length) ruleLines.push(`- BLOCOS OBRIGATÓRIOS (sempre incluir): ${rules.requiredBlocks.join(", ")}`);
     if (rules.forbiddenLanguage?.length) ruleLines.push(`- PROIBIDO: ${rules.forbiddenLanguage.map((t) => `"${t}"`).join(", ")}`);
     if (rules.emotionalArchitecture?.trim()) {
       ruleLines.push(`\n═══ ARQUITETURA EMOCIONAL ═══\n${rules.emotionalArchitecture.trim()}\nSiga essa jornada emocional na ordem de cada seção.`);

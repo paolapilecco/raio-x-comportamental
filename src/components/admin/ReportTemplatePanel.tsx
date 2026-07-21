@@ -3,6 +3,7 @@ import { Save, Plus, Trash2, ChevronDown, ChevronUp, RotateCcw, Copy, Sparkles, 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import type { TestModule } from './promptConstants';
+import { findStrongVerbConflicts } from '@/lib/actionValidationRules';
 
 // ═══════════════════════════════════════════════════════════════
 // TYPES — 3-Act Storyboard + Composition Rules
@@ -613,6 +614,15 @@ const ReportTemplatePanel = ({ currentModule }: Props) => {
                     className="w-full text-[0.75rem] bg-destructive/[0.02] border border-destructive/10 rounded-lg px-3 py-2 text-foreground placeholder:text-muted-foreground/30 resize-none focus:outline-none focus:border-destructive/30 font-mono"
                     placeholder="Um termo por linha..."
                   />
+                  {(() => {
+                    const conflicts = findStrongVerbConflicts(template.rules.forbiddenTerms);
+                    if (conflicts.length === 0) return null;
+                    return (
+                      <p className="text-[0.68rem] text-destructive mt-1.5 leading-relaxed">
+                        ⚠ {conflicts.length === 1 ? 'Este termo está' : 'Estes termos estão'} na lista de verbos que a validação de ações exige (<span className="font-mono">{conflicts.join(', ')}</span>). Se todos os verbos exigidos forem banidos, a IA nunca consegue gerar uma ação válida e a seção "Plano estratégico" some do relatório sem aviso.
+                      </p>
+                    );
+                  })()}
                 </div>
               </div>
             )}

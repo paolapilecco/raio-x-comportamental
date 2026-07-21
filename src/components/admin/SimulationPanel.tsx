@@ -445,7 +445,20 @@ const SimulationResult = ({
   if (genericFound.length > 0) issues.push(`Frases genéricas: "${genericFound.join('", "')}"`);
   if (!previewResult.blindSpot?.realProblem) issues.push('Ponto cego vazio ou ausente');
   if ((previewResult.whatNotToDo?.length ?? 0) === 0) issues.push('Sem restrições (o que não fazer)');
-  const qualityScore = Math.max(0, 100 - issues.length * 18);
+
+  // Plano estratégico (tarefasEstrategicas) is validated for real by analyze-test's own
+  // validateAction/validateTarefasEstrategicas — surface that outcome here instead of ignoring
+  // it, otherwise this heuristic can report "100%" while the actual report ships with 0 actions.
+  const tarefaCount = Array.isArray(previewResult.tarefasEstrategicas) ? previewResult.tarefasEstrategicas.length : 0;
+  const tarefasErrors: string[] = previewResult.tarefasValidation?.errors || [];
+  if (tarefaCount < 3) {
+    issues.push(`Plano estratégico incompleto: ${tarefaCount}/3 tarefas aprovadas pela validação real${tarefasErrors.length > 0 ? ` (${tarefasErrors.join(', ')})` : ''}`);
+  }
+
+  const heuristicScore = Math.max(0, 100 - issues.length * 18);
+  // A missing strategic action plan is the most consequential failure this panel can catch —
+  // never let the heuristic above mask it with a comfortable "quality" number.
+  const qualityScore = tarefaCount < 3 ? Math.min(heuristicScore, Math.round((tarefaCount / 3) * 60)) : heuristicScore;
 
   const blocks: { key: string; label: string; color: string; borderColor: string; render: () => React.ReactNode }[] = [
     { key: 'criticalDiagnosis', label: 'Diagnóstico Crítico', color: 'text-red-600 dark:text-red-400', borderColor: 'border-red-500/20', render: () => <p className="text-[0.78rem] text-foreground/70 leading-relaxed">{previewResult.criticalDiagnosis}</p> },
@@ -518,11 +531,19 @@ const SimulationResult = ({
           <h4 className="text-[0.9rem] font-bold text-emerald-700 dark:text-emerald-400">Resultado da Simulação</h4>
           <p className="text-[0.68rem] text-muted-foreground/50 mt-0.5">{blocks.filter(b => previewResult[b.key]).length} blocos gerados</p>
         </div>
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.7rem] font-semibold ${
-          qualityScore >= 80 ? 'bg-emerald-500/10 text-emerald-600' : qualityScore >= 50 ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-600'
-        }`}>
-          {qualityScore >= 80 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-          Qualidade: {qualityScore}%
+        <div className="flex items-center gap-2 flex-wrap justify-end">
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.7rem] font-semibold ${
+            tarefaCount >= 3 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600'
+          }`}>
+            {tarefaCount >= 3 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+            Plano estratégico: {tarefaCount}/3
+          </div>
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[0.7rem] font-semibold ${
+            qualityScore >= 80 ? 'bg-emerald-500/10 text-emerald-600' : qualityScore >= 50 ? 'bg-amber-500/10 text-amber-600' : 'bg-red-500/10 text-red-600'
+          }`}>
+            {qualityScore >= 80 ? <CheckCircle2 className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
+            Qualidade: {qualityScore}%
+          </div>
         </div>
       </div>
 
